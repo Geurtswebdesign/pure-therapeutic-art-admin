@@ -1,5 +1,21 @@
 {
-  "node": {},
+  "node": {
+    "40985ee5894df03fcec81ebaa6f2de02977a8d5e93": {
+      "workers": {
+        "app/admin/users/[user_id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/users/[user_id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/admin/users/[user_id]/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "adjustCredits",
+          "filename": "app/admin/users/[user_id]/actions.ts"
+        }
+      },
+      "layer": {
+        "app/admin/users/[user_id]/page": "action-browser"
+      },
+      "filename": "app/admin/users/[user_id]/actions.ts",
+      "exportedName": "adjustCredits"
+    }
+  },
   "edge": {},
-  "encryptionKey": "p9G3tOHGmIys0Qv/VYKwntBtMHZ6+6WGB6zSiloAdZI="
+  "encryptionKey": "ystBEX8KsM1G5KyAdeSqEjd0jxRJynbZprcihRCt/D0="
 }
