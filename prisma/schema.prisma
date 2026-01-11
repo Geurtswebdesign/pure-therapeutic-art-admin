@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/* =========================
+   SUPABASE MODELS
+   ========================= */
+
+model Profile {
+  user_id          String   @id
+  display_name     String?
+  language         String?
+  timezone         String?
+  onboarding_state String?
+  marketing_opt_in Boolean
+  role             String
+  created_at       DateTime
+  updated_at       DateTime
+
+  @@map("profiles")
+}
+
+model CreditWallet {
+  user_id                 String   @id
+  credits_available       Int
+  credits_total_purchased Int
+  updated_at              DateTime
+
+  @@map("credit_wallets")
+}
+
+model CreditTransaction {
+  id         String   @id @default(uuid())
+  user_id    String
+  delta      Int
+  reason     String
+  created_at DateTime @default(now())
+
+  @@map("credit_transactions")
+}
