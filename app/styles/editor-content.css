@@ -1,0 +1,23 @@
+/* Caption basis */
+.image-caption {
+  font-size: 0.875rem;
+  color: #6b7280; /* gray-500 */
+  font-style: italic;
+  text-align: center;
+  margin-top: -0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Placeholder-stijl */
+.image-caption:empty::before,
+.image-caption[data-caption]:not(:focus):contains("Bijschrift toevoegen") {
+  content: "Bijschrift toevoegen";
+  color: #9ca3af; /* gray-400 */
+}
+
+/* Focus (editor) */
+.image-caption:focus {
+  outline: none;
+  color: #374151; /* gray-700 */
+  font-style: normal;
+}
