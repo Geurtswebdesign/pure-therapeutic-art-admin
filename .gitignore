@@ -25,3 +25,6 @@ pnpm-debug.log*
 
 # uploads
 uploads/
+.next/
+node_modules/
+node_modules/
