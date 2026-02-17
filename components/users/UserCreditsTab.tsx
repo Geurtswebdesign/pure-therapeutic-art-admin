@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { adjustCredits } from "@/app/admin/users/actions";
+import { grantCredits } from "@/lib/credits/grantCredits";
 
 import type {
   CreditWallet,
@@ -37,7 +37,12 @@ export default function UserCreditsTab({
 
     setLoading(true);
     try {
-      await adjustCredits(userId, delta);
+      await grantCredits({
+        userId,
+        amount: delta,
+        reason: "admin_adjust",
+      });
+
       setAmount(0);
     } catch (e: unknown) {
       const message =
