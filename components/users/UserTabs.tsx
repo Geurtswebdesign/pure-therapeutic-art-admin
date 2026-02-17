@@ -3,11 +3,11 @@
 import { useState } from "react";
 
 import type {
-  AdminUserProfile,
   CreditWallet,
   CreditTransaction,
 } from "@/lib/credits/types";
 
+import type {AdminUserProfile} from "@/lib/users/getUserDetail";
 import UserGeneralTab from "@/components/users/UserGeneralTab";
 import UserCreditsTab from "@/components/users/UserCreditsTab";
 

@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/globals.css";
+
+import { WalletProvider } from "@/components/providers/WalletProvider";
+import { getCurrentUser } from "@/lib/auth/getCurrentUser";
+import { getWallet } from "@/lib/credits/getWallet";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -16,17 +21,28 @@ export const metadata: Metadata = {
   description: "Hier komt een beschrijving van de app te staan.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  const user = await getCurrentUser();
+
+  let balance = 0;
+
+  if (user) {
+    const wallet = await getWallet(user.id);
+    balance = wallet?.credits_available ?? 0;
+  }
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <WalletProvider initialBalance={balance}>
+          {children}
+        </WalletProvider>
       </body>
     </html>
   );

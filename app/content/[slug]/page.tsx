@@ -5,42 +5,62 @@ import {
 } from "@/lib/content/public-queries";
 import PublicBlockRenderer from "@/components/content/PublicBlockRenderer";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
+import { hasAccess } from "@/lib/unlocks/hasAccess";
+import { getCurrentUser } from "@/lib/auth/getCurrentUser";
+import LockedView from "@/components/content/LockedView";
+
 
 export default async function ContentDetailPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params; // ⬅️ CRUCIAAL
+  const { slug } = await params;
 
   const item = await getPublishedContentBySlug(slug);
-
   if (!item) notFound();
+
+  const user = await getCurrentUser();
+
+  const requiresUnlock = item.credit_cost > 0;
+
+  let hasUserAccess = false;
+
+  if (requiresUnlock && user) {
+    hasUserAccess = await hasAccess(user.id, item.id);
+  }
+
+  if (requiresUnlock && !hasUserAccess) {
+    return (
+      <LockedView
+        contentId={item.id}
+        cost={item.credit_cost}
+      />
+    );
+  }
 
   const blocks = await getPublishedBlocks(item.id);
 
   return (
-  <article className="max-w-3xl mx-auto py-12">
-    <h1 className="text-4xl font-semibold mb-6">
-      {item.title}
-    </h1>
+    <article className="max-w-3xl mx-auto py-12">
+      <h1 className="text-4xl font-semibold mb-6">
+        {item.title}
+      </h1>
 
-    {/* BODY (classic editor content) */}
-    {item.body && (
-      <div
-        className="prose prose-lg mb-10"
-        dangerouslySetInnerHTML={{
-          __html: normalizeImages(item.body),
-        }}
-      />
-    )}
+      {item.body && (
+        <div
+          className="prose prose-lg mb-10"
+          dangerouslySetInnerHTML={{
+            __html: normalizeImages(item.body),
+          }}
+        />
+      )}
 
-    {/* BLOCKS (images, galleries, etc.) */}
-    <div className="space-y-8">
-      <PublicBlockRenderer blocks={blocks} />
-    </div>
-  </article>
-);
+      <div className="space-y-8">
+        <PublicBlockRenderer blocks={blocks} />
+      </div>
+    </article>
+  );
 }
 
 export async function generateMetadata({

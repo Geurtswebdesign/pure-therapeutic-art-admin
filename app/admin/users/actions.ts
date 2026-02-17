@@ -3,7 +3,7 @@
 import { createAdminClient, supabaseAdmin } from "@/lib/supabase-admin";
 import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/auth/getAdminUser";
-import { grantCredits } from "@/lib/credits/grandCredits";
+import { grantCredits } from "@/lib/credits/grantCredits";
 
 export type CreateUserInput = {
   email: string;

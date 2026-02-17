@@ -3,11 +3,10 @@ import { createAdminClient } from "@/lib/supabase-admin";
 import { getAdminUser } from "@/lib/auth/getAdminUser";
 
 import {
-  AdminUserProfile,
   CreditWallet,
   CreditTransaction,
 } from "@/lib/credits/types";
-
+import {AdminUserProfile} from "@/lib/users/getUserDetail";
 import UserHeader from "@/components/users/UserHeader";
 import UserTabs from "@/components/users/UserTabs";
 
