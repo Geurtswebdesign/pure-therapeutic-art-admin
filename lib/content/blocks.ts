@@ -9,8 +9,6 @@ export type ParagraphBlock = {
   };
 };
 
-export type ContentBlock = ParagraphBlock;
-
 export type ImageBlock = {
   id: string;
   type: "image";

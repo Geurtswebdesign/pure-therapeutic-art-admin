@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchRandomSplashText } from "@/app/services/cms/splashTexts.service";
+import { fetchRandomSplashText } from "@/services/cms/splashTexts.service";
 
 export function useSplashText(language: string) {
   const [text, setText] = useState<string | null>(null);

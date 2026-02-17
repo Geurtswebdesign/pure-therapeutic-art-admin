@@ -1,11 +1,15 @@
-import { redirect } from 'next/navigation';
-import { createAdminClient } from '@/lib/supabase-admin';
-import { getAdminUser } from '@/lib/auth/getAdminUser';
+import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase-admin";
+import { getAdminUser } from "@/lib/auth/getAdminUser";
 
-import { AdminUser, CreditWallet, CreditTransaction } from './types';
-import UserHeader from './UserHeader';
-import CreditOverview from './CreditOverview';
-import CreditTransactions from './CreditTransactions';
+import {
+  AdminUserProfile,
+  CreditWallet,
+  CreditTransaction,
+} from "@/lib/users/types";
+
+import UserHeader from "@/components/users/UserHeader";
+import UserTabs from "@/components/users/UserTabs";
 
 type PageProps = {
   params: Promise<{
@@ -20,99 +24,60 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
      1. Admin authorisatie
      ========================= */
   const adminUser = await getAdminUser();
-
-  if (!adminUser) {
-    redirect('/unauthorized');
-  }
+  if (!adminUser) redirect("/unauthorized");
 
   const supabase = createAdminClient();
 
   /* =========================
-     2. Profile ophalen of aanmaken (LAZY)
+     2. Profiel
      ========================= */
-  let user: AdminUser;
+  const { data: user, error: userError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("user_id", user_id)
+    .maybeSingle<AdminUserProfile>();
 
-  const { data: existingUser } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user_id)
-    .single<AdminUser>();
-
-  if (!existingUser) {
-    const { data: newUser, error } = await supabase
-      .from('profiles')
-      .insert({
-        id: user_id,
-        email: adminUser.email,
-        full_name: adminUser.email?.split('@')[0] ?? null,
-      })
-      .select()
-      .single<AdminUser>();
-
-    if (error || !newUser) {
-      throw new Error('Kon user-profiel niet aanmaken');
-    }
-
-    user = newUser;
-  } else {
-    user = existingUser;
+  if (userError || !user) {
+    throw new Error("Profiel bestaat niet");
   }
 
   /* =========================
-     3. Credit wallet ophalen of aanmaken (LAZY)
+     3. Wallet
      ========================= */
-  let wallet: CreditWallet;
-
-  const { data: existingWallet } = await supabase
-    .from('credit_wallets')
-    .select('*')
-    .eq('user_id', user_id)
+  const { data: wallet, error: walletError } = await supabase
+    .from("credit_wallets")
+    .select("*")
+    .eq("user_id", user_id)
     .single<CreditWallet>();
 
-  if (!existingWallet) {
-    const { data: newWallet, error } = await supabase
-      .from('credit_wallets')
-      .insert({
-        user_id,
-        credits_available: 0,
-      })
-      .select()
-      .single<CreditWallet>();
-
-    if (error || !newWallet) {
-      throw new Error('Kon credit wallet niet aanmaken');
-    }
-
-    wallet = newWallet;
-  } else {
-    wallet = existingWallet;
+  if (walletError || !wallet) {
+    throw new Error("Credit wallet bestaat niet");
   }
 
   /* =========================
-     4. Credit transacties ophalen
+     4. Transacties
      ========================= */
   const { data: transactions } = await supabase
-    .from('credit_transactions')
-    .select('*')
-    .eq('user_id', user_id)
-    .order('created_at', { ascending: false })
+    .from("credit_transactions")
+    .select("*")
+    .eq("user_id", user_id)
+    .order("created_at", { ascending: false })
     .limit(50)
     .returns<CreditTransaction[]>();
 
   /* =========================
-     5. Render pagina
+     5. Render
      ========================= */
   return (
     <div className="space-y-8">
       <UserHeader user={user} />
 
-      <CreditOverview
+      <UserTabs
+        user={user}
         wallet={wallet}
-        userId={user.id}
-      />
-
-      <CreditTransactions
         transactions={transactions ?? []}
+        currentAdminId={adminUser.id}
+        isSuperAdmin={adminUser.isSuperAdmin}   // ⬅️ MOET ERIN
       />
     </div>
   );

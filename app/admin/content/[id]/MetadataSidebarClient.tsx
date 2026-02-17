@@ -31,7 +31,10 @@ export default function MetadataSidebarClient({
         setDirty(true);
       }}
       onSaveAll={async () => {
-        await updateContentItem(item.id, draft);
+        await updateContentItem({
+          id: item.id,
+          status: draft.status,
+        });
         setDirty(false);
       }}
     />

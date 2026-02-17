@@ -1,6 +1,6 @@
 "use server";
 
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase-client";
 
 export async function getPublishedContent() {
   const { data, error } = await supabase

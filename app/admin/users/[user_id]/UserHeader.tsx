@@ -1,3 +1,0 @@
-type Props = {
-    user: AdminUser;
-};

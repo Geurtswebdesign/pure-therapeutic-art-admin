@@ -1,52 +1,60 @@
 import Link from "next/link";
-import { getContentItems } from "@/lib/content/queries";
-import "../../styles/globals.css";
-import "../../styles/content.css";
+import { createAdminClient } from "@/lib/supabase-admin";
+import ContentTableClient from "@/components/content/admin/ContentTableClient";
 
-export default async function ContentIndexPage() {
-  const items = await getContentItems();
+type PageProps = {
+  searchParams: Promise<{
+    s?: string;
+    status?: "all" | "draft" | "published";
+  }>;
+};
+
+export default async function AdminContentPage({ searchParams }: PageProps) {
+  const supabase = createAdminClient();
+  const { s, status } = await searchParams;
+  const search = s?.trim() ?? "";
+
+  let query = supabase
+    .from("content_items")
+    .select("*")
+    .order("updated_at", { ascending: false });
+
+  // 🔍 WP-style search: title + body/content
+  if (search) {
+    query = query.or(
+      `title.ilike.%${search}%,content.ilike.%${search}%`
+    );
+  }
+
+  const { data: items, error } = await query;
+
+  if (error) {
+    throw new Error("Content laden mislukt");
+  }
 
   return (
-    <div className="p-6 w-full">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-semibold">Content</h1>
+    <div className="w-full space-y-4">
+      {/* =========================
+         Header (WP-style)
+         ========================= */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Content</h1>
 
         <Link
           href="/admin/content/new"
-          className="px-4 py-2 bg-black text-white rounded"
+          className="rounded bg-[#2271b1] px-4 py-2 text-sm font-medium text-white hover:bg-[#135e96]"
         >
-          Nieuw item
+          Nieuwe pagina
         </Link>
       </div>
 
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="border-b">
-            <th className="text-left py-2">Titel</th>
-            <th>Status</th>
-            <th>Taal</th>
-            <th>Datum</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {items.map((item) => (
-            <tr key={item.id} className="border-b">
-              <td className="py-2">
-                <Link
-                  href={`/admin/content/${item.id}`}
-                  className="underline"
-                >
-                  {item.title || "(geen titel)"}
-                </Link>
-              </td>
-              <td>{item.status}</td>
-              <td>{item.language}</td>
-              <td>{new Date(item.created_at).toLocaleDateString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* =========================
+         Tabel
+         ========================= */}
+      {/* Header + zoekveld zit in client */}
+      <ContentTableClient
+        items={items ?? []}
+      />
     </div>
   );
 }

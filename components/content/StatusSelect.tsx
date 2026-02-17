@@ -1,6 +1,6 @@
 "use client";
 
-export type ContentStatus = "draft" | "published" | "archived";
+export type ContentStatus = "all" | "draft" | "published" | "archived";
 
 export default function StatusSelect({
   value,

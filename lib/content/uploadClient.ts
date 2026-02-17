@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase-client";
 
 export async function uploadImageClient(
   file: File,

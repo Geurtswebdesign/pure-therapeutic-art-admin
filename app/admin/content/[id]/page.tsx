@@ -1,8 +1,6 @@
 import ContentEditorClient from "./ContentEditorClient";
-import {
-  getContentItem,
-  getContentBlocks,
-} from "@/lib/content/queries";
+import { getContentItem } from "@/lib/content/queries";
+import TermSelector from "@/components/content/TermSelector";
 
 export default async function ContentEditorPage({
   params,
@@ -12,9 +10,10 @@ export default async function ContentEditorPage({
   const { id } = await params;
 
   const item = await getContentItem(id);
-  const blocks = await getContentBlocks(id);
-
   return (
-    <ContentEditorClient item={item} blocks={blocks} />
+    <div className="space-y-6">
+      <ContentEditorClient item={item} />
+      <TermSelector contentId={item.id} taxonomySlug="category" />
+    </div>
   );
 }

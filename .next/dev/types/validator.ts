@@ -36,6 +36,96 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
 }
 
 
+// Validate ../../../app/[locale]/[slug]/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/[locale]/[slug]">> = Specific
+  const handler = {} as typeof import("../../../app/[locale]/[slug]/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/admin/content/[id]/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/content/[id]">> = Specific
+  const handler = {} as typeof import("../../../app/admin/content/[id]/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/admin/content/categories/[slug]/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/content/categories/[slug]">> = Specific
+  const handler = {} as typeof import("../../../app/admin/content/categories/[slug]/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/admin/content/categories/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/content/categories">> = Specific
+  const handler = {} as typeof import("../../../app/admin/content/categories/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/admin/content/new/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/content/new">> = Specific
+  const handler = {} as typeof import("../../../app/admin/content/new/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/admin/content/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/content">> = Specific
+  const handler = {} as typeof import("../../../app/admin/content/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/admin/content/taxonomies/[taxonomy]/terms/[slug]/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/content/taxonomies/[taxonomy]/terms/[slug]">> = Specific
+  const handler = {} as typeof import("../../../app/admin/content/taxonomies/[taxonomy]/terms/[slug]/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/admin/content/taxonomies/[taxonomy]/terms/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/content/taxonomies/[taxonomy]/terms">> = Specific
+  const handler = {} as typeof import("../../../app/admin/content/taxonomies/[taxonomy]/terms/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/admin/dashboard/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/dashboard">> = Specific
+  const handler = {} as typeof import("../../../app/admin/dashboard/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/admin/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin">> = Specific
+  const handler = {} as typeof import("../../../app/admin/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../../app/admin/users/[user_id]/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/admin/users/[user_id]">> = Specific
@@ -45,10 +135,37 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
   type __Unused = __Check
 }
 
+// Validate ../../../app/admin/users/new/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/users/new">> = Specific
+  const handler = {} as typeof import("../../../app/admin/users/new/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../../app/admin/users/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/admin/users">> = Specific
   const handler = {} as typeof import("../../../app/admin/users/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/content/[slug]/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/content/[slug]">> = Specific
+  const handler = {} as typeof import("../../../app/content/[slug]/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/content/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/content">> = Specific
+  const handler = {} as typeof import("../../../app/content/page.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check
@@ -72,25 +189,34 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
   type __Unused = __Check
 }
 
-// Validate ../../../app/unauthorized/page.tsx
+
+
+
+
+
+
+// Validate ../../../app/admin/content/layout.tsx
 {
-  type __IsExpected<Specific extends AppPageConfig<"/unauthorized">> = Specific
-  const handler = {} as typeof import("../../../app/unauthorized/page.js")
+  type __IsExpected<Specific extends LayoutConfig<"/admin/content">> = Specific
+  const handler = {} as typeof import("../../../app/admin/content/layout.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check
 }
 
-
-
-
-
-
-
 // Validate ../../../app/admin/layout.tsx
 {
   type __IsExpected<Specific extends LayoutConfig<"/admin">> = Specific
   const handler = {} as typeof import("../../../app/admin/layout.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/content/layout.tsx
+{
+  type __IsExpected<Specific extends LayoutConfig<"/content">> = Specific
+  const handler = {} as typeof import("../../../app/content/layout.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

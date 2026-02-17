@@ -1,5 +1,5 @@
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 export async function getAdminUser() {
   const cookieStore = await cookies();
@@ -16,20 +16,37 @@ export async function getAdminUser() {
     }
   );
 
-  const { data: userData, error } = await supabase.auth.getUser();
+  // 1️⃣ Auth user ophalen
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-  if (error || !userData?.user) {
+  if (authError || !user) {
     return null;
   }
 
-  const user = userData.user;
+  // 2️⃣ Profile ophalen
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("user_id, role, display_name")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  // 🔍 Tijdelijke debug (mag je straks verwijderen)
-  console.log('ADMIN USER CHECK:', user.app_metadata);
-
-  if (user.app_metadata?.role !== 'admin') {
+  if (profileError || !profile) {
     return null;
   }
 
-  return user;
+  // 3️⃣ Admin check (DEZE regel is cruciaal)
+  if (profile.role !== "admin") {
+    return null;
+  }
+
+  // 4️⃣ Samengevoegde admin user
+  return {
+    id: user.id,
+    email: user.email,
+    role: profile.role,
+    display_name: profile.display_name,
+  };
 }

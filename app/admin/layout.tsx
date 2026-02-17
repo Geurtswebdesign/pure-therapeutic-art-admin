@@ -2,7 +2,10 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import LogoutButton from "./_components/LogoutButton";
+
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminTopbar from "@/components/admin/AdminTopbar";
+import LogoutButton from "@/components/admin/LogoutButton";
 
 export default async function AdminLayout({
   children,
@@ -16,18 +19,14 @@ export default async function AdminLayout({
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
+        get(name: string) {
+          return cookieStore.get(name)?.value;
         },
       },
     }
   );
 
+  // 🔐 Auth check
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -36,7 +35,7 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  // Rolcheck via service role (veilig)
+  // 🔐 Role check
   const { data: profile } = await supabaseAdmin
     .from("profiles")
     .select("role")
@@ -46,14 +45,15 @@ export default async function AdminLayout({
   if (profile?.role !== "admin") {
     redirect("/unauthorized");
   }
-  return (
-  <section className="min-h-screen bg-white">
-    <header className="flex items-center justify-between px-6 py-4 border-b">
-      <h1 className="font-semibold">Admin panel</h1>
-      <LogoutButton />
-    </header>
 
-    <main>{children}</main>
-  </section>
-);
+  return (
+    <div className="flex min-h-screen bg-[#f0f0f1]">
+      <AdminSidebar />
+
+      <div className="flex flex-col flex-1">
+        <AdminTopbar actions={<LogoutButton />} />
+        <main className="p-6">{children}</main>
+      </div>
+    </div>
+  );
 }

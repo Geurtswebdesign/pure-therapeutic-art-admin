@@ -37,9 +37,7 @@ export default async function ContentDetailPage({
 
     {/* BLOCKS (images, galleries, etc.) */}
     <div className="space-y-8">
-      {blocks.map((block) => (
-        <PublicBlockRenderer key={block.id} block={block} />
-      ))}
+      <PublicBlockRenderer blocks={blocks} />
     </div>
   </article>
 );

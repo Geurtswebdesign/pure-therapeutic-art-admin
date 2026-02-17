@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import PreviewButton from "@/app/admin/_components/PreviewButton";
+import PreviewButton from "@/components/admin/PreviewButton";
 import StatusSelect from "./StatusSelect";
+import { deleteContentItem } from "@/lib/content/actions";
+import { useRouter } from "next/navigation";
 
-export type ContentStatus = "draft" | "published" | "archived";
+export type ContentStatus = "all" | "draft" | "published" | "archived";
 
 type MetadataSidebarProps = {
   item: {
@@ -32,6 +34,22 @@ export default function MetadataSidebar({
   onSaveAll,
   saving = false,
 }: MetadataSidebarProps) {
+
+  const router = useRouter(); // ✅ hier mag het
+
+  async function handleDelete() {
+    const confirmDelete = confirm(
+      dirty
+        ? "Er zijn niet-opgeslagen wijzigingen. Weet je zeker dat je deze content wilt verwijderen?"
+        : "Weet je zeker dat je deze content definitief wilt verwijderen?"
+    );
+
+    if (!confirmDelete) return;
+
+    await deleteContentItem(item.id);
+    router.push("/admin/content");
+  }
+
   const currentStatus = draft.status;
   const isPublished = currentStatus === "published";
   const canSave = dirty && !saving;
@@ -46,6 +64,15 @@ export default function MetadataSidebar({
       {/* Header */}
       <div className="border-b px-6 py-4 font-semibold">
         Publiceren
+      </div>
+
+      <div className="mt-6 border-t pt-4">
+        <button
+          onClick={handleDelete}
+          className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded"
+        >
+          Content verwijderen
+        </button>
       </div>
 
       <div className="p-6 space-y-6 text-sm">
@@ -173,3 +200,5 @@ export default function MetadataSidebar({
     </aside>
   );
 }
+
+

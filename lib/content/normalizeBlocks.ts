@@ -18,9 +18,10 @@ export function normalizeBlocks(blocks: ContentBlock[]): ContentBlock[] {
 
 function normalizeParagraphBlock(block: ParagraphBlock): ParagraphBlock {
   return {
-    type: "paragraph",
+    ...block,
     data: {
-      html: normalizeHtml(block.data.html),
+      ...block.data,
+      text: normalizeHtml(block.data.text),
     },
   };
 }

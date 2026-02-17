@@ -1,3 +1,6 @@
 {
-  "/admin/users/[user_id]/page": "app/admin/users/[user_id]/page.js"
+  "/admin/content/[id]/page": "app/admin/content/[id]/page.js",
+  "/admin/content/new/page": "app/admin/content/new/page.js",
+  "/admin/content/taxonomies/[taxonomy]/terms/[slug]/page": "app/admin/content/taxonomies/[taxonomy]/terms/[slug]/page.js",
+  "/admin/content/taxonomies/[taxonomy]/terms/page": "app/admin/content/taxonomies/[taxonomy]/terms/page.js"
 }

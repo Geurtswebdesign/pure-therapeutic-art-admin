@@ -5,7 +5,7 @@ import EditorCanvas from "@/components/content/EditorCanvas";
 import MetadataSidebar from "@/components/content/MetadataSidebar";
 import { updateContentItem } from "@/lib/content/actions";
 
-type ContentStatus = "draft" | "published" | "archived";
+type ContentStatus = "all" | "draft" | "published" | "archived";
 
 type Props = {
   item: {
