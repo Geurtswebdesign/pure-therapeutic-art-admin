@@ -5,7 +5,7 @@ import {
   updateUserRole,
   adminResetPassword,
 } from "@/app/admin/users/actions";
-import type { AdminUserProfile } from "@/lib/users/types";
+import type { AdminUserProfile } from "@/lib/credits/types";
 
 type UserRole = "user" | "admin";
 

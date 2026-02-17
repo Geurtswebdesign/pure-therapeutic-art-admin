@@ -5,7 +5,7 @@ import AdminResetPasswordButton from "@/components/admin/AdminResetPasswordButto
 import AdminRoleEditor from "@/lib/admin/AdminRoleEditor";
 import { updateUserProfileExtended } from "@/app/admin/users/actions";
 
-import type { AdminUserProfile } from "@/lib/users/types";
+import type { AdminUserProfile } from "@/lib/credits/types";
 
 type Props = {
   user: AdminUserProfile;

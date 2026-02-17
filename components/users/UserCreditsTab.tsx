@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { grantCredits } from "@/lib/credits/grantCredits";
+import { grantCredits } from "@/lib/credits/grandCredits";
 
 import type {
   CreditWallet,
   CreditTransaction,
-} from "@/lib/users/types";
+} from "@/lib/credits/types";
 
 import CreditOverview from "@/components/users/CreditOverview";
 import CreditTransactions from "@/components/users/CreditTransactions";

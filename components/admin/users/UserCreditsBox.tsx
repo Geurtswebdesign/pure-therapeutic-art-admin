@@ -1,4 +1,4 @@
-import type { CreditWallet } from "@/lib/users/types";
+import type { CreditWallet } from "@/lib/credits/types";
 
 export default function UserCreditsBox({
   wallet,

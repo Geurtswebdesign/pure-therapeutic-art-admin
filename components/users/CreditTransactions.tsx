@@ -1,4 +1,4 @@
-import type { CreditTransaction } from '@/lib/users/types';
+import type { CreditTransaction } from '@/lib/credits/types';
 import CreditHistoryTable from '@/components/users/CreditHistoryTable';
 
 type Props = {

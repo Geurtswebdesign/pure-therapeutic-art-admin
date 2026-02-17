@@ -6,7 +6,7 @@ import type {
   AdminUserProfile,
   CreditWallet,
   CreditTransaction,
-} from "@/lib/users/types";
+} from "@/lib/credits/types";
 
 import UserGeneralTab from "@/components/users/UserGeneralTab";
 import UserCreditsTab from "@/components/users/UserCreditsTab";

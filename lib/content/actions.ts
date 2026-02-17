@@ -2,10 +2,6 @@
 
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-import { createAdminClient } from '@/lib/supabase-admin';
-import { revalidatePath } from 'next/cache';
-import { getAdminSession } from '@/lib/auth/getAdminSession';
-
 
 type ContentStatus = "all" | "draft" | "published" | "archived";
 

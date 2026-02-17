@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import { SUPER_ADMIN_ID } from "@/lib/auth/constants";
 
 export async function getAdminUser() {
   const cookieStore = await cookies();
@@ -48,5 +49,6 @@ export async function getAdminUser() {
     email: user.email,
     role: profile.role,
     display_name: profile.display_name,
+    isSuperAdmin: user.id === SUPER_ADMIN_ID,
   };
 }

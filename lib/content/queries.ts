@@ -6,7 +6,7 @@ import type {
   AdminUserProfile,
   CreditTransactionUI,
   CreditWallet,
-} from "@/lib/users/types";
+} from "@/lib/credits/types";
 
 const PAGE_SIZE = 10;
 

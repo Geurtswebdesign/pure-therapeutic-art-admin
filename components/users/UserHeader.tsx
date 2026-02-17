@@ -1,4 +1,4 @@
-import type { AdminUserProfile } from "@/lib/users/types";
+import type { AdminUserProfile } from "@/lib/credits/types";
 
 type Props = {
   user: AdminUserProfile;

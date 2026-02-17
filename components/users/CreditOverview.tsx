@@ -1,4 +1,4 @@
-import { CreditWallet } from "@/lib/users/types";
+import { CreditWallet } from "@/lib/credits/types";
 
 type Props = {
   wallet: CreditWallet;
