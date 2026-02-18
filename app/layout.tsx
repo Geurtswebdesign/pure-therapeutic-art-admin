@@ -5,6 +5,7 @@ import "@/styles/globals.css";
 import { WalletProvider } from "@/components/providers/WalletProvider";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { getWallet } from "@/lib/credits/getWallet";
+import WalletDebug from "@/components/debug/WalletDebug";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,6 +43,8 @@ export default async function RootLayout({
       >
         <WalletProvider initialBalance={balance}>
           {children}
+          <WalletDebug />
+
         </WalletProvider>
       </body>
     </html>
