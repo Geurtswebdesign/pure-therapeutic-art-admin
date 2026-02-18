@@ -5,7 +5,7 @@ import {
 } from "@/lib/content/public-queries";
 import PublicBlockRenderer from "@/components/content/PublicBlockRenderer";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
-import { hasAccess } from "@/lib/unlocks/hasAccess";
+import { hasAccess } from "@/lib/unlock/hasAccess";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import LockedView from "@/components/content/LockedView";
 

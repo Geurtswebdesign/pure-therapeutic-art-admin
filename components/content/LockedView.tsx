@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { unlockContent } from "@/lib/unlocks/unlockContent";
+import { unlockContent } from "@/lib/unlock/unlockContent";
 
 export default function LockedView({
   contentId,
