@@ -7,7 +7,7 @@ import PublicBlockRenderer from "@/components/content/PublicBlockRenderer";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
 import { hasAccess } from "@/lib/unlock/hasAccess";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
-import LockedView from "@/components/content/LockedView";
+import LockedView from "../../../components/content/LockedView";
 
 
 export default async function ContentDetailPage({

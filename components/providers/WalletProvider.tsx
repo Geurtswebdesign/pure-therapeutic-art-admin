@@ -1,10 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useCallback } from "react";
+import { refreshBalance } from "@/lib/credits/refreshBalance";
 
 type WalletContextType = {
   balance: number;
-  setBalance: (value: number) => void;
+  setBalance: React.Dispatch<React.SetStateAction<number>>;
+  applyDelta: (delta: number) => void;
+  refresh: () => Promise<void>;
 };
 
 const WalletContext = createContext<WalletContextType | null>(null);
@@ -18,8 +21,18 @@ export function WalletProvider({
 }) {
   const [balance, setBalance] = useState(initialBalance);
 
+  const applyDelta = useCallback((delta: number) => {
+    // ✅ voorkomt stale state
+    setBalance((b) => b + delta);
+  }, []);
+
+  const refresh = useCallback(async () => {
+    const latest = await refreshBalance();
+    setBalance(latest);
+  }, []);
+
   return (
-    <WalletContext.Provider value={{ balance, setBalance }}>
+    <WalletContext.Provider value={{ balance, setBalance, applyDelta, refresh }}>
       {children}
     </WalletContext.Provider>
   );
