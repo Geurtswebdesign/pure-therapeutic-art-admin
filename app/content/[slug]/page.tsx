@@ -8,7 +8,7 @@ import { normalizeImages } from "@/lib/content/normalizeHtml";
 import { hasAccess } from "@/lib/unlock/hasAccess";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import LockedView from "../../../components/content/LockedView";
-
+import { getWalletBalance } from "@/lib/users/getWalletBalance";
 
 export default async function ContentDetailPage({
   params,
@@ -31,10 +31,13 @@ export default async function ContentDetailPage({
   }
 
   if (requiresUnlock && !hasUserAccess) {
+    const balance = user ? await getWalletBalance(user.id) : 0;
+
     return (
       <LockedView
         contentId={item.id}
         cost={item.credit_cost}
+        balance={balance}
       />
     );
   }

@@ -14,7 +14,5 @@ export async function unlockContentItem(contentItemId: string) {
     throw new Error("Unlock mislukt");
   }
 
-  return data as
-    | { unlocked: true; cost: number; new_balance?: number; already?: boolean }
-    | { unlocked: false; error: "INSUFFICIENT_CREDITS"; cost: number; balance: number };
+  return data;
 }
