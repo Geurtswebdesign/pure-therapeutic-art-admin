@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createAdminClient } from "@/lib/supabase-admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 import ContentTableClient from "@/components/content/admin/ContentTableClient";
 
 type PageProps = {

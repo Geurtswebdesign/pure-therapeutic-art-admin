@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase-admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function getBalance(userId: string): Promise<number> {
   const supabase = createAdminClient();

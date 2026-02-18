@@ -1,6 +1,6 @@
 "use server";
 
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function getContentItems() {
   const { data, error } = await supabaseAdmin

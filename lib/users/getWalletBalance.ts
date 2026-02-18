@@ -3,11 +3,16 @@ import { createClient } from "@/lib/supabase/server";
 export async function getWalletBalance(userId: string) {
   const supabase = await createClient();
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("credit_wallets")
-    .select("balance")
+    .select("credits_available")
     .eq("user_id", userId)
     .single();
 
-  return data?.balance ?? 0;
+  if (error) {
+    // als er geen wallet row is, wil je meestal 0 teruggeven
+    return 0;
+  }
+
+  return data?.credits_available ?? 0;
 }

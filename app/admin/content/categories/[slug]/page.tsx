@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase-admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 import EditCategoryForm from "@/components/categories/EditCategoryForm";
 import { notFound } from "next/navigation";
 

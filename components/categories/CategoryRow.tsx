@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase/browser";
 import type { CategoryNode } from "./CategoryTree";
 import Link from "next/link";
 

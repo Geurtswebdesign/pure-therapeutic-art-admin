@@ -1,6 +1,6 @@
 "use client";
 
-import { supabase } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase/browser";
 
 export default function BlockInserter({
   contentItemId,

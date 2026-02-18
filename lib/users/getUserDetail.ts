@@ -3,7 +3,7 @@
 import { requireAdmin } from "@/lib/auth";
 import { getWallet } from "@/lib/credits/getWallet";
 import { getTransactions } from "@/lib/credits/getTransactions";
-import { createAdminClient } from "@/lib/supabase-admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type AdminUserProfile = {
   user_id: string;

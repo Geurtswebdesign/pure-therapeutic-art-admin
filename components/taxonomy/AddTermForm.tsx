@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase/browser";
 import type { Taxonomy, Term } from "./types";
 
 type Props = {

@@ -1,6 +1,6 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase-admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function hasAccess(userId: string, contentItemId: string): Promise<boolean> {
   if (!userId || !contentItemId) return false;

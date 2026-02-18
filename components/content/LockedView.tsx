@@ -1,4 +1,4 @@
-import LockedViewClient from "./LockedViewClient";
+import LockedViewClient from "@/components/content/LockedViewClient";
 
 type Props = {
   contentId: string;

@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import UsersTableClient from "@/components/admin/UsersTableClient";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { getAdminUser } from "@/lib/auth/getAdminUser";

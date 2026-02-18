@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase/browser";
 import type { Term } from "@/components/taxonomy/types";
 import { buildTermTree, flattenTree } from "@/components/taxonomy/types";
 

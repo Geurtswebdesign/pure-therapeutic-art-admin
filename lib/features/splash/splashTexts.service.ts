@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase/browser";
 
 export async function fetchRandomSplashText(language: string) {
   const { data, error } = await supabase

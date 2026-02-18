@@ -1,6 +1,6 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase-admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAdminUser } from "@/lib/auth/getAdminUser";
 import { revalidatePath } from "next/cache";
 

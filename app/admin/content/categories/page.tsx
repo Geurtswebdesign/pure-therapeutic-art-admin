@@ -1,6 +1,6 @@
 // app/admin/categories/page.tsx
 
-import { createAdminClient } from "@/lib/supabase-admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 import CategoryTable from "@/components/categories/CategoryTable";
 import CategoryForm from "@/components/categories/CategoryForm";
 import type { Category } from "@/components/categories/CategoryTree";
