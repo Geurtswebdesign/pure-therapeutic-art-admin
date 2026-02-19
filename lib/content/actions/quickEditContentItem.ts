@@ -6,6 +6,7 @@ export type QuickEditPatch = {
   title?: string;
   status?: "draft" | "published" | "trash";
   published_at?: string | null;
+  credit_cost?: number;
   category_ids?: string[];
   tags?: string[];
 };
@@ -20,6 +21,7 @@ export async function quickEditContentItem(
     title: string;
     status: "draft" | "published" | "trash";
     published_at: string | null;
+    credit_cost: number;
   }> = {};
 
   if (patch.title !== undefined) {
@@ -32,6 +34,10 @@ export async function quickEditContentItem(
 
   if (patch.published_at !== undefined) {
     updateData.published_at = patch.published_at;
+  }
+  
+  if (patch.credit_cost !== undefined) {
+    updateData.credit_cost = patch.credit_cost;
   }
 
   if (Object.keys(updateData).length === 0) {

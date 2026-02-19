@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import {
   getPublishedContentBySlug,
   getPublishedBlocks,
@@ -34,11 +35,30 @@ export default async function ContentDetailPage({
     const balance = user ? await getWalletBalance(user.id) : 0;
 
     return (
-      <LockedView
-        contentId={item.id}
-        cost={item.credit_cost}
-        balance={balance}
-      />
+      <article className="max-w-3xl mx-auto py-12 space-y-6">
+        <h1 className="text-4xl font-semibold">{item.title}</h1>
+
+        {item.featured_image_url ? (
+          <Image
+            src={item.featured_image_url}
+            alt={item.featured_image_alt || item.title || "Uitgelichte afbeelding"}
+            width={1200}
+            height={630}
+            unoptimized
+            className="w-full h-auto rounded-lg border object-cover"
+          />
+        ) : null}
+
+        {item.excerpt ? (
+          <p className="text-lg text-gray-700 leading-relaxed">{item.excerpt}</p>
+        ) : null}
+
+        <LockedView
+          contentId={item.id}
+          cost={item.credit_cost}
+          balance={balance}
+        />
+      </article>
     );
   }
 
@@ -49,6 +69,21 @@ export default async function ContentDetailPage({
       <h1 className="text-4xl font-semibold mb-6">
         {item.title}
       </h1>
+
+      {item.featured_image_url ? (
+        <Image
+          src={item.featured_image_url}
+          alt={item.featured_image_alt || item.title || "Uitgelichte afbeelding"}
+          width={1200}
+          height={630}
+          unoptimized
+          className="w-full h-auto rounded-lg border object-cover mb-6"
+        />
+      ) : null}
+
+      {item.excerpt ? (
+        <p className="text-lg text-gray-700 leading-relaxed mb-6">{item.excerpt}</p>
+      ) : null}
 
       {item.body && (
         <div

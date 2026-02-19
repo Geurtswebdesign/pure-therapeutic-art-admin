@@ -4,11 +4,15 @@
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import Image from "next/image";
 
 import ContentLayout from "@/components/content/ContentLayout";
 import PublicBlockRenderer from "@/components/content/PublicBlockRenderer";
+import LockedView from "@/components/content/LockedView";
 import { parseContentBlocks } from "@/lib/content/renderer";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
+import { hasAccess } from "@/lib/unlock/hasAccess";
+import { getWalletBalance } from "@/lib/users/getWalletBalance";
 
 type PageProps = {
   params: Promise<{
@@ -59,7 +63,7 @@ export default async function ContentPage({
    * ------------------------------------------------- */
   const { data: item, error: itemError } = await supabase
     .from("content_items")
-    .select("id, title, body, status, language")
+    .select("id, title, body, status, language, credit_cost, excerpt, featured_image_url, featured_image_alt")
     .eq("slug", slug)
     .eq("language", locale)
     .single();
@@ -82,6 +86,45 @@ export default async function ContentPage({
   }
 
   /* -------------------------------------------------
+   * 3b️⃣ Unlock check (alleen buiten admin-preview)
+   * ------------------------------------------------- */
+  const requiresUnlock = (item.credit_cost ?? 0) > 0;
+  let hasUserAccess = false;
+
+  if (!isPreview && requiresUnlock && user) {
+    hasUserAccess = await hasAccess(user.id, item.id);
+  }
+
+  if (!isPreview && requiresUnlock && !hasUserAccess) {
+    const balance = user ? await getWalletBalance(user.id) : 0;
+
+    return (
+      <ContentLayout isPreview={isPreview}>
+        <article className="space-y-6">
+          <h1 className="text-4xl font-semibold">{item.title}</h1>
+
+          {item.featured_image_url ? (
+            <Image
+              src={item.featured_image_url}
+              alt={item.featured_image_alt || item.title || "Uitgelichte afbeelding"}
+              width={1200}
+              height={630}
+              unoptimized
+              className="w-full h-auto rounded-lg border object-cover"
+            />
+          ) : null}
+
+          {item.excerpt ? (
+            <p className="text-lg text-gray-700 leading-relaxed">{item.excerpt}</p>
+          ) : null}
+
+          <LockedView contentId={item.id} cost={item.credit_cost} balance={balance} />
+        </article>
+      </ContentLayout>
+    );
+  }
+
+  /* -------------------------------------------------
    * 4️⃣ Blocks ophalen
    * ------------------------------------------------- */
   const { data: rawBlocks } = await supabase
@@ -101,6 +144,21 @@ export default async function ContentPage({
       <h1 className="text-4xl font-semibold mb-6">
         {item.title}
       </h1>
+
+      {item.featured_image_url ? (
+        <Image
+          src={item.featured_image_url}
+          alt={item.featured_image_alt || item.title || "Uitgelichte afbeelding"}
+          width={1200}
+          height={630}
+          unoptimized
+          className="w-full h-auto rounded-lg border object-cover mb-6"
+        />
+      ) : null}
+
+      {item.excerpt ? (
+        <p className="text-lg text-gray-700 leading-relaxed mb-6">{item.excerpt}</p>
+      ) : null}
 
       {/* BODY */}
       {item.body && (

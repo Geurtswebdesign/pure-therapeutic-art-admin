@@ -65,7 +65,72 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
     .returns<CreditTransaction[]>();
 
   /* =========================
-     5. Render
+     5. Content Unlocks
+     ========================= */  
+  const { data: unlockedContent } = await supabase
+    .from("content_unlocks")
+    .select(`
+      id,
+      credits_spent,
+      unlocked_at,
+      content_item_id
+    `)
+    .eq("user_id", user_id)
+    .order("unlocked_at", { ascending: false });
+
+  const contentIds = Array.from(
+    new Set((unlockedContent ?? []).map((u) => u.content_item_id).filter(Boolean))
+  );
+
+  type UnlockedItem = {
+    id: string;
+    title: string;
+    slug: string;
+    credit_cost: number;
+    content_categories?: { name: string }[] | null;
+  };
+
+  let unlockedItems: UnlockedItem[] = [];
+
+  if (contentIds.length) {
+    const { data: withCategories, error: withCategoriesError } = await supabase
+      .from("content_items")
+      .select("id, title, slug, credit_cost, content_categories(name)")
+      .in("id", contentIds);
+
+    if (withCategoriesError) {
+      const { data: baseItems } = await supabase
+        .from("content_items")
+        .select("id, title, slug, credit_cost")
+        .in("id", contentIds);
+      unlockedItems = (baseItems ?? []) as UnlockedItem[];
+    } else {
+      unlockedItems = (withCategories ?? []) as UnlockedItem[];
+    }
+  }
+
+  const itemById = new Map((unlockedItems ?? []).map((item) => [item.id, item]));
+
+  const unlockedContentWithItem = (unlockedContent ?? []).map((unlock) => ({
+    id: unlock.id,
+    credits_spent: unlock.credits_spent,
+    unlocked_at: unlock.unlocked_at,
+    content_item: unlock.content_item_id
+      ? (() => {
+          const item = itemById.get(unlock.content_item_id);
+          if (!item) return null;
+          return {
+            id: item.id,
+            title: item.title,
+            slug: item.slug,
+            credit_cost: item.credit_cost,
+            categories: item.content_categories?.map((c) => c.name) ?? [],
+          };
+        })()
+      : null,
+  }));
+  /* =========================
+     6. Render
      ========================= */
   return (
     <div className="space-y-8">
@@ -75,6 +140,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
         user={user}
         wallet={wallet}
         transactions={transactions ?? []}
+        unlockedContent={unlockedContentWithItem}
         currentAdminId={adminUser.id}
         isSuperAdmin={adminUser.isSuperAdmin}   // ⬅️ MOET ERIN
       />

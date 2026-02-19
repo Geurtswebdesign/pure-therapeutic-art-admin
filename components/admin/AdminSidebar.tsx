@@ -9,7 +9,8 @@ import {
   FileText,
   Settings,
   ChevronDown,
-  LayoutGrid, 
+  LayoutGrid,
+  Image as ImageIcon,
 } from "lucide-react";
 
 type MenuItem =
@@ -49,6 +50,14 @@ const menu: MenuItem[] = [
       { label: "Nieuwe pagina's", href: "/admin/content/new" },
       { label: "Categorieen", href: "/admin/content/taxonomies/category/terms" },
       { label: "Tags", href: "/admin/content/tags" },
+    ],
+  },
+  {
+    label: "Media",
+    icon: <ImageIcon size={18} />,
+    children: [
+      { label: "Bibliotheek", href: "/admin/media" },
+      { label: "Nieuw bestand", href: "/admin/media?tab=upload" },
     ],
   },
   {

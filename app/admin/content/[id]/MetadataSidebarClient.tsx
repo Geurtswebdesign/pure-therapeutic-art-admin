@@ -13,10 +13,23 @@ export default function MetadataSidebarClient({
     status: ContentStatus;
     slug: string | null;
     language: string;
+    credit_cost?: number | null;
+    excerpt?: string | null;
+    published_at?: string | null;
+    featured_image_url?: string | null;
+    featured_image_alt?: string | null;
   };
 }) {
   const [draft, setDraft] = useState({
     status: item.status,
+    slug: item.slug ?? "",
+    excerpt: item.excerpt ?? "",
+    published_at: item.published_at ? item.published_at.slice(0, 16) : "",
+    featured_image_url: item.featured_image_url ?? "",
+    featured_image_alt: item.featured_image_alt ?? "",
+    credit_cost: item.credit_cost ?? 0,
+    category_term_ids: [] as string[],
+    tag_term_ids: [] as string[],
   });
 
   const [dirty, setDirty] = useState(false);
@@ -34,9 +47,19 @@ export default function MetadataSidebarClient({
         await updateContentItem({
           id: item.id,
           status: draft.status,
+          slug: draft.slug,
+          excerpt: draft.excerpt || null,
+          published_at: draft.published_at || null,
+          featured_image_url: draft.featured_image_url || null,
+          featured_image_alt: draft.featured_image_alt || null,
+          credit_cost: draft.credit_cost,
+          category_term_ids: draft.category_term_ids,
+          tag_term_ids: draft.tag_term_ids,
         });
         setDirty(false);
       }}
+      categoryTerms={[]}
+      tagTerms={[]}
     />
   );
 }

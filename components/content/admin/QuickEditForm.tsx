@@ -9,6 +9,7 @@ export type QuickEditPatch = {
   status?: ContentStatus;
   published_at?: string | null;   // ← TOEVOEGEN
   category_ids?: string[];
+  credit_cost?: number;
   tags?: string[];
 };
 
@@ -17,7 +18,8 @@ type Props = {
     id: string;
     title: string;
     status: ContentStatus;
-    published_at?: string | null;   // ← toevoegen
+    published_at?: string | null;
+    credit_cost?: number;   // 👈 toevoegen
     categories?: { id: string; name: string }[];
     tags?: string[];
   };
@@ -44,6 +46,9 @@ export default function QuickEditForm({
   const [categoryIds, setCategoryIds] = useState<string[]>(
     item.categories?.map((c) => c.id) ?? []
   );
+  const [creditCost, setCreditCost] = useState<number>(
+    item.credit_cost ?? 0
+  );
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -67,6 +72,10 @@ export default function QuickEditForm({
           JSON.stringify(originalCategoryIds)
             ? categoryIds
             : undefined,
+        credit_cost:
+          creditCost !== (item.credit_cost ?? 0)
+            ? creditCost
+            : undefined,
       });
     } finally {
       setSaving(false);
@@ -85,6 +94,20 @@ export default function QuickEditForm({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
+          <div className="mt-4">
+            <label className="block text-sm font-medium mb-1">
+              Credit kosten
+            </label>
+
+            <input
+              type="number"
+              min={0}
+              value={creditCost}
+              onChange={(e) => setCreditCost(Number(e.target.value))}
+              className="border rounded px-2 py-1 w-24"
+            />
+          </div>
+          
           <label className="block text-sm font-medium">Datum</label>
             <input
               type="date"
@@ -129,7 +152,7 @@ export default function QuickEditForm({
           </div>
         </div>
       </div>
-
+            
       {/* === Acties === */}
       <div className="mt-4 flex items-center gap-3">
         <button

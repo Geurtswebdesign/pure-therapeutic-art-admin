@@ -27,6 +27,7 @@ type ContentItem = {
   status: ContentStatus;
   updated_at: string;
   published_at?: string | null; // ✅ toevoegen
+  credit_cost: number;
   content_categories?: { name: string }[] | null;
   content_tags?: { name: string }[] | null;
 };
@@ -251,8 +252,16 @@ export default function ContentTableClient({
                     </td>
 
                     <td className="px-2 py-2">
-                      <div className="font-medium text-blue-600">
-                        {item.title}
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium text-blue-600">
+                          {item.title}
+                        </div>
+
+                        {item.credit_cost > 0 && (
+                          <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
+                            🔒 {item.credit_cost} credits
+                          </span>
+                        )}
                       </div>
 
                       <ContentRowActions

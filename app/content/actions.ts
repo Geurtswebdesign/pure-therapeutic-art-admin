@@ -9,6 +9,8 @@ export async function unlockContentItem(contentItemId: string) {
     p_content_item_id: contentItemId,
   });
 
+  console.log("UNLOCK RESULT:", data);
+
   if (error) {
     console.error("unlockContentItem error:", error);
     throw new Error("Unlock mislukt");

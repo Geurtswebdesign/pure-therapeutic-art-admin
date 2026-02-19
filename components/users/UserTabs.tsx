@@ -10,21 +10,35 @@ import type {
 import type {AdminUserProfile} from "@/lib/users/getUserDetail";
 import UserGeneralTab from "@/components/users/UserGeneralTab";
 import UserCreditsTab from "@/components/users/UserCreditsTab";
+import UserUnlockedTab from "@/components/users/UserUnlockedTab";
 
 type Props = {
   user: AdminUserProfile;
   wallet: CreditWallet;
   transactions: CreditTransaction[];
+  unlockedContent: {
+    id: string;
+    credits_spent: number;
+    unlocked_at: string;
+    content_item: {
+      id: string;
+      title: string;
+      slug: string;
+      credit_cost: number;
+      categories: string[];
+    } | null;
+  }[];
   currentAdminId: string;
   isSuperAdmin: boolean;
 };
 
-type Tab = "general" | "credits";
+type Tab = "general" | "credits" | "unlocked";
 
 export default function UserTabs({
   user,
   wallet,
   transactions,
+  unlockedContent,
   currentAdminId,
   isSuperAdmin, // ✅ NU BESTAAT HIJ
 }: Props) {
@@ -55,6 +69,17 @@ export default function UserTabs({
         >
           Credits
         </button>
+
+        <button
+          onClick={() => setTab("unlocked")}
+          className={`pb-2 text-sm ${
+            tab === "unlocked"
+              ? "border-b-2 border-black font-semibold"
+              : "text-gray-500"
+          }`}
+        >
+          Unlocked Content
+        </button>
       </div>
 
       {/* TAB CONTENT */}
@@ -68,6 +93,10 @@ export default function UserTabs({
           isSelf={currentAdminId === user.user_id}
           isSuperAdmin={isSuperAdmin}
         />
+      )}
+
+      {tab === "unlocked" && (
+        <UserUnlockedTab items={unlockedContent} />
       )}
     </div>
   );
