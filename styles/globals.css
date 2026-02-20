@@ -31,3 +31,70 @@ body {
 .h-10 {
     height: 53px;
 }
+
+/* Lockout design system (Figma) */
+.lockout-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #FBF3E7 43%, #E4C9C3 100%);
+  color: #4A4A4A;
+}
+
+.lockout-container {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 320px;
+  padding: 20px 12px;
+}
+
+.lockout-brand-title {
+  color: black;
+  font-size: 20px;
+  font-family: Joan, serif;
+  font-weight: 400;
+  line-height: 1.05;
+  word-wrap: break-word;
+}
+
+.lockout-title {
+  color: black;
+  font-size: 32px;
+  font-family: Joan, serif;
+  font-weight: 400;
+  word-wrap: break-word;
+}
+
+.lockout-copy {
+  color: black;
+  font-size: 16px;
+  font-family: Corbel, sans-serif;
+  font-weight: 400;
+  word-wrap: break-word;
+}
+
+.lockout-lock-icon {
+  color: #4A4A4A;
+}
+
+.lockout-cta {
+  border-color: #C6D2C0;
+  background-color: #EDE3D6;
+  color: black;
+}
+
+.lockout-cta-text {
+  color: black;
+  font-size: 16px;
+  font-family: Corbel, sans-serif;
+  font-weight: 400;
+  word-wrap: break-word;
+}
+
+.lockout-muted {
+  color: #4A4A4A;
+  font-family: Corbel, sans-serif;
+}
+
+.lockout-error {
+  color: #8d1f1f;
+  font-family: Corbel, sans-serif;
+}

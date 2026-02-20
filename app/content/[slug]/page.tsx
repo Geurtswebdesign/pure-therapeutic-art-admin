@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import logo from "@/assets/branding/logo.png";
 import {
   getPublishedContentBySlug,
   getPublishedBlocks,
@@ -35,30 +36,44 @@ export default async function ContentDetailPage({
     const balance = user ? await getWalletBalance(user.id) : 0;
 
     return (
-      <article className="max-w-3xl mx-auto py-12 space-y-6">
-        <h1 className="text-4xl font-semibold">{item.title}</h1>
+      <div className="lockout-page">
+        <article className="lockout-container space-y-5">
+          <header className="flex items-start gap-3">
+            <Image src={logo} alt="Pure Grief and Therapeutic ART" width={46} height={46} priority />
+            <h3 className="lockout-brand-title">
+              Pure Grief and Therapeutic ART
+            </h3>
+          </header>
 
-        {item.featured_image_url ? (
-          <Image
-            src={item.featured_image_url}
-            alt={item.featured_image_alt || item.title || "Uitgelichte afbeelding"}
-            width={1200}
-            height={630}
-            unoptimized
-            className="w-full h-auto rounded-lg border object-cover"
+          <h1 className="lockout-title">
+            {item.title}
+          </h1>
+
+          {item.featured_image_url ? (
+            <Image
+              src={item.featured_image_url}
+              alt={item.featured_image_alt || item.title || "Uitgelichte afbeelding"}
+              width={1200}
+              height={630}
+              unoptimized
+              className="h-auto w-full rounded border object-cover"
+            />
+          ) : null}
+
+          {item.excerpt ? (
+            <p className="lockout-copy">
+              {item.excerpt}
+            </p>
+          ) : null}
+
+          <LockedView
+            contentId={item.id}
+            cost={item.credit_cost ?? 0}
+            balance={balance}
+            isLoggedIn={!!user}
           />
-        ) : null}
-
-        {item.excerpt ? (
-          <p className="text-lg text-gray-700 leading-relaxed">{item.excerpt}</p>
-        ) : null}
-
-        <LockedView
-          contentId={item.id}
-          cost={item.credit_cost}
-          balance={balance}
-        />
-      </article>
+        </article>
+      </div>
     );
   }
 
@@ -79,10 +94,6 @@ export default async function ContentDetailPage({
           unoptimized
           className="w-full h-auto rounded-lg border object-cover mb-6"
         />
-      ) : null}
-
-      {item.excerpt ? (
-        <p className="text-lg text-gray-700 leading-relaxed mb-6">{item.excerpt}</p>
       ) : null}
 
       {item.body && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase/browser";
 
@@ -44,10 +44,13 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
   const [assets, setAssets] = useState<MediaAsset[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [altDraft, setAltDraft] = useState("");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedAsset = useMemo(
     () => assets.find((a) => a.id === selectedId) ?? null,
@@ -83,12 +86,34 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
     setLoading(false);
   }
 
-  async function handleUpload(files: FileList | null) {
-    if (!files?.length) return;
+  async function getImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+    if (!file.type.startsWith("image/")) return null;
+
+    return await new Promise((resolve) => {
+      const objectUrl = URL.createObjectURL(file);
+      const img = new window.Image();
+      img.onload = () => {
+        resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        URL.revokeObjectURL(objectUrl);
+      };
+      img.onerror = () => {
+        resolve(null);
+        URL.revokeObjectURL(objectUrl);
+      };
+      img.src = objectUrl;
+    });
+  }
+
+  async function handleUpload(files: FileList | File[] | null) {
+    if (!files || files.length === 0) return;
     setUploading(true);
+    setUploadError(null);
 
     try {
-      for (const file of Array.from(files)) {
+      const list = Array.from(files);
+      let failed = 0;
+
+      for (const file of list) {
         const ext = file.name.split(".").pop() ?? "bin";
         const base = slugifyBase(file.name) || "asset";
         const fileName = `library/${base}-${crypto.randomUUID()}.${ext}`;
@@ -101,28 +126,41 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
           });
 
         if (uploadError) {
+          failed += 1;
           console.error("Media upload failed:", uploadError);
           continue;
         }
 
-        // Try writing media row when no storage trigger is present.
+        // Write media row so the library always contains uploads.
+        const dimensions = await getImageDimensions(file);
+        const mimeType = file.type || "application/octet-stream";
+
         const { error: insertError } = await supabase
           .from("media_assets")
           .insert({
             file_path: `media/${fileName}`,
-            alt_text: "",
+            mime_type: mimeType,
+            width: dimensions?.width ?? null,
+            height: dimensions?.height ?? null,
+            alt_text: null,
           });
 
         if (insertError) {
-          // Non-fatal, row may be created by DB trigger.
-          console.warn("media_assets insert skipped:", insertError.message);
+          failed += 1;
+          console.warn("media_assets insert failed:", insertError.message);
         }
       }
 
       await loadAssets();
       setTab("library");
+      if (failed > 0) {
+        setUploadError(
+          `${failed} bestand(en) zijn geupload naar storage, maar niet aan media_assets toegevoegd.`
+        );
+      }
     } finally {
       setUploading(false);
+      setDragActive(false);
     }
   }
 
@@ -194,15 +232,52 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
       {tab === "upload" ? (
         <section className="rounded border bg-white p-4 space-y-3">
           <h2 className="font-medium">Bestanden uploaden</h2>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="rounded border px-3 py-1.5 text-sm hover:bg-gray-100"
+            disabled={uploading}
+          >
+            Kies bestanden
+          </button>
           <input
+            ref={fileInputRef}
             type="file"
             multiple
+            className="hidden"
             onChange={(e) => handleUpload(e.target.files)}
             disabled={uploading}
           />
+          <div
+            onDragEnter={(e) => {
+              e.preventDefault();
+              setDragActive(true);
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragActive(true);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              setDragActive(false);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragActive(false);
+              handleUpload(e.dataTransfer.files);
+            }}
+            className={`rounded border-2 border-dashed px-4 py-8 text-center text-sm ${
+              dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 text-gray-500"
+            }`}
+          >
+            Sleep bestanden hierheen of klik op Kies bestanden.
+          </div>
           <p className="text-xs text-gray-500">
             Je kunt meerdere afbeeldingen tegelijk uploaden.
           </p>
+          {uploadError ? (
+            <p className="text-sm text-red-600">{uploadError}</p>
+          ) : null}
         </section>
       ) : null}
 

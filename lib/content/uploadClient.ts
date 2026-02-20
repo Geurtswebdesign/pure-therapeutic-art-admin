@@ -19,6 +19,16 @@ export async function uploadImageClient(
     throw error;
   }
 
+  const { error: insertError } = await supabase.from("media_assets").insert({
+    file_path: `media/${fileName}`,
+    mime_type: file.type || "application/octet-stream",
+    alt_text: null,
+  });
+
+  if (insertError) {
+    console.warn("media_assets insert failed:", insertError.message);
+  }
+
   const { data } = supabase.storage
     .from("media")
     .getPublicUrl(fileName);

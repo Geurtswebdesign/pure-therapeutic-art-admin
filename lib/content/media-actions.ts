@@ -20,6 +20,18 @@ export async function uploadContentImage(
     throw new Error("Upload failed");
   }
 
+  const { error: insertError } = await supabaseAdmin
+    .from("media_assets")
+    .insert({
+      file_path: `media/${fileName}`,
+      mime_type: file.type || "application/octet-stream",
+      alt_text: null,
+    });
+
+  if (insertError) {
+    console.warn("media_assets insert failed:", insertError.message);
+  }
+
   const { data } = supabaseAdmin.storage
     .from("media")
     .getPublicUrl(fileName);

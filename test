@@ -1,0 +1,52 @@
+h1
+color: black;
+font-size: 32px;
+font-family: Joan;
+font-weight: 400;
+word-wrap: break-word
+---
+h2
+color: black;
+font-size: 24px;
+font-family: Joan;
+font-weight: 400;
+word-wrap: break-word
+---
+p
+color: black;
+font-size: 16px;
+font-family: Corbel;
+font-weight: 400;
+word-wrap: break-word
+---
+h3
+color: black;
+font-size: 20px;
+font-family: Joan;
+font-weight: 400;
+word-wrap: break-word
+---
+button text
+color: black;
+font-size: 16px;
+font-family: Corbel;
+font-weight: 400;
+word-wrap: break-word
+---
+kleuren
+background color
+linear Gradient
+    43% #FBF3E7
+    100% #E4C9C3
+
+Primair
+    #C6D2C0
+Secundair
+    #E4C9C3
+Accent
+    #EDE3D6
+Tekst
+    #4A4A4A
+Donker accent
+    #9DAE9D
+    
