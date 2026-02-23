@@ -10,7 +10,7 @@ export async function getWallet(
     .from("credit_wallets")
     .select("*")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error("[getWallet]", error);

@@ -56,10 +56,30 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
     .from("credit_wallets")
     .select("*")
     .eq("user_id", user_id)
-    .single<CreditWallet>();
+    .maybeSingle<CreditWallet>();
 
-  if (walletError || !wallet) {
-    throw new Error("Credit wallet bestaat niet");
+  if (walletError) {
+    throw new Error("Credit wallet ophalen mislukt");
+  }
+
+  let ensuredWallet = wallet;
+
+  if (!ensuredWallet) {
+    const { data: insertedWallet, error: insertWalletError } = await supabase
+      .from("credit_wallets")
+      .insert({
+        user_id,
+        credits_available: 0,
+        credits_total_purchased: 0,
+      })
+      .select("*")
+      .single<CreditWallet>();
+
+    if (insertWalletError || !insertedWallet) {
+      throw new Error("Credit wallet aanmaken mislukt");
+    }
+
+    ensuredWallet = insertedWallet;
   }
 
   /* =========================
@@ -156,7 +176,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
 
       <UserTabs
         user={user}
-        wallet={wallet}
+        wallet={ensuredWallet}
         transactions={transactions ?? []}
         unlockedContent={unlockedContentWithItem}
         yearEntitlements={yearEntitlements ?? []}

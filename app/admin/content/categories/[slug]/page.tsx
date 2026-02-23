@@ -28,7 +28,7 @@ export default async function EditCategoryPage(
   return (
     <div className="max-w-3xl space-y-6">
       <h1 className="text-2xl font-semibold">
-        Edit Category
+        Categorie bewerken
       </h1>
 
       <EditCategoryForm category={data} />

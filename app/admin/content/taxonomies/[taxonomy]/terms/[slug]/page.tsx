@@ -35,7 +35,7 @@ export default async function EditTermPage(props: Props) {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <h1 className="text-2xl font-semibold">Edit Term</h1>
+      <h1 className="text-2xl font-semibold">Term bewerken</h1>
       <EditTermForm taxonomy={tax} term={term} allTerms={allTerms || []} />
     </div>
   );

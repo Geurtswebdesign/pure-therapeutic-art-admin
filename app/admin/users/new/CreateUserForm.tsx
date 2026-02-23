@@ -85,7 +85,7 @@ export default function CreateUserForm() {
             }
           }}
         >
-          <option value="user">User</option>
+          <option value="user">Gebruiker</option>
           <option value="admin">Admin</option>
         </select>
       </div>
@@ -112,7 +112,7 @@ export default function CreateUserForm() {
               mode === "invite" ? "bg-gray-100" : ""
             }`}
           >
-            Invite per email
+            Uitnodiging per e-mail
           </button>
           <button
             type="button"

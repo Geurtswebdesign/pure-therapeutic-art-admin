@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase/browser";
 import MediaPicker from "@/components/content/media/MediaPicker";
 import type { Term } from "@/components/taxonomy/types";
 import { buildTermTree, flattenTree } from "@/components/taxonomy/types";
+import { LANGUAGE_OPTIONS } from "@/lib/i18n/languages";
 
 export type ContentStatus = "all" | "draft" | "published" | "archived";
 
@@ -20,6 +21,7 @@ type DraftState = {
   published_at: string;
   featured_image_url: string;
   featured_image_alt: string;
+  language: string;
   credit_cost: number;
   category_term_ids: string[];
   tag_term_ids: string[];
@@ -42,6 +44,7 @@ type MetadataSidebarProps = {
 };
 
 type BoxKey = "publish" | "permalink" | "featured" | "categories" | "tags" | "excerpt" | "options";
+type SecondaryBoxKey = Exclude<BoxKey, "publish">;
 
 function slugify(text: string) {
   return text
@@ -62,15 +65,7 @@ export default function MetadataSidebar({
   tagTerms,
 }: MetadataSidebarProps) {
   const router = useRouter();
-  const [open, setOpen] = useState<Record<BoxKey, boolean>>({
-    publish: true,
-    permalink: true,
-    featured: true,
-    categories: true,
-    tags: true,
-    excerpt: false,
-    options: false,
-  });
+  const [openBox, setOpenBox] = useState<SecondaryBoxKey>("permalink");
   const [pickingFeatured, setPickingFeatured] = useState(false);
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<ContentStatus>(draft.status);
@@ -82,22 +77,21 @@ export default function MetadataSidebar({
   const isPublished = draft.status === "published";
   const liveSlug = draft.slug.trim();
 
-  function toggleBox(key: BoxKey) {
-    setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
-  }
-
   function renderBox(
     key: BoxKey,
     title: string,
     content: React.ReactNode
   ) {
-    const isOpen = open[key];
+    const isPublishBox = key === "publish";
+    const isOpen = isPublishBox || openBox === key;
     return (
       <section className="rounded border bg-white">
         <button
           type="button"
           className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold"
-          onClick={() => toggleBox(key)}
+          onClick={() => {
+            if (!isPublishBox) setOpenBox(key as SecondaryBoxKey);
+          }}
         >
           <span>{title}</span>
           <span className="text-gray-500">{isOpen ? "▾" : "▸"}</span>
@@ -408,7 +402,20 @@ export default function MetadataSidebar({
         "options",
         "Instellingen",
         <div className="space-y-2 text-xs text-gray-600">
-          <p>Taal: {item.language}</p>
+          <label className="block space-y-1">
+            <span className="block text-xs text-gray-600">Taal</span>
+            <select
+              value={draft.language}
+              onChange={(e) => onDraftChange({ language: e.target.value })}
+              className="w-full rounded border px-2 py-1 text-sm"
+            >
+              {LANGUAGE_OPTIONS.map((lang) => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <p>Zichtbaarheid: Openbaar</p>
         </div>
       )}

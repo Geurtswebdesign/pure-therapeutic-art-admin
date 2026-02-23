@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 const tabs = [
-  { label: "Overview", tab: "overview" },
+  { label: "Overzicht", tab: "overview" },
   { label: "Credits", tab: "credits" },
   { label: "Wallets", tab: "wallets" },
   { label: "Transacties", tab: "transactions" },

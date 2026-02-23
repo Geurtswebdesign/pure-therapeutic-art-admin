@@ -16,7 +16,7 @@ export default async function AdminUsersPage() {
 
   if (error) {
     console.error("ADMIN USERS LOAD ERROR:", error);
-    throw new Error("Users konden niet geladen worden");
+    throw new Error("Gebruikers konden niet geladen worden");
   }
 
   return (

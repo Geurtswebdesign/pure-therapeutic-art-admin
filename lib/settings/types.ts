@@ -4,6 +4,8 @@ export type GeneralSettings = {
   timezone: string;
   locale: string;
   currency: string;
+  primaryLanguage: string;
+  enabledLanguages: string[];
 };
 
 export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
@@ -12,4 +14,6 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   timezone: "Europe/Amsterdam",
   locale: "nl-NL",
   currency: "EUR",
+  primaryLanguage: "nl",
+  enabledLanguages: ["nl", "en", "de"],
 };

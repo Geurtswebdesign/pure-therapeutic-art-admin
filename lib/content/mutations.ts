@@ -1,15 +1,30 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { DEFAULT_PRIMARY_LANGUAGE } from "@/lib/i18n/languages";
 
 export async function createContentItem() {
+  const { data: generalSettingsRow } = await supabaseAdmin
+    .from("app_settings")
+    .select("value")
+    .eq("scope", "global")
+    .is("scope_id", null)
+    .eq("key", "general")
+    .maybeSingle<{ value: { primaryLanguage?: string } }>();
+
+  const language =
+    typeof generalSettingsRow?.value?.primaryLanguage === "string" &&
+    generalSettingsRow.value.primaryLanguage.trim()
+      ? generalSettingsRow.value.primaryLanguage.trim().toLowerCase()
+      : DEFAULT_PRIMARY_LANGUAGE;
+
   const { data, error } = await supabaseAdmin
     .from("content_items")
     .insert({
       title: "",
       slug: crypto.randomUUID(),
       status: "draft",
-      language: "nl",
+      language,
     })
     .select()
     .single();

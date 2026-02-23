@@ -148,6 +148,24 @@ export async function grantYearAssignmentsAccess(input: {
   endsAt.setMonth(endsAt.getMonth() + months);
 
   const supabase = createAdminClient();
+  const { data: yearPack, error: yearPackError } = await supabase
+    .from("credit_packs")
+    .select("id, price_cents, currency, is_active")
+    .eq("slug", "jaarabonnement")
+    .maybeSingle<{
+      id: string;
+      price_cents: number;
+      currency: string;
+      is_active: boolean;
+    }>();
+
+  if (yearPackError) throw new Error(yearPackError.message);
+  if (!yearPack || !yearPack.is_active) {
+    throw new Error(
+      "Geen actief jaarabonnement-pack gevonden. Maak/activeer een pack met slug 'jaarabonnement'."
+    );
+  }
+
   const { error } = await supabase.from("user_entitlements").insert({
     user_id: input.userId,
     entitlement_key: "year_assignments",
@@ -156,7 +174,10 @@ export async function grantYearAssignmentsAccess(input: {
     is_active: true,
     source: "admin",
     metadata: {
+      pack_id: yearPack.id,
       duration_months: months,
+      amount_cents: yearPack.price_cents,
+      currency: yearPack.currency,
       note: input.note?.trim() || null,
     },
     created_by: admin.id,

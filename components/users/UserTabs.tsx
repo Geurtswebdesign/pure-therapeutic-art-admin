@@ -87,7 +87,7 @@ export default function UserTabs({
               : "text-gray-500"
           }`}
         >
-          Unlocked Content
+          Ontgrendelde content
         </button>
       </div>
 

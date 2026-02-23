@@ -77,10 +77,15 @@ export default function ContentEditorClient({
     published_at: initialPublishedAt,
     featured_image_url: item.featured_image_url ?? "",
     featured_image_alt: item.featured_image_alt ?? "",
+    language: item.language ?? "nl",
     credit_cost: item.credit_cost ?? 0,
     category_term_ids: selectedCategoryIds,
     tag_term_ids: selectedTagIds,
   }));
+  const [isSlugManual, setIsSlugManual] = useState(() => {
+    const currentSlug = item.slug ?? "";
+    return Boolean(currentSlug) && currentSlug !== item.id && !isUuidLike(currentSlug);
+  });
 
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -95,12 +100,26 @@ export default function ContentEditorClient({
       published_at: string;
       featured_image_url: string;
       featured_image_alt: string;
+      language: string;
       credit_cost: number;
       category_term_ids: string[];
       tag_term_ids: string[];
     }>
   ) => {
-    setDraft((prev) => ({ ...prev, ...patch }));
+    setDraft((prev) => {
+      const next = { ...prev, ...patch };
+
+      if (patch.title !== undefined && !isSlugManual) {
+        next.slug = slugify(patch.title);
+      }
+
+      return next;
+    });
+
+    if (patch.slug !== undefined && patch.title === undefined) {
+      setIsSlugManual(Boolean(patch.slug.trim()));
+    }
+
     setDirty(true);
   };
 
@@ -138,6 +157,7 @@ export default function ContentEditorClient({
         published_at: normalizeToIso(publishInput),
         featured_image_url: draft.featured_image_url || null,
         featured_image_alt: draft.featured_image_alt || null,
+        language: draft.language,
         credit_cost: draft.credit_cost,
         category_term_ids: draft.category_term_ids,
         tag_term_ids: draft.tag_term_ids,
@@ -148,6 +168,7 @@ export default function ContentEditorClient({
         status: nextStatus,
         slug: finalSlug,
         published_at: publishInput,
+        language: draft.language,
       }));
       setDirty(false);
     } catch (error) {

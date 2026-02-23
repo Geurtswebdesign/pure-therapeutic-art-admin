@@ -16,6 +16,7 @@ export async function updateContentItem({
   featured_image_url,
   featured_image_alt,
   credit_cost,
+  language,
   category_term_ids,
   tag_term_ids,
 }: {
@@ -29,6 +30,7 @@ export async function updateContentItem({
   featured_image_url?: string | null;
   featured_image_alt?: string | null;
   credit_cost?: number;
+  language?: string;
   category_term_ids?: string[];
   tag_term_ids?: string[];
 }) {
@@ -42,6 +44,7 @@ export async function updateContentItem({
     featured_image_url: string | null;
     featured_image_alt: string | null;
     credit_cost: number;
+    language: string;
   }> = {};
 
   if (title !== undefined) update.title = title;
@@ -53,6 +56,7 @@ export async function updateContentItem({
   if (featured_image_url !== undefined) update.featured_image_url = featured_image_url;
   if (featured_image_alt !== undefined) update.featured_image_alt = featured_image_alt;
   if (credit_cost !== undefined) update.credit_cost = credit_cost;
+  if (language !== undefined) update.language = language;
 
   const hasItemChanges = Object.keys(update).length > 0;
   if (hasItemChanges) {

@@ -4,11 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const tabs = [
-  { label: "General", href: "/admin/settings/general" },
-  { label: "Security", href: "/admin/settings/security" },
+  { label: "Algemeen", href: "/admin/settings/general" },
+  { label: "Beveiliging", href: "/admin/settings/security" },
   { label: "App", href: "/admin/settings/app" },
   { label: "Email", href: "/admin/settings/email" },
-  { label: "System", href: "/admin/settings/system" },
+  { label: "Systeem", href: "/admin/settings/system" },
 ];
 
 export default function SettingsTabs() {

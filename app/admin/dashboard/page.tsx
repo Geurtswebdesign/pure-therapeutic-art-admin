@@ -13,8 +13,8 @@ export default function AdminDashboardPage() {
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <Link className="rounded border bg-white p-4 hover:bg-gray-50" href="/admin/users">
-          <h2 className="font-semibold">Users</h2>
-          <p className="mt-1 text-sm text-gray-600">Identity, roles en accountbeheer.</p>
+          <h2 className="font-semibold">Gebruikers</h2>
+          <p className="mt-1 text-sm text-gray-600">Identiteit, rollen en accountbeheer.</p>
         </Link>
         <Link className="rounded border bg-white p-4 hover:bg-gray-50" href="/admin/administration">
           <h2 className="font-semibold">Administratie</h2>
@@ -22,7 +22,7 @@ export default function AdminDashboardPage() {
         </Link>
         <Link className="rounded border bg-white p-4 hover:bg-gray-50" href="/admin/content">
           <h2 className="font-semibold">Content</h2>
-          <p className="mt-1 text-sm text-gray-600">Content items, taxonomies en media.</p>
+          <p className="mt-1 text-sm text-gray-600">Content-items, taxonomieen en media.</p>
         </Link>
       </div>
     </div>

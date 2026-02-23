@@ -7,6 +7,11 @@ import {
   DEFAULT_GENERAL_SETTINGS,
   type GeneralSettings,
 } from "@/lib/settings/types";
+import {
+  DEFAULT_ENABLED_LANGUAGES,
+  DEFAULT_PRIMARY_LANGUAGE,
+  normalizeLanguageCode,
+} from "@/lib/i18n/languages";
 
 function asObject(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -17,6 +22,15 @@ function asObject(value: unknown): Record<string, unknown> | null {
 
 function asString(value: unknown, fallback: string): string {
   return typeof value === "string" ? value : fallback;
+}
+
+function asStringArray(value: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(value)) return fallback;
+  const next = value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => normalizeLanguageCode(item))
+    .filter(Boolean);
+  return next.length > 0 ? Array.from(new Set(next)) : fallback;
 }
 
 export async function getGeneralSettings(): Promise<GeneralSettings> {
@@ -46,6 +60,13 @@ export async function getGeneralSettings(): Promise<GeneralSettings> {
     timezone: asString(value?.timezone, DEFAULT_GENERAL_SETTINGS.timezone),
     locale: asString(value?.locale, DEFAULT_GENERAL_SETTINGS.locale),
     currency: asString(value?.currency, DEFAULT_GENERAL_SETTINGS.currency),
+    primaryLanguage: normalizeLanguageCode(
+      asString(value?.primaryLanguage, DEFAULT_GENERAL_SETTINGS.primaryLanguage)
+    ),
+    enabledLanguages: asStringArray(
+      value?.enabledLanguages,
+      DEFAULT_GENERAL_SETTINGS.enabledLanguages
+    ),
   };
 }
 
@@ -58,13 +79,35 @@ export async function saveGeneralSettings(
     throw new Error("Niet geautoriseerd");
   }
 
+  const normalizedPrimary = normalizeLanguageCode(
+    settings.primaryLanguage || DEFAULT_PRIMARY_LANGUAGE
+  );
+  const normalizedEnabled = Array.from(
+    new Set(
+      (settings.enabledLanguages.length
+        ? settings.enabledLanguages
+        : DEFAULT_ENABLED_LANGUAGES
+      )
+        .map((item) => normalizeLanguageCode(item))
+        .filter(Boolean)
+    )
+  );
+
+  if (!normalizedEnabled.includes(normalizedPrimary)) {
+    normalizedEnabled.unshift(normalizedPrimary);
+  }
+
   const supabase = createAdminClient();
   const { error } = await supabase.from("app_settings").upsert(
     {
       scope: "global",
       scope_id: null,
       key: "general",
-      value: settings,
+      value: {
+        ...settings,
+        primaryLanguage: normalizedPrimary,
+        enabledLanguages: normalizedEnabled,
+      },
       updated_by: adminId ?? admin.id,
     },
     { onConflict: "scope,scope_id,key" }

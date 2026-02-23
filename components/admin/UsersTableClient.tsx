@@ -114,7 +114,7 @@ export default function UsersTableClient({
             >
             <option value="">Bulk acties</option>
             <option value="make-admin">Rol → Admin</option>
-            <option value="make-user">Rol → User</option>
+            <option value="make-user">Rol → Gebruiker</option>
             <option value="delete">🗑 Verwijderen</option>
             </select>
 
@@ -150,7 +150,7 @@ export default function UsersTableClient({
         >
           <option value="all">Alle rollen</option>
           <option value="admin">Admins</option>
-          <option value="user">Users</option>
+          <option value="user">Gebruikers</option>
         </select>
       </div>
 
@@ -210,7 +210,7 @@ export default function UsersTableClient({
                         }}
                         className="rounded border px-2 py-1 text-xs"
                         >
-                        <option value="user">User</option>
+                        <option value="user">Gebruiker</option>
                         <option value="admin">Admin</option>
                         </select>
                     )}

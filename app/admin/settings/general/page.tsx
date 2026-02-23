@@ -7,9 +7,9 @@ export default async function SettingsGeneralPage() {
   return (
     <section className="max-w-2xl space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">General Settings</h2>
+        <h2 className="text-lg font-semibold">Algemene instellingen</h2>
         <p className="text-sm text-gray-600">
-          Platform branding en basis configuratie.
+          Platform-branding, basisconfiguratie en taalinstellingen.
         </p>
       </div>
 
