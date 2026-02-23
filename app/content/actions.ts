@@ -13,7 +13,7 @@ export async function unlockContentItem(contentItemId: string) {
 
   if (error) {
     console.error("unlockContentItem error:", error);
-    throw new Error("Unlock mislukt");
+    throw new Error("Ontgrendelen mislukt");
   }
 
   return data;

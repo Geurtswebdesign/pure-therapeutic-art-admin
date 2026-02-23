@@ -13,6 +13,7 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
   const supabase = createAdminClient();
   const { s, status } = await searchParams;
   const search = s?.trim() ?? "";
+  const statusFilter = status ?? "all";
 
   let query = supabase
     .from("content_items")
@@ -24,6 +25,10 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
     query = query.or(
       `title.ilike.%${search}%,content.ilike.%${search}%`
     );
+  }
+
+  if (statusFilter !== "all") {
+    query = query.eq("status", statusFilter);
   }
 
   const { data: items, error } = await query;
