@@ -28,6 +28,14 @@ type Props = {
       categories: string[];
     } | null;
   }[];
+  yearEntitlements: {
+    id: string;
+    entitlement_key: string;
+    starts_at: string;
+    ends_at: string | null;
+    is_active: boolean;
+    created_at: string;
+  }[];
   currentAdminId: string;
   isSuperAdmin: boolean;
 };
@@ -39,6 +47,7 @@ export default function UserTabs({
   wallet,
   transactions,
   unlockedContent,
+  yearEntitlements,
   currentAdminId,
   isSuperAdmin, // ✅ NU BESTAAT HIJ
 }: Props) {
@@ -90,6 +99,7 @@ export default function UserTabs({
           userId={user.user_id}
           wallet={wallet}
           transactions={transactions}
+          yearEntitlements={yearEntitlements}
           isSelf={currentAdminId === user.user_id}
           isSuperAdmin={isSuperAdmin}
         />

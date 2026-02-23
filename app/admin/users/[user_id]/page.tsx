@@ -16,6 +16,15 @@ type PageProps = {
   }>;
 };
 
+type YearEntitlement = {
+  id: string;
+  entitlement_key: string;
+  starts_at: string;
+  ends_at: string | null;
+  is_active: boolean;
+  created_at: string;
+};
+
 export default async function AdminUserDetailPage({ params }: PageProps) {
   const { user_id } = await params;
 
@@ -129,6 +138,15 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
         })()
       : null,
   }));
+
+  const { data: yearEntitlements } = await supabase
+    .from("user_entitlements")
+    .select("id, entitlement_key, starts_at, ends_at, is_active, created_at")
+    .eq("user_id", user_id)
+    .eq("entitlement_key", "year_assignments")
+    .order("created_at", { ascending: false })
+    .returns<YearEntitlement[]>();
+
   /* =========================
      6. Render
      ========================= */
@@ -141,6 +159,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
         wallet={wallet}
         transactions={transactions ?? []}
         unlockedContent={unlockedContentWithItem}
+        yearEntitlements={yearEntitlements ?? []}
         currentAdminId={adminUser.id}
         isSuperAdmin={adminUser.isSuperAdmin}   // ⬅️ MOET ERIN
       />

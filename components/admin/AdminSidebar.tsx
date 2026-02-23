@@ -1,87 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import {
-  LayoutDashboard,
-  Users,
-  FileText,
-  Settings,
-  ChevronDown,
-  LayoutGrid,
-  Image as ImageIcon,
-} from "lucide-react";
-
-type MenuItem =
-  | {
-      label: string;
-      href: string;
-      icon: React.ReactNode;
-    }
-  | {
-      label: string;
-      icon: React.ReactNode;
-      children: {
-        label: string;
-        href: string;
-      }[];
-    };
-
-const menu: MenuItem[] = [
-  {
-    label: "Dashboard",
-    href: "/admin/dashboard",
-    icon: <LayoutDashboard size={18} />,
-  },
-  {
-    label: "Users",
-    icon: <Users size={18} />,
-    children: [
-      { label: "All users", href: "/admin/users" },
-      { label: "Add new", href: "/admin/users/new" },
-    ],
-  },
-  {
-    label: "pagina's",
-    icon: <FileText size={18} />,
-    children: [
-      { label: "Alle pagina's", href: "/admin/content" },
-      { label: "Nieuwe pagina's", href: "/admin/content/new" },
-      { label: "Categorieen", href: "/admin/content/taxonomies/category/terms" },
-      { label: "Tags", href: "/admin/content/tags" },
-    ],
-  },
-  {
-    label: "Media",
-    icon: <ImageIcon size={18} />,
-    children: [
-      { label: "Bibliotheek", href: "/admin/media" },
-      { label: "Nieuw bestand", href: "/admin/media?tab=upload" },
-    ],
-  },
-  {
-    label: "Settings",
-    href: "/admin/settings",
-    icon: <Settings size={18} />,
-  },
-
-  {
-    label: "Administratie",
-    href: "/admin/administratie",
-    icon: <LayoutGrid size={18} />,
-  },
-];
+import { ChevronDown } from "lucide-react";
+import { adminNav } from "@/components/admin/nav";
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [menuOverride, setMenuOverride] = useState<string | null>(null);
 
+  function hrefMatches(href: string) {
+    const [targetPath, queryString] = href.split("?");
+    if (pathname !== targetPath) return false;
+    if (!queryString) return true;
+
+    const targetParams = new URLSearchParams(queryString);
+    for (const [key, value] of targetParams.entries()) {
+      if (searchParams.get(key) !== value) return false;
+    }
+    return true;
+  }
+
   const activeParentLabel =
-    menu.find(
+    adminNav.find(
       (item) =>
         "children" in item &&
-        item.children.some((c) => pathname.startsWith(c.href))
+        item.children?.some((c) => pathname === c.href.split("?")[0])
     )?.label ?? null;
 
   const openMenu =
@@ -96,12 +42,12 @@ export default function AdminSidebar() {
       </div>
 
       <nav className="py-2 text-sm">
-        {menu.map((item) => {
+        {adminNav.map((item) => {
           /* ======================
              Simpel menu-item
              ====================== */
-          if ("href" in item) {
-            const active = pathname === item.href;
+          if (item.href) {
+            const active = hrefMatches(item.href);
 
             return (
               <Link
@@ -123,7 +69,7 @@ export default function AdminSidebar() {
              Menu met submenu
              ====================== */
           const isOpen = openMenu === item.label;
-          const isActive = item.children.some((c) =>
+          const isActive = (item.children ?? []).some((c) =>
             pathname.startsWith(c.href)
           );
 
@@ -155,8 +101,8 @@ export default function AdminSidebar() {
 
               {isOpen && (
                 <div className="ml-6 mt-1 space-y-1">
-                  {item.children.map((child) => {
-                    const active = pathname === child.href;
+                  {(item.children ?? []).map((child) => {
+                    const active = hrefMatches(child.href);
 
                     return (
                       <Link

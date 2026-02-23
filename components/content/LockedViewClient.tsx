@@ -5,11 +5,13 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { unlockContentItem } from "@/app/content/actions";
 import { Lock, ShoppingCart, Unlock } from "lucide-react";
+import type { ContentAccessScope } from "@/lib/content/access";
 
 type Props = {
   contentId: string;
   cost: number;
   balance: number;
+  scope: ContentAccessScope;
   isLoggedIn: boolean;
 };
 
@@ -17,6 +19,7 @@ export default function LockedViewClient({
   contentId,
   cost,
   balance,
+  scope,
   isLoggedIn,
 }: Props) {
   const router = useRouter();
@@ -27,6 +30,14 @@ export default function LockedViewClient({
   const insufficient = balance < cost;
   const loginHref = `/login?next=${encodeURIComponent(pathname || "/")}`;
   const buyCreditsHref = "/credits";
+  const scopeLabel =
+    scope === "book"
+      ? "boek"
+      : scope === "game"
+        ? "spel"
+        : scope === "referral"
+          ? "verwijsbestand"
+          : "opdracht";
 
   async function handleUnlock() {
     setError(null);
@@ -38,7 +49,13 @@ export default function LockedViewClient({
         if (!result.unlocked) {
           if (result.error === "INSUFFICIENT_CREDITS") {
             setError(
-              `Onvoldoende credits. Je hebt ${result.balance}, nodig: ${result.cost}.`
+              `Onvoldoende ${scopeLabel}-credits. Je hebt ${result.balance}, nodig: ${result.cost}.`
+            );
+            return;
+          }
+          if (result.error === "INSUFFICIENT_SCOPE_CREDITS") {
+            setError(
+              `Onvoldoende ${scopeLabel}-credits. Je hebt ${result.balance}, nodig: ${result.cost}.`
             );
             return;
           }
@@ -59,17 +76,17 @@ export default function LockedViewClient({
 
       <div className="space-y-2 text-center">
         <p className="lockout-copy">
-          Wil je de rest van de opdracht ontgrendelen?
+          Wil je toegang tot deze {scopeLabel}?
         </p>
         <p className="lockout-copy">
-          Kies wat bij jou past. Credit verlopen niet en zijn geldig voor alle opdrachten.
+          Je gebruikt hiervoor {scopeLabel}-credits.
         </p>
       </div>
 
       {isLoggedIn ? (
         <>
           <p className="lockout-muted text-center text-sm">
-            Kosten: <strong>{cost} credits</strong> • Saldo: <strong>{balance} credits</strong>
+            Kosten: <strong>{cost} {scopeLabel}-credits</strong> • Saldo: <strong>{balance} {scopeLabel}-credits</strong>
           </p>
 
           {insufficient ? (
@@ -114,7 +131,7 @@ export default function LockedViewClient({
       ) : null}
       {isLoggedIn && insufficient ? (
         <p className="lockout-error text-center text-sm">
-          Onvoldoende credits. Je saldo is {balance} credits en je hebt {cost} nodig.
+          Onvoldoende {scopeLabel}-credits. Je saldo is {balance} en je hebt {cost} nodig.
         </p>
       ) : null}
       {error ? (

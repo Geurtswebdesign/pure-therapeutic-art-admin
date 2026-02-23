@@ -40,10 +40,10 @@ type ColumnKey = "status" | "categories" | "tags" | "date";
 
 export default function ContentTableClient({
   items,
-  allCategories,
+  allCategories = [],
 }: {
   items: ContentItem[];
-  allCategories: { id: string; name: string }[];
+  allCategories?: { id: string; name: string }[];
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [searchInput, setSearchInput] = useState("");

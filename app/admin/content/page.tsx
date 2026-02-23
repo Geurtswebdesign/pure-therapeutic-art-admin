@@ -37,6 +37,24 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
     throw new Error("Content laden mislukt");
   }
 
+  let allCategories: { id: string; name: string }[] = [];
+
+  const { data: categoryTaxonomy } = await supabase
+    .from("content_taxonomies")
+    .select("id")
+    .eq("slug", "category")
+    .maybeSingle();
+
+  if (categoryTaxonomy?.id) {
+    const { data: categories } = await supabase
+      .from("content_terms")
+      .select("id, name")
+      .eq("taxonomy_id", categoryTaxonomy.id)
+      .order("sort_order", { ascending: true });
+
+    allCategories = categories ?? [];
+  }
+
   return (
     <div className="w-full space-y-4">
       {/* =========================
@@ -59,6 +77,7 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
       {/* Header + zoekveld zit in client */}
       <ContentTableClient
         items={items ?? []}
+        allCategories={allCategories}
       />
     </div>
   );

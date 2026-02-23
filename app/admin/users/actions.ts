@@ -202,3 +202,40 @@ export async function bulkDeleteUsers(userIds: string[]) {
     }
   }
 }
+
+export async function deactivateYearAssignmentsEntitlement(input: {
+  entitlementId: string;
+  userId: string;
+}) {
+  const admin = await getAdminUser();
+  if (!admin) {
+    throw new Error("Niet geautoriseerd");
+  }
+
+  if (!input.entitlementId) {
+    throw new Error("entitlementId ontbreekt");
+  }
+  if (!input.userId) {
+    throw new Error("userId ontbreekt");
+  }
+
+  const supabase = createAdminClient();
+  const nowIso = new Date().toISOString();
+
+  const { error } = await supabase
+    .from("user_entitlements")
+    .update({
+      is_active: false,
+      ends_at: nowIso,
+    })
+    .eq("id", input.entitlementId)
+    .eq("user_id", input.userId)
+    .eq("entitlement_key", "year_assignments");
+
+  if (error) {
+    throw new Error("Jaarabonnement beëindigen mislukt");
+  }
+
+  revalidatePath(`/admin/users/${input.userId}`);
+  revalidatePath("/admin/administration");
+}

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { grantCredits } from "@/lib/credits/grantCredits";
 import type { CreditWallet, CreditTransaction } from "@/lib/credits/types";
+import { deactivateYearAssignmentsEntitlement } from "@/app/admin/users/actions";
 
 import CreditOverview from "@/components/users/CreditOverview";
 import CreditTransactions from "@/components/users/CreditTransactions";
@@ -11,6 +13,14 @@ type Props = {
   userId: string;
   wallet: CreditWallet;
   transactions: CreditTransaction[];
+  yearEntitlements: {
+    id: string;
+    entitlement_key: string;
+    starts_at: string;
+    ends_at: string | null;
+    is_active: boolean;
+    created_at: string;
+  }[];
   isSelf: boolean;
   isSuperAdmin: boolean; // ⭐ TOEGEVOEGD
 };
@@ -19,11 +29,14 @@ export default function UserCreditsTab({
   userId,
   wallet,
   transactions,
+  yearEntitlements,
   isSelf,
   isSuperAdmin,
 }: Props) {
+  const router = useRouter();
   const [amount, setAmount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [entitlementBusyId, setEntitlementBusyId] = useState<string | null>(null);
 
   // ✅ JUISTE UI-GUARD
   const disableActions = isSelf && !isSuperAdmin;
@@ -48,6 +61,25 @@ export default function UserCreditsTab({
       alert(message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDeactivate(entitlementId: string) {
+    setEntitlementBusyId(entitlementId);
+    try {
+      await deactivateYearAssignmentsEntitlement({
+        entitlementId,
+        userId,
+      });
+      router.refresh();
+    } catch (e: unknown) {
+      const message =
+        e instanceof Error
+          ? e.message
+          : "Abonnement beëindigen mislukt";
+      alert(message);
+    } finally {
+      setEntitlementBusyId(null);
     }
   }
 
@@ -90,6 +122,47 @@ export default function UserCreditsTab({
             Aftrekken
           </button>
         </div>
+      </section>
+
+      <section className="rounded border bg-white p-4 space-y-3">
+        <h2 className="text-sm font-semibold">
+          Jaarabonnement opdrachten
+        </h2>
+
+        {yearEntitlements.length === 0 ? (
+          <p className="text-sm text-gray-600">
+            Geen jaarabonnementen gevonden.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {yearEntitlements.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between rounded border px-3 py-2 text-sm"
+              >
+                <div>
+                  <div>
+                    Start: {new Date(item.starts_at).toLocaleDateString("nl-NL")} • Einde: {item.ends_at ? new Date(item.ends_at).toLocaleDateString("nl-NL") : "onbepaald"}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Status: {item.is_active ? "actief" : "beëindigd"}
+                  </div>
+                </div>
+
+                {item.is_active ? (
+                  <button
+                    type="button"
+                    onClick={() => handleDeactivate(item.id)}
+                    disabled={entitlementBusyId === item.id}
+                    className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 disabled:opacity-50"
+                  >
+                    {entitlementBusyId === item.id ? "Beëindigen..." : "Beëindigen"}
+                  </button>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <CreditTransactions transactions={transactions} />

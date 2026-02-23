@@ -5,15 +5,15 @@ import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import Image from "next/image";
-import logo from "@/assets/branding/logo.png";
 
 import ContentLayout from "@/components/content/ContentLayout";
 import PublicBlockRenderer from "@/components/content/PublicBlockRenderer";
-import LockedView from "@/components/content/LockedView";
+import ContentLockout from "@/components/content/ContentLockout";
 import { parseContentBlocks } from "@/lib/content/renderer";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
 import { hasAccess } from "@/lib/unlock/hasAccess";
-import { getWalletBalance } from "@/lib/users/getWalletBalance";
+import { getBalanceByScope } from "@/lib/users/getBalanceByScope";
+import { getContentAccessScope } from "@/lib/content/access";
 
 type PageProps = {
   params: Promise<{
@@ -90,6 +90,7 @@ export default async function ContentPage({
    * 3b️⃣ Unlock check (alleen buiten admin-preview)
    * ------------------------------------------------- */
   const requiresUnlock = (item.credit_cost ?? 0) > 0;
+  const scope = await getContentAccessScope(item.id);
   let hasUserAccess = false;
 
   if (!isPreview && requiresUnlock && user) {
@@ -97,48 +98,16 @@ export default async function ContentPage({
   }
 
   if (!isPreview && requiresUnlock && !hasUserAccess) {
-    const balance = user ? await getWalletBalance(user.id) : 0;
+    const balance = user ? await getBalanceByScope(user.id, scope) : 0;
 
     return (
       <ContentLayout isPreview={isPreview}>
-        <div className="lockout-page">
-          <article className="lockout-container space-y-5">
-            <header className="flex items-start gap-3">
-              <Image src={logo} alt="Pure Grief and Therapeutic ART" width={46} height={46} priority />
-              <h3 className="lockout-brand-title">
-                Pure Grief and Therapeutic ART
-              </h3>
-            </header>
-
-            <h1 className="lockout-title">
-              {item.title}
-            </h1>
-
-            {item.featured_image_url ? (
-              <Image
-                src={item.featured_image_url}
-                alt={item.featured_image_alt || item.title || "Uitgelichte afbeelding"}
-                width={1200}
-                height={630}
-                unoptimized
-                className="w-full h-auto rounded border object-cover"
-              />
-            ) : null}
-
-            {item.excerpt ? (
-              <p className="lockout-copy">
-                {item.excerpt}
-              </p>
-            ) : null}
-
-            <LockedView
-              contentId={item.id}
-              cost={item.credit_cost ?? 0}
-              balance={balance}
-              isLoggedIn={!!user}
-            />
-          </article>
-        </div>
+        <ContentLockout
+          item={item}
+          balance={balance}
+          scope={scope}
+          isLoggedIn={!!user}
+        />
       </ContentLayout>
     );
   }
