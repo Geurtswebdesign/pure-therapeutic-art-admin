@@ -1,10 +1,15 @@
 import type { AdminUserProfile } from "@/lib/users/getUserDetail";
+import { getAppMessages } from "@/lib/i18n/appMessages";
+import type { UiLanguage } from "@/lib/i18n/runtime";
 
 type Props = {
   user: AdminUserProfile;
+  language: UiLanguage;
 };
 
-export default function UserHeader({ user }: Props) {
+export default function UserHeader({ user, language }: Props) {
+  const t = getAppMessages(language).userHeader;
+  const locale = language === "en" ? "en-US" : language === "de" ? "de-DE" : "nl-NL";
   const displayName = user.display_name ?? user.email ?? "—";
   const createdAt = user.created_at ? new Date(user.created_at) : null;
 
@@ -18,7 +23,7 @@ export default function UserHeader({ user }: Props) {
 
       {createdAt && (
         <p className="text-xs text-gray-500">
-          Aangemaakt: {createdAt.toLocaleString("nl-NL")}
+          {t.createdAt}: {createdAt.toLocaleString(locale)}
         </p>
       )}
     </section>

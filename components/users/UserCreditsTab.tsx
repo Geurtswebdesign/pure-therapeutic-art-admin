@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { grantCredits } from "@/lib/credits/grantCredits";
 import type { CreditWallet, CreditTransaction } from "@/lib/credits/types";
 import { deactivateYearAssignmentsEntitlement } from "@/app/admin/users/actions";
+import { getAppMessages } from "@/lib/i18n/appMessages";
+import type { UiLanguage } from "@/lib/i18n/runtime";
 
 import CreditOverview from "@/components/users/CreditOverview";
 import CreditTransactions from "@/components/users/CreditTransactions";
@@ -23,6 +25,7 @@ type Props = {
   }[];
   isSelf: boolean;
   isSuperAdmin: boolean; // ⭐ TOEGEVOEGD
+  language: UiLanguage;
 };
 
 export default function UserCreditsTab({
@@ -32,7 +35,10 @@ export default function UserCreditsTab({
   yearEntitlements,
   isSelf,
   isSuperAdmin,
+  language,
 }: Props) {
+  const t = getAppMessages(language).userCredits;
+  const locale = language === "en" ? "en-US" : language === "de" ? "de-DE" : "nl-NL";
   const router = useRouter();
   const [amount, setAmount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -57,7 +63,7 @@ export default function UserCreditsTab({
       const message =
         e instanceof Error
           ? e.message
-          : "Credits aanpassen mislukt";
+          : t.adjustFailed;
       alert(message);
     } finally {
       setLoading(false);
@@ -76,7 +82,7 @@ export default function UserCreditsTab({
       const message =
         e instanceof Error
           ? e.message
-          : "Abonnement beëindigen mislukt";
+          : t.endFailed;
       alert(message);
     } finally {
       setEntitlementBusyId(null);
@@ -85,16 +91,16 @@ export default function UserCreditsTab({
 
   return (
     <div className="space-y-8">
-      <CreditOverview wallet={wallet} />
+      <CreditOverview wallet={wallet} language={language} />
 
       <section className="rounded border bg-white p-4 space-y-3">
         <h2 className="text-sm font-semibold">
-          Credits aanpassen
+          {t.adjustCredits}
         </h2>
 
         {isSelf && !isSuperAdmin && (
           <p className="text-xs text-red-600">
-            Je kunt je eigen credits niet aanpassen.
+            {t.selfGuard}
           </p>
         )}
 
@@ -111,7 +117,7 @@ export default function UserCreditsTab({
             disabled={loading || disableActions || amount <= 0}
             className="rounded bg-green-600 px-3 py-1 text-sm text-white disabled:opacity-50"
           >
-            Toevoegen
+            {t.add}
           </button>
 
           <button
@@ -119,19 +125,19 @@ export default function UserCreditsTab({
             disabled={loading || disableActions || amount <= 0}
             className="rounded bg-red-600 px-3 py-1 text-sm text-white disabled:opacity-50"
           >
-            Aftrekken
+            {t.subtract}
           </button>
         </div>
       </section>
 
       <section className="rounded border bg-white p-4 space-y-3">
         <h2 className="text-sm font-semibold">
-          Jaarabonnement opdrachten
+          {t.yearSubTitle}
         </h2>
 
         {yearEntitlements.length === 0 ? (
           <p className="text-sm text-gray-600">
-            Geen jaarabonnementen gevonden.
+            {t.noYearSub}
           </p>
         ) : (
           <div className="space-y-2">
@@ -142,10 +148,10 @@ export default function UserCreditsTab({
               >
                 <div>
                   <div>
-                    Start: {new Date(item.starts_at).toLocaleDateString("nl-NL")} • Einde: {item.ends_at ? new Date(item.ends_at).toLocaleDateString("nl-NL") : "onbepaald"}
+                    {t.start}: {new Date(item.starts_at).toLocaleDateString(locale)} • {t.endLabel}: {item.ends_at ? new Date(item.ends_at).toLocaleDateString(locale) : t.indefinite}
                   </div>
                   <div className="text-xs text-gray-500">
-                    Status: {item.is_active ? "actief" : "beëindigd"}
+                    {t.status}: {item.is_active ? t.active : t.ended}
                   </div>
                 </div>
 
@@ -156,7 +162,7 @@ export default function UserCreditsTab({
                     disabled={entitlementBusyId === item.id}
                     className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 disabled:opacity-50"
                   >
-                    {entitlementBusyId === item.id ? "Beëindigen..." : "Beëindigen"}
+                    {entitlementBusyId === item.id ? t.ending : t.endAction}
                   </button>
                 ) : null}
               </div>
@@ -165,7 +171,7 @@ export default function UserCreditsTab({
         )}
       </section>
 
-      <CreditTransactions transactions={transactions} />
+      <CreditTransactions transactions={transactions} language={language} />
     </div>
   );
 }

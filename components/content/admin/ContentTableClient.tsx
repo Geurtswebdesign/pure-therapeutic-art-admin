@@ -12,6 +12,8 @@ import BulkDeleteModal from "@/components/content/admin/BulkDeleteModal";
 import QuickEditForm from "./QuickEditForm";
 import type { QuickEditPatch } from "./QuickEditForm";
 import { quickEditContentItem } from "@/lib/content/actions/quickEditContentItem";
+import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import type { UiLanguage } from "@/lib/i18n/runtime";
 
 /* =========================
    Types
@@ -41,10 +43,14 @@ type ColumnKey = "status" | "categories" | "tags" | "date";
 export default function ContentTableClient({
   items,
   allCategories = [],
+  language,
 }: {
   items: ContentItem[];
   allCategories?: { id: string; name: string }[];
+  language: UiLanguage;
 }) {
+  const t = getAdminMessages(language).contentTable;
+  const locale = language === "en" ? "en-US" : language === "de" ? "de-DE" : "nl-NL";
   const [selected, setSelected] = useState<string[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -172,13 +178,13 @@ export default function ContentTableClient({
 
         {/* ===== Status tabs ===== */}
         <div className="flex items-center gap-2 text-sm">
-          <StatusTab active={statusFilter === "all"} onClick={() => setStatusFilter("all")} label={`Alle (${counts.all})`} />
+          <StatusTab active={statusFilter === "all"} onClick={() => setStatusFilter("all")} label={`${t.all} (${counts.all})`} />
           <Divider />
-          <StatusTab active={statusFilter === "draft"} onClick={() => setStatusFilter("draft")} label={`Concept (${counts.draft})`} />
+          <StatusTab active={statusFilter === "draft"} onClick={() => setStatusFilter("draft")} label={`${t.draft} (${counts.draft})`} />
           <Divider />
-          <StatusTab active={statusFilter === "published"} onClick={() => setStatusFilter("published")} label={`Gepubliceerd (${counts.published})`} />
+          <StatusTab active={statusFilter === "published"} onClick={() => setStatusFilter("published")} label={`${t.published} (${counts.published})`} />
           <Divider />
-          <StatusTab active={statusFilter === "trash"} onClick={() => setStatusFilter("trash")} label={`Prullenbak (${counts.trash})`} />
+          <StatusTab active={statusFilter === "trash"} onClick={() => setStatusFilter("trash")} label={`${t.trash} (${counts.trash})`} />
         </div>
 
         {/* ===== Bulk + Search ===== */}
@@ -188,15 +194,15 @@ export default function ContentTableClient({
             onChange={(e) => setBulkAction(e.target.value)}
             className="border px-2 py-1 text-sm"
           >
-            <option value="">Bulkacties</option>
+            <option value="">{t.bulkActions}</option>
 
             {statusFilter === "trash" ? (
               <>
-                <option value="restore">Herstellen</option>
-                <option value="delete-permanent">Permanent verwijderen</option>
+                <option value="restore">{t.restore}</option>
+                <option value="delete-permanent">{t.deletePermanent}</option>
               </>
             ) : (
-              <option value="trash">Verplaatsen naar prullenbak</option>
+              <option value="trash">{t.moveToTrash}</option>
             )}
           </select>
 
@@ -205,12 +211,12 @@ export default function ContentTableClient({
             disabled={!bulkAction || selected.length === 0}
             className="border px-3 py-1 text-sm disabled:opacity-50"
           >
-            Toepassen
+            {t.apply}
           </button>
 
           <input
             className="ml-auto border px-3 py-1 text-sm w-64"
-            placeholder="Berichten zoeken"
+            placeholder={t.searchPlaceholder}
             value={searchInput}
             onChange={(e) => {
               setSearchInput(e.target.value);
@@ -231,11 +237,11 @@ export default function ContentTableClient({
                     onChange={(e) => toggleAll(e.target.checked)}
                   />
                 </th>
-                <th className="text-left px-2 py-2">Titel</th>
-                {visibleColumns.status && <th className="px-2 py-2">Status</th>}
-                {visibleColumns.categories && <th className="px-2 py-2">Categorieën</th>}
-                {visibleColumns.tags && <th className="px-2 py-2">Tags</th>}
-                {visibleColumns.date && <th className="px-2 py-2">Datum</th>}
+                <th className="text-left px-2 py-2">{t.title}</th>
+                {visibleColumns.status && <th className="px-2 py-2">{t.status}</th>}
+                {visibleColumns.categories && <th className="px-2 py-2">{t.categories}</th>}
+                {visibleColumns.tags && <th className="px-2 py-2">{t.tags}</th>}
+                {visibleColumns.date && <th className="px-2 py-2">{t.date}</th>}
               </tr>
             </thead>
 
@@ -259,7 +265,7 @@ export default function ContentTableClient({
 
                         {item.credit_cost > 0 && (
                           <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
-                            🔒 {item.credit_cost} credits
+                            🔒 {item.credit_cost} {t.creditsSuffix}
                           </span>
                         )}
                       </div>
@@ -267,6 +273,7 @@ export default function ContentTableClient({
                       <ContentRowActions
                         id={item.id}
                         status={item.status}
+                        language={language}
                         onQuickEdit={() =>
                           setQuickEditId((prev) =>
                             prev === item.id ? null : item.id
@@ -296,7 +303,7 @@ export default function ContentTableClient({
                     {visibleColumns.date && (
                       <td className="px-2 py-2">
                         {item.published_at
-                          ? new Date(item.published_at).toLocaleDateString("nl-NL")
+                          ? new Date(item.published_at).toLocaleDateString(locale)
                           : "—"}
                       </td>
                     )}
@@ -308,6 +315,7 @@ export default function ContentTableClient({
                         <QuickEditForm
                           item={item}
                           allCategories={allCategories}
+                          language={language}
                           onCancel={() => setQuickEditId(null)}
                           onSave={async (patch: QuickEditPatch) => {
                             await quickEditContentItem(item.id, patch);
@@ -324,7 +332,7 @@ export default function ContentTableClient({
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
-                    Geen content gevonden.
+                    {t.noContentFound}
                   </td>
                 </tr>
               )}
@@ -337,6 +345,7 @@ export default function ContentTableClient({
       {showConfirmModal && (
         <BulkDeleteModal
           count={selected.length}
+          language={language}
           loading={loading}
           onCancel={() => setShowConfirmModal(false)}
           onConfirm={confirmAction}

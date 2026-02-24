@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
 
-const tabs = [
-  { label: "Overzicht", tab: "overview" },
-  { label: "Credits", tab: "credits" },
-  { label: "Wallets", tab: "wallets" },
-  { label: "Transacties", tab: "transactions" },
-];
-
-export default function AdministrationTabs() {
+export default function AdministrationTabs({ language = "nl" }: { language?: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const active = searchParams.get("tab") ?? "overview";
+  const t = getAdminMessages(resolveUiLanguage(language)).nav;
+  const tabs = [
+    { label: t.overview, tab: "overview" },
+    { label: t.credits, tab: "credits" },
+    { label: t.wallets, tab: "wallets" },
+    { label: t.transactions, tab: "transactions" },
+  ];
 
   return (
     <div className="flex flex-wrap gap-2 border-b pb-2">

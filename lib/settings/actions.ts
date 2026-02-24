@@ -8,7 +8,6 @@ import {
   type GeneralSettings,
 } from "@/lib/settings/types";
 import {
-  DEFAULT_ENABLED_LANGUAGES,
   DEFAULT_PRIMARY_LANGUAGE,
   normalizeLanguageCode,
 } from "@/lib/i18n/languages";
@@ -22,15 +21,6 @@ function asObject(value: unknown): Record<string, unknown> | null {
 
 function asString(value: unknown, fallback: string): string {
   return typeof value === "string" ? value : fallback;
-}
-
-function asStringArray(value: unknown, fallback: string[]): string[] {
-  if (!Array.isArray(value)) return fallback;
-  const next = value
-    .filter((item): item is string => typeof item === "string")
-    .map((item) => normalizeLanguageCode(item))
-    .filter(Boolean);
-  return next.length > 0 ? Array.from(new Set(next)) : fallback;
 }
 
 export async function getGeneralSettings(): Promise<GeneralSettings> {
@@ -63,10 +53,6 @@ export async function getGeneralSettings(): Promise<GeneralSettings> {
     primaryLanguage: normalizeLanguageCode(
       asString(value?.primaryLanguage, DEFAULT_GENERAL_SETTINGS.primaryLanguage)
     ),
-    enabledLanguages: asStringArray(
-      value?.enabledLanguages,
-      DEFAULT_GENERAL_SETTINGS.enabledLanguages
-    ),
   };
 }
 
@@ -82,36 +68,40 @@ export async function saveGeneralSettings(
   const normalizedPrimary = normalizeLanguageCode(
     settings.primaryLanguage || DEFAULT_PRIMARY_LANGUAGE
   );
-  const normalizedEnabled = Array.from(
-    new Set(
-      (settings.enabledLanguages.length
-        ? settings.enabledLanguages
-        : DEFAULT_ENABLED_LANGUAGES
-      )
-        .map((item) => normalizeLanguageCode(item))
-        .filter(Boolean)
-    )
-  );
-
-  if (!normalizedEnabled.includes(normalizedPrimary)) {
-    normalizedEnabled.unshift(normalizedPrimary);
-  }
 
   const supabase = createAdminClient();
-  const { error } = await supabase.from("app_settings").upsert(
-    {
-      scope: "global",
-      scope_id: null,
-      key: "general",
-      value: {
-        ...settings,
-        primaryLanguage: normalizedPrimary,
-        enabledLanguages: normalizedEnabled,
-      },
-      updated_by: adminId ?? admin.id,
-    },
-    { onConflict: "scope,scope_id,key" }
-  );
+  const value = {
+    ...settings,
+    primaryLanguage: normalizedPrimary,
+  };
+
+  const { data: existing, error: existingError } = await supabase
+    .from("app_settings")
+    .select("id")
+    .eq("scope", "global")
+    .is("scope_id", null)
+    .eq("key", "general")
+    .maybeSingle<{ id: string }>();
+
+  if (existingError) {
+    throw new Error(existingError.message);
+  }
+
+  const { error } = existing
+    ? await supabase
+        .from("app_settings")
+        .update({
+          value,
+          updated_by: adminId ?? admin.id,
+        })
+        .eq("id", existing.id)
+    : await supabase.from("app_settings").insert({
+        scope: "global",
+        scope_id: null,
+        key: "general",
+        value,
+        updated_by: adminId ?? admin.id,
+      });
 
   if (error) {
     throw new Error(error.message);

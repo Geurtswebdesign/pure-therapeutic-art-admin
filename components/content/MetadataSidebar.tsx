@@ -11,6 +11,8 @@ import MediaPicker from "@/components/content/media/MediaPicker";
 import type { Term } from "@/components/taxonomy/types";
 import { buildTermTree, flattenTree } from "@/components/taxonomy/types";
 import { LANGUAGE_OPTIONS } from "@/lib/i18n/languages";
+import { getAppMessages } from "@/lib/i18n/appMessages";
+import type { UiLanguage } from "@/lib/i18n/runtime";
 
 export type ContentStatus = "all" | "draft" | "published" | "archived";
 
@@ -28,6 +30,7 @@ type DraftState = {
 };
 
 type MetadataSidebarProps = {
+  language: UiLanguage;
   item: {
     id: string;
     status: ContentStatus;
@@ -55,6 +58,7 @@ function slugify(text: string) {
 }
 
 export default function MetadataSidebar({
+  language,
   item,
   draft,
   dirty,
@@ -64,6 +68,7 @@ export default function MetadataSidebar({
   categoryTerms,
   tagTerms,
 }: MetadataSidebarProps) {
+  const t = getAppMessages(language).metadata;
   const router = useRouter();
   const [openBox, setOpenBox] = useState<SecondaryBoxKey>("permalink");
   const [pickingFeatured, setPickingFeatured] = useState(false);
@@ -147,8 +152,8 @@ export default function MetadataSidebar({
   async function handleDelete() {
     const ok = confirm(
       dirty
-        ? "Er zijn niet-opgeslagen wijzigingen. Weet je zeker dat je deze content wilt verwijderen?"
-        : "Weet je zeker dat je deze content definitief wilt verwijderen?"
+        ? t.unsavedDeleteConfirm
+        : t.deleteConfirm
     );
     if (!ok) return;
     await deleteContentItem(item.id);
@@ -159,7 +164,7 @@ export default function MetadataSidebar({
     <aside className="w-96 border-l bg-gray-50 p-4 space-y-4">
       {renderBox(
         "publish",
-        "Publiceren",
+        t.publish,
         <div className="space-y-4">
           <div className="flex gap-2">
             {draft.status === "draft" ? (
@@ -169,7 +174,7 @@ export default function MetadataSidebar({
                 onClick={() => onSaveAll("save_draft")}
                 className="rounded border px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-50"
               >
-                {saving ? "Opslaan..." : "Concept opslaan"}
+                {saving ? t.saving : t.saveDraft}
               </button>
             ) : null}
 
@@ -184,7 +189,7 @@ export default function MetadataSidebar({
                 rel="noopener noreferrer"
                 className="rounded border px-3 py-2 text-sm hover:bg-gray-100"
               >
-                Bekijk live
+                {t.viewLive}
               </a>
             ) : null}
           </div>
@@ -200,7 +205,7 @@ export default function MetadataSidebar({
                   setIsEditingStatus(true);
                 }}
               >
-                {draft.status} bewerken
+                {draft.status} {t.editStatus}
               </button>
             </div>
           ) : (
@@ -215,21 +220,21 @@ export default function MetadataSidebar({
                     setIsEditingStatus(false);
                   }}
                 >
-                  OK
+                  {t.ok}
                 </button>
                 <button
                   type="button"
                   className="text-blue-600 hover:underline"
                   onClick={() => setIsEditingStatus(false)}
                 >
-                  Annuleren
+                  {t.cancel}
                 </button>
               </div>
             </div>
           )}
 
           <label className="block space-y-1">
-            <span className="block text-xs text-gray-600">Publicatiedatum</span>
+            <span className="block text-xs text-gray-600">{t.publishDate}</span>
             <input
               type="datetime-local"
               value={draft.published_at}
@@ -239,7 +244,7 @@ export default function MetadataSidebar({
           </label>
 
           <label className="block space-y-1">
-            <span className="block text-xs text-gray-600">Credit kosten</span>
+            <span className="block text-xs text-gray-600">{t.creditCost}</span>
             <input
               type="number"
               min={0}
@@ -257,7 +262,7 @@ export default function MetadataSidebar({
               canPublishOrUpdate ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"
             }`}
           >
-            {saving ? "Opslaan..." : isPublished ? "Bijwerken" : "Publiceren"}
+            {saving ? t.saving : isPublished ? t.update : t.publishAction}
           </button>
 
           <button
@@ -265,14 +270,14 @@ export default function MetadataSidebar({
             onClick={handleDelete}
             className="w-full rounded px-3 py-2 text-sm text-red-600 hover:bg-red-50"
           >
-            Naar prullenbak
+            {t.moveToTrash}
           </button>
         </div>
       )}
 
       {renderBox(
         "permalink",
-        "Permalink",
+        t.permalink,
         <div className="space-y-2">
           <input
             value={draft.slug}
@@ -280,20 +285,20 @@ export default function MetadataSidebar({
             className="w-full rounded border px-2 py-1"
           />
           <p className="text-xs text-gray-500">
-            URL: /{item.language}/{draft.slug || "(geen-slug)"}
+            URL: /{item.language}/{draft.slug || t.noSlug}
           </p>
         </div>
       )}
 
       {renderBox(
         "featured",
-        "Uitgelichte afbeelding",
+        t.featuredImage,
         <div className="space-y-3">
           {draft.featured_image_url ? (
             <div className="space-y-2">
               <Image
                 src={draft.featured_image_url}
-                alt={draft.featured_image_alt || "Uitgelichte afbeelding"}
+                alt={draft.featured_image_alt || t.featuredImageAlt}
                 width={480}
                 height={280}
                 unoptimized
@@ -303,11 +308,11 @@ export default function MetadataSidebar({
                 value={draft.featured_image_alt}
                 onChange={(e) => onDraftChange({ featured_image_alt: e.target.value })}
                 className="w-full rounded border px-2 py-1"
-                placeholder="Alt tekst"
+                placeholder={t.altText}
               />
             </div>
           ) : (
-            <p className="text-xs text-gray-500">Nog geen uitgelichte afbeelding gekozen.</p>
+            <p className="text-xs text-gray-500">{t.noFeatured}</p>
           )}
 
           {!pickingFeatured ? (
@@ -317,7 +322,7 @@ export default function MetadataSidebar({
                 className="rounded border px-3 py-1 hover:bg-gray-100"
                 onClick={() => setPickingFeatured(true)}
               >
-                {draft.featured_image_url ? "Wijzigen" : "Kiezen"}
+                {draft.featured_image_url ? t.change : t.choose}
               </button>
               {draft.featured_image_url ? (
                 <button
@@ -325,7 +330,7 @@ export default function MetadataSidebar({
                   className="rounded border px-3 py-1 text-red-600 hover:bg-red-50"
                   onClick={() => onDraftChange({ featured_image_url: "", featured_image_alt: "" })}
                 >
-                  Verwijderen
+                  {t.delete}
                 </button>
               ) : null}
             </div>
@@ -337,7 +342,7 @@ export default function MetadataSidebar({
                 className="text-blue-600 hover:underline"
                 onClick={() => setPickingFeatured(false)}
               >
-                Sluiten
+                {t.close}
               </button>
             </div>
           )}
@@ -346,7 +351,7 @@ export default function MetadataSidebar({
 
       {renderBox(
         "categories",
-        "Categorieen",
+        t.categories,
         flatCategories.length ? (
           <div className="max-h-56 space-y-1 overflow-auto">
             {flatCategories.map(({ node, depth }) => (
@@ -361,13 +366,13 @@ export default function MetadataSidebar({
             ))}
           </div>
         ) : (
-          <p className="text-xs text-gray-500">Geen categorieen gevonden.</p>
+          <p className="text-xs text-gray-500">{t.noCategories}</p>
         )
       )}
 
       {renderBox(
         "tags",
-        "Tags",
+        t.tags,
         tagTerms.length ? (
           <div className="max-h-40 space-y-1 overflow-auto">
             {tagTerms.map((tag) => (
@@ -382,28 +387,28 @@ export default function MetadataSidebar({
             ))}
           </div>
         ) : (
-          <p className="text-xs text-gray-500">Geen tags gevonden.</p>
+          <p className="text-xs text-gray-500">{t.noTags}</p>
         )
       )}
 
       {renderBox(
         "excerpt",
-        "Samenvatting",
+        t.excerpt,
         <textarea
           value={draft.excerpt}
           onChange={(e) => onDraftChange({ excerpt: e.target.value })}
           rows={5}
           className="w-full rounded border px-2 py-1"
-          placeholder="Korte samenvatting zoals in WordPress excerpt"
+          placeholder={t.excerptPlaceholder}
         />
       )}
 
       {renderBox(
         "options",
-        "Instellingen",
+        t.settings,
         <div className="space-y-2 text-xs text-gray-600">
           <label className="block space-y-1">
-            <span className="block text-xs text-gray-600">Taal</span>
+            <span className="block text-xs text-gray-600">{t.language}</span>
             <select
               value={draft.language}
               onChange={(e) => onDraftChange({ language: e.target.value })}
@@ -416,7 +421,7 @@ export default function MetadataSidebar({
               ))}
             </select>
           </label>
-          <p>Zichtbaarheid: Openbaar</p>
+          <p>{t.visibilityPublic}</p>
         </div>
       )}
     </aside>

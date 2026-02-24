@@ -5,6 +5,7 @@ import "@/styles/globals.css";
 import { WalletProvider } from "@/components/providers/WalletProvider";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { getWallet } from "@/lib/credits/getWallet";
+import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,9 +35,10 @@ export default async function RootLayout({
     const wallet = await getWallet(user.id);
     balance = wallet?.credits_available ?? 0;
   }
+  const primaryLanguage = await getPrimaryLanguage();
 
   return (
-    <html lang="nl">
+    <html lang={primaryLanguage}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

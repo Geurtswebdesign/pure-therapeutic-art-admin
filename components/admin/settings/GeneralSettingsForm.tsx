@@ -4,12 +4,54 @@ import { useState, useTransition } from "react";
 import { saveGeneralSettings } from "@/lib/settings/actions";
 import type { GeneralSettings } from "@/lib/settings/types";
 import { LANGUAGE_OPTIONS } from "@/lib/i18n/languages";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
 
 type Props = {
   initialValues: GeneralSettings;
 };
 
 export default function GeneralSettingsForm({ initialValues }: Props) {
+  const language = resolveUiLanguage(initialValues.primaryLanguage);
+  const t =
+    language === "en"
+      ? {
+          siteName: "Site name",
+          tagline: "Tagline",
+          timezone: "Timezone",
+          locale: "Locale",
+          currency: "Currency",
+          primaryLanguage: "Primary language",
+          saving: "Saving...",
+          save: "Save settings",
+          success: "Settings saved successfully",
+          saveError: "Saving failed.",
+        }
+      : language === "de"
+        ? {
+            siteName: "Seitenname",
+            tagline: "Slogan",
+            timezone: "Zeitzone",
+            locale: "Locale",
+            currency: "Wahrung",
+            primaryLanguage: "Primarsprache",
+            saving: "Speichern...",
+            save: "Einstellungen speichern",
+            success: "Einstellungen erfolgreich gespeichert",
+            saveError: "Speichern fehlgeschlagen.",
+          }
+        : {
+            siteName: "Sitenaam",
+            tagline: "Tagline",
+            timezone: "Tijdzone",
+            locale: "Landinstelling",
+            currency: "Valuta",
+            primaryLanguage: "Primaire taal",
+            saving: "Opslaan...",
+            save: "Instellingen opslaan",
+            success: "Instellingen succesvol opgeslagen",
+            saveError: "Opslaan mislukt.",
+          };
+
   const [form, setForm] = useState(initialValues);
   const [isPending, startTransition] = useTransition();
   const [success, setSuccess] = useState(false);
@@ -22,22 +64,6 @@ export default function GeneralSettingsForm({ initialValues }: Props) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function toggleLanguage(code: string) {
-    setForm((prev) => {
-      const exists = prev.enabledLanguages.includes(code);
-      const nextEnabled = exists
-        ? prev.enabledLanguages.filter((item) => item !== code)
-        : [...prev.enabledLanguages, code];
-
-      // Primary language must always stay enabled.
-      if (!nextEnabled.includes(prev.primaryLanguage)) {
-        nextEnabled.unshift(prev.primaryLanguage);
-      }
-
-      return { ...prev, enabledLanguages: nextEnabled };
-    });
-  }
-
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setSuccess(false);
@@ -48,7 +74,7 @@ export default function GeneralSettingsForm({ initialValues }: Props) {
         await saveGeneralSettings(form);
         setSuccess(true);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Opslaan mislukt.");
+        setError(err instanceof Error ? err.message : t.saveError);
       }
     });
   }
@@ -56,7 +82,7 @@ export default function GeneralSettingsForm({ initialValues }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium">Sitenaam</label>
+        <label className="block text-sm font-medium">{t.siteName}</label>
         <input
           className="w-full rounded border px-3 py-2 text-sm"
           value={form.siteName}
@@ -65,7 +91,7 @@ export default function GeneralSettingsForm({ initialValues }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium">Tagline</label>
+        <label className="block text-sm font-medium">{t.tagline}</label>
         <input
           className="w-full rounded border px-3 py-2 text-sm"
           value={form.tagline}
@@ -74,7 +100,7 @@ export default function GeneralSettingsForm({ initialValues }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium">Tijdzone</label>
+        <label className="block text-sm font-medium">{t.timezone}</label>
         <input
           className="w-full rounded border px-3 py-2 text-sm"
           value={form.timezone}
@@ -83,7 +109,7 @@ export default function GeneralSettingsForm({ initialValues }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium">Landinstelling</label>
+        <label className="block text-sm font-medium">{t.locale}</label>
         <input
           className="w-full rounded border px-3 py-2 text-sm"
           value={form.locale}
@@ -92,7 +118,7 @@ export default function GeneralSettingsForm({ initialValues }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium">Valuta</label>
+        <label className="block text-sm font-medium">{t.currency}</label>
         <input
           className="w-full rounded border px-3 py-2 text-sm"
           value={form.currency}
@@ -101,20 +127,11 @@ export default function GeneralSettingsForm({ initialValues }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium">Primaire taal</label>
+        <label className="block text-sm font-medium">{t.primaryLanguage}</label>
         <select
           className="w-full rounded border px-3 py-2 text-sm"
           value={form.primaryLanguage}
-          onChange={(e) => {
-            const nextPrimary = e.target.value;
-            setForm((prev) => ({
-              ...prev,
-              primaryLanguage: nextPrimary,
-              enabledLanguages: prev.enabledLanguages.includes(nextPrimary)
-                ? prev.enabledLanguages
-                : [nextPrimary, ...prev.enabledLanguages],
-            }));
-          }}
+          onChange={(e) => handleChange("primaryLanguage", e.target.value)}
         >
           {LANGUAGE_OPTIONS.map((lang) => (
             <option key={lang.code} value={lang.code}>
@@ -124,34 +141,18 @@ export default function GeneralSettingsForm({ initialValues }: Props) {
         </select>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium">Ingeschakelde talen</label>
-        <div className="mt-2 grid grid-cols-2 gap-2 rounded border p-3 text-sm">
-          {LANGUAGE_OPTIONS.map((lang) => (
-            <label key={lang.code} className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={form.enabledLanguages.includes(lang.code)}
-                onChange={() => toggleLanguage(lang.code)}
-              />
-              <span>{lang.label}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
       <div className="flex items-center gap-4">
         <button
           type="submit"
           disabled={isPending}
           className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-60"
         >
-          {isPending ? "Opslaan..." : "Instellingen opslaan"}
+          {isPending ? t.saving : t.save}
         </button>
 
         {success ? (
           <span className="text-sm text-green-600">
-            Instellingen succesvol opgeslagen
+            {t.success}
           </span>
         ) : null}
 

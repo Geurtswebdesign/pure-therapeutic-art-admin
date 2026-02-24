@@ -19,6 +19,7 @@
     "jsdom": "^24.0.0",
     "lucide-react": "^0.563.0",
     "next": "^16.1.6",
+    "nodemailer": "^6.10.1",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
@@ -26,6 +27,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/jsdom": "^21.1.6",
     "@types/node": "^20",
+    "@types/nodemailer": "^6.4.23",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

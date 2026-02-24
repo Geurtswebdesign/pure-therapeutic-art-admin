@@ -6,6 +6,8 @@ import {
   bulkDeleteUsers,
   updateUserRole,
 } from "@/app/admin/users/actions";
+import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import type { UiLanguage } from "@/lib/i18n/runtime";
 
 type User = {
   id: string;
@@ -19,10 +21,13 @@ type User = {
 export default function UsersTableClient({
   users,
   currentAdminId,
+  language,
 }: {
   users: User[];
   currentAdminId: string;
+  language: UiLanguage;
 }) {
+  const t = getAdminMessages(language).usersTable;
   const [selected, setSelected] = useState<string[]>([]);
   type UserRole = "admin" | "user";
   type RoleFilter = "all" | UserRole;
@@ -74,7 +79,7 @@ export default function UsersTableClient({
 
     if (bulkAction === "delete") {
         const ok = confirm(
-        `Weet je zeker dat je ${safeIds.length} gebruiker(s) definitief wilt verwijderen?`
+        t.deleteConfirm.replace("{count}", String(safeIds.length))
         );
         if (!ok) return;
 
@@ -112,10 +117,10 @@ export default function UsersTableClient({
             }
             className="border rounded px-2 py-1 text-sm"
             >
-            <option value="">Bulk acties</option>
-            <option value="make-admin">Rol → Admin</option>
-            <option value="make-user">Rol → Gebruiker</option>
-            <option value="delete">🗑 Verwijderen</option>
+            <option value="">{t.bulkActions}</option>
+            <option value="make-admin">{t.makeAdmin}</option>
+            <option value="make-user">{t.makeUser}</option>
+            <option value="delete">{t.delete}</option>
             </select>
 
         <button
@@ -123,7 +128,7 @@ export default function UsersTableClient({
             disabled={loading || selected.length === 0}
             className="rounded border px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-50"
             >
-            {loading ? "Bezig…" : "Toepassen"}
+            {loading ? t.busy : t.apply}
         </button>
 
 
@@ -134,7 +139,7 @@ export default function UsersTableClient({
                 setSearch(e.target.value);
                 setSelected([]); // 👈 zoals WordPress
             }}
-            placeholder="Zoek gebruikers…"
+            placeholder={t.searchPlaceholder}
             className="border rounded px-2 py-1 text-sm w-64"
             />
 
@@ -148,9 +153,9 @@ export default function UsersTableClient({
           }}
           className="ml-auto border rounded px-2 py-1 text-sm"
         >
-          <option value="all">Alle rollen</option>
-          <option value="admin">Admins</option>
-          <option value="user">Gebruikers</option>
+          <option value="all">{t.allRoles}</option>
+          <option value="admin">{t.admins}</option>
+          <option value="user">{t.users}</option>
         </select>
       </div>
 
@@ -169,10 +174,10 @@ export default function UsersTableClient({
                   onChange={(e) => toggleAll(e.target.checked)}
                 />
               </th>
-              <th className="text-left px-2 py-2">Naam</th>
-              <th className="text-left px-2 py-2">E-mail</th>
-              <th className="text-left px-2 py-2">Rol</th>
-              <th className="text-right px-2 py-2">Credits</th>
+              <th className="text-left px-2 py-2">{t.name}</th>
+              <th className="text-left px-2 py-2">{t.email}</th>
+              <th className="text-left px-2 py-2">{t.role}</th>
+              <th className="text-right px-2 py-2">{t.credits}</th>
             </tr>
           </thead>
 
@@ -198,7 +203,7 @@ export default function UsersTableClient({
                 <td className="px-2 py-2">
                     {u.id === currentAdminId ? (
                         <span className="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
-                        Jij ({u.role})
+                        {t.you} ({u.role})
                         </span>
                     ) : (
                         <select
@@ -210,8 +215,8 @@ export default function UsersTableClient({
                         }}
                         className="rounded border px-2 py-1 text-xs"
                         >
-                        <option value="user">Gebruiker</option>
-                        <option value="admin">Admin</option>
+                        <option value="user">{t.user}</option>
+                        <option value="admin">{t.admin}</option>
                         </select>
                     )}
                     </td>
@@ -223,7 +228,7 @@ export default function UsersTableClient({
           </tbody>
           {filteredUsers.length === 0 && (
             <div className="text-sm text-gray-500 p-4">
-                Geen gebruikers gevonden.
+                {t.noUsersFound}
             </div>
             )}
         </table>

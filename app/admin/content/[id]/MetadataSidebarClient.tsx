@@ -37,6 +37,7 @@ export default function MetadataSidebarClient({
 
   return (
     <MetadataSidebar
+      language={(item.language as "nl" | "en" | "de") ?? "nl"}
       item={item}
       draft={draft}
       dirty={dirty}

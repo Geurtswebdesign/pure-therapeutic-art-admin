@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/browser";
 import type { CategoryNode } from "./CategoryTree";
 import Link from "next/link";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getAppMessages } from "@/lib/i18n/appMessages";
 
 type Props = {
   node: CategoryNode;
@@ -20,6 +22,10 @@ function slugify(text: string) {
 }
 
 export default function CategoryRow({ node, depth }: Props) {
+  const uiLanguage = resolveUiLanguage(
+    typeof document !== "undefined" ? document.documentElement.lang : "nl"
+  );
+  const t = getAppMessages(uiLanguage).categoryRow;
   const router = useRouter();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -32,7 +38,7 @@ export default function CategoryRow({ node, depth }: Props) {
 
   async function handleDelete() {
     const confirmed = confirm(
-      "Weet je zeker dat je deze categorie wilt verwijderen?"
+      t.deleteConfirm
     );
     if (!confirmed) return;
 
@@ -94,14 +100,14 @@ export default function CategoryRow({ node, depth }: Props) {
                 onClick={() => setIsEditing(true)}
                 className="hover:underline text-blue-600"
               >
-                Snel bewerken
+                {t.quickEdit}
               </button>
 
               <button
                 onClick={handleDelete}
                 className="hover:underline text-red-600"
               >
-                Verwijderen
+                {t.delete}
               </button>
             </div>
           )}
@@ -149,14 +155,14 @@ export default function CategoryRow({ node, depth }: Props) {
                 disabled={loading}
                 className="bg-black text-white px-4 py-1 rounded"
               >
-                {loading ? "Opslaan..." : "Opgeslagen"}
+                {loading ? t.save : t.saved}
               </button>
 
               <button
                 onClick={() => setIsEditing(false)}
                 className="px-4 py-1 border rounded"
               >
-                Annuleer
+                {t.cancel}
               </button>
             </div>
           </td>

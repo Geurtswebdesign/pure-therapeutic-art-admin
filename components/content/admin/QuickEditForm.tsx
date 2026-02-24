@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import type { UiLanguage } from "@/lib/i18n/runtime";
 
 type ContentStatus = "draft" | "published" | "trash";
 
@@ -24,6 +26,7 @@ type Props = {
     tags?: string[];
   };
   allCategories?: { id: string; name: string }[];
+  language: UiLanguage;
   onCancel: () => void;
   onSave: (patch: QuickEditPatch) => Promise<void>;
 };
@@ -31,9 +34,11 @@ type Props = {
 export default function QuickEditForm({
   item,
   allCategories,
+  language,
   onCancel,
   onSave,
 }: Props) {
+  const t = getAdminMessages(language).quickEditForm;
   const [title, setTitle] = useState(item.title);
   const [status, setStatus] = useState<ContentStatus>(
     item.status === "trash" ? "draft" : item.status
@@ -88,7 +93,7 @@ export default function QuickEditForm({
 
         {/* === Linkerkolom === */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium">Titel</label>
+          <label className="block text-sm font-medium">{t.title}</label>
           <input
             className="w-full border px-3 py-1 text-sm"
             value={title}
@@ -96,7 +101,7 @@ export default function QuickEditForm({
           />
           <div className="mt-4">
             <label className="block text-sm font-medium mb-1">
-              Credit kosten
+              {t.creditCost}
             </label>
 
             <input
@@ -108,7 +113,7 @@ export default function QuickEditForm({
             />
           </div>
           
-          <label className="block text-sm font-medium">Datum</label>
+          <label className="block text-sm font-medium">{t.date}</label>
             <input
               type="date"
               className="w-full border px-3 py-1 text-sm"
@@ -119,7 +124,7 @@ export default function QuickEditForm({
 
         {/* === Rechterkolom === */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium">Status</label>
+          <label className="block text-sm font-medium">{t.status}</label>
           <select
             className="w-full border px-3 py-1 text-sm"
             value={status}
@@ -127,11 +132,11 @@ export default function QuickEditForm({
               setStatus(e.target.value as ContentStatus)
             }
           >
-            <option value="draft">Concept</option>
-            <option value="published">Gepubliceerd</option>
+            <option value="draft">{t.draft}</option>
+            <option value="published">{t.published}</option>
           </select>
 
-          <label className="block text-sm font-medium">Categorieën</label>
+          <label className="block text-sm font-medium">{t.categories}</label>
           <div className="max-h-32 overflow-auto border rounded p-2 text-sm space-y-1">
           {(allCategories ?? []).map((cat) => (
               <label key={cat.id} className="flex items-center gap-2">
@@ -160,7 +165,7 @@ export default function QuickEditForm({
           disabled={saving}
           className="bg-blue-600 text-white px-4 py-1 text-sm rounded disabled:opacity-50"
         >
-          Bijwerken
+          {t.update}
         </button>
 
         <button
@@ -168,7 +173,7 @@ export default function QuickEditForm({
           onClick={onCancel}
           className="text-sm text-gray-600 hover:underline"
         >
-          Annuleren
+          {t.cancel}
         </button>
       </div>
     </div>

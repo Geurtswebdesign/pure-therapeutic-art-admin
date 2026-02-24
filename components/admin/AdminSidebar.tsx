@@ -4,12 +4,16 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { adminNav } from "@/components/admin/nav";
+import { getAdminNav } from "@/components/admin/nav";
+import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ language = "nl" }: { language?: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [menuOverride, setMenuOverride] = useState<string | null>(null);
+  const t = getAdminMessages(resolveUiLanguage(language));
+  const adminNav = getAdminNav(language);
 
   function hrefMatches(href: string) {
     const [targetPath, queryString] = href.split("?");
@@ -38,7 +42,7 @@ export default function AdminSidebar() {
   return (
     <aside className="w-56 bg-[#1d2327] text-white flex-shrink-0">
       <div className="px-4 py-4 text-sm font-semibold border-b border-white/10">
-        Admin
+        {t.adminLabel}
       </div>
 
       <nav className="py-2 text-sm">

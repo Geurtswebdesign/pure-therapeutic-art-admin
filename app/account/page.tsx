@@ -3,6 +3,9 @@ import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CreditTransaction, CreditWallet } from "@/lib/credits/types";
 import AccountTabs from "@/components/account/AccountTabs";
+import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getAppMessages } from "@/lib/i18n/appMessages";
 
 type ProfileRow = {
   user_id: string;
@@ -21,6 +24,9 @@ type UnlockedItem = {
 };
 
 export default async function AccountPage() {
+  const language = resolveUiLanguage(await getPrimaryLanguage());
+  const t = getAppMessages(language).accountPage;
+
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login?next=/account");
@@ -97,9 +103,9 @@ export default async function AccountPage() {
   return (
     <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-10">
       <header className="rounded border bg-white p-4">
-        <h1 className="text-2xl font-semibold">Mijn account</h1>
+        <h1 className="text-2xl font-semibold">{t.title}</h1>
         <p className="text-sm text-gray-600">
-          Beheer je profiel, credits en ontgrendelde content.
+          {t.subtitle}
         </p>
       </header>
 
@@ -111,6 +117,7 @@ export default async function AccountPage() {
         wallet={safeWallet}
         transactions={transactions ?? []}
         unlockedContent={unlockedContent}
+        language={language}
       />
     </main>
   );

@@ -6,6 +6,8 @@ import Link from "next/link";
 import { unlockContentItem } from "@/app/content/actions";
 import { Lock, ShoppingCart, Unlock } from "lucide-react";
 import type { ContentAccessScope } from "@/lib/content/access";
+import { getAppMessages } from "@/lib/i18n/appMessages";
+import type { UiLanguage } from "@/lib/i18n/runtime";
 
 type Props = {
   contentId: string;
@@ -13,6 +15,7 @@ type Props = {
   balance: number;
   scope: ContentAccessScope;
   isLoggedIn: boolean;
+  language: UiLanguage;
 };
 
 export default function LockedViewClient({
@@ -21,7 +24,9 @@ export default function LockedViewClient({
   balance,
   scope,
   isLoggedIn,
+  language,
 }: Props) {
+  const t = getAppMessages(language).lockedView;
   const router = useRouter();
   const pathname = usePathname();
   const [error, setError] = useState<string | null>(null);
@@ -32,12 +37,12 @@ export default function LockedViewClient({
   const buyCreditsHref = "/credits";
   const scopeLabel =
     scope === "book"
-      ? "boek"
+      ? t.scopeBook
       : scope === "game"
-        ? "spel"
+        ? t.scopeGame
         : scope === "referral"
-          ? "verwijsbestand"
-          : "opdracht";
+          ? t.scopeReferral
+          : t.scopeAssignment;
 
   async function handleUnlock() {
     setError(null);
@@ -49,13 +54,19 @@ export default function LockedViewClient({
         if (!result.unlocked) {
           if (result.error === "INSUFFICIENT_CREDITS") {
             setError(
-              `Onvoldoende ${scopeLabel}-credits. Je hebt ${result.balance}, nodig: ${result.cost}.`
+              t.insufficient
+                .replaceAll("{scope}", scopeLabel)
+                .replace("{balance}", String(result.balance))
+                .replace("{cost}", String(result.cost))
             );
             return;
           }
           if (result.error === "INSUFFICIENT_SCOPE_CREDITS") {
             setError(
-              `Onvoldoende ${scopeLabel}-credits. Je hebt ${result.balance}, nodig: ${result.cost}.`
+              t.insufficient
+                .replaceAll("{scope}", scopeLabel)
+                .replace("{balance}", String(result.balance))
+                .replace("{cost}", String(result.cost))
             );
             return;
           }
@@ -63,7 +74,7 @@ export default function LockedViewClient({
 
         router.refresh();
       } catch {
-        setError("Er ging iets mis bij het ontgrendelen.");
+        setError(t.unlockFailed);
       }
     });
   }
@@ -76,17 +87,20 @@ export default function LockedViewClient({
 
       <div className="space-y-2 text-center">
         <p className="lockout-copy">
-          Wil je toegang tot deze {scopeLabel}?
+          {t.askAccess.replace("{scope}", scopeLabel)}
         </p>
         <p className="lockout-copy">
-          Je gebruikt hiervoor {scopeLabel}-credits.
+          {t.useCredits.replace("{scope}", scopeLabel)}
         </p>
       </div>
 
       {isLoggedIn ? (
         <>
           <p className="lockout-muted text-center text-sm">
-            Kosten: <strong>{cost} {scopeLabel}-credits</strong> • Saldo: <strong>{balance} {scopeLabel}-credits</strong>
+            {t.costBalance
+              .replaceAll("{scope}", scopeLabel)
+              .replace("{cost}", String(cost))
+              .replace("{balance}", String(balance))}
           </p>
 
           {insufficient ? (
@@ -95,7 +109,7 @@ export default function LockedViewClient({
               className="lockout-cta flex w-full items-center justify-between rounded-sm border px-4 py-3 text-left shadow-sm transition"
             >
               <span className="lockout-cta-text">
-                Credits kopen
+                {t.buyCredits}
               </span>
               <ShoppingCart className="h-7 w-7" />
             </Link>
@@ -106,7 +120,7 @@ export default function LockedViewClient({
               className="lockout-cta flex w-full items-center justify-between rounded-sm border px-4 py-3 text-left shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span className="lockout-cta-text">
-                Direct ontgrendelen
+                {t.unlockNow}
               </span>
               <Unlock className="h-7 w-7" />
             </button>
@@ -118,7 +132,7 @@ export default function LockedViewClient({
           className="lockout-cta flex w-full items-center justify-between rounded-sm border px-4 py-3 text-left shadow-sm transition"
         >
           <span className="lockout-cta-text">
-            Inloggen om te ontgrendelen
+            {t.loginToUnlock}
           </span>
           <ShoppingCart className="h-7 w-7" />
         </Link>
@@ -126,12 +140,15 @@ export default function LockedViewClient({
 
       {isPending ? (
         <p className="lockout-muted text-center text-sm">
-          Bezig met ontgrendelen...
+          {t.unlocking}
         </p>
       ) : null}
       {isLoggedIn && insufficient ? (
         <p className="lockout-error text-center text-sm">
-          Onvoldoende {scopeLabel}-credits. Je saldo is {balance} en je hebt {cost} nodig.
+          {t.insufficient
+            .replaceAll("{scope}", scopeLabel)
+            .replace("{balance}", String(balance))
+            .replace("{cost}", String(cost))}
         </p>
       ) : null}
       {error ? (

@@ -1,6 +1,8 @@
 import ContentEditorClient from "./ContentEditorClient";
 import { getContentItem } from "@/lib/content/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
 
 export default async function ContentEditorPage({
   params,
@@ -8,6 +10,7 @@ export default async function ContentEditorPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const uiLanguage = resolveUiLanguage(await getPrimaryLanguage());
 
   const item = await getContentItem(id);
   const supabase = createAdminClient();
@@ -81,6 +84,7 @@ export default async function ContentEditorPage({
 
   return (
     <ContentEditorClient
+      uiLanguage={uiLanguage}
       item={item}
       categoryTerms={categoryTerms}
       selectedCategoryIds={selectedCategoryIds}

@@ -11,12 +11,17 @@ import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import ContentLockout from "@/components/content/ContentLockout";
 import { getBalanceByScope } from "@/lib/users/getBalanceByScope";
 import { getContentAccessScope } from "@/lib/content/access";
+import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getAppMessages } from "@/lib/i18n/appMessages";
 
 export default async function ContentDetailPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const language = resolveUiLanguage(await getPrimaryLanguage());
+  const t = getAppMessages(language).metadata;
   const { slug } = await params;
 
   const item = await getPublishedContentBySlug(slug);
@@ -42,6 +47,7 @@ export default async function ContentDetailPage({
         balance={balance}
         scope={scope}
         isLoggedIn={!!user}
+        language={language}
       />
     );
   }
@@ -57,7 +63,7 @@ export default async function ContentDetailPage({
       {item.featured_image_url ? (
         <Image
           src={item.featured_image_url}
-          alt={item.featured_image_alt || item.title || "Uitgelichte afbeelding"}
+          alt={item.featured_image_alt || item.title || t.featuredImageAlt}
           width={1200}
           height={630}
           unoptimized

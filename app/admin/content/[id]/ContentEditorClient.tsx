@@ -5,6 +5,8 @@ import EditorCanvas from "@/components/content/EditorCanvas";
 import MetadataSidebar from "@/components/content/MetadataSidebar";
 import { updateContentItem } from "@/lib/content/actions";
 import type { Term } from "@/components/taxonomy/types";
+import type { UiLanguage } from "@/lib/i18n/runtime";
+import { getAppMessages } from "@/lib/i18n/appMessages";
 
 type ContentStatus = "all" | "draft" | "published" | "archived";
 type SaveMode = "save_draft" | "publish_or_update";
@@ -27,6 +29,7 @@ type Props = {
   selectedCategoryIds: string[];
   tagTerms: Term[];
   selectedTagIds: string[];
+  uiLanguage: UiLanguage;
 };
 
 export default function ContentEditorClient({
@@ -35,7 +38,9 @@ export default function ContentEditorClient({
   selectedCategoryIds,
   tagTerms,
   selectedTagIds,
+  uiLanguage,
 }: Props) {
+  const metaText = getAppMessages(uiLanguage).metadata;
   function slugify(text: string) {
     return text
       .toLowerCase()
@@ -172,7 +177,7 @@ export default function ContentEditorClient({
       }));
       setDirty(false);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Onbekende fout bij opslaan.";
+      const message = error instanceof Error ? error.message : metaText.unknownSaveError;
       alert(message);
     } finally {
       setSaving(false);
@@ -189,6 +194,7 @@ export default function ContentEditorClient({
       />
 
       <MetadataSidebar
+        language={uiLanguage}
         item={item}
         draft={draft}
         dirty={dirty}

@@ -1,13 +1,18 @@
-export default function SettingsSecurityPage() {
+import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
+
+export default async function SettingsSecurityPage() {
+  const language = resolveUiLanguage(await getPrimaryLanguage());
+  const t = getAdminMessages(language).settingsSecurity;
+
   return (
     <section className="space-y-4 rounded border bg-white p-5">
-      <h2 className="text-lg font-semibold">Beveiliging</h2>
+      <h2 className="text-lg font-semibold">{t.title}</h2>
       <ul className="list-disc space-y-1 pl-5 text-sm text-gray-600">
-        <li>Limiet voor inlogpogingen</li>
-        <li>Admin-sessietimeout</li>
-        <li>2FA-beleid</li>
-        <li>Rate limiting</li>
-        <li>API-sleutels en webhook-secrets</li>
+        {t.items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
       </ul>
     </section>
   );

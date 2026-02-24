@@ -1,14 +1,25 @@
-export default function SettingsEmailPage() {
+import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getEmailSettings } from "@/lib/settings/email-actions";
+import EmailSettingsForm from "@/components/admin/settings/EmailSettingsForm";
+
+export default async function SettingsEmailPage() {
+  const language = resolveUiLanguage(await getPrimaryLanguage());
+  const settings = await getEmailSettings();
+  const t = getAdminMessages(language).settingsEmail;
+
   return (
-    <section className="space-y-4 rounded border bg-white p-5">
-      <h2 className="text-lg font-semibold">Email</h2>
-      <ul className="list-disc space-y-1 pl-5 text-sm text-gray-600">
-        <li>SMTP-configuratie</li>
-        <li>Transactionele templates</li>
-        <li>Ontgrendel e-mailtemplate</li>
-        <li>Herinnering e-mailtemplate</li>
-        <li>Branding-variabelen</li>
-      </ul>
-    </section>
+    <div className="space-y-5">
+      <section className="space-y-4 rounded border bg-white p-5">
+        <h2 className="text-lg font-semibold">{t.title}</h2>
+        <ul className="list-disc space-y-1 pl-5 text-sm text-gray-600">
+          {t.items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </section>
+      <EmailSettingsForm initialValues={settings} language={language} />
+    </div>
   );
 }

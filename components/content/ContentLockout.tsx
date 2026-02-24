@@ -2,6 +2,8 @@ import Image from "next/image";
 import logo from "@/assets/branding/logo.png";
 import LockedView from "@/components/content/LockedView";
 import type { ContentAccessScope } from "@/lib/content/access";
+import type { UiLanguage } from "@/lib/i18n/runtime";
+import { getAppMessages } from "@/lib/i18n/appMessages";
 
 type Props = {
   item: {
@@ -16,6 +18,7 @@ type Props = {
   scope: ContentAccessScope;
   isLoggedIn: boolean;
   wrapInPageContainer?: boolean;
+  language: UiLanguage;
 };
 
 export default function ContentLockout({
@@ -23,8 +26,10 @@ export default function ContentLockout({
   balance,
   scope,
   isLoggedIn,
+  language,
   wrapInPageContainer = true,
 }: Props) {
+  const t = getAppMessages(language).metadata;
   const content = (
     <article className="lockout-container space-y-5">
       <header className="flex items-start gap-3">
@@ -41,7 +46,7 @@ export default function ContentLockout({
       {item.featured_image_url ? (
         <Image
           src={item.featured_image_url}
-          alt={item.featured_image_alt || item.title || "Uitgelichte afbeelding"}
+          alt={item.featured_image_alt || item.title || t.featuredImageAlt}
           width={1200}
           height={630}
           unoptimized
@@ -61,6 +66,7 @@ export default function ContentLockout({
         balance={balance}
         scope={scope}
         isLoggedIn={isLoggedIn}
+        language={language}
       />
     </article>
   );

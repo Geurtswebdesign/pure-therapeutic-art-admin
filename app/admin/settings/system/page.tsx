@@ -1,13 +1,18 @@
-export default function SettingsSystemPage() {
+import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
+
+export default async function SettingsSystemPage() {
+  const language = resolveUiLanguage(await getPrimaryLanguage());
+  const t = getAdminMessages(language).settingsSystem;
+
   return (
     <section className="space-y-4 rounded border bg-white p-5">
-      <h2 className="text-lg font-semibold">Systeem</h2>
+      <h2 className="text-lg font-semibold">{t.title}</h2>
       <ul className="list-disc space-y-1 pl-5 text-sm text-gray-600">
-        <li>Feature flags</li>
-        <li>Cache legen</li>
-        <li>Zoekindex opnieuw opbouwen</li>
-        <li>Queue-monitor</li>
-        <li>Logviewer en database-health check</li>
+        {t.items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
       </ul>
     </section>
   );

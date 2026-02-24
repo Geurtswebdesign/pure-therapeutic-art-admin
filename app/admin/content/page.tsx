@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import ContentTableClient from "@/components/content/admin/ContentTableClient";
+import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
 
 type PageProps = {
   searchParams: Promise<{
@@ -10,6 +13,9 @@ type PageProps = {
 };
 
 export default async function AdminContentPage({ searchParams }: PageProps) {
+  const language = resolveUiLanguage(await getPrimaryLanguage());
+  const t = getAdminMessages(language).contentPage;
+
   const supabase = createAdminClient();
   const { s, status } = await searchParams;
   const search = s?.trim() ?? "";
@@ -34,7 +40,7 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
   const { data: items, error } = await query;
 
   if (error) {
-    throw new Error("Content laden mislukt");
+    throw new Error(t.loadError);
   }
 
   let allCategories: { id: string; name: string }[] = [];
@@ -61,13 +67,13 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
          Header (WP-style)
          ========================= */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Content</h1>
+        <h1 className="text-2xl font-semibold">{t.title}</h1>
 
         <Link
           href="/admin/content/new"
           className="rounded bg-[#2271b1] px-4 py-2 text-sm font-medium text-white hover:bg-[#135e96]"
         >
-          Nieuwe pagina
+          {t.newPage}
         </Link>
       </div>
 
@@ -78,6 +84,7 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
       <ContentTableClient
         items={items ?? []}
         allCategories={allCategories}
+        language={language}
       />
     </div>
   );

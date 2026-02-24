@@ -11,8 +11,11 @@ import type {AdminUserProfile} from "@/lib/users/getUserDetail";
 import UserGeneralTab from "@/components/users/UserGeneralTab";
 import UserCreditsTab from "@/components/users/UserCreditsTab";
 import UserUnlockedTab from "@/components/users/UserUnlockedTab";
+import { getAppMessages } from "@/lib/i18n/appMessages";
+import type { UiLanguage } from "@/lib/i18n/runtime";
 
 type Props = {
+  language: UiLanguage;
   user: AdminUserProfile;
   wallet: CreditWallet;
   transactions: CreditTransaction[];
@@ -43,6 +46,7 @@ type Props = {
 type Tab = "general" | "credits" | "unlocked";
 
 export default function UserTabs({
+  language,
   user,
   wallet,
   transactions,
@@ -51,6 +55,7 @@ export default function UserTabs({
   currentAdminId,
   isSuperAdmin, // ✅ NU BESTAAT HIJ
 }: Props) {
+  const t = getAppMessages(language).userTabs;
   const [tab, setTab] = useState<Tab>("general");
 
   return (
@@ -65,7 +70,7 @@ export default function UserTabs({
               : "text-gray-500"
           }`}
         >
-          Algemeen
+          {t.general}
         </button>
 
         <button
@@ -76,7 +81,7 @@ export default function UserTabs({
               : "text-gray-500"
           }`}
         >
-          Credits
+          {t.credits}
         </button>
 
         <button
@@ -87,12 +92,12 @@ export default function UserTabs({
               : "text-gray-500"
           }`}
         >
-          Ontgrendelde content
+          {t.unlocked}
         </button>
       </div>
 
       {/* TAB CONTENT */}
-      {tab === "general" && <UserGeneralTab user={user} />}
+      {tab === "general" && <UserGeneralTab user={user} language={language} />}
 
       {tab === "credits" && (
         <UserCreditsTab
@@ -102,11 +107,12 @@ export default function UserTabs({
           yearEntitlements={yearEntitlements}
           isSelf={currentAdminId === user.user_id}
           isSuperAdmin={isSuperAdmin}
+          language={language}
         />
       )}
 
       {tab === "unlocked" && (
-        <UserUnlockedTab items={unlockedContent} />
+        <UserUnlockedTab items={unlockedContent} language={language} />
       )}
     </div>
   );

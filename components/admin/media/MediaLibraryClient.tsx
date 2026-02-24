@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase/browser";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getAppMessages } from "@/lib/i18n/appMessages";
 
 type MediaAsset = {
   id: string;
@@ -41,6 +43,11 @@ function slugifyBase(name: string) {
 }
 
 export default function MediaLibraryClient({ initialTab = "library" }: Props) {
+  const language = resolveUiLanguage(
+    typeof document !== "undefined" ? document.documentElement.lang : "nl"
+  );
+  const t = getAppMessages(language).mediaLibrary;
+  const locale = language === "en" ? "en-US" : language === "de" ? "de-DE" : "nl-NL";
   const [tab, setTab] = useState<Tab>(initialTab);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -155,7 +162,7 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
       setTab("library");
       if (failed > 0) {
         setUploadError(
-          `${failed} bestand(en) zijn geupload naar storage, maar niet aan media_assets toegevoegd.`
+          t.uploadPartialFailed.replace("{count}", String(failed))
         );
       }
     } finally {
@@ -172,7 +179,7 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
       .eq("id", selectedAsset.id);
 
     if (error) {
-      alert("Alt-tekst opslaan mislukt.");
+      alert(t.saveAltFailed);
       return;
     }
 
@@ -187,7 +194,7 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
 
   async function deleteSelected() {
     if (!selectedAsset) return;
-    if (!confirm("Weet je zeker dat je dit mediabestand wilt verwijderen?")) return;
+    if (!confirm(t.deleteConfirm)) return;
 
     const storagePath = toStoragePath(selectedAsset.file_path);
     const withoutBucket = storagePath.startsWith("media/")
@@ -216,7 +223,7 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
             tab === "library" ? "bg-black text-white" : "hover:bg-gray-100"
           }`}
         >
-          Bibliotheek
+          {t.libraryTab}
         </button>
         <button
           type="button"
@@ -225,20 +232,20 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
             tab === "upload" ? "bg-black text-white" : "hover:bg-gray-100"
           }`}
         >
-          Nieuw bestand
+          {t.uploadTab}
         </button>
       </div>
 
       {tab === "upload" ? (
         <section className="rounded border bg-white p-4 space-y-3">
-          <h2 className="font-medium">Bestanden uploaden</h2>
+          <h2 className="font-medium">{t.uploadTitle}</h2>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className="rounded border px-3 py-1.5 text-sm hover:bg-gray-100"
             disabled={uploading}
           >
-            Kies bestanden
+            {t.chooseFiles}
           </button>
           <input
             ref={fileInputRef}
@@ -270,10 +277,10 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
               dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 text-gray-500"
             }`}
           >
-            Sleep bestanden hierheen of klik op Kies bestanden.
+            {t.dropHint}
           </div>
           <p className="text-xs text-gray-500">
-            Je kunt meerdere afbeeldingen tegelijk uploaden.
+            {t.multiHint}
           </p>
           {uploadError ? (
             <p className="text-sm text-red-600">{uploadError}</p>
@@ -285,19 +292,19 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
         <div className="grid grid-cols-12 gap-4">
           <section className="col-span-8 rounded border bg-white p-4 space-y-3">
             <div className="flex items-center gap-3">
-              <h2 className="font-medium">Mediabibliotheek</h2>
+              <h2 className="font-medium">{t.libraryTitle}</h2>
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Zoek op bestandsnaam of alt-tekst"
+                placeholder={t.searchPlaceholder}
                 className="ml-auto w-72 rounded border px-2 py-1 text-sm"
               />
             </div>
 
             {loading ? (
-              <p className="text-sm text-gray-500">Laden...</p>
+              <p className="text-sm text-gray-500">{t.loading}</p>
             ) : filteredAssets.length === 0 ? (
-              <p className="text-sm text-gray-500">Geen media gevonden.</p>
+              <p className="text-sm text-gray-500">{t.noneFound}</p>
             ) : (
               <div className="grid grid-cols-4 gap-3">
                 {filteredAssets.map((asset) => {
@@ -327,9 +334,9 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
           </section>
 
           <aside className="col-span-4 rounded border bg-white p-4 space-y-3">
-            <h2 className="font-medium">Bijlagegegevens</h2>
+            <h2 className="font-medium">{t.attachmentDetails}</h2>
             {!selectedAsset ? (
-              <p className="text-sm text-gray-500">Selecteer een bestand om metadata te bewerken.</p>
+              <p className="text-sm text-gray-500">{t.selectToEdit}</p>
             ) : (
               <>
                 <Image
@@ -343,18 +350,18 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
 
                 <div className="space-y-1 text-xs text-gray-600">
                   <p>
-                    <span className="font-medium">Bestand:</span> {selectedAsset.file_path}
+                    <span className="font-medium">{t.file}:</span> {selectedAsset.file_path}
                   </p>
                   {selectedAsset.created_at ? (
                     <p>
-                      <span className="font-medium">Geupload:</span>{" "}
-                      {new Date(selectedAsset.created_at).toLocaleString("nl-NL")}
+                      <span className="font-medium">{t.uploaded}:</span>{" "}
+                      {new Date(selectedAsset.created_at).toLocaleString(locale)}
                     </p>
                   ) : null}
                 </div>
 
                 <label className="block space-y-1">
-                  <span className="text-xs text-gray-600">Alt-tekst</span>
+                  <span className="text-xs text-gray-600">{t.altText}</span>
                   <textarea
                     value={altDraft}
                     onChange={(e) => setAltDraft(e.target.value)}
@@ -369,21 +376,21 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
                     onClick={saveAltText}
                     className="rounded border px-3 py-1 text-sm hover:bg-gray-100"
                   >
-                    Opslaan
+                    {t.save}
                   </button>
                   <button
                     type="button"
                     onClick={copyUrl}
                     className="rounded border px-3 py-1 text-sm hover:bg-gray-100"
                   >
-                    URL kopieren
+                    {t.copyUrl}
                   </button>
                   <button
                     type="button"
                     onClick={deleteSelected}
                     className="rounded border px-3 py-1 text-sm text-red-600 hover:bg-red-50"
                   >
-                    Verwijderen
+                    {t.delete}
                   </button>
                 </div>
               </>

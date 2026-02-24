@@ -3,11 +3,12 @@ import {
   FileText,
   LayoutDashboard,
   Settings,
-  Shield,
   Users,
   WalletCards,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
 
 export type AdminNavItem = {
   label: string;
@@ -19,60 +20,59 @@ export type AdminNavItem = {
   }[];
 };
 
-export const adminNav: AdminNavItem[] = [
-  {
-    label: "Dashboard",
-    href: "/admin/dashboard",
-    icon: <LayoutDashboard size={18} />,
-  },
-  {
-    label: "Algemeen",
-    href: "/admin/settings/general",
-    icon: <Shield size={18} />,
-  },
-  {
-    label: "Gebruikers",
-    icon: <Users size={18} />,
-    children: [
-      { label: "Gebruikerslijst", href: "/admin/users" },
-      { label: "Nieuwe gebruiker", href: "/admin/users/new" },
-    ],
-  },
-  {
-    label: "Administratie",
-    icon: <WalletCards size={18} />,
-    children: [
-      { label: "Overzicht", href: "/admin/administration" },
-      { label: "Credits", href: "/admin/administration?tab=credits" },
-      { label: "Wallets", href: "/admin/administration?tab=wallets" },
-      { label: "Transacties", href: "/admin/administration?tab=transactions" },
-    ],
-  },
-  {
-    label: "Content",
-    icon: <FileText size={18} />,
-    children: [
-      { label: "Items", href: "/admin/content" },
-      { label: "Nieuw item", href: "/admin/content/new" },
-      { label: "Categorieen", href: "/admin/content/taxonomies/category/terms" },
-      { label: "Tags", href: "/admin/content/taxonomies/tag/terms" },
-      { label: "Media", href: "/admin/media" },
-    ],
-  },
-  {
-    label: "Inzichten",
-    href: "/admin/insights",
-    icon: <ChartColumnIncreasing size={18} />,
-  },
-  {
-    label: "Instellingen",
-    icon: <Settings size={18} />,
-    children: [
-      { label: "Algemeen", href: "/admin/settings/general" },
-      { label: "Beveiliging", href: "/admin/settings/security" },
-      { label: "App", href: "/admin/settings/app" },
-      { label: "Email", href: "/admin/settings/email" },
-      { label: "Systeem", href: "/admin/settings/system" },
-    ],
-  },
-];
+export function getAdminNav(language: string): AdminNavItem[] {
+  const t = getAdminMessages(resolveUiLanguage(language)).nav;
+
+  return [
+    {
+      label: t.dashboard,
+      href: "/admin/dashboard",
+      icon: <LayoutDashboard size={18} />,
+    },
+    {
+      label: t.users,
+      icon: <Users size={18} />,
+      children: [
+        { label: t.usersList, href: "/admin/users" },
+        { label: t.newUser, href: "/admin/users/new" },
+      ],
+    },
+    {
+      label: t.administration,
+      icon: <WalletCards size={18} />,
+      children: [
+        { label: t.overview, href: "/admin/administration" },
+        { label: t.credits, href: "/admin/administration?tab=credits" },
+        { label: t.wallets, href: "/admin/administration?tab=wallets" },
+        { label: t.transactions, href: "/admin/administration?tab=transactions" },
+      ],
+    },
+    {
+      label: t.content,
+      icon: <FileText size={18} />,
+      children: [
+        { label: t.items, href: "/admin/content" },
+        { label: t.newItem, href: "/admin/content/new" },
+        { label: t.categories, href: "/admin/content/taxonomies/category/terms" },
+        { label: t.tags, href: "/admin/content/taxonomies/tag/terms" },
+        { label: t.media, href: "/admin/media" },
+      ],
+    },
+    {
+      label: t.insights,
+      href: "/admin/insights",
+      icon: <ChartColumnIncreasing size={18} />,
+    },
+    {
+      label: t.settings,
+      icon: <Settings size={18} />,
+      children: [
+        { label: t.general, href: "/admin/settings/general" },
+        { label: t.security, href: "/admin/settings/security" },
+        { label: t.app, href: "/admin/settings/app" },
+        { label: t.email, href: "/admin/settings/email" },
+        { label: t.system, href: "/admin/settings/system" },
+      ],
+    },
+  ];
+}

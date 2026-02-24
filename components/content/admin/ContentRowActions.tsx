@@ -6,18 +6,23 @@ import {
   bulkRestoreContent,
   bulkDeleteContent,
 } from "@/components/content/admin/actions";
+import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import type { UiLanguage } from "@/lib/i18n/runtime";
 
 type Props = {
   id: string;
   status: "draft" | "published" | "trash";
+  language: UiLanguage;
   onQuickEdit?: () => void;
 };
 
 export default function ContentRowActions({
   id,
   status,
+  language,
   onQuickEdit,
 }: Props) {
+  const t = getAdminMessages(language).contentRowActions;
   const [loading, setLoading] = useState(false);
 
   async function moveToTrash() {
@@ -41,7 +46,7 @@ export default function ContentRowActions({
   }
 
   async function deletePermanent() {
-    if (!confirm("Weet je zeker dat je dit item permanent wilt verwijderen?")) {
+    if (!confirm(t.deleteConfirm)) {
       return;
     }
 
@@ -62,7 +67,7 @@ export default function ContentRowActions({
             href={`/admin/content/${id}`}
             className="text-blue-600 hover:underline"
           >
-            Bewerken
+            {t.edit}
           </a>
 
           {onQuickEdit && (
@@ -71,7 +76,7 @@ export default function ContentRowActions({
               onClick={onQuickEdit}
               className="hover:underline"
             >
-              Snel bewerken
+              {t.quickEdit}
             </button>
           )}
 
@@ -80,7 +85,7 @@ export default function ContentRowActions({
             disabled={loading}
             className="hover:underline"
           >
-            Prullenbak
+            {t.trash}
           </button>
 
           <a
@@ -88,7 +93,7 @@ export default function ContentRowActions({
             target="_blank"
             className="hover:underline"
           >
-            Bekijken
+            {t.view}
           </a>
         </>
       ) : (
@@ -98,7 +103,7 @@ export default function ContentRowActions({
             disabled={loading}
             className="text-blue-600 hover:underline"
           >
-            Herstellen
+            {t.restore}
           </button>
 
           <button
@@ -106,7 +111,7 @@ export default function ContentRowActions({
             disabled={loading}
             className="text-red-600 hover:underline"
           >
-            Permanent verwijderen
+            {t.deletePermanent}
           </button>
         </>
       )}

@@ -2,6 +2,9 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import AdministrationTabs from "@/components/admin/administration/AdministrationTabs";
 import CreditPacksManager from "@/components/admin/administration/CreditPacksManager";
+import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
 
 type PageProps = {
   searchParams: Promise<{ tab?: string }>;
@@ -103,15 +106,21 @@ type AdminUserRpcRow = {
   display_name: string | null;
 };
 
-function scopeLabel(scope: CombinedTransactionRow["scope"] | ScopedWalletRow["credit_scope"]) {
-  if (scope === "assignment") return "opdrachten";
-  if (scope === "book") return "boeken";
-  if (scope === "game") return "spellen";
-  return "verwijsbestanden";
+function scopeLabel(
+  scope: CombinedTransactionRow["scope"] | ScopedWalletRow["credit_scope"],
+  labels: ReturnType<typeof getAdminMessages>["administrationPage"]
+) {
+  if (scope === "assignment") return labels.scopeAssignment;
+  if (scope === "book") return labels.scopeBook;
+  if (scope === "game") return labels.scopeGame;
+  return labels.scopeReferral;
 }
 
 export default async function AdministrationPage({ searchParams }: PageProps) {
   const supabase = createAdminClient();
+  const primaryLanguage = resolveUiLanguage(await getPrimaryLanguage());
+  const t = getAdminMessages(primaryLanguage).administrationPage;
+  const locale = primaryLanguage === "en" ? "en-US" : primaryLanguage === "de" ? "de-DE" : "nl-NL";
   const { tab } = await searchParams;
   const activeTab = tab ?? "overview";
 
@@ -207,7 +216,7 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
       scope: "assignment" as const,
       delta: tx.delta,
       reason: tx.reason,
-      amount: tx.ref_id ? purchaseAmountById.get(tx.ref_id) ?? "—" : "—",
+      amount: tx.ref_id ? purchaseAmountById.get(tx.ref_id) ?? t.noAmount : t.noAmount,
     }))),
     ...((scopedTransactions ?? []).map((tx) => ({
       id: tx.id,
@@ -217,19 +226,19 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
       scope: tx.credit_scope,
       delta: tx.delta,
       reason: tx.reason,
-      amount: tx.ref_id ? purchaseAmountById.get(tx.ref_id) ?? "—" : "—",
+      amount: tx.ref_id ? purchaseAmountById.get(tx.ref_id) ?? t.noAmount : t.noAmount,
     }))),
     ...((entitlements ?? []).map((row) => {
       const now = new Date();
       const start = new Date(row.starts_at);
       const end = row.ends_at ? new Date(row.ends_at) : null;
       const status = !row.is_active
-        ? "beëindigd"
+        ? t.statusEnded
         : start > now
-          ? "gepland"
+          ? t.statusPlanned
           : end && end <= now
-            ? "verlopen"
-            : "actief";
+            ? t.statusExpired
+            : t.statusActive;
 
       return {
         id: row.id,
@@ -242,7 +251,7 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
         amount:
           typeof row.metadata?.amount_cents === "number"
             ? `${(row.metadata.amount_cents / 100).toFixed(2)} ${row.metadata?.currency ?? "EUR"}`
-            : "—",
+            : t.noAmount,
       };
     })),
   ].sort(
@@ -253,35 +262,33 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
   return (
     <section className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Administratie</h1>
-        <p className="text-sm text-gray-600">
-          Credits, wallets en transacties voor je ontgrendel-businessmodel.
-        </p>
+        <h1 className="text-2xl font-semibold">{t.title}</h1>
+        <p className="text-sm text-gray-600">{t.subtitle}</p>
       </header>
 
-      <AdministrationTabs />
+      <AdministrationTabs language={primaryLanguage} />
 
       {activeTab === "overview" ? (
         <div className="grid gap-4 md:grid-cols-3">
           <article className="rounded border bg-white p-4">
-            <h2 className="text-base font-semibold">Credits</h2>
-            <p className="mt-2 text-sm text-gray-600">Creditpacks, prijzen en toekenningen.</p>
+            <h2 className="text-base font-semibold">{t.overviewCreditsTitle}</h2>
+            <p className="mt-2 text-sm text-gray-600">{t.overviewCreditsDesc}</p>
             <Link href="/admin/administration?tab=credits" className="mt-3 inline-block text-sm text-blue-700 hover:underline">
-              Ga naar credits
+              {t.overviewCreditsLink}
             </Link>
           </article>
           <article className="rounded border bg-white p-4">
-            <h2 className="text-base font-semibold">Wallets</h2>
-            <p className="mt-2 text-sm text-gray-600">Wallet-overzicht per credit-scope.</p>
+            <h2 className="text-base font-semibold">{t.overviewWalletsTitle}</h2>
+            <p className="mt-2 text-sm text-gray-600">{t.overviewWalletsDesc}</p>
             <Link href="/admin/administration?tab=wallets" className="mt-3 inline-block text-sm text-blue-700 hover:underline">
-              Ga naar wallets
+              {t.overviewWalletsLink}
             </Link>
           </article>
           <article className="rounded border bg-white p-4">
-            <h2 className="text-base font-semibold">Transacties</h2>
-            <p className="mt-2 text-sm text-gray-600">Mutaties, aankopen en jaarabonnementen.</p>
+            <h2 className="text-base font-semibold">{t.overviewTransactionsTitle}</h2>
+            <p className="mt-2 text-sm text-gray-600">{t.overviewTransactionsDesc}</p>
             <Link href="/admin/administration?tab=transactions" className="mt-3 inline-block text-sm text-blue-700 hover:underline">
-              Ga naar transacties
+              {t.overviewTransactionsLink}
             </Link>
           </article>
         </div>
@@ -291,21 +298,22 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
         <CreditPacksManager
           packs={packs ?? []}
           users={users}
+          language={primaryLanguage}
         />
       ) : null}
 
       {activeTab === "wallets" ? (
         <div className="space-y-6">
           <section className="rounded border bg-white p-4">
-            <h2 className="text-base font-semibold">Wallets (opdrachten)</h2>
+            <h2 className="text-base font-semibold">{t.walletsAssignmentsTitle}</h2>
             <div className="mt-3 overflow-auto">
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-2 py-2 text-left">Gebruiker</th>
-                    <th className="px-2 py-2 text-right">Beschikbaar</th>
-                    <th className="px-2 py-2 text-right">Totaal gekocht</th>
-                    <th className="px-2 py-2 text-left">Bijgewerkt</th>
+                    <th className="px-2 py-2 text-left">{t.user}</th>
+                    <th className="px-2 py-2 text-right">{t.available}</th>
+                    <th className="px-2 py-2 text-right">{t.totalPurchased}</th>
+                    <th className="px-2 py-2 text-left">{t.updated}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -314,7 +322,7 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
                       <td className="px-2 py-2">{wallet.user_id.slice(0, 8)}...</td>
                       <td className="px-2 py-2 text-right">{wallet.credits_available}</td>
                       <td className="px-2 py-2 text-right">{wallet.credits_total_purchased}</td>
-                      <td className="px-2 py-2">{new Date(wallet.updated_at).toLocaleString("nl-NL")}</td>
+                      <td className="px-2 py-2">{new Date(wallet.updated_at).toLocaleString(locale)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -323,26 +331,26 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
           </section>
 
           <section className="rounded border bg-white p-4">
-            <h2 className="text-base font-semibold">Wallets (boek/spel/verwijs)</h2>
+            <h2 className="text-base font-semibold">{t.walletsScopedTitle}</h2>
             <div className="mt-3 overflow-auto">
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-2 py-2 text-left">Gebruiker</th>
-                    <th className="px-2 py-2 text-left">Type</th>
-                    <th className="px-2 py-2 text-right">Beschikbaar</th>
-                    <th className="px-2 py-2 text-right">Totaal gekocht</th>
-                    <th className="px-2 py-2 text-left">Bijgewerkt</th>
+                    <th className="px-2 py-2 text-left">{t.user}</th>
+                    <th className="px-2 py-2 text-left">{t.type}</th>
+                    <th className="px-2 py-2 text-right">{t.available}</th>
+                    <th className="px-2 py-2 text-right">{t.totalPurchased}</th>
+                    <th className="px-2 py-2 text-left">{t.updated}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(scopedWallets ?? []).map((wallet) => (
                     <tr key={`${wallet.user_id}-${wallet.credit_scope}`} className="border-t">
                       <td className="px-2 py-2">{wallet.user_id.slice(0, 8)}...</td>
-                      <td className="px-2 py-2">{scopeLabel(wallet.credit_scope)}</td>
+                      <td className="px-2 py-2">{scopeLabel(wallet.credit_scope, t)}</td>
                       <td className="px-2 py-2 text-right">{wallet.credits_available}</td>
                       <td className="px-2 py-2 text-right">{wallet.credits_total_purchased}</td>
-                      <td className="px-2 py-2">{new Date(wallet.updated_at).toLocaleString("nl-NL")}</td>
+                      <td className="px-2 py-2">{new Date(wallet.updated_at).toLocaleString(locale)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -354,34 +362,34 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
 
       {activeTab === "transactions" ? (
         <section className="rounded border bg-white p-4">
-          <h2 className="text-base font-semibold">Transactieoverzicht (alle aankopen)</h2>
+          <h2 className="text-base font-semibold">{t.transactionOverviewTitle}</h2>
           <div className="mt-3 overflow-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-2 py-2 text-left">Datum</th>
-                  <th className="px-2 py-2 text-left">Gebruiker</th>
-                  <th className="px-2 py-2 text-left">Type</th>
-                  <th className="px-2 py-2 text-left">Type credits</th>
-                  <th className="px-2 py-2 text-right">Delta</th>
-                  <th className="px-2 py-2 text-left">Reden</th>
-                  <th className="px-2 py-2 text-right">Aankoopkosten</th>
+                  <th className="px-2 py-2 text-left">{t.date}</th>
+                  <th className="px-2 py-2 text-left">{t.user}</th>
+                  <th className="px-2 py-2 text-left">{t.type}</th>
+                  <th className="px-2 py-2 text-left">{t.creditType}</th>
+                  <th className="px-2 py-2 text-right">{t.delta}</th>
+                  <th className="px-2 py-2 text-left">{t.reason}</th>
+                  <th className="px-2 py-2 text-right">{t.purchaseAmount}</th>
                 </tr>
               </thead>
               <tbody>
                 {combinedTransactions.map((row) => (
                   <tr key={`${row.type}-${row.id}`} className="border-t">
-                    <td className="px-2 py-2">{new Date(row.created_at).toLocaleString("nl-NL")}</td>
+                    <td className="px-2 py-2">{new Date(row.created_at).toLocaleString(locale)}</td>
                     <td className="px-2 py-2">{row.user_id.slice(0, 8)}...</td>
                     <td className="px-2 py-2">
                       {row.type === "assignment_pack"
-                        ? "creditpack"
+                        ? t.assignmentPack
                         : row.type === "scoped_pack"
-                          ? "creditpack (specifiek)"
-                          : "jaarabonnement"}
+                          ? t.scopedPack
+                          : t.yearSubscription}
                     </td>
-                    <td className="px-2 py-2">{scopeLabel(row.scope)}</td>
-                    <td className="px-2 py-2 text-right">{row.delta ?? "—"}</td>
+                    <td className="px-2 py-2">{scopeLabel(row.scope, t)}</td>
+                    <td className="px-2 py-2 text-right">{row.delta ?? t.noAmount}</td>
                     <td className="px-2 py-2">{row.reason}</td>
                     <td className="px-2 py-2 text-right">{row.amount}</td>
                   </tr>

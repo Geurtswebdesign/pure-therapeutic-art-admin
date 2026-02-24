@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminTopbar from "@/components/admin/AdminTopbar";
 import LogoutButton from "@/components/admin/LogoutButton";
+import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 
 export default async function AdminLayout({
   children,
@@ -45,10 +46,11 @@ export default async function AdminLayout({
   if (profile?.role !== "admin") {
     redirect("/unauthorized");
   }
+  const primaryLanguage = await getPrimaryLanguage();
 
   return (
     <div className="flex min-h-screen bg-[#f0f0f1]">
-      <AdminSidebar />
+      <AdminSidebar language={primaryLanguage} />
 
       <div className="flex flex-col flex-1">
         <AdminTopbar actions={<LogoutButton />} />

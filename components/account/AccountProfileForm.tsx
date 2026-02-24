@@ -2,18 +2,23 @@
 
 import { useState, useTransition } from "react";
 import { updateMyProfile } from "@/app/account/actions";
+import { getAppMessages } from "@/lib/i18n/appMessages";
+import type { UiLanguage } from "@/lib/i18n/runtime";
 
 type Props = {
   initialDisplayName: string;
   initialBio: string;
   email: string;
+  language: UiLanguage;
 };
 
 export default function AccountProfileForm({
   initialDisplayName,
   initialBio,
   email,
+  language,
 }: Props) {
+  const t = getAppMessages(language).accountProfile;
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [bio, setBio] = useState(initialBio);
   const [message, setMessage] = useState<string | null>(null);
@@ -27,9 +32,9 @@ export default function AccountProfileForm({
           displayName,
           bio,
         });
-        setMessage("Profiel opgeslagen.");
+        setMessage(t.saved);
       } catch (e) {
-        const text = e instanceof Error ? e.message : "Opslaan mislukt.";
+        const text = e instanceof Error ? e.message : t.saveFailed;
         setMessage(text);
       }
     });
@@ -37,10 +42,10 @@ export default function AccountProfileForm({
 
   return (
     <section className="rounded border bg-white p-4 space-y-4">
-      <h2 className="text-lg font-semibold">Profiel</h2>
+      <h2 className="text-lg font-semibold">{t.title}</h2>
 
       <label className="block space-y-1">
-        <span className="text-sm text-gray-600">E-mail</span>
+        <span className="text-sm text-gray-600">{t.email}</span>
         <input
           value={email}
           disabled
@@ -49,7 +54,7 @@ export default function AccountProfileForm({
       </label>
 
       <label className="block space-y-1">
-        <span className="text-sm text-gray-600">Weergavenaam</span>
+        <span className="text-sm text-gray-600">{t.displayName}</span>
         <input
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
@@ -58,7 +63,7 @@ export default function AccountProfileForm({
       </label>
 
       <label className="block space-y-1">
-        <span className="text-sm text-gray-600">Biografie</span>
+        <span className="text-sm text-gray-600">{t.bio}</span>
         <textarea
           rows={4}
           value={bio}
@@ -74,7 +79,7 @@ export default function AccountProfileForm({
           disabled={isPending}
           className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-60"
         >
-          {isPending ? "Opslaan..." : "Opslaan"}
+          {isPending ? t.saving : t.save}
         </button>
 
         {message ? <p className="text-sm text-gray-600">{message}</p> : null}

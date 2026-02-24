@@ -9,6 +9,8 @@ import {
 import {AdminUserProfile} from "@/lib/users/getUserDetail";
 import UserHeader from "@/components/users/UserHeader";
 import UserTabs from "@/components/users/UserTabs";
+import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
 
 type PageProps = {
   params: Promise<{
@@ -27,6 +29,7 @@ type YearEntitlement = {
 
 export default async function AdminUserDetailPage({ params }: PageProps) {
   const { user_id } = await params;
+  const language = resolveUiLanguage(await getPrimaryLanguage());
 
   /* =========================
      1. Admin authorisatie
@@ -172,9 +175,10 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
      ========================= */
   return (
     <div className="space-y-8">
-      <UserHeader user={user} />
+      <UserHeader user={user} language={language} />
 
       <UserTabs
+        language={language}
         user={user}
         wallet={ensuredWallet}
         transactions={transactions ?? []}

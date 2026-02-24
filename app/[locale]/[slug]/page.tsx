@@ -14,6 +14,8 @@ import { normalizeImages } from "@/lib/content/normalizeHtml";
 import { hasAccess } from "@/lib/unlock/hasAccess";
 import { getBalanceByScope } from "@/lib/users/getBalanceByScope";
 import { getContentAccessScope } from "@/lib/content/access";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getAppMessages } from "@/lib/i18n/appMessages";
 
 type PageProps = {
   params: Promise<{
@@ -30,6 +32,8 @@ export default async function ContentPage({
   searchParams,
 }: PageProps) {
   const { locale, slug } = await params;
+  const language = resolveUiLanguage(locale);
+  const t = getAppMessages(language).metadata;
   const { preview } = await searchParams;
 
   const cookieStore = await cookies();
@@ -107,6 +111,7 @@ export default async function ContentPage({
           balance={balance}
           scope={scope}
           isLoggedIn={!!user}
+          language={language}
         />
       </ContentLayout>
     );
@@ -136,7 +141,7 @@ export default async function ContentPage({
       {item.featured_image_url ? (
         <Image
           src={item.featured_image_url}
-          alt={item.featured_image_alt || item.title || "Uitgelichte afbeelding"}
+          alt={item.featured_image_alt || item.title || t.featuredImageAlt}
           width={1200}
           height={630}
           unoptimized

@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { getAppMessages } from "@/lib/i18n/appMessages";
+import type { UiLanguage } from "@/lib/i18n/runtime";
 
 type Unlock = {
   id: string;
@@ -17,13 +19,17 @@ type Unlock = {
 
 export default function UserUnlockedTab({
   items,
+  language,
 }: {
   items: Unlock[];
+  language: UiLanguage;
 }) {
+  const t = getAppMessages(language).unlockedTable;
+  const locale = language === "en" ? "en-US" : language === "de" ? "de-DE" : "nl-NL";
   if (!items.length) {
     return (
       <div className="text-sm text-gray-500">
-        Geen unlocked content.
+        {t.noUnlocked}
       </div>
     );
   }
@@ -33,10 +39,10 @@ export default function UserUnlockedTab({
       <table className="w-full text-sm">
         <thead className="bg-gray-100">
           <tr>
-            <th className="text-left px-3 py-2">Titel</th>
-            <th className="px-3 py-2 text-left">Categorie</th>
-            <th className="px-3 py-2 text-center">Betaald</th>
-            <th className="px-3 py-2 text-center">Datum</th>
+            <th className="text-left px-3 py-2">{t.title}</th>
+            <th className="px-3 py-2 text-left">{t.category}</th>
+            <th className="px-3 py-2 text-center">{t.paid}</th>
+            <th className="px-3 py-2 text-center">{t.date}</th>
           </tr>
         </thead>
 
@@ -52,7 +58,7 @@ export default function UserUnlockedTab({
                     {u.content_item.title}
                   </Link>
                 ) : (
-                  <span className="text-gray-500">Onbekende content</span>
+                  <span className="text-gray-500">{t.unknownContent}</span>
                 )}
               </td>
 
@@ -63,11 +69,11 @@ export default function UserUnlockedTab({
               </td>
 
               <td className="px-3 py-2 text-center">
-                {u.credits_spent} credits
+                {u.credits_spent} {t.creditsSuffix}
               </td>
 
               <td className="px-3 py-2 text-center">
-                {new Date(u.unlocked_at).toLocaleDateString("nl-NL")}
+                {new Date(u.unlocked_at).toLocaleDateString(locale)}
               </td>
             </tr>
           ))}

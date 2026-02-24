@@ -4,14 +4,18 @@ import { useState } from "react";
 import AdminResetPasswordButton from "@/components/admin/AdminResetPasswordButton";
 import AdminRoleEditor from "@/lib/admin/AdminRoleEditor";
 import { updateUserProfileExtended } from "@/app/admin/users/actions";
+import { getAppMessages } from "@/lib/i18n/appMessages";
+import type { UiLanguage } from "@/lib/i18n/runtime";
 
 import type { AdminUserProfile } from "@/lib/users/getUserDetail";
 
 type Props = {
   user: AdminUserProfile;
+  language: UiLanguage;
 };
 
-export default function UserGeneralTab({ user }: Props) {
+export default function UserGeneralTab({ user, language }: Props) {
+  const t = getAppMessages(language).userGeneral;
   const profileData = user.profile_data ?? {};
 
   const [firstName, setFirstName] = useState(
@@ -62,30 +66,30 @@ export default function UserGeneralTab({ user }: Props) {
 
       {/* NAAM */}
       <section className="space-y-4">
-        <h2 className="text-sm font-semibold text-gray-700">Naam</h2>
+        <h2 className="text-sm font-semibold text-gray-700">{t.name}</h2>
 
         <div className="grid max-w-md gap-3">
           <input
-            placeholder="Voornaam"
+            placeholder={t.firstName}
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             className="rounded border px-2 py-1"
           />
           <input
-            placeholder="Achternaam"
+            placeholder={t.lastName}
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             className="rounded border px-2 py-1"
           />
           <input
-            placeholder="Bijnaam"
+            placeholder={t.nickname}
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             className="rounded border px-2 py-1"
           />
 
           <input
-            placeholder="Weergavenaam"
+            placeholder={t.displayName}
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             className="rounded border px-2 py-1"
@@ -96,11 +100,11 @@ export default function UserGeneralTab({ user }: Props) {
       {/* CONTACT */}
       <section className="space-y-4">
         <h2 className="text-sm font-semibold text-gray-700">
-          Contactinformatie
+          {t.contactInfo}
         </h2>
 
         <input
-          placeholder="Website"
+          placeholder={t.website}
           value={website}
           onChange={(e) => setWebsite(e.target.value)}
           className="rounded border px-2 py-1 max-w-md"
@@ -110,7 +114,7 @@ export default function UserGeneralTab({ user }: Props) {
       {/* OVER JEZELF */}
       <section className="space-y-4">
         <h2 className="text-sm font-semibold text-gray-700">
-          Over jezelf
+          {t.aboutYou}
         </h2>
 
         <textarea
@@ -127,21 +131,22 @@ export default function UserGeneralTab({ user }: Props) {
         disabled={saving}
         className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
       >
-        {saving ? "Opslaan…" : "Wijzigingen opslaan"}
+        {saving ? t.saving : t.saveChanges}
       </button>
 
       {/* ACCOUNT */}
       <section className="space-y-4 border-t pt-6">
         <h2 className="text-sm font-semibold text-gray-700">
-          Account & beveiliging
+          {t.accountSecurity}
         </h2>
 
         <AdminRoleEditor
           userId={user.user_id}
           initialRole={initialRole}
+          language={language}
         />
 
-        <AdminResetPasswordButton userId={user.user_id} />
+        <AdminResetPasswordButton userId={user.user_id} language={language} />
       </section>
     </div>
   );
