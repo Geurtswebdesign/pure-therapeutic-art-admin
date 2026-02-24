@@ -1,12 +1,12 @@
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
-import { getEmailSettings } from "@/lib/settings/email-actions";
+import { getEmailSettingsAdminData } from "@/lib/settings/email-actions";
 import EmailSettingsForm from "@/components/admin/settings/EmailSettingsForm";
 
 export default async function SettingsEmailPage() {
   const language = resolveUiLanguage(await getPrimaryLanguage());
-  const settings = await getEmailSettings();
+  const settings = await getEmailSettingsAdminData();
   const t = getAdminMessages(language).settingsEmail;
 
   return (
@@ -19,7 +19,14 @@ export default async function SettingsEmailPage() {
           ))}
         </ul>
       </section>
-      <EmailSettingsForm initialValues={settings} language={language} />
+      <EmailSettingsForm
+        language={language}
+        smtpStatus={settings.smtp}
+        templates={settings.templates}
+        senderProfiles={settings.senderProfiles}
+        branding={settings.branding}
+        logs={settings.logs}
+      />
     </div>
   );
 }

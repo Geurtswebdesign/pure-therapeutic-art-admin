@@ -1,306 +1,441 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import {
-  saveEmailSettings,
+  saveEmailBranding,
+  saveEmailSenderProfiles,
+  saveEmailTemplate,
   sendEmailSettingsTest,
 } from "@/lib/settings/email-actions";
-import type { EmailSettings } from "@/lib/settings/email-types";
+import {
+  EMAIL_TEMPLATE_TYPES,
+  EMAIL_SENDER_KEYS,
+  type EmailSenderKey,
+  type EmailTemplateType,
+} from "@/lib/mail/types";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 
+type TemplateRow = {
+  id: string;
+  type: EmailTemplateType;
+  sender_key: EmailSenderKey;
+  subject: string;
+  html: string;
+  is_active: boolean;
+  updated_at: string;
+};
+
+type Branding = {
+  id: string;
+  app_name: string;
+  primary_color: string;
+  logo_url: string | null;
+  support_email: string | null;
+  footer_text: string | null;
+  website_url: string | null;
+};
+
+type EmailLog = {
+  id: string;
+  template_type: string | null;
+  recipient: string;
+  subject: string;
+  status: string;
+  error_message: string | null;
+  created_at: string;
+};
+
 type Props = {
-  initialValues: EmailSettings;
   language: UiLanguage;
-};
-
-type Copy = {
-  googleConfig: string;
-  fromName: string;
-  fromEmail: string;
-  replyTo: string;
-  gmailUser: string;
-  googleClientId: string;
-  googleClientSecret: string;
-  clientSecretHint: string;
-  googleRefreshToken: string;
-  refreshTokenHint: string;
-  save: string;
-  saving: string;
-  saved: string;
-  saveFailed: string;
-  testMail: string;
-  testRecipient: string;
-  sendTest: string;
-  sendingTest: string;
-  testSent: string;
-  testFailed: string;
-  googleHelp: string;
-};
-
-function getCopy(language: UiLanguage): Copy {
-  if (language === "en") {
-    return {
-      googleConfig: "Google Workspace SMTP (OAuth2)",
-      fromName: "From name",
-      fromEmail: "From email",
-      replyTo: "Reply-to",
-      gmailUser: "Gmail address",
-      googleClientId: "Google Client ID",
-      googleClientSecret: "Google Client Secret",
-      clientSecretHint: "Leave empty to keep the current secret.",
-      googleRefreshToken: "Google Refresh Token",
-      refreshTokenHint: "Leave empty to keep the current token.",
-      save: "Save settings",
-      saving: "Saving...",
-      saved: "Settings saved.",
-      saveFailed: "Saving failed.",
-      testMail: "Send test email",
-      testRecipient: "Test recipient",
-      sendTest: "Send test",
-      sendingTest: "Sending...",
-      testSent: "Test email sent successfully.",
-      testFailed: "Sending test email failed.",
-      googleHelp:
-        "Use Google Workspace OAuth2: Client ID + Client Secret + Refresh Token for the selected Gmail account.",
-    };
-  }
-
-  if (language === "de") {
-    return {
-      googleConfig: "Google Workspace SMTP (OAuth2)",
-      fromName: "Absendername",
-      fromEmail: "Absender-E-Mail",
-      replyTo: "Antwortadresse",
-      gmailUser: "Gmail-Adresse",
-      googleClientId: "Google Client ID",
-      googleClientSecret: "Google Client Secret",
-      clientSecretHint: "Leer lassen, um das aktuelle Secret zu behalten.",
-      googleRefreshToken: "Google Refresh Token",
-      refreshTokenHint: "Leer lassen, um den aktuellen Token zu behalten.",
-      save: "Einstellungen speichern",
-      saving: "Speichern...",
-      saved: "Einstellungen gespeichert.",
-      saveFailed: "Speichern fehlgeschlagen.",
-      testMail: "Test-E-Mail senden",
-      testRecipient: "Test-Empfanger",
-      sendTest: "Test senden",
-      sendingTest: "Senden...",
-      testSent: "Test-E-Mail erfolgreich gesendet.",
-      testFailed: "Test-E-Mail konnte nicht gesendet werden.",
-      googleHelp:
-        "Verwende Google Workspace OAuth2: Client ID + Client Secret + Refresh Token fur das gewahlte Gmail-Konto.",
-    };
-  }
-
-  return {
-    googleConfig: "Google Workspace SMTP (OAuth2)",
-    fromName: "Afzendernaam",
-    fromEmail: "Afzender e-mail",
-    replyTo: "Antwoordadres",
-    gmailUser: "Gmail-adres",
-    googleClientId: "Google Client ID",
-    googleClientSecret: "Google Client Secret",
-    clientSecretHint: "Laat leeg om het huidige secret te behouden.",
-    googleRefreshToken: "Google Refresh Token",
-    refreshTokenHint: "Laat leeg om het huidige token te behouden.",
-    save: "Instellingen opslaan",
-    saving: "Opslaan...",
-    saved: "Instellingen opgeslagen.",
-    saveFailed: "Opslaan mislukt.",
-    testMail: "Testmail versturen",
-    testRecipient: "Test ontvanger",
-    sendTest: "Test versturen",
-    sendingTest: "Versturen...",
-    testSent: "Testmail succesvol verzonden.",
-    testFailed: "Testmail versturen mislukt.",
-    googleHelp:
-      "Gebruik Google Workspace OAuth2: Client ID + Client Secret + Refresh Token voor het gekozen Gmail-account.",
+  smtpStatus: {
+    hasClientId: boolean;
+    hasClientSecret: boolean;
+    hasRefreshToken: boolean;
+    hasSenderEmail: boolean;
+    hasAllowedSenderEmails: boolean;
   };
-}
+  templates: TemplateRow[];
+  senderProfiles: Array<{
+    id: string;
+    key: EmailSenderKey;
+    name: string;
+    email: string | null;
+    reply_to: string | null;
+    is_active: boolean;
+  }>;
+  branding: Branding;
+  logs: EmailLog[];
+};
 
-export default function EmailSettingsForm({ initialValues, language }: Props) {
-  const copy = getCopy(language);
-  const [form, setForm] = useState<EmailSettings>(initialValues);
+type Tab = "smtp" | "templates" | "senders" | "branding" | "test";
+
+export default function EmailSettingsForm({
+  smtpStatus,
+  templates,
+  senderProfiles,
+  branding,
+  logs,
+}: Props) {
+  const [tab, setTab] = useState<Tab>("smtp");
+  const templateOptions = templates.length
+    ? templates.map((t) => t.type)
+    : [...EMAIL_TEMPLATE_TYPES];
+  const [templateType, setTemplateType] = useState<EmailTemplateType>(
+    templates[0]?.type ?? templateOptions[0]
+  );
+  const selectedTemplate = useMemo(
+    () => templates.find((t) => t.type === templateType),
+    [templates, templateType]
+  );
+
+  const [subject, setSubject] = useState(selectedTemplate?.subject ?? "");
+  const [html, setHtml] = useState(selectedTemplate?.html ?? "");
+  const [isActive, setIsActive] = useState(selectedTemplate?.is_active ?? true);
+  const [senderKey, setSenderKey] = useState<EmailSenderKey>(
+    selectedTemplate?.sender_key ?? "noreply"
+  );
+  const [sendersDraft, setSendersDraft] = useState(() =>
+    (senderProfiles.length
+      ? senderProfiles
+      : EMAIL_SENDER_KEYS.map((key) => ({
+          id: key,
+          key,
+          name: key,
+          email: null,
+          reply_to: null,
+          is_active: true,
+        })))
+      .map((row) => ({
+        key: row.key,
+        name: row.name,
+        email: row.email ?? "",
+        reply_to: row.reply_to ?? "",
+        is_active: row.is_active,
+      }))
+  );
+
+  const [appName, setAppName] = useState(branding.app_name);
+  const [primaryColor, setPrimaryColor] = useState(branding.primary_color);
+  const [logoUrl, setLogoUrl] = useState(branding.logo_url ?? "");
+  const [supportEmail, setSupportEmail] = useState(branding.support_email ?? "");
+  const [footerText, setFooterText] = useState(branding.footer_text ?? "");
+  const [websiteUrl, setWebsiteUrl] = useState(branding.website_url ?? "");
+
   const [testRecipient, setTestRecipient] = useState("");
-  const [isPending, startTransition] = useTransition();
-  const [isTesting, startTesting] = useTransition();
-  const [success, setSuccess] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [testStatus, setTestStatus] = useState<string | null>(null);
-  const [testError, setTestError] = useState<string | null>(null);
+  const [testTemplate, setTestTemplate] = useState<EmailTemplateType>(
+    templates[0]?.type ?? templateOptions[0]
+  );
 
-  function setField<K extends keyof EmailSettings>(
-    key: K,
-    value: EmailSettings[K]
-  ) {
-    setForm((prev) => ({ ...prev, [key]: value }));
+  const [isPending, startTransition] = useTransition();
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function loadTemplate(type: EmailTemplateType) {
+    const next = templates.find((t) => t.type === type);
+    setTemplateType(type);
+    setSubject(next?.subject ?? "");
+    setHtml(next?.html ?? "");
+    setIsActive(next?.is_active ?? true);
+    setSenderKey(next?.sender_key ?? "noreply");
   }
 
-  function handleSave(event: React.FormEvent) {
-    event.preventDefault();
-    setSuccess(null);
+  function runAction(action: () => Promise<void>, successMessage: string) {
+    setNotice(null);
     setError(null);
-
     startTransition(async () => {
       try {
-        await saveEmailSettings(form);
-        setForm((prev) => ({
-          ...prev,
-          googleClientSecret: "",
-          googleRefreshToken: "",
-          hasClientSecret: true,
-          hasRefreshToken: true,
-        }));
-        setSuccess(copy.saved);
+        await action();
+        setNotice(successMessage);
       } catch (err) {
-        setError(err instanceof Error ? err.message : copy.saveFailed);
-      }
-    });
-  }
-
-  function handleSendTest(event: React.FormEvent) {
-    event.preventDefault();
-    setTestStatus(null);
-    setTestError(null);
-
-    startTesting(async () => {
-      try {
-        await sendEmailSettingsTest(testRecipient);
-        setTestStatus(copy.testSent);
-      } catch (err) {
-        setTestError(err instanceof Error ? err.message : copy.testFailed);
+        setError(err instanceof Error ? err.message : "Actie mislukt.");
       }
     });
   }
 
   return (
-    <div className="space-y-5 rounded border bg-white p-5">
-      <div>
-        <h2 className="text-lg font-semibold">{copy.googleConfig}</h2>
-        <p className="mt-1 text-sm text-gray-600">{copy.googleHelp}</p>
+    <div className="space-y-4 rounded border bg-white p-5">
+      <div className="flex flex-wrap gap-2 border-b pb-3">
+        <button type="button" onClick={() => setTab("smtp")} className={`rounded px-3 py-1.5 text-sm ${tab === "smtp" ? "bg-black text-white" : "hover:bg-gray-100"}`}>SMTP Config</button>
+        <button type="button" onClick={() => setTab("templates")} className={`rounded px-3 py-1.5 text-sm ${tab === "templates" ? "bg-black text-white" : "hover:bg-gray-100"}`}>Templates</button>
+        <button type="button" onClick={() => setTab("senders")} className={`rounded px-3 py-1.5 text-sm ${tab === "senders" ? "bg-black text-white" : "hover:bg-gray-100"}`}>Afzenders</button>
+        <button type="button" onClick={() => setTab("branding")} className={`rounded px-3 py-1.5 text-sm ${tab === "branding" ? "bg-black text-white" : "hover:bg-gray-100"}`}>Branding</button>
+        <button type="button" onClick={() => setTab("test")} className={`rounded px-3 py-1.5 text-sm ${tab === "test" ? "bg-black text-white" : "hover:bg-gray-100"}`}>Test Email</button>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-4">
-        <label className="block space-y-1">
-          <span className="text-sm text-gray-700">{copy.fromName}</span>
-          <input
-            value={form.fromName}
-            onChange={(e) => setField("fromName", e.target.value)}
-            className="w-full rounded border px-3 py-2 text-sm"
-          />
-        </label>
+      {tab === "smtp" ? (
+        <div className="space-y-2 text-sm">
+          <p className="text-gray-700">OAuth2 status vanuit environment variables:</p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>GOOGLE_CLIENT_ID: {smtpStatus.hasClientId ? "OK" : "ONTBREEKT"}</li>
+            <li>GOOGLE_CLIENT_SECRET: {smtpStatus.hasClientSecret ? "OK" : "ONTBREEKT"}</li>
+            <li>GOOGLE_REFRESH_TOKEN: {smtpStatus.hasRefreshToken ? "OK" : "ONTBREEKT"}</li>
+            <li>GOOGLE_SENDER_EMAIL: {smtpStatus.hasSenderEmail ? "OK" : "ONTBREEKT"}</li>
+            <li>GOOGLE_ALLOWED_SENDER_EMAILS: {smtpStatus.hasAllowedSenderEmails ? "OK" : "OPTIONEEL"}</li>
+          </ul>
+          <p className="text-xs text-gray-500">
+            Tip: zet meerdere afzenders komma-gescheiden in GOOGLE_ALLOWED_SENDER_EMAILS.
+          </p>
+        </div>
+      ) : null}
 
-        <label className="block space-y-1">
-          <span className="text-sm text-gray-700">{copy.fromEmail}</span>
-          <input
-            type="email"
-            value={form.fromEmail}
-            onChange={(e) => setField("fromEmail", e.target.value)}
-            className="w-full rounded border px-3 py-2 text-sm"
-          />
-        </label>
+      {tab === "templates" ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            runAction(
+              () =>
+                saveEmailTemplate({
+                  type: templateType,
+                  senderKey,
+                  subject,
+                  html,
+                  isActive,
+                }),
+              "Template opgeslagen."
+            );
+          }}
+          className="space-y-3"
+        >
+          <label className="block space-y-1">
+            <span className="text-sm">Template type</span>
+            <select
+              value={templateType}
+              onChange={(e) => loadTemplate(e.target.value as EmailTemplateType)}
+              className="w-full rounded border px-3 py-2 text-sm"
+            >
+              {templateOptions.map((type) => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block space-y-1">
+            <span className="text-sm">Subject</span>
+            <input value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full rounded border px-3 py-2 text-sm" />
+          </label>
+          <label className="block space-y-1">
+            <span className="text-sm">Afzenderprofiel</span>
+            <select
+              value={senderKey}
+              onChange={(e) => setSenderKey(e.target.value as EmailSenderKey)}
+              className="w-full rounded border px-3 py-2 text-sm"
+            >
+              {sendersDraft.map((sender) => (
+                <option key={sender.key} value={sender.key}>
+                  {sender.key} - {sender.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block space-y-1">
+            <span className="text-sm">HTML</span>
+            <textarea value={html} onChange={(e) => setHtml(e.target.value)} rows={10} className="w-full rounded border px-3 py-2 font-mono text-xs" />
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+            Actief
+          </label>
+          <button type="submit" disabled={isPending} className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-60">
+            {isPending ? "Opslaan..." : "Template opslaan"}
+          </button>
+        </form>
+      ) : null}
 
-        <label className="block space-y-1">
-          <span className="text-sm text-gray-700">{copy.replyTo}</span>
-          <input
-            type="email"
-            value={form.replyTo}
-            onChange={(e) => setField("replyTo", e.target.value)}
-            className="w-full rounded border px-3 py-2 text-sm"
-          />
-        </label>
+      {tab === "senders" ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            runAction(
+              () =>
+                saveEmailSenderProfiles(
+                  sendersDraft.map((row) => ({
+                    key: row.key as EmailSenderKey,
+                    name: row.name,
+                    email: row.email,
+                    replyTo: row.reply_to,
+                    isActive: row.is_active,
+                  }))
+                ),
+              "Afzenders opgeslagen."
+            );
+          }}
+          className="space-y-3"
+        >
+          <div className="overflow-auto rounded border">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-2 py-2 text-left">Key</th>
+                  <th className="px-2 py-2 text-left">Naam</th>
+                  <th className="px-2 py-2 text-left">E-mail</th>
+                  <th className="px-2 py-2 text-left">Reply-to</th>
+                  <th className="px-2 py-2 text-left">Actief</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sendersDraft.map((sender, idx) => (
+                  <tr key={sender.key} className="border-t">
+                    <td className="px-2 py-2 font-mono text-xs">{sender.key}</td>
+                    <td className="px-2 py-2">
+                      <input
+                        value={sender.name}
+                        onChange={(e) =>
+                          setSendersDraft((prev) =>
+                            prev.map((row, rowIdx) =>
+                              rowIdx === idx ? { ...row, name: e.target.value } : row
+                            )
+                          )
+                        }
+                        className="w-full rounded border px-2 py-1"
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <input
+                        value={sender.email}
+                        onChange={(e) =>
+                          setSendersDraft((prev) =>
+                            prev.map((row, rowIdx) =>
+                              rowIdx === idx ? { ...row, email: e.target.value } : row
+                            )
+                          )
+                        }
+                        className="w-full rounded border px-2 py-1"
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <input
+                        value={sender.reply_to}
+                        onChange={(e) =>
+                          setSendersDraft((prev) =>
+                            prev.map((row, rowIdx) =>
+                              rowIdx === idx ? { ...row, reply_to: e.target.value } : row
+                            )
+                          )
+                        }
+                        className="w-full rounded border px-2 py-1"
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <input
+                        type="checkbox"
+                        checked={sender.is_active}
+                        onChange={(e) =>
+                          setSendersDraft((prev) =>
+                            prev.map((row, rowIdx) =>
+                              rowIdx === idx ? { ...row, is_active: e.target.checked } : row
+                            )
+                          )
+                        }
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button type="submit" disabled={isPending} className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-60">
+            {isPending ? "Opslaan..." : "Afzenders opslaan"}
+          </button>
+        </form>
+      ) : null}
 
-        <label className="block space-y-1">
-          <span className="text-sm text-gray-700">{copy.gmailUser}</span>
-          <input
-            type="email"
-            value={form.gmailUser}
-            onChange={(e) => setField("gmailUser", e.target.value)}
-            className="w-full rounded border px-3 py-2 text-sm"
-            required
-          />
-        </label>
+      {tab === "branding" ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            runAction(
+              () =>
+                saveEmailBranding({
+                  appName,
+                  primaryColor,
+                  logoUrl,
+                  supportEmail,
+                  footerText,
+                  websiteUrl,
+                }),
+              "Branding opgeslagen."
+            );
+          }}
+          className="grid gap-3"
+        >
+          <input value={appName} onChange={(e) => setAppName(e.target.value)} placeholder="App naam" className="w-full rounded border px-3 py-2 text-sm" />
+          <input value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} placeholder="#111827" className="w-full rounded border px-3 py-2 text-sm" />
+          <input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="Logo URL" className="w-full rounded border px-3 py-2 text-sm" />
+          <input value={supportEmail} onChange={(e) => setSupportEmail(e.target.value)} placeholder="Support email" className="w-full rounded border px-3 py-2 text-sm" />
+          <input value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="Website URL" className="w-full rounded border px-3 py-2 text-sm" />
+          <textarea value={footerText} onChange={(e) => setFooterText(e.target.value)} rows={3} placeholder="Footer tekst" className="w-full rounded border px-3 py-2 text-sm" />
+          <button type="submit" disabled={isPending} className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-60">
+            {isPending ? "Opslaan..." : "Branding opslaan"}
+          </button>
+        </form>
+      ) : null}
 
-        <label className="block space-y-1">
-          <span className="text-sm text-gray-700">{copy.googleClientId}</span>
-          <input
-            value={form.googleClientId}
-            onChange={(e) => setField("googleClientId", e.target.value)}
-            className="w-full rounded border px-3 py-2 text-sm"
-            required
-          />
-        </label>
-
-        <label className="block space-y-1">
-          <span className="text-sm text-gray-700">
-            {copy.googleClientSecret}
-            {form.hasClientSecret ? " (••••••••)" : ""}
-          </span>
-          <input
-            type="password"
-            value={form.googleClientSecret}
-            onChange={(e) => setField("googleClientSecret", e.target.value)}
-            className="w-full rounded border px-3 py-2 text-sm"
-            placeholder={copy.clientSecretHint}
-          />
-          <span className="text-xs text-gray-500">{copy.clientSecretHint}</span>
-        </label>
-
-        <label className="block space-y-1">
-          <span className="text-sm text-gray-700">
-            {copy.googleRefreshToken}
-            {form.hasRefreshToken ? " (••••••••)" : ""}
-          </span>
-          <textarea
-            value={form.googleRefreshToken}
-            onChange={(e) => setField("googleRefreshToken", e.target.value)}
-            className="w-full rounded border px-3 py-2 text-sm"
-            rows={3}
-            placeholder={copy.refreshTokenHint}
-          />
-          <span className="text-xs text-gray-500">{copy.refreshTokenHint}</span>
-        </label>
-
-        <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={isPending}
-            className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-60"
-          >
-            {isPending ? copy.saving : copy.save}
+      {tab === "test" ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            runAction(
+              () => sendEmailSettingsTest({ to: testRecipient, templateType: testTemplate }),
+              "Testmail verzonden."
+            );
+          }}
+          className="space-y-3"
+        >
+          <label className="block space-y-1">
+            <span className="text-sm">Ontvanger</span>
+            <input
+              type="email"
+              value={testRecipient}
+              onChange={(e) => setTestRecipient(e.target.value)}
+              className="w-full rounded border px-3 py-2 text-sm"
+              required
+            />
+          </label>
+          <label className="block space-y-1">
+            <span className="text-sm">Template</span>
+            <select
+              value={testTemplate}
+              onChange={(e) => setTestTemplate(e.target.value as EmailTemplateType)}
+              className="w-full rounded border px-3 py-2 text-sm"
+            >
+              {templateOptions.map((type) => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </label>
+          <button type="submit" disabled={isPending} className="rounded border px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-60">
+            {isPending ? "Versturen..." : "Testmail versturen"}
           </button>
 
-          {success ? <span className="text-sm text-green-700">{success}</span> : null}
-          {error ? <span className="text-sm text-red-700">{error}</span> : null}
-        </div>
-      </form>
+          <div className="space-y-1 border-t pt-3">
+            <h3 className="text-sm font-semibold">Recente email logs</h3>
+            <div className="max-h-56 overflow-auto rounded border">
+              <table className="min-w-full text-xs">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-2 py-1 text-left">Datum</th>
+                    <th className="px-2 py-1 text-left">Type</th>
+                    <th className="px-2 py-1 text-left">Ontvanger</th>
+                    <th className="px-2 py-1 text-left">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map((log) => (
+                    <tr key={log.id} className="border-t">
+                      <td className="px-2 py-1">{new Date(log.created_at).toLocaleString("nl-NL")}</td>
+                      <td className="px-2 py-1">{log.template_type ?? "n/a"}</td>
+                      <td className="px-2 py-1">{log.recipient}</td>
+                      <td className="px-2 py-1">{log.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </form>
+      ) : null}
 
-      <hr />
-
-      <form onSubmit={handleSendTest} className="space-y-3">
-        <h3 className="text-sm font-semibold">{copy.testMail}</h3>
-        <label className="block space-y-1">
-          <span className="text-sm text-gray-700">{copy.testRecipient}</span>
-          <input
-            type="email"
-            value={testRecipient}
-            onChange={(e) => setTestRecipient(e.target.value)}
-            className="w-full rounded border px-3 py-2 text-sm"
-            required
-          />
-        </label>
-        <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={isTesting}
-            className="rounded border px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-60"
-          >
-            {isTesting ? copy.sendingTest : copy.sendTest}
-          </button>
-          {testStatus ? <span className="text-sm text-green-700">{testStatus}</span> : null}
-          {testError ? <span className="text-sm text-red-700">{testError}</span> : null}
-        </div>
-      </form>
+      {notice ? <p className="text-sm text-green-700">{notice}</p> : null}
+      {error ? <p className="text-sm text-red-700">{error}</p> : null}
     </div>
   );
 }
