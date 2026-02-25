@@ -1,19 +1,26 @@
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getSecuritySettings } from "@/lib/settings/security-actions";
+import SecuritySettingsForm from "@/components/admin/settings/SecuritySettingsForm";
 
 export default async function SettingsSecurityPage() {
   const language = resolveUiLanguage(await getPrimaryLanguage());
   const t = getAdminMessages(language).settingsSecurity;
+  const settings = await getSecuritySettings();
 
   return (
-    <section className="space-y-4 rounded border bg-white p-5">
-      <h2 className="text-lg font-semibold">{t.title}</h2>
-      <ul className="list-disc space-y-1 pl-5 text-sm text-gray-600">
-        {t.items.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
+    <section className="max-w-2xl space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold">{t.title}</h2>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600">
+          {t.items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+
+      <SecuritySettingsForm initialValues={settings} language={language} />
     </section>
   );
 }

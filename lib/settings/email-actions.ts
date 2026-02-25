@@ -45,6 +45,11 @@ type EmailSettingsAdminData = {
   senderProfiles: EmailSenderProfile[];
   branding: EmailBrandingSettings & { id: string };
   logs: EmailLogRow[];
+  deliveryStats: Array<{
+    senderKey: EmailSenderKey;
+    sent: number;
+    failed: number;
+  }>;
 };
 
 function assertAdmin(
@@ -69,11 +74,14 @@ export async function getEmailSettingsAdminData(): Promise<EmailSettingsAdminDat
 
   const supabase = createAdminClient();
 
+  const senderStatsMap = new Map<EmailSenderKey, { sent: number; failed: number }>();
+
   const [
     { data: templates, error: templatesError },
     { data: senderProfiles, error: senderProfilesError },
     { data: branding, error: brandingError },
     { data: logs, error: logsError },
+    { data: statsLogs, error: statsLogsError },
   ] =
     await Promise.all([
       supabase
@@ -98,12 +106,57 @@ export async function getEmailSettingsAdminData(): Promise<EmailSettingsAdminDat
         .order("created_at", { ascending: false })
         .limit(30)
         .returns<EmailLogRow[]>(),
+      supabase
+        .from("email_logs")
+        .select("status, template_type, metadata")
+        .in("status", ["sent", "failed"])
+        .limit(5000)
+        .returns<Array<{
+          status: "sent" | "failed";
+          template_type: EmailTemplateType | null;
+          metadata: { sender_email?: string; sender_key?: EmailSenderKey } | null;
+        }>>(),
     ]);
 
   if (templatesError) throw new Error(templatesError.message);
   if (senderProfilesError) throw new Error(senderProfilesError.message);
   if (brandingError) throw new Error(brandingError.message);
   if (logsError) throw new Error(logsError.message);
+  if (statsLogsError) throw new Error(statsLogsError.message);
+
+  const templateSenderKeyMap = new Map<EmailTemplateType, EmailSenderKey>();
+  (templates ?? []).forEach((template) => {
+    templateSenderKeyMap.set(template.type, template.sender_key);
+  });
+
+  const senderKeySet = new Set<EmailSenderKey>();
+  (senderProfiles ?? []).forEach((sender) => {
+    senderKeySet.add(sender.key);
+    senderStatsMap.set(sender.key, { sent: 0, failed: 0 });
+  });
+
+  (statsLogs ?? []).forEach((log) => {
+    const metadata = log.metadata ?? {};
+    const senderKeyFromMeta = metadata.sender_key;
+    const fallbackSenderKey =
+      metadata.sender_key ??
+      (log.template_type ? templateSenderKeyMap.get(log.template_type) : undefined);
+    const senderKey = senderKeyFromMeta || fallbackSenderKey;
+    if (!senderKey || !senderKeySet.has(senderKey)) return;
+
+    const current = senderStatsMap.get(senderKey) ?? { sent: 0, failed: 0 };
+    if (log.status === "sent") current.sent += 1;
+    if (log.status === "failed") current.failed += 1;
+    senderStatsMap.set(senderKey, current);
+  });
+
+  const deliveryStats = [...senderStatsMap.entries()]
+    .map(([senderKey, counts]) => ({
+      senderKey,
+      sent: counts.sent,
+      failed: counts.failed,
+    }))
+    .sort((a, b) => a.senderKey.localeCompare(b.senderKey));
 
   return {
     smtp: {
@@ -117,6 +170,7 @@ export async function getEmailSettingsAdminData(): Promise<EmailSettingsAdminDat
     senderProfiles: senderProfiles ?? [],
     branding: branding ?? DEFAULT_BRANDING,
     logs: logs ?? [],
+    deliveryStats,
   };
 }
 

@@ -13,6 +13,9 @@ import {
   type EmailSenderKey,
   type EmailTemplateType,
 } from "@/lib/mail/types";
+import { normalizeTemplateHtml } from "@/lib/mail/normalizeTemplateHtml";
+import { renderEmailLayout } from "@/lib/mail/renderEmailLayout";
+import { renderTemplate } from "@/lib/mail/renderTemplate";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 
 type TemplateRow = {
@@ -67,7 +70,7 @@ type Props = {
   logs: EmailLog[];
 };
 
-type Tab = "smtp" | "templates" | "senders" | "branding" | "test";
+type Tab = "smtp" | "templates" | "preview" | "senders" | "branding" | "test";
 
 export default function EmailSettingsForm({
   smtpStatus,
@@ -76,7 +79,7 @@ export default function EmailSettingsForm({
   branding,
   logs,
 }: Props) {
-  const [tab, setTab] = useState<Tab>("smtp");
+  const [tab, setTab] = useState<Tab>("branding");
   const templateOptions = templates.length
     ? templates.map((t) => t.type)
     : [...EMAIL_TEMPLATE_TYPES];
@@ -125,10 +128,52 @@ export default function EmailSettingsForm({
   const [testTemplate, setTestTemplate] = useState<EmailTemplateType>(
     templates[0]?.type ?? templateOptions[0]
   );
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
 
   const [isPending, startTransition] = useTransition();
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const previewVariables = useMemo(
+    () => ({
+      user_name: "Test gebruiker",
+      content_title: "Voorbeeldcontent",
+      unlock_date: new Date().toISOString(),
+      remaining_credits: "10",
+      reminder_text: "Dit is een voorbeeldherinnering.",
+      action_url: `${websiteUrl || "http://localhost:3000"}/account`,
+      app_url: websiteUrl || "http://localhost:3000",
+      app_name: appName || "Pure Therapeutic ART Therapy",
+      primary_color: primaryColor || "#111827",
+      logo_url: logoUrl || "",
+      support_email: supportEmail || "",
+      footer_text: footerText || "",
+      website_url: websiteUrl || "",
+    }),
+    [appName, footerText, logoUrl, primaryColor, supportEmail, websiteUrl]
+  );
+
+  const previewSubject = useMemo(
+    () => renderTemplate(subject || "", previewVariables),
+    [previewVariables, subject]
+  );
+
+  const previewHtml = useMemo(() => {
+    const content = normalizeTemplateHtml(
+      renderTemplate(html || "<p>Geen template inhoud.</p>", previewVariables)
+    );
+
+    return renderEmailLayout({
+      appName: previewVariables.app_name,
+      contentHtml: content,
+      primaryColor: previewVariables.primary_color,
+      logoUrl: previewVariables.logo_url,
+      websiteUrl: previewVariables.website_url,
+      supportEmail: previewVariables.support_email,
+      footerText: previewVariables.footer_text,
+      preheader: previewSubject,
+    });
+  }, [html, previewSubject, previewVariables]);
 
   function loadTemplate(type: EmailTemplateType) {
     const next = templates.find((t) => t.type === type);
@@ -155,11 +200,12 @@ export default function EmailSettingsForm({
   return (
     <div className="space-y-4 rounded border bg-white p-5">
       <div className="flex flex-wrap gap-2 border-b pb-3">
-        <button type="button" onClick={() => setTab("smtp")} className={`rounded px-3 py-1.5 text-sm ${tab === "smtp" ? "bg-black text-white" : "hover:bg-gray-100"}`}>SMTP Config</button>
-        <button type="button" onClick={() => setTab("templates")} className={`rounded px-3 py-1.5 text-sm ${tab === "templates" ? "bg-black text-white" : "hover:bg-gray-100"}`}>Templates</button>
-        <button type="button" onClick={() => setTab("senders")} className={`rounded px-3 py-1.5 text-sm ${tab === "senders" ? "bg-black text-white" : "hover:bg-gray-100"}`}>Afzenders</button>
         <button type="button" onClick={() => setTab("branding")} className={`rounded px-3 py-1.5 text-sm ${tab === "branding" ? "bg-black text-white" : "hover:bg-gray-100"}`}>Branding</button>
+        <button type="button" onClick={() => setTab("senders")} className={`rounded px-3 py-1.5 text-sm ${tab === "senders" ? "bg-black text-white" : "hover:bg-gray-100"}`}>Afzenders</button>
+        <button type="button" onClick={() => setTab("templates")} className={`rounded px-3 py-1.5 text-sm ${tab === "templates" ? "bg-black text-white" : "hover:bg-gray-100"}`}>Templates</button>
+        <button type="button" onClick={() => setTab("preview")} className={`rounded px-3 py-1.5 text-sm ${tab === "preview" ? "bg-black text-white" : "hover:bg-gray-100"}`}>Preview</button>
         <button type="button" onClick={() => setTab("test")} className={`rounded px-3 py-1.5 text-sm ${tab === "test" ? "bg-black text-white" : "hover:bg-gray-100"}`}>Test Email</button>
+        <button type="button" onClick={() => setTab("smtp")} className={`rounded px-3 py-1.5 text-sm ${tab === "smtp" ? "bg-black text-white" : "hover:bg-gray-100"}`}>SMTP Config</button>
       </div>
 
       {tab === "smtp" ? (
@@ -238,6 +284,61 @@ export default function EmailSettingsForm({
             {isPending ? "Opslaan..." : "Template opslaan"}
           </button>
         </form>
+      ) : null}
+
+      {tab === "preview" ? (
+        <section className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="block space-y-1">
+              <span className="text-sm">Template type</span>
+              <select
+                value={templateType}
+                onChange={(e) => loadTemplate(e.target.value as EmailTemplateType)}
+                className="w-full rounded border px-3 py-2 text-sm"
+              >
+                {templateOptions.map((type) => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </label>
+            <div className="space-y-1">
+              <span className="text-sm">Weergave</span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPreviewDevice("desktop")}
+                  className={`rounded border px-3 py-2 text-sm ${previewDevice === "desktop" ? "bg-black text-white" : "hover:bg-gray-100"}`}
+                >
+                  Desktop
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDevice("mobile")}
+                  className={`rounded border px-3 py-2 text-sm ${previewDevice === "mobile" ? "bg-black text-white" : "hover:bg-gray-100"}`}
+                >
+                  Mobiel
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="rounded border bg-gray-50 p-3">
+            <p className="text-xs text-gray-600">
+              Onderwerp preview: <span className="font-semibold text-gray-800">{previewSubject || "(leeg onderwerp)"}</span>
+            </p>
+          </div>
+          <div className="overflow-auto rounded border bg-gray-100 p-3">
+            <div className={`${previewDevice === "mobile" ? "mx-auto w-[390px]" : "w-full"}`}>
+              <iframe
+                title="Email preview"
+                srcDoc={previewHtml}
+                className="h-[720px] w-full rounded border bg-white"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-gray-500">
+            Preview gebruikt voorbeeldvariabelen. Wijzigingen in Templates/Branding zie je hier direct terug.
+          </p>
+        </section>
       ) : null}
 
       {tab === "senders" ? (

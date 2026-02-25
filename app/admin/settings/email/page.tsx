@@ -13,11 +13,25 @@ export default async function SettingsEmailPage() {
     <div className="space-y-5">
       <section className="space-y-4 rounded border bg-white p-5">
         <h2 className="text-lg font-semibold">{t.title}</h2>
-        <ul className="list-disc space-y-1 pl-5 text-sm text-gray-600">
-          {t.items.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
+        {settings.deliveryStats.length ? (
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
+            {settings.deliveryStats.map((row) => (
+              <article key={row.senderKey} className="rounded border bg-gray-50 p-4">
+                <p className="truncate text-sm font-semibold text-gray-900">{row.senderKey}</p>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800">
+                    Succesvol: {row.sent}
+                  </span>
+                  <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-800">
+                    Mislukt: {row.failed}
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">Nog geen e-mailstatistieken beschikbaar.</p>
+        )}
       </section>
       <EmailSettingsForm
         language={language}

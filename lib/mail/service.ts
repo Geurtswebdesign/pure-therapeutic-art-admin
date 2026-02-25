@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeTemplateHtml } from "@/lib/mail/normalizeTemplateHtml";
+import { renderEmailLayout } from "@/lib/mail/renderEmailLayout";
 import { renderTemplate } from "@/lib/mail/renderTemplate";
 import { sendMail } from "@/lib/mail/sendMail";
 import type {
@@ -114,7 +116,17 @@ export async function sendTransactionalEmail(input: {
   };
 
   const subject = renderTemplate(template.subject, merged);
-  const html = renderTemplate(template.html, merged);
+  const contentHtml = normalizeTemplateHtml(renderTemplate(template.html, merged));
+  const html = renderEmailLayout({
+    appName: merged.app_name,
+    contentHtml,
+    primaryColor: merged.primary_color,
+    logoUrl: merged.logo_url,
+    websiteUrl: merged.website_url,
+    supportEmail: merged.support_email,
+    footerText: merged.footer_text,
+    preheader: subject,
+  });
   const sender = await getEmailSenderProfile(template.sender_key);
   if (sender && !sender.is_active) {
     throw new Error(`Afzenderprofiel '${template.sender_key}' is niet actief.`);
@@ -136,7 +148,11 @@ export async function sendTransactionalEmail(input: {
     recipient: input.to,
     subject,
     status: "queued",
-    metadata: { template_type: input.templateType },
+    metadata: {
+      template_type: input.templateType,
+      sender_key: template.sender_key,
+      sender_email: senderEmail,
+    },
   });
 
   try {
@@ -154,7 +170,11 @@ export async function sendTransactionalEmail(input: {
       recipient: input.to,
       subject,
       status: "sent",
-      metadata: { template_type: input.templateType },
+      metadata: {
+        template_type: input.templateType,
+        sender_key: template.sender_key,
+        sender_email: senderEmail,
+      },
     });
   } catch (error) {
     const message =
@@ -165,7 +185,11 @@ export async function sendTransactionalEmail(input: {
       subject,
       status: "failed",
       errorMessage: message,
-      metadata: { template_type: input.templateType },
+      metadata: {
+        template_type: input.templateType,
+        sender_key: template.sender_key,
+        sender_email: senderEmail,
+      },
     });
     throw error;
   }

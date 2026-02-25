@@ -46,6 +46,7 @@ export default async function AdminLayout({
   if (profile?.role !== "admin") {
     redirect("/unauthorized");
   }
+
   const primaryLanguage = await getPrimaryLanguage();
 
   return (
