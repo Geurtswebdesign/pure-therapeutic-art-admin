@@ -29,7 +29,10 @@ export async function getRuntimeSecuritySettings(): Promise<SecuritySettings> {
 
     return normalizeSecuritySettings({
       loginAttemptLimit: value.loginAttemptLimit as number | undefined,
+      ipAttemptLimit: value.ipAttemptLimit as number | undefined,
       loginWindowMinutes: value.loginWindowMinutes as number | undefined,
+      escalationThreshold: value.escalationThreshold as number | undefined,
+      escalationWindowMinutes: value.escalationWindowMinutes as number | undefined,
       adminSessionTimeoutMinutes: value.adminSessionTimeoutMinutes as number | undefined,
       maintenanceMode: value.maintenanceMode as boolean | undefined,
     });

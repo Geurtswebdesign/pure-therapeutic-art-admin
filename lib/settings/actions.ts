@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/auth/getAdminUser";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logSecurityAuditEvent } from "@/lib/security/audit";
 import {
   DEFAULT_GENERAL_SETTINGS,
   type GeneralSettings,
@@ -87,6 +88,14 @@ export async function saveGeneralSettings(
     throw new Error(existingError.message);
   }
 
+  const previousSettings = existing
+    ? await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("id", existing.id)
+        .maybeSingle<{ value: unknown }>()
+    : null;
+
   const { error } = existing
     ? await supabase
         .from("app_settings")
@@ -106,6 +115,15 @@ export async function saveGeneralSettings(
   if (error) {
     throw new Error(error.message);
   }
+
+  await logSecurityAuditEvent({
+    eventType: "general_settings_updated",
+    actorUserId: adminId ?? admin.id,
+    details: {
+      previous: previousSettings?.data?.value ?? null,
+      next: value,
+    },
+  });
 
   revalidatePath("/admin/settings/general");
 }

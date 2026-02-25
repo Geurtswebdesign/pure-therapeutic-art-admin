@@ -4,6 +4,8 @@ import { createAdminClient, supabaseAdmin } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/auth/getAdminUser";
 import { grantCredits } from "@/lib/credits/grantCredits";
+import { logSecurityAuditEvent } from "@/lib/security/audit";
+import { invalidateUserSessions } from "@/lib/security/session";
 
 export type CreateUserInput = {
   email: string;
@@ -74,17 +76,35 @@ export async function adjustCredits(
   userId: string,
   delta: number
 ) {
-  return grantCredits({
+  const admin = await getAdminUser();
+  const result = await grantCredits({
     userId,
     amount: delta,
     reason: "admin_adjust",
   });
+
+  await logSecurityAuditEvent({
+    eventType: "credits_adjusted",
+    actorUserId: admin?.id ?? null,
+    targetUserId: userId,
+    details: {
+      delta,
+      reason: "admin_adjust",
+    },
+  });
+
+  return result;
 }
 
 export async function adminResetPassword(
   userId: string,
   newPassword: string
 ) {
+  const admin = await getAdminUser();
+  if (!admin) {
+    throw new Error("Niet geautoriseerd");
+  }
+
   if (newPassword.length < 8) {
     throw new Error("Wachtwoord moet minimaal 8 tekens zijn");
   }
@@ -101,6 +121,19 @@ export async function adminResetPassword(
     console.error("ADMIN RESET PASSWORD ERROR:", error);
     throw new Error("Wachtwoord resetten mislukt");
   }
+
+  await invalidateUserSessions({
+    userIds: [userId],
+    reason: "password_reset",
+    updatedBy: admin.id,
+  });
+
+  await logSecurityAuditEvent({
+    eventType: "password_reset_by_admin",
+    severity: "warning",
+    actorUserId: admin.id,
+    targetUserId: userId,
+  });
 }
 type UserRole = "user" | "admin";
 
@@ -121,6 +154,12 @@ export async function updateUserRole(
 
   const supabase = createAdminClient();
 
+  const { data: previousProfile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("user_id", userId)
+    .maybeSingle<{ role: UserRole }>();
+
   // 3️⃣ Update role in profiles
   const { error } = await supabase
     .from("profiles")
@@ -132,6 +171,23 @@ export async function updateUserRole(
     throw new Error("Rol bijwerken mislukt");
   }
 
+  await invalidateUserSessions({
+    userIds: [userId],
+    reason: "role_changed",
+    updatedBy: admin.id,
+  });
+
+  await logSecurityAuditEvent({
+    eventType: "user_role_updated",
+    severity: "warning",
+    actorUserId: admin.id,
+    targetUserId: userId,
+    details: {
+      previousRole: previousProfile?.role ?? null,
+      nextRole: role,
+    },
+  });
+
   return { success: true };
 }
 
@@ -139,6 +195,11 @@ export async function bulkUpdateUserRole(
   userIds: string[],
   role: "admin" | "user"
 ) {
+  const admin = await getAdminUser();
+  if (!admin) {
+    throw new Error("Niet geautoriseerd");
+  }
+
   if (userIds.length === 0) return;
 
   const { error } = await supabaseAdmin
@@ -150,6 +211,22 @@ export async function bulkUpdateUserRole(
     console.error("BULK ROLE UPDATE ERROR:", error);
     throw new Error("Bulk rol wijzigen mislukt");
   }
+
+  await invalidateUserSessions({
+    userIds,
+    reason: "bulk_role_changed",
+    updatedBy: admin.id,
+  });
+
+  await logSecurityAuditEvent({
+    eventType: "bulk_user_role_updated",
+    severity: "warning",
+    actorUserId: admin.id,
+    details: {
+      affectedUsers: userIds.length,
+      nextRole: role,
+    },
+  });
 }
 
 export async function updateUserProfileExtended(input: {

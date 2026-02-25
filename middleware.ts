@@ -66,6 +66,39 @@ async function isAdminByUserId(userId: string): Promise<boolean> {
   }
 }
 
+async function getSessionInvalidAfter(userId: string): Promise<string | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceRole) return null;
+
+  try {
+    const response = await fetch(
+      `${url}/rest/v1/auth_session_invalidations?select=invalid_after&user_id=eq.${encodeURIComponent(userId)}&limit=1`,
+      {
+        headers: {
+          apikey: serviceRole,
+          Authorization: `Bearer ${serviceRole}`,
+        },
+        cache: "no-store",
+      }
+    );
+    if (!response.ok) return null;
+    const rows = (await response.json()) as Array<{ invalid_after?: string }>;
+    return rows?.[0]?.invalid_after ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function clearAuthCookies(req: NextRequest, res: NextResponse) {
+  res.cookies.delete("admin_session_started_at");
+  for (const cookie of req.cookies.getAll()) {
+    if (cookie.name.startsWith("sb-")) {
+      res.cookies.delete(cookie.name);
+    }
+  }
+}
+
 export async function middleware(req: NextRequest) {
   const security = await getSecuritySettingsFromDb();
   const pathname = req.nextUrl.pathname;
@@ -97,6 +130,23 @@ export async function middleware(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (user) {
+    const invalidAfterRaw = await getSessionInvalidAfter(user.id);
+    if (invalidAfterRaw) {
+      const invalidAfter = Date.parse(invalidAfterRaw);
+      const startedAtRaw = req.cookies.get("admin_session_started_at")?.value;
+      const startedAt = startedAtRaw ? Date.parse(startedAtRaw) : Number.NaN;
+
+      if (!Number.isFinite(startedAt) || startedAt <= invalidAfter) {
+        const loginUrl = new URL("/login", req.url);
+        loginUrl.searchParams.set("reason", "session-invalidated");
+        const invalidatedRes = NextResponse.redirect(loginUrl);
+        clearAuthCookies(req, invalidatedRes);
+        return invalidatedRes;
+      }
+    }
+  }
+
   if (pathname.startsWith("/admin")) {
     const startedAtRaw = req.cookies.get("admin_session_started_at")?.value;
     if (startedAtRaw) {
@@ -106,7 +156,7 @@ export async function middleware(req: NextRequest) {
         const loginUrl = new URL("/login", req.url);
         loginUrl.searchParams.set("reason", "session-timeout");
         const timeoutRes = NextResponse.redirect(loginUrl);
-        timeoutRes.cookies.delete("admin_session_started_at");
+        clearAuthCookies(req, timeoutRes);
         return timeoutRes;
       }
     }

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/auth/getAdminUser";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logSecurityAuditEvent } from "@/lib/security/audit";
+import { invalidateAdminSessions } from "@/lib/security/session";
 import {
   DEFAULT_SECURITY_SETTINGS,
   normalizeSecuritySettings,
@@ -40,7 +42,10 @@ export async function getSecuritySettings(): Promise<SecuritySettings> {
 
   return normalizeSecuritySettings({
     loginAttemptLimit: value.loginAttemptLimit as number | undefined,
+    ipAttemptLimit: value.ipAttemptLimit as number | undefined,
     loginWindowMinutes: value.loginWindowMinutes as number | undefined,
+    escalationThreshold: value.escalationThreshold as number | undefined,
+    escalationWindowMinutes: value.escalationWindowMinutes as number | undefined,
     adminSessionTimeoutMinutes: value.adminSessionTimeoutMinutes as number | undefined,
     maintenanceMode: value.maintenanceMode as boolean | undefined,
   });
@@ -67,6 +72,14 @@ export async function saveSecuritySettings(input: SecuritySettings) {
     throw new Error(existingError.message);
   }
 
+  const previousSettings = existing
+    ? await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("id", existing.id)
+        .maybeSingle<{ value: unknown }>()
+    : null;
+
   const { error } = existing
     ? await supabase
         .from("app_settings")
@@ -86,6 +99,24 @@ export async function saveSecuritySettings(input: SecuritySettings) {
   if (error) {
     throw new Error(error.message);
   }
+
+  await logSecurityAuditEvent({
+    eventType: "security_settings_updated",
+    severity: "warning",
+    actorUserId: admin.id,
+    details: {
+      previous: previousSettings?.data?.value ?? null,
+      next: value,
+      maintenanceModeChanged:
+        (previousSettings?.data?.value as { maintenanceMode?: boolean } | undefined)
+          ?.maintenanceMode !== value.maintenanceMode,
+    },
+  });
+
+  await invalidateAdminSessions({
+    reason: "security_settings_updated",
+    updatedBy: admin.id,
+  });
 
   revalidatePath("/admin/settings/security");
 }

@@ -5,6 +5,82 @@ import { cookies, headers } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getRuntimeSecuritySettings } from "@/lib/security/runtime";
+import { logSecurityAuditEvent } from "@/lib/security/audit";
+import { sendMail } from "@/lib/mail/sendMail";
+
+async function maybeSendSecurityAlert(input: {
+  email: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  reason: string;
+  blockedMinutes: number;
+}) {
+  const supabaseAdmin = createAdminClient();
+  const alertKey = `login_bruteforce:${input.email}:${input.ipAddress ?? "unknown"}`;
+  const alertWindowStart = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+  const { count } = await supabaseAdmin
+    .from("security_alert_events")
+    .select("id", { count: "exact", head: true })
+    .eq("alert_key", alertKey)
+    .gte("created_at", alertWindowStart);
+
+  if (typeof count === "number" && count > 0) return;
+
+  await supabaseAdmin.from("security_alert_events").insert({
+    alert_key: alertKey,
+    channel: "email",
+    metadata: {
+      email: input.email,
+      ip: input.ipAddress,
+      user_agent: input.userAgent,
+      reason: input.reason,
+      blocked_minutes: input.blockedMinutes,
+    },
+  });
+
+  const { data: senders } = await supabaseAdmin
+    .from("email_sender_profiles")
+    .select("key, email, is_active")
+    .in("key", ["techsupport", "klantenservice"]);
+
+  const recipients = (senders ?? [])
+    .filter((sender) => sender.is_active && sender.email)
+    .map((sender) => sender.email as string);
+
+  if (!recipients.length) return;
+
+  const fromAddress =
+    (senders ?? []).find((sender) => sender.key === "techsupport" && sender.email)
+      ?.email ??
+    process.env.GOOGLE_SENDER_EMAIL;
+
+  if (!fromAddress) return;
+
+  const subject = "Beveiligingsmelding: verdachte loginactiviteit";
+  const html = `
+    <h1>Beveiligingsmelding</h1>
+    <p>Er is verdachte loginactiviteit gedetecteerd.</p>
+    <p><strong>E-mail:</strong> ${input.email}</p>
+    <p><strong>IP:</strong> ${input.ipAddress ?? "onbekend"}</p>
+    <p><strong>Reden:</strong> ${input.reason}</p>
+    <p><strong>Blokkade:</strong> ${input.blockedMinutes} minuten</p>
+  `;
+
+  for (const recipient of recipients) {
+    try {
+      await sendMail({
+        to: recipient,
+        subject,
+        html,
+        fromName: "Security Monitor",
+        fromEmail: fromAddress,
+      });
+    } catch {
+      // Non-blocking alert channel
+    }
+  }
+}
 
 export async function login(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
@@ -24,16 +100,58 @@ export async function login(formData: FormData) {
   const windowStartIso = new Date(
     Date.now() - security.loginWindowMinutes * 60_000
   ).toISOString();
+  const escalationWindowStartIso = new Date(
+    Date.now() - security.escalationWindowMinutes * 60_000
+  ).toISOString();
 
-  let failedCount = 0;
+  let failedByEmail = 0;
+  let failedByIp = 0;
+  let failedByDevice = 0;
+  let failedInEscalationWindow = 0;
+
   try {
-    const [{ count, error: limitError }] = await Promise.all([
-      supabaseAdmin
-        .from("auth_login_attempts")
-        .select("id", { count: "exact", head: true })
-        .eq("email", email)
-        .eq("is_success", false)
-        .gte("attempted_at", windowStartIso),
+    const emailQuery = supabaseAdmin
+      .from("auth_login_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("email", email)
+      .eq("is_success", false)
+      .gte("attempted_at", windowStartIso);
+
+    const ipQuery = ipAddress
+      ? supabaseAdmin
+          .from("auth_login_attempts")
+          .select("id", { count: "exact", head: true })
+          .eq("ip_address", ipAddress)
+          .eq("is_success", false)
+          .gte("attempted_at", windowStartIso)
+      : Promise.resolve({ count: 0, error: null } as const);
+
+    const deviceQuery = userAgent
+      ? supabaseAdmin
+          .from("auth_login_attempts")
+          .select("id", { count: "exact", head: true })
+          .eq("user_agent", userAgent)
+          .eq("is_success", false)
+          .gte("attempted_at", windowStartIso)
+      : Promise.resolve({ count: 0, error: null } as const);
+
+    const escalationQuery = supabaseAdmin
+      .from("auth_login_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("email", email)
+      .eq("is_success", false)
+      .gte("attempted_at", escalationWindowStartIso);
+
+    const [
+      { count: emailCount, error: emailLimitError },
+      { count: ipCount, error: ipLimitError },
+      { count: deviceCount, error: deviceLimitError },
+      { count: escalationCount, error: escalationError },
+    ] = await Promise.all([
+      emailQuery,
+      ipQuery,
+      deviceQuery,
+      escalationQuery,
       supabaseAdmin
         .from("auth_login_attempts")
         .delete()
@@ -42,16 +160,76 @@ export async function login(formData: FormData) {
           new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
         ),
     ]);
-    if (!limitError && typeof count === "number") {
-      failedCount = count;
+
+    if (!emailLimitError && typeof emailCount === "number") {
+      failedByEmail = emailCount;
+    }
+    if (!ipLimitError && typeof ipCount === "number") {
+      failedByIp = ipCount;
+    }
+    if (!deviceLimitError && typeof deviceCount === "number") {
+      failedByDevice = deviceCount;
+    }
+    if (!escalationError && typeof escalationCount === "number") {
+      failedInEscalationWindow = escalationCount;
     }
   } catch {
-    failedCount = 0;
+    failedByEmail = 0;
+    failedByIp = 0;
+    failedByDevice = 0;
+    failedInEscalationWindow = 0;
   }
 
-  if (failedCount >= security.loginAttemptLimit) {
+  const tooManyByEmail = failedByEmail >= security.loginAttemptLimit;
+  const tooManyByIp = failedByIp >= security.ipAttemptLimit;
+  const tooManyByDevice = failedByDevice >= security.ipAttemptLimit;
+  const escalationTriggered =
+    failedInEscalationWindow >= security.escalationThreshold;
+  const blockMultiplier = escalationTriggered
+    ? Math.max(
+        2,
+        Math.ceil(
+          failedInEscalationWindow / Math.max(security.escalationThreshold, 1)
+        )
+      )
+    : 1;
+  const blockMinutes = security.loginWindowMinutes * blockMultiplier;
+
+  if (tooManyByEmail || tooManyByIp || tooManyByDevice || escalationTriggered) {
+    const reason = tooManyByEmail
+      ? "email_limit"
+      : tooManyByIp
+        ? "ip_limit"
+        : tooManyByDevice
+          ? "device_limit"
+          : "escalation";
+
+    await logSecurityAuditEvent({
+      eventType: "login_blocked",
+      severity: "warning",
+      ipAddress,
+      userAgent,
+      details: {
+        email,
+        reason,
+        failedByEmail,
+        failedByIp,
+        failedByDevice,
+        failedInEscalationWindow,
+        blockMinutes,
+      },
+    });
+
+    await maybeSendSecurityAlert({
+      email,
+      ipAddress,
+      userAgent,
+      reason,
+      blockedMinutes: blockMinutes,
+    });
+
     throw new Error(
-      `Te veel loginpogingen. Probeer opnieuw over ${security.loginWindowMinutes} minuten.`
+      `Te veel loginpogingen. Probeer opnieuw over ${blockMinutes} minuten.`
     );
   }
 
@@ -92,6 +270,18 @@ export async function login(formData: FormData) {
     } catch {
       // noop when table does not exist yet
     }
+
+    await logSecurityAuditEvent({
+      eventType: "login_failed",
+      severity: "warning",
+      ipAddress,
+      userAgent,
+      details: {
+        email,
+        error: error.message,
+      },
+    });
+
     throw new Error(error.message);
   }
 
@@ -107,6 +297,15 @@ export async function login(formData: FormData) {
   } catch {
     // noop when table does not exist yet
   }
+
+  await logSecurityAuditEvent({
+    eventType: "login_success",
+    ipAddress,
+    userAgent,
+    details: {
+      email,
+    },
+  });
 
   cookieStore.set("admin_session_started_at", nowIso, {
     httpOnly: true,

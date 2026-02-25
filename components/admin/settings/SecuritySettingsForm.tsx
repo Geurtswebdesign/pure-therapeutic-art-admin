@@ -15,7 +15,10 @@ export default function SecuritySettingsForm({ initialValues, language }: Props)
     language === "en"
       ? {
           loginAttemptLimit: "Login attempts limit",
+          ipAttemptLimit: "IP attempts limit",
           loginWindowMinutes: "Login window (minutes)",
+          escalationThreshold: "Escalation threshold",
+          escalationWindowMinutes: "Escalation window (minutes)",
           adminSessionTimeoutMinutes: "Admin session timeout (minutes)",
           maintenanceMode: "Maintenance mode",
           maintenanceHint: "Block non-admin pages while enabled.",
@@ -27,7 +30,10 @@ export default function SecuritySettingsForm({ initialValues, language }: Props)
       : language === "de"
         ? {
             loginAttemptLimit: "Limit fur Login-Versuche",
+            ipAttemptLimit: "IP-Limit fur Login-Versuche",
             loginWindowMinutes: "Login-Fenster (Minuten)",
+            escalationThreshold: "Eskalationsschwelle",
+            escalationWindowMinutes: "Eskalationsfenster (Minuten)",
             adminSessionTimeoutMinutes: "Admin-Sitzungs-Timeout (Minuten)",
             maintenanceMode: "Wartungsmodus",
             maintenanceHint: "Sperrt Nicht-Admin-Seiten wenn aktiv.",
@@ -38,7 +44,10 @@ export default function SecuritySettingsForm({ initialValues, language }: Props)
           }
         : {
             loginAttemptLimit: "Limiet loginpogingen",
+            ipAttemptLimit: "Limiet pogingen per IP",
             loginWindowMinutes: "Loginvenster (minuten)",
+            escalationThreshold: "Escalatie-drempel",
+            escalationWindowMinutes: "Escalatievenster (minuten)",
             adminSessionTimeoutMinutes: "Admin sessie-timeout (minuten)",
             maintenanceMode: "Onderhoudsmodus",
             maintenanceHint: "Blokkeert niet-admin pagina's zolang dit aan staat.",
@@ -87,6 +96,17 @@ export default function SecuritySettingsForm({ initialValues, language }: Props)
       </div>
 
       <div>
+        <label className="block text-sm font-medium">{t.ipAttemptLimit}</label>
+        <input
+          type="number"
+          min={1}
+          className="w-full rounded border px-3 py-2 text-sm"
+          value={form.ipAttemptLimit}
+          onChange={(e) => setNumber("ipAttemptLimit", e.target.value)}
+        />
+      </div>
+
+      <div>
         <label className="block text-sm font-medium">{t.loginWindowMinutes}</label>
         <input
           type="number"
@@ -94,6 +114,28 @@ export default function SecuritySettingsForm({ initialValues, language }: Props)
           className="w-full rounded border px-3 py-2 text-sm"
           value={form.loginWindowMinutes}
           onChange={(e) => setNumber("loginWindowMinutes", e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium">{t.escalationThreshold}</label>
+        <input
+          type="number"
+          min={1}
+          className="w-full rounded border px-3 py-2 text-sm"
+          value={form.escalationThreshold}
+          onChange={(e) => setNumber("escalationThreshold", e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium">{t.escalationWindowMinutes}</label>
+        <input
+          type="number"
+          min={1}
+          className="w-full rounded border px-3 py-2 text-sm"
+          value={form.escalationWindowMinutes}
+          onChange={(e) => setNumber("escalationWindowMinutes", e.target.value)}
         />
       </div>
 
