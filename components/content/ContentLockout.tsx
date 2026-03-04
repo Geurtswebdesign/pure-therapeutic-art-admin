@@ -4,6 +4,7 @@ import LockedView from "@/components/content/LockedView";
 import type { ContentAccessScope } from "@/lib/content/access";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
+import { getPublicBranding } from "@/lib/settings/public";
 
 type Props = {
   item: {
@@ -21,7 +22,7 @@ type Props = {
   language: UiLanguage;
 };
 
-export default function ContentLockout({
+export default async function ContentLockout({
   item,
   balance,
   scope,
@@ -30,12 +31,27 @@ export default function ContentLockout({
   wrapInPageContainer = true,
 }: Props) {
   const t = getAppMessages(language).metadata;
+  const branding = await getPublicBranding();
   const content = (
     <article className="lockout-container space-y-5">
       <header className="flex items-start gap-3">
-        <Image src={logo} alt="Pure Grief and Therapeutic ART" width={46} height={46} priority />
+        {branding.logoUrl ? (
+          <img
+            src={branding.logoUrl}
+            alt={`${branding.siteName} logo`}
+            className="h-[46px] w-[46px] object-contain"
+          />
+        ) : (
+          <Image
+            src={logo}
+            alt="Pure Grief and Therapeutic ART"
+            width={46}
+            height={46}
+            priority
+          />
+        )}
         <h3 className="lockout-brand-title">
-          Pure Grief and Therapeutic ART
+          {branding.siteName || "Pure Grief and Therapeutic ART"}
         </h3>
       </header>
 

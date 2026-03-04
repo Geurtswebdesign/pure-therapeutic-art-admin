@@ -12,6 +12,13 @@ type AppMessages = {
     email: string;
     password: string;
     submit: string;
+    mfaTitle: string;
+    mfaPrompt: string;
+    mfaCode: string;
+    mfaSubmit: string;
+    mfaInvalid: string;
+    mfaSetupPrompt: string;
+    mfaSetupContinue: string;
   };
   accountPage: {
     title: string;
@@ -223,6 +230,14 @@ const nl: AppMessages = {
     email: "E-mail",
     password: "Wachtwoord",
     submit: "Inloggen",
+    mfaTitle: "Bevestig 2FA",
+    mfaPrompt: "Vul de code uit je authenticator app in.",
+    mfaCode: "2FA-code",
+    mfaSubmit: "Verifiëren",
+    mfaInvalid: "Ongeldige code. Probeer opnieuw.",
+    mfaSetupPrompt:
+      "2FA is verplicht voor admins. Stel dit nu in om verder te gaan.",
+    mfaSetupContinue: "Ga door naar admin",
   },
   accountPage: {
     title: "Mijn account",
@@ -425,7 +440,20 @@ const nl: AppMessages = {
 const en: AppMessages = {
   ...nl,
   home: { title: "Welcome to Pure Therapeutic ART", subtitle: "Discover assignments and content that support you step by step.", viewContent: "View content", login: "Log in" },
-  login: { title: "Log in", email: "Email", password: "Password", submit: "Log in" },
+  login: {
+    title: "Log in",
+    email: "Email",
+    password: "Password",
+    submit: "Log in",
+    mfaTitle: "Confirm 2FA",
+    mfaPrompt: "Enter the code from your authenticator app.",
+    mfaCode: "2FA code",
+    mfaSubmit: "Verify",
+    mfaInvalid: "Invalid code. Try again.",
+    mfaSetupPrompt:
+      "2FA is required for admins. Set it up now to continue.",
+    mfaSetupContinue: "Continue to admin",
+  },
   accountPage: { title: "My account", subtitle: "Manage your profile, credits and unlocked content." },
   accountTabs: { ...nl.accountTabs, overview: "Overview", profile: "Profile", unlocked: "Unlocked content", clients: "Clients", welcome: "Welcome", accountType: "Account type", availableCredits: "Available credits", unlockedItems: "Unlocked items", unlockedTitle: "Unlocked content", noUnlocked: "No unlocked content yet.", unknownContent: "Unknown content", titleCol: "Title", categoryCol: "Category", dateCol: "Date", therapistDesc: "This is the base for the therapist account. We can add client linking and progress next.", roleTherapist: "Therapist", roleAdmin: "Administrator", roleClient: "Client", roleUser: "User" },
   accountProfile: { ...nl.accountProfile, saved: "Profile saved.", saveFailed: "Saving failed.", title: "Profile", displayName: "Display name", bio: "Biography", save: "Save", saving: "Saving..." },
@@ -447,7 +475,20 @@ const en: AppMessages = {
 const de: AppMessages = {
   ...nl,
   home: { title: "Willkommen bei Pure Therapeutic ART", subtitle: "Entdecke Aufgaben und Inhalte, die dich Schritt fur Schritt unterstutzen.", viewContent: "Inhalte ansehen", login: "Anmelden" },
-  login: { title: "Anmelden", email: "E-Mail", password: "Passwort", submit: "Anmelden" },
+  login: {
+    title: "Anmelden",
+    email: "E-Mail",
+    password: "Passwort",
+    submit: "Anmelden",
+    mfaTitle: "2FA bestaetigen",
+    mfaPrompt: "Code aus der Authenticator-App eingeben.",
+    mfaCode: "2FA-Code",
+    mfaSubmit: "Bestaetigen",
+    mfaInvalid: "Ungueltiger Code. Bitte erneut versuchen.",
+    mfaSetupPrompt:
+      "2FA ist fuer Admins verpflichtend. Jetzt einrichten, um fortzufahren.",
+    mfaSetupContinue: "Weiter zum Admin",
+  },
   accountPage: { title: "Mein Konto", subtitle: "Verwalte dein Profil, Credits und freigeschaltete Inhalte." },
   accountTabs: { ...nl.accountTabs, overview: "Ubersicht", profile: "Profil", unlocked: "Freigeschaltete Inhalte", clients: "Klienten", welcome: "Willkommen", accountType: "Kontotyp", availableCredits: "Verfugbare Credits", unlockedItems: "Freigeschaltete Elemente", unlockedTitle: "Freigeschaltete Inhalte", noUnlocked: "Noch keine freigeschalteten Inhalte.", unknownContent: "Unbekannter Inhalt", titleCol: "Titel", categoryCol: "Kategorie", dateCol: "Datum", therapistDesc: "Dies ist die Basis fur das Therapeutenkonto. Verknupfung von Klienten und Fortschritt folgt als nachstes.", roleTherapist: "Therapeut", roleAdmin: "Administrator", roleClient: "Klient", roleUser: "Benutzer" },
   accountProfile: { ...nl.accountProfile, saved: "Profil gespeichert.", saveFailed: "Speichern fehlgeschlagen.", title: "Profil", displayName: "Anzeigename", bio: "Biografie", save: "Speichern", saving: "Speichern..." },

@@ -6,14 +6,16 @@ export default function ContentLayout({
   isPreview?: boolean;
 }) {
   return (
-    <main className="max-w-3xl mx-auto py-12">
-      {isPreview && (
-        <div className="mb-6 rounded bg-yellow-100 text-yellow-800 px-4 py-2 text-sm">
-          🔍 Voorbeeldmodus – conceptinhoud zichtbaar (alleen admin)
-        </div>
-      )}
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f7f2ea_0%,#fcfaf7_18%,#ffffff_52%,#f4efe7_100%)]">
+      <main className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+        {isPreview ? (
+          <div className="mb-8 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
+            Previewmodus: concepthoud zichtbaar voor admins.
+          </div>
+        ) : null}
 
-      {children}
-    </main>
+        {children}
+      </main>
+    </div>
   );
 }

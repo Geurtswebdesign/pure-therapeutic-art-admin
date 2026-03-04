@@ -48,6 +48,7 @@ export async function getSecuritySettings(): Promise<SecuritySettings> {
     escalationWindowMinutes: value.escalationWindowMinutes as number | undefined,
     adminSessionTimeoutMinutes: value.adminSessionTimeoutMinutes as number | undefined,
     maintenanceMode: value.maintenanceMode as boolean | undefined,
+    mfaPolicy: value.mfaPolicy as "opt_in" | "required_admin" | undefined,
   });
 }
 

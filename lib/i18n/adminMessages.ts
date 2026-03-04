@@ -67,7 +67,7 @@ type AdminMessages = {
   };
   settingsSecurity: {
     title: string;
-    items: string[];
+    subtitle: string;
   };
   settingsApp: {
     title: string;
@@ -340,13 +340,7 @@ const nl: AdminMessages = {
   },
   settingsSecurity: {
     title: "Beveiliging",
-    items: [
-      "Limiet voor inlogpogingen",
-      "Admin-sessietimeout",
-      "2FA-beleid",
-      "Rate limiting",
-      "API-sleutels en webhook-secrets",
-    ],
+    subtitle: "Beheer loginlimieten, sessies en 2FA-beleid voor admins.",
   },
   settingsApp: {
     title: "App",
@@ -629,13 +623,7 @@ const en: AdminMessages = {
   },
   settingsSecurity: {
     title: "Security",
-    items: [
-      "Login attempts limit",
-      "Admin session timeout",
-      "2FA policy",
-      "Rate limiting",
-      "API keys and webhook secrets",
-    ],
+    subtitle: "Manage login limits, sessions, and 2FA policies for admins.",
   },
   settingsApp: {
     title: "App",
@@ -909,13 +897,7 @@ const de: AdminMessages = {
   },
   settingsSecurity: {
     title: "Sicherheit",
-    items: [
-      "Limit fur Anmeldeversuche",
-      "Admin-Sitzungs-Timeout",
-      "2FA-Richtlinie",
-      "Rate Limiting",
-      "API-Schlussel und Webhook-Secrets",
-    ],
+    subtitle: "Verwalte Login-Grenzen, Sitzungen und 2FA-Richtlinien.",
   },
   settingsApp: {
     title: "App",

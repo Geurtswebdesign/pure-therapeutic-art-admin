@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/browser";
+import { trackEvent } from "@/lib/analytics/track";
 type CategoryOption = {
   id: string;
   name: string;
@@ -44,8 +45,12 @@ export default function CategoryForm() {
     if (!name) return;
 
     setLoading(true);
+    trackEvent({
+      eventName: "admin_category_create_submit",
+      eventCategory: "admin_content",
+    });
 
-    await supabase.from("content_categories").insert({
+    const { error } = await supabase.from("content_categories").insert({
       name,
       slug: slug || slugify(name),
       description,
@@ -53,6 +58,18 @@ export default function CategoryForm() {
     });
 
     setLoading(false);
+    if (error) {
+      trackEvent({
+        eventName: "admin_category_create_failed",
+        eventCategory: "admin_content",
+        eventLabel: error.message,
+      });
+      return;
+    }
+    trackEvent({
+      eventName: "admin_category_create_success",
+      eventCategory: "admin_content",
+    });
     router.refresh();
   }
 

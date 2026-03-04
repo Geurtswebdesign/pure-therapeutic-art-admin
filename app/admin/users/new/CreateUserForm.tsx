@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createUser } from "../actions";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
+import { trackEvent } from "@/lib/analytics/track";
 
 type UserRole = "user" | "admin";
 
@@ -27,6 +28,11 @@ export default function CreateUserForm({ language }: { language: UiLanguage }) {
     e.preventDefault();
     setError(null);
     setSaving(true);
+    trackEvent({
+      eventName: "admin_user_create_submit",
+      eventCategory: "admin_users",
+      eventLabel: mode,
+    });
 
     try {
       const res = await createUser({
@@ -38,10 +44,20 @@ export default function CreateUserForm({ language }: { language: UiLanguage }) {
         password: mode === "password" ? password : undefined,
       });
 
+      trackEvent({
+        eventName: "admin_user_create_success",
+        eventCategory: "admin_users",
+        eventLabel: role,
+      });
       router.push(`/admin/users/${res.userId}`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t.unknownError;
       setError(message);
+      trackEvent({
+        eventName: "admin_user_create_failed",
+        eventCategory: "admin_users",
+        eventLabel: message,
+      });
     } finally {
       setSaving(false);
     }

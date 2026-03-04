@@ -12,6 +12,7 @@ import {
   setCreditPackActive,
   updateCreditPack,
 } from "@/app/admin/administration/actions";
+import { trackEvent } from "@/lib/analytics/track";
 
 type CreditPack = {
   id: string;
@@ -164,6 +165,12 @@ export default function CreditPacksManager({
           packId: purchasePackId,
           quantity: purchaseQty,
           note: purchaseNote,
+        });
+        trackEvent({
+          eventName: "admin_credit_pack_purchase",
+          eventCategory: "credits",
+          eventLabel: purchasePackId || "unknown_pack",
+          eventValue: purchaseQty,
         });
         setMessage(t.purchaseProcessed);
         setPurchaseQty(1);

@@ -17,6 +17,7 @@ import { normalizeTemplateHtml } from "@/lib/mail/normalizeTemplateHtml";
 import { renderEmailLayout } from "@/lib/mail/renderEmailLayout";
 import { renderTemplate } from "@/lib/mail/renderTemplate";
 import type { UiLanguage } from "@/lib/i18n/runtime";
+import { trackEvent } from "@/lib/analytics/track";
 
 type TemplateRow = {
   id: string;
@@ -184,15 +185,35 @@ export default function EmailSettingsForm({
     setSenderKey(next?.sender_key ?? "noreply");
   }
 
-  function runAction(action: () => Promise<void>, successMessage: string) {
+  function runAction(
+    action: () => Promise<void>,
+    successMessage: string,
+    eventBase: string,
+    eventLabel?: string
+  ) {
     setNotice(null);
     setError(null);
+    trackEvent({
+      eventName: `${eventBase}_submit`,
+      eventCategory: "admin_email_settings",
+      eventLabel,
+    });
     startTransition(async () => {
       try {
         await action();
         setNotice(successMessage);
+        trackEvent({
+          eventName: `${eventBase}_success`,
+          eventCategory: "admin_email_settings",
+          eventLabel,
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Actie mislukt.");
+        trackEvent({
+          eventName: `${eventBase}_failed`,
+          eventCategory: "admin_email_settings",
+          eventLabel,
+        });
       }
     });
   }
@@ -237,7 +258,9 @@ export default function EmailSettingsForm({
                   html,
                   isActive,
                 }),
-              "Template opgeslagen."
+              "Template opgeslagen.",
+              "email_template_save",
+              templateType
             );
           }}
           className="space-y-3"
@@ -356,7 +379,8 @@ export default function EmailSettingsForm({
                     isActive: row.is_active,
                   }))
                 ),
-              "Afzenders opgeslagen."
+              "Afzenders opgeslagen.",
+              "email_senders_save"
             );
           }}
           className="space-y-3"
@@ -453,7 +477,8 @@ export default function EmailSettingsForm({
                   footerText,
                   websiteUrl,
                 }),
-              "Branding opgeslagen."
+              "Branding opgeslagen.",
+              "email_branding_save"
             );
           }}
           className="grid gap-3"
@@ -476,7 +501,9 @@ export default function EmailSettingsForm({
             e.preventDefault();
             runAction(
               () => sendEmailSettingsTest({ to: testRecipient, templateType: testTemplate }),
-              "Testmail verzonden."
+              "Testmail verzonden.",
+              "email_test_send",
+              testTemplate
             );
           }}
           className="space-y-3"

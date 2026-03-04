@@ -8,6 +8,7 @@ import { Lock, ShoppingCart, Unlock } from "lucide-react";
 import type { ContentAccessScope } from "@/lib/content/access";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
+import { trackEvent } from "@/lib/analytics/track";
 
 type Props = {
   contentId: string;
@@ -46,6 +47,12 @@ export default function LockedViewClient({
 
   async function handleUnlock() {
     setError(null);
+    trackEvent({
+      eventName: "content_unlock_attempt",
+      eventCategory: "content",
+      eventLabel: contentId,
+      eventValue: cost,
+    });
 
     startTransition(async () => {
       try {
@@ -53,6 +60,12 @@ export default function LockedViewClient({
 
         if (!result.unlocked) {
           if (result.error === "INSUFFICIENT_CREDITS") {
+            trackEvent({
+              eventName: "content_unlock_failed",
+              eventCategory: "content",
+              eventLabel: "INSUFFICIENT_CREDITS",
+              eventValue: cost,
+            });
             setError(
               t.insufficient
                 .replaceAll("{scope}", scopeLabel)
@@ -62,6 +75,12 @@ export default function LockedViewClient({
             return;
           }
           if (result.error === "INSUFFICIENT_SCOPE_CREDITS") {
+            trackEvent({
+              eventName: "content_unlock_failed",
+              eventCategory: "content",
+              eventLabel: "INSUFFICIENT_SCOPE_CREDITS",
+              eventValue: cost,
+            });
             setError(
               t.insufficient
                 .replaceAll("{scope}", scopeLabel)
@@ -72,8 +91,20 @@ export default function LockedViewClient({
           }
         }
 
+        trackEvent({
+          eventName: "content_unlock_success",
+          eventCategory: "content",
+          eventLabel: contentId,
+          eventValue: cost,
+        });
         router.refresh();
       } catch {
+        trackEvent({
+          eventName: "content_unlock_failed",
+          eventCategory: "content",
+          eventLabel: "error",
+          eventValue: cost,
+        });
         setError(t.unlockFailed);
       }
     });
@@ -106,6 +137,13 @@ export default function LockedViewClient({
           {insufficient ? (
             <Link
               href={buyCreditsHref}
+              onClick={() =>
+                trackEvent({
+                  eventName: "buy_credits_click",
+                  eventCategory: "credits",
+                  eventLabel: scopeLabel,
+                })
+              }
               className="lockout-cta flex w-full items-center justify-between rounded-sm border px-4 py-3 text-left shadow-sm transition"
             >
               <span className="lockout-cta-text">
@@ -129,6 +167,13 @@ export default function LockedViewClient({
       ) : (
         <Link
           href={loginHref}
+          onClick={() =>
+            trackEvent({
+              eventName: "login_to_unlock_click",
+              eventCategory: "auth",
+              eventLabel: scopeLabel,
+            })
+          }
           className="lockout-cta flex w-full items-center justify-between rounded-sm border px-4 py-3 text-left shadow-sm transition"
         >
           <span className="lockout-cta-text">

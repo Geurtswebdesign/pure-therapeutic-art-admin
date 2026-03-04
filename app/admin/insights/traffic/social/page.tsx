@@ -1,0 +1,40 @@
+import { resolveRange, getSocialReferrers } from "@/lib/insights/queries";
+import BarList from "@/components/analytics/BarList";
+import RangeTabs from "@/components/analytics/RangeTabs";
+
+type SearchParams = {
+  range?: string | string[];
+};
+
+export default async function TrafficSocialPage({
+  searchParams,
+}: {
+  searchParams?: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const rangeValue = Array.isArray(params?.range) ? params?.range[0] : params?.range;
+  const range = resolveRange(rangeValue);
+  const social = await getSocialReferrers(range, 20);
+
+  return (
+    <section className="space-y-6">
+      <RangeTabs basePath="/admin/insights/traffic/social" value={rangeValue} />
+
+      <div className="rounded border bg-white p-4">
+        <h2 className="text-sm font-semibold">Social traffic</h2>
+        <div className="mt-4">
+          {social.length ? (
+            <BarList
+              data={social.map((item) => ({
+                label: item.network,
+                value: Number(item.pageviews ?? 0),
+              }))}
+            />
+          ) : (
+            <p className="text-xs text-gray-400">No data yet.</p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}

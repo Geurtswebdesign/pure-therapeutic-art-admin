@@ -6,6 +6,7 @@ import { WalletProvider } from "@/components/providers/WalletProvider";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { getWallet } from "@/lib/credits/getWallet";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import TrackPageView from "@/components/analytics/TrackPageView";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +44,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <WalletProvider initialBalance={balance}>
+          <TrackPageView />
           {children}
         </WalletProvider>
       </body>

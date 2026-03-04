@@ -48,6 +48,7 @@ export async function getGeneralSettings(): Promise<GeneralSettings> {
   return {
     siteName: asString(value?.siteName, DEFAULT_GENERAL_SETTINGS.siteName),
     tagline: asString(value?.tagline, DEFAULT_GENERAL_SETTINGS.tagline),
+    logoUrl: asString(value?.logoUrl, DEFAULT_GENERAL_SETTINGS.logoUrl),
     timezone: asString(value?.timezone, DEFAULT_GENERAL_SETTINGS.timezone),
     locale: asString(value?.locale, DEFAULT_GENERAL_SETTINGS.locale),
     currency: asString(value?.currency, DEFAULT_GENERAL_SETTINGS.currency),

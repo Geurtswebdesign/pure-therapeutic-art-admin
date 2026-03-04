@@ -9,13 +9,11 @@ export default async function SettingsGeneralPage() {
   const t = getAdminMessages(language).settingsGeneral;
 
   return (
-    <section className="max-w-2xl space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold">{t.title}</h2>
-        <p className="text-sm text-gray-600">
-          {t.desc}
-        </p>
-      </div>
+    <section className="w-full space-y-6">
+      <header className="rounded-lg border bg-white p-5 shadow-sm">
+        <h1 className="text-lg font-semibold">{t.title}</h1>
+        <p className="mt-1 text-sm text-gray-600">{t.desc}</p>
+      </header>
 
       <GeneralSettingsForm initialValues={settings} />
     </section>

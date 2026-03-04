@@ -15,7 +15,8 @@ select
     'escalationThreshold', 10,
     'escalationWindowMinutes', 60,
     'adminSessionTimeoutMinutes', 60,
-    'maintenanceMode', false
+    'maintenanceMode', false,
+    'mfaPolicy', 'opt_in'
   )
 where not exists (
   select 1

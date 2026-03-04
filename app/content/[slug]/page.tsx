@@ -55,10 +55,27 @@ export default async function ContentDetailPage({
   const blocks = await getPublishedBlocks(item.id);
 
   return (
-    <article className="max-w-3xl mx-auto py-12">
-      <h1 className="text-4xl font-semibold mb-6">
-        {item.title}
-      </h1>
+    <article className="mx-auto max-w-4xl rounded-[2rem] border border-stone-200 bg-white/85 p-6 py-12 shadow-[0_24px_60px_rgba(28,25,23,0.08)] backdrop-blur sm:p-8 lg:p-10">
+      <header className="mb-8 space-y-4">
+        <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.22em] text-stone-500">
+          <span>{language.toUpperCase()}</span>
+          {item.credit_cost && item.credit_cost > 0 ? (
+            <span>{item.credit_cost} credits</span>
+          ) : (
+            <span>Vrij toegankelijk</span>
+          )}
+        </div>
+
+        <h1 className="text-4xl font-semibold tracking-tight text-stone-950 sm:text-5xl">
+          {item.title}
+        </h1>
+
+        {item.excerpt ? (
+          <p className="max-w-3xl text-lg leading-8 text-stone-600">
+            {item.excerpt}
+          </p>
+        ) : null}
+      </header>
 
       {item.featured_image_url ? (
         <Image
@@ -67,13 +84,13 @@ export default async function ContentDetailPage({
           width={1200}
           height={630}
           unoptimized
-          className="w-full h-auto rounded-lg border object-cover mb-6"
+          className="mb-8 h-auto w-full rounded-[1.5rem] border border-stone-200 object-cover"
         />
       ) : null}
 
       {item.body && (
         <div
-          className="prose prose-lg mb-10"
+          className="prose mb-10 max-w-none prose-headings:text-stone-900 prose-p:text-stone-700 prose-strong:text-stone-900 prose-a:text-stone-900 lg:prose-lg"
           dangerouslySetInnerHTML={{
             __html: normalizeImages(item.body),
           }}

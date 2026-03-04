@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase/browser";
 import type { Taxonomy, Term } from "./types";
+import { trackEvent } from "@/lib/analytics/track";
 
 type Props = {
   taxonomy: Taxonomy;
@@ -32,6 +33,12 @@ export default function AddTermForm({
     e.preventDefault();
     if (!name) return;
 
+    trackEvent({
+      eventName: "admin_term_create_submit",
+      eventCategory: "admin_content",
+      eventLabel: taxonomy.name,
+    });
+
     const { data, error } = await supabase
       .from("content_terms")
       .insert({
@@ -46,8 +53,19 @@ export default function AddTermForm({
 
     if (error) {
       console.error(error);
+      trackEvent({
+        eventName: "admin_term_create_failed",
+        eventCategory: "admin_content",
+        eventLabel: error.message,
+      });
       return;
     }
+
+    trackEvent({
+      eventName: "admin_term_create_success",
+      eventCategory: "admin_content",
+      eventLabel: taxonomy.name,
+    });
 
     // Voeg direct toe aan client state
     onAdd({

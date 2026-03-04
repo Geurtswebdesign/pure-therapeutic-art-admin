@@ -6,6 +6,7 @@ export type SecuritySettings = {
   escalationWindowMinutes: number;
   adminSessionTimeoutMinutes: number;
   maintenanceMode: boolean;
+  mfaPolicy: "opt_in" | "required_admin";
 };
 
 export const DEFAULT_SECURITY_SETTINGS: SecuritySettings = {
@@ -16,6 +17,7 @@ export const DEFAULT_SECURITY_SETTINGS: SecuritySettings = {
   escalationWindowMinutes: 60,
   adminSessionTimeoutMinutes: 60,
   maintenanceMode: false,
+  mfaPolicy: "opt_in",
 };
 
 export function normalizeSecuritySettings(
@@ -49,5 +51,9 @@ export function normalizeSecuritySettings(
       typeof safe.maintenanceMode === "boolean"
         ? safe.maintenanceMode
         : DEFAULT_SECURITY_SETTINGS.maintenanceMode,
+    mfaPolicy:
+      safe.mfaPolicy === "required_admin" || safe.mfaPolicy === "opt_in"
+        ? safe.mfaPolicy
+        : DEFAULT_SECURITY_SETTINGS.mfaPolicy,
   };
 }

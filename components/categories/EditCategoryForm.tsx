@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/browser";
 import type { Category } from "./CategoryTree";
+import { trackEvent } from "@/lib/analytics/track";
 
 type CategoryOption = {
   id: string;
@@ -49,7 +50,13 @@ export default function EditCategoryForm({
   }, []);
 
   async function handleSave() {
-    await supabase
+    trackEvent({
+      eventName: "admin_category_update_submit",
+      eventCategory: "admin_content",
+      eventLabel: category.id,
+    });
+
+    const { error } = await supabase
       .from("content_categories")
       .update({
         name,
@@ -59,6 +66,20 @@ export default function EditCategoryForm({
       })
       .eq("id", category.id);
 
+    if (error) {
+      trackEvent({
+        eventName: "admin_category_update_failed",
+        eventCategory: "admin_content",
+        eventLabel: error.message,
+      });
+      return;
+    }
+
+    trackEvent({
+      eventName: "admin_category_update_success",
+      eventCategory: "admin_content",
+      eventLabel: category.id,
+    });
     router.push("/admin/content/categories");
     router.refresh();
   }

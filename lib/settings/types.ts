@@ -1,6 +1,7 @@
 export type GeneralSettings = {
   siteName: string;
   tagline: string;
+  logoUrl: string;
   timezone: string;
   locale: string;
   currency: string;
@@ -10,6 +11,7 @@ export type GeneralSettings = {
 export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   siteName: "Pure Therapeutic ART Therapy",
   tagline: "",
+  logoUrl: "",
   timezone: "Europe/Amsterdam",
   locale: "nl-NL",
   currency: "EUR",

@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getRuntimeSecuritySettings } from "@/lib/security/runtime";
 import { logSecurityAuditEvent } from "@/lib/security/audit";
 import { sendMail } from "@/lib/mail/sendMail";
+import { logServerEvent } from "@/lib/analytics/server";
 
 async function maybeSendSecurityAlert(input: {
   email: string;
@@ -85,6 +86,7 @@ async function maybeSendSecurityAlert(input: {
 export async function login(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
+  const emailDomain = email.includes("@") ? email.split("@")[1] : "unknown";
 
   const cookieStore = await cookies();
   const requestHeaders = await headers();
@@ -96,6 +98,12 @@ export async function login(formData: FormData) {
 
   const security = await getRuntimeSecuritySettings();
   const supabaseAdmin = createAdminClient();
+  await logServerEvent({
+    eventName: "login_submit",
+    eventCategory: "auth",
+    eventLabel: emailDomain,
+    path: "/login",
+  });
 
   const windowStartIso = new Date(
     Date.now() - security.loginWindowMinutes * 60_000
@@ -282,7 +290,72 @@ export async function login(formData: FormData) {
       },
     });
 
+    await logServerEvent({
+      eventName: "login_failed",
+      eventCategory: "auth",
+      eventLabel: error.message,
+      path: "/login",
+    });
+
     throw new Error(error.message);
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const isAdmin = user
+    ? (
+        await supabaseAdmin
+          .from("profiles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle<{ role?: string }>()
+      ).data?.role === "admin"
+    : false;
+
+  if (isAdmin && user) {
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    const verified = factors?.totp?.find((factor) => factor.status === "verified");
+    const isRequired = security.mfaPolicy === "required_admin";
+
+    if (isRequired && !verified?.id) {
+      await logServerEvent({
+        eventName: "mfa_setup_required",
+        eventCategory: "auth",
+        eventLabel: "required_admin",
+        path: "/login",
+      });
+      redirect("/login?step=mfa-setup");
+    }
+
+    if (verified?.id) {
+      const { data: challenge, error: challengeError } =
+        await supabase.auth.mfa.challenge({ factorId: verified.id });
+      if (!challengeError && challenge?.id) {
+        cookieStore.set("mfa_factor_id", verified.id, {
+          httpOnly: true,
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+          path: "/",
+          maxAge: 5 * 60,
+        });
+        cookieStore.set("mfa_challenge_id", challenge.id, {
+          httpOnly: true,
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+          path: "/",
+          maxAge: 5 * 60,
+        });
+        await logServerEvent({
+          eventName: "mfa_challenge_started",
+          eventCategory: "auth",
+          eventLabel: "totp",
+          path: "/login",
+        });
+        redirect("/login?step=mfa");
+      }
+    }
   }
 
   try {
@@ -307,6 +380,83 @@ export async function login(formData: FormData) {
     },
   });
 
+  await logServerEvent({
+    eventName: "login_success",
+    eventCategory: "auth",
+    eventLabel: emailDomain,
+    path: "/login",
+  });
+
+  cookieStore.set("admin_session_started_at", nowIso, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
+
+  redirect("/admin");
+}
+
+export async function verifyMfa(formData: FormData) {
+  const code = String(formData.get("code") ?? "").trim();
+  const cookieStore = await cookies();
+  const factorId = cookieStore.get("mfa_factor_id")?.value;
+  const challengeId = cookieStore.get("mfa_challenge_id")?.value;
+
+  if (!code || !factorId || !challengeId) {
+    await logServerEvent({
+      eventName: "mfa_verify_invalid",
+      eventCategory: "auth",
+      eventLabel: "missing_code_or_challenge",
+      path: "/login",
+    });
+    redirect("/login?step=mfa&error=invalid");
+  }
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
+  const { error: verifyError } = await supabase.auth.mfa.verify({
+    factorId,
+    challengeId,
+    code,
+  });
+
+  if (verifyError) {
+    await logServerEvent({
+      eventName: "mfa_verify_failed",
+      eventCategory: "auth",
+      eventLabel: verifyError.message,
+      path: "/login",
+    });
+    redirect("/login?step=mfa&error=invalid");
+  }
+
+  cookieStore.delete("mfa_factor_id");
+  cookieStore.delete("mfa_challenge_id");
+
+  await logServerEvent({
+    eventName: "mfa_verify_success",
+    eventCategory: "auth",
+    eventLabel: "totp",
+    path: "/login",
+  });
+
+  const nowIso = new Date().toISOString();
   cookieStore.set("admin_session_started_at", nowIso, {
     httpOnly: true,
     sameSite: "lax",
