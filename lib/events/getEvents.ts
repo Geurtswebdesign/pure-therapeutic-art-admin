@@ -68,7 +68,7 @@ function normalizeEvents(input: unknown[]): AppEvent[] {
       return {
         id,
         title: String(item.title ?? ""),
-        descriptionHtml: String(item.descriptionHtml ?? item.description_html ?? ""),
+        descriptionHtml: String(item.descriptionHtml ?? ""),
         ameliaEventId: Number(item.ameliaEventId ?? id),
         price: Number(item.price ?? 0),
         capacity:
@@ -76,12 +76,8 @@ function normalizeEvents(input: unknown[]): AppEvent[] {
             ? null
             : Number(item.capacity),
         nextOccurrence:
-          typeof item.nextOccurrence === "string"
-            ? item.nextOccurrence
-            : typeof item.next_occurrence === "string"
-              ? item.next_occurrence
-              : null,
-        occurrenceCount: Number(item.occurrenceCount ?? item.occurrence_count ?? 0),
+          typeof item.nextOccurrence === "string" ? item.nextOccurrence : null,
+        occurrenceCount: Number(item.occurrenceCount ?? 0),
         occurrences: Array.isArray(item.occurrences)
           ? item.occurrences
               .map((occ) => {
@@ -94,23 +90,9 @@ function normalizeEvents(input: unknown[]): AppEvent[] {
               })
               .filter((occ): occ is NonNullable<typeof occ> => Boolean(occ))
           : undefined,
-        bookingUrl: String(item.bookingUrl ?? item.booking_url ?? ""),
-        listUrl:
-          typeof item.listUrl === "string"
-            ? item.listUrl
-            : typeof item.list_url === "string"
-              ? item.list_url
-              : null,
-        updatedAt:
-          typeof item.updatedAt === "string"
-            ? item.updatedAt
-            : typeof item.updated_at === "string"
-              ? item.updated_at
-              : null,
+        bookingUrl: String(item.bookingUrl ?? ""),
+        updatedAt: typeof item.updatedAt === "string" ? item.updatedAt : null,
       } as AppEvent;
     })
-    .filter(
-      (event): event is AppEvent =>
-        Boolean(event && (event.bookingUrl || event.listUrl))
-    );
+    .filter((event): event is AppEvent => Boolean(event && event.bookingUrl));
 }

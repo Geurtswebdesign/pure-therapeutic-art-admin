@@ -1,5 +1,6 @@
 import PublicAppShell from "@/components/public/PublicAppShell";
 import { getEvents } from "@/lib/events/getEvents";
+import type { AppEvent } from "@/lib/events/types";
 
 function formatDateTime(value: string | null) {
   if (!value) return "Nog geen datum";
@@ -12,6 +13,29 @@ function formatDateTime(value: string | null) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function resolveBookingHref(event: AppEvent) {
+  const rawHref = (event.bookingUrl || event.listUrl || "").trim();
+  if (!rawHref) return "";
+
+  try {
+    const url = new URL(rawHref);
+    const hasPopupParams =
+      url.searchParams.has("pta_open") &&
+      url.searchParams.has("pta_title") &&
+      url.searchParams.has("pta_start");
+
+    if (!hasPopupParams && event.title && event.nextOccurrence) {
+      url.searchParams.set("pta_open", "1");
+      url.searchParams.set("pta_title", event.title);
+      url.searchParams.set("pta_start", event.nextOccurrence);
+    }
+
+    return url.toString();
+  } catch {
+    return rawHref;
+  }
 }
 
 export default async function TrainingenPage() {
@@ -93,7 +117,7 @@ export default async function TrainingenPage() {
               <div className="mt-3">
                 {event.bookingUrl || event.listUrl ? (
                   <a
-                    href={event.bookingUrl || event.listUrl || "#"}
+                    href={resolveBookingHref(event)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex rounded-full bg-stone-900 px-4 py-2 text-sm text-white"
