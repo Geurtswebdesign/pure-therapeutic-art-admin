@@ -13,6 +13,8 @@ export type Term = {
   name: string;
   slug: string;
   description: string | null;
+  featured_image_url?: string | null;
+  featured_image_alt?: string | null;
   sort_order: number;
   is_active: boolean;
   content_term_relationships?: { count: number }[];

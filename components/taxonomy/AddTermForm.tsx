@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase/browser";
 import type { Taxonomy, Term } from "./types";
 import { trackEvent } from "@/lib/analytics/track";
+import MediaPicker from "@/components/content/media/MediaPicker";
 
 type Props = {
   taxonomy: Taxonomy;
@@ -27,7 +28,27 @@ export default function AddTermForm({
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [featuredImageUrl, setFeaturedImageUrl] = useState("");
+  const [featuredImageAlt, setFeaturedImageAlt] = useState("");
   const [parentId, setParentId] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  async function handleSelectMedia(ids: string[]) {
+    const id = ids[0];
+    if (!id) return;
+    const { data, error } = await supabase
+      .from("media_assets")
+      .select("file_path, alt_text")
+      .eq("id", id)
+      .maybeSingle<{ file_path: string; alt_text: string | null }>();
+    if (error || !data) return;
+    const url = data.file_path.startsWith("http")
+      ? data.file_path
+      : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${data.file_path}`;
+    setFeaturedImageUrl(url);
+    setFeaturedImageAlt(data.alt_text ?? "");
+    setPickerOpen(false);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,6 +67,8 @@ export default function AddTermForm({
         name,
         slug: slug || slugify(name),
         description,
+        featured_image_url: featuredImageUrl || null,
+        featured_image_alt: featuredImageAlt || null,
         parent_id: parentId || null,
       })
       .select()
@@ -77,6 +100,8 @@ export default function AddTermForm({
     setName("");
     setSlug("");
     setDescription("");
+    setFeaturedImageUrl("");
+    setFeaturedImageAlt("");
     setParentId("");
   }
 
@@ -130,10 +155,66 @@ export default function AddTermForm({
           }
         />
 
+        <input
+          className="w-full border rounded px-3 py-2"
+          placeholder="Category image URL"
+          value={featuredImageUrl}
+          onChange={(e) => setFeaturedImageUrl(e.target.value)}
+        />
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className="rounded border px-3 py-2 text-sm"
+            onClick={() => setPickerOpen(true)}
+          >
+            Kies uit mediatheek
+          </button>
+          {featuredImageUrl ? (
+            <button
+              type="button"
+              className="rounded border px-3 py-2 text-sm"
+              onClick={() => {
+                setFeaturedImageUrl("");
+                setFeaturedImageAlt("");
+              }}
+            >
+              Verwijderen
+            </button>
+          ) : null}
+        </div>
+
+        <input
+          className="w-full border rounded px-3 py-2"
+          placeholder="Category image alt text"
+          value={featuredImageAlt}
+          onChange={(e) => setFeaturedImageAlt(e.target.value)}
+        />
+
         <button className="bg-black text-white px-4 py-2 rounded">
           Add
         </button>
       </form>
+
+      {pickerOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-4xl rounded-lg bg-white p-5 shadow-lg">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold">Kies categorie-afbeelding</h4>
+              <button
+                type="button"
+                onClick={() => setPickerOpen(false)}
+                className="rounded border px-3 py-1 text-xs"
+              >
+                Sluiten
+              </button>
+            </div>
+            <div className="mt-4 max-h-[60vh] overflow-auto">
+              <MediaPicker onSelect={handleSelectMedia} />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

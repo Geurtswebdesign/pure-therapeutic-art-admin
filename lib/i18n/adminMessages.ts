@@ -295,7 +295,7 @@ const nl: AdminMessages = {
     insights: "Inzichten",
     settings: "Instellingen",
     security: "Beveiliging",
-    app: "App",
+    app: "Customizer",
     email: "Email",
     system: "Systeem",
   },
@@ -343,7 +343,7 @@ const nl: AdminMessages = {
     subtitle: "Beheer loginlimieten, sessies en 2FA-beleid voor admins.",
   },
   settingsApp: {
-    title: "App",
+    title: "Customizer",
     items: [
       "Minimale appversie",
       "Force-update schakelaar",
@@ -626,7 +626,7 @@ const en: AdminMessages = {
     subtitle: "Manage login limits, sessions, and 2FA policies for admins.",
   },
   settingsApp: {
-    title: "App",
+    title: "Customizer",
     items: [
       "Minimum app version",
       "Force-update toggle",
@@ -900,7 +900,7 @@ const de: AdminMessages = {
     subtitle: "Verwalte Login-Grenzen, Sitzungen und 2FA-Richtlinien.",
   },
   settingsApp: {
-    title: "App",
+    title: "Customizer",
     items: [
       "Minimale App-Version",
       "Force-Update Schalter",

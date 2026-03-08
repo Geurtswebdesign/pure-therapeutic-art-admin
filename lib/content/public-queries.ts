@@ -60,15 +60,44 @@ export async function getHomepageCategories(limit = 10) {
   const categoryTaxonomy = await getTaxonomyId("category");
   if (!categoryTaxonomy) return [];
 
-  const { data: categories, error } = await supabase
+  let categories:
+    | Array<{
+        id: string;
+        name: string;
+        slug: string;
+        description: string | null;
+        sort_order: number;
+        featured_image_url?: string | null;
+        featured_image_alt?: string | null;
+      }>
+    | null = null;
+
+  const withImageColumns = await supabase
     .from("content_terms")
-    .select("id, name, slug, description, sort_order")
+    .select(
+      "id, name, slug, description, sort_order, featured_image_url, featured_image_alt"
+    )
     .eq("taxonomy_id", categoryTaxonomy)
     .eq("is_active", true)
     .order("sort_order", { ascending: true })
     .limit(limit);
 
-  if (error) throw error;
+  if (withImageColumns.error) {
+    // Backward compatible fallback when migration is not applied yet.
+    const fallback = await supabase
+      .from("content_terms")
+      .select("id, name, slug, description, sort_order")
+      .eq("taxonomy_id", categoryTaxonomy)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .limit(limit);
+
+    if (fallback.error) throw fallback.error;
+    categories = fallback.data ?? [];
+  } else {
+    categories = withImageColumns.data ?? [];
+  }
+
   if (!categories?.length) return [];
 
   const { data: items, error: itemsError } = await supabase
@@ -133,7 +162,7 @@ export async function getHomepageCategories(limit = 10) {
     featuredItem: firstItemByCategory.get(category.id) ?? null,
   }));
 
-  return rows.filter((row) => row.featuredItem);
+  return rows;
 }
 
 export async function getPublishedContentBySlug(slug: string) {

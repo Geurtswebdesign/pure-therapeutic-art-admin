@@ -86,6 +86,16 @@ async function maybeSendSecurityAlert(input: {
 export async function login(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
+  const requestedNext = String(formData.get("next") ?? "").trim();
+  const origin = String(formData.get("origin") ?? "login").trim();
+  const safeNext =
+    requestedNext.startsWith("/") && !requestedNext.startsWith("//")
+      ? requestedNext
+      : "/account";
+  const invalidRedirect =
+    origin === "account"
+      ? "/account?error=invalid"
+      : `/login?error=invalid${safeNext ? `&next=${encodeURIComponent(safeNext)}` : ""}`;
   const emailDomain = email.includes("@") ? email.split("@")[1] : "unknown";
 
   const cookieStore = await cookies();
@@ -297,7 +307,7 @@ export async function login(formData: FormData) {
       path: "/login",
     });
 
-    throw new Error(error.message);
+    redirect(invalidRedirect);
   }
 
   const {
@@ -394,7 +404,11 @@ export async function login(formData: FormData) {
     path: "/",
   });
 
-  redirect("/admin");
+  if (isAdmin) {
+    redirect("/admin");
+  }
+
+  redirect(safeNext || "/account");
 }
 
 export async function verifyMfa(formData: FormData) {

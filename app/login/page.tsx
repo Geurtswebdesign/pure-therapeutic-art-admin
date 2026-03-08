@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { login, verifyMfa } from "@/components/login/actions";
 import AdminTwoFactorCard from "@/components/admin/settings/AdminTwoFactorCard";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
@@ -7,6 +8,7 @@ import { getAppMessages } from "@/lib/i18n/appMessages";
 type LoginSearchParams = {
   step?: string | string[];
   error?: string | string[];
+  next?: string | string[];
 };
 
 export default async function LoginPage({
@@ -19,6 +21,7 @@ export default async function LoginPage({
   const params = await searchParams;
   const step = Array.isArray(params?.step) ? params?.step[0] : params?.step;
   const error = Array.isArray(params?.error) ? params?.error[0] : params?.error;
+  const next = Array.isArray(params?.next) ? params?.next[0] : params?.next;
   const isMfaStep = step === "mfa";
   const isMfaSetup = step === "mfa-setup";
   const hasError = error === "invalid";
@@ -58,12 +61,12 @@ export default async function LoginPage({
           </div>
           <AdminTwoFactorCard language={language} />
           <div className="text-right">
-            <a
+            <Link
               href="/admin"
               className="inline-flex items-center rounded bg-black px-4 py-2 text-sm text-white"
             >
               {t.mfaSetupContinue}
-            </a>
+            </Link>
           </div>
         </div>
       ) : (
@@ -72,6 +75,8 @@ export default async function LoginPage({
           className="w-full max-w-sm bg-white border rounded-lg p-6 space-y-4"
         >
           <h1 className="text-xl font-semibold text-center">{t.title}</h1>
+          <input type="hidden" name="next" value={next || "/account"} />
+          <input type="hidden" name="origin" value="login" />
 
           <div>
             <label className="block text-sm mb-1">{t.email}</label>
@@ -99,6 +104,10 @@ export default async function LoginPage({
           >
             {t.submit}
           </button>
+
+          {hasError ? (
+            <p className="text-sm text-red-600 text-center">{t.mfaInvalid}</p>
+          ) : null}
         </form>
       )}
     </div>

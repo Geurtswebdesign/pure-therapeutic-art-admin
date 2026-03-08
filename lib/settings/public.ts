@@ -8,6 +8,18 @@ type PublicBranding = {
   tagline: string;
 };
 
+type PublicHeaderContext = {
+  categorySlug?: string | null;
+  route?: string | null;
+  page?: string | null;
+};
+
+type PublicHeaderOverride = {
+  logoUrl: string | null;
+  logoAlt: string | null;
+  subtitle: string | null;
+};
+
 function asObject(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
@@ -45,3 +57,75 @@ export const getPublicBranding = cache(async (): Promise<PublicBranding> => {
     };
   }
 });
+
+export const getPublicHeaderOverride = cache(
+  async (context: PublicHeaderContext): Promise<PublicHeaderOverride | null> => {
+    try {
+      const supabase = createAdminClient();
+      const [headersRes, rulesRes, fallbackRes] = await Promise.all([
+        supabase
+          .from("customizer_headers")
+          .select("id, logo_url, logo_alt, subtitle, is_active")
+          .eq("is_active", true),
+        supabase
+          .from("customizer_header_rules")
+          .select("header_id, target_type, target_value"),
+        supabase
+          .from("app_settings")
+          .select("value")
+          .eq("scope", "global")
+          .is("scope_id", null)
+          .eq("key", "customizer_header_fallback")
+          .maybeSingle<{ value: unknown }>(),
+      ]);
+
+      const headers = new Map(
+        (headersRes.data ?? []).map((row) => [
+          row.id as string,
+          {
+            logoUrl: (row.logo_url as string) || null,
+            logoAlt: (row.logo_alt as string) || null,
+            subtitle: (row.subtitle as string) || null,
+          },
+        ])
+      );
+      if (!headers.size) return null;
+
+      const rules = rulesRes.data ?? [];
+      const chooseHeaderId = () => {
+        if (context.categorySlug) {
+          const hit = rules.find(
+            (r) =>
+              r.target_type === "category" &&
+              r.target_value === context.categorySlug
+          );
+          if (hit?.header_id) return hit.header_id as string;
+        }
+        if (context.route) {
+          const hit = rules.find(
+            (r) =>
+              r.target_type === "route" &&
+              r.target_value === context.route
+          );
+          if (hit?.header_id) return hit.header_id as string;
+        }
+        if (context.page) {
+          const hit = rules.find(
+            (r) =>
+              r.target_type === "page" &&
+              r.target_value === context.page
+          );
+          if (hit?.header_id) return hit.header_id as string;
+        }
+        const fallback = asObject(fallbackRes.data?.value)?.headerId;
+        return typeof fallback === "string" ? fallback : null;
+      };
+
+      const headerId = chooseHeaderId();
+      if (!headerId) return null;
+      return headers.get(headerId) ?? null;
+    } catch {
+      return null;
+    }
+  }
+);

@@ -1,19 +1,34 @@
-import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
-import { getAdminMessages } from "@/lib/i18n/adminMessages";
-import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import {
+  getCustomizerHeaderConfig,
+  getCustomizerSettings,
+  getGeneralSettings,
+} from "@/lib/settings/actions";
+import CustomizerSettingsForm from "@/components/admin/settings/CustomizerSettingsForm";
 
 export default async function SettingsAppPage() {
-  const language = resolveUiLanguage(await getPrimaryLanguage());
-  const t = getAdminMessages(language).settingsApp;
+  const [settings, general, headerConfig] = await Promise.all([
+    getCustomizerSettings(),
+    getGeneralSettings(),
+    getCustomizerHeaderConfig(),
+  ]);
 
   return (
-    <section className="space-y-4 rounded border bg-white p-5">
-      <h2 className="text-lg font-semibold">{t.title}</h2>
-      <ul className="list-disc space-y-1 pl-5 text-sm text-gray-600">
-        {t.items.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
+    <section className="space-y-6">
+      <header className="rounded-lg border bg-white p-5 shadow-sm">
+        <h1 className="text-lg font-semibold">Customizer</h1>
+        <p className="mt-1 text-sm text-gray-600">
+          Thema-instellingen voor kleuren, gradient en basis layout.
+        </p>
+      </header>
+      <CustomizerSettingsForm
+        initialValues={settings}
+        brandingValues={{
+          siteName: general.siteName,
+          tagline: general.tagline,
+          logoUrl: general.logoUrl,
+        }}
+        headerConfig={headerConfig}
+      />
     </section>
   );
 }
