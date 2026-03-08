@@ -3,10 +3,7 @@ import PublicAppShell from "@/components/public/PublicAppShell";
 export default async function TherapeutenPage() {
   return (
     <PublicAppShell
-      activeTab="therapeuten"
-      title="Therapeuten"
-      subtitle="Begeleiding en contact"
-    >
+      activeTab="therapeuten">
       <section className="space-y-4">
         <div className="rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-sm">
           <h2 className="font-serif text-2xl text-stone-950">

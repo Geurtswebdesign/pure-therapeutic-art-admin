@@ -7,7 +7,6 @@ import { logSecurityAuditEvent } from "@/lib/security/audit";
 import {
   DEFAULT_GENERAL_SETTINGS,
   type CustomizerHeaderConfig,
-  type CustomizerHeaderRule,
   type CustomizerHeaderTargetType,
   DEFAULT_CUSTOMIZER_SETTINGS,
   type CustomizerSettings,

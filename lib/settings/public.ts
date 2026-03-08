@@ -94,6 +94,21 @@ export const getPublicHeaderOverride = cache(
       const rules = rulesRes.data ?? [];
       const chooseHeaderId = () => {
         if (context.categorySlug) {
+          if (context.route) {
+            const routeCategoryHit = rules.find(
+              (r) =>
+                r.target_type === "route" &&
+                r.target_value === `${context.route}:category:${context.categorySlug}`
+            );
+            if (routeCategoryHit?.header_id) return routeCategoryHit.header_id as string;
+          }
+          const categoryAsRouteHit = rules.find(
+            (r) =>
+              r.target_type === "route" &&
+              r.target_value === `category:${context.categorySlug}`
+          );
+          if (categoryAsRouteHit?.header_id) return categoryAsRouteHit.header_id as string;
+
           const hit = rules.find(
             (r) =>
               r.target_type === "category" &&

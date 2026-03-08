@@ -49,7 +49,7 @@ export default async function AccountPage({
 
   if (!user) {
     return (
-      <PublicAppShell activeTab="profiel" title="Profiel" subtitle="Inloggen">
+      <PublicAppShell activeTab="profiel">
         <section className="space-y-4">
           <div className="rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-sm">
             <h2 className="font-serif text-2xl text-stone-950">Welkom terug</h2>
@@ -139,7 +139,7 @@ export default async function AccountPage({
     "";
 
   return (
-    <PublicAppShell activeTab="profiel" title="Profiel" subtitle="Mijn account">
+    <PublicAppShell activeTab="profiel">
       <section className="space-y-4">
         <div className="overflow-hidden rounded-[1.5rem] border border-[#d8c6b8] bg-[#d8e0d3]">
           <div className="px-4 py-4">
