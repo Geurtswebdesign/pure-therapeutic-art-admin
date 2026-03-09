@@ -28,9 +28,7 @@ type FlatRow = { node: TermNode; depth: number };
  */
 export default function TermsTable({ taxonomy, terms }: Props) {
   const router = useRouter();
-
-  // local order state for DnD reorder
-  const [localTerms] = useState<Term[]>(terms);
+  const localTerms = terms;
 
   // selection
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -49,6 +47,16 @@ export default function TermsTable({ taxonomy, terms }: Props) {
   // For reorder we only reorder within same parent group, so we need a stable list per parent.
   // We'll use the flattened list but only allow reorder within same parent_id.
   const flatIds = flat.map((r) => r.node.id);
+
+  function isDescendant(parentCandidateId: string, nodeId: string) {
+    const byId = new Map(localTerms.map((t) => [t.id, t]));
+    let cursor: string | null = parentCandidateId;
+    while (cursor) {
+      if (cursor === nodeId) return true;
+      cursor = byId.get(cursor)?.parent_id ?? null;
+    }
+    return false;
+  }
 
   function toggleAll(checked: boolean) {
     const next: Record<string, boolean> = {};
@@ -92,10 +100,24 @@ export default function TermsTable({ taxonomy, terms }: Props) {
         return;
       }
 
-      await supabase
+      if (bulkParentId) {
+        for (const selectedId of selectedIds) {
+          if (isDescendant(bulkParentId, selectedId)) {
+            alert("Cannot set parent to a child/descendant term.");
+            return;
+          }
+        }
+      }
+
+      const { error } = await supabase
         .from("content_terms")
         .update({ parent_id: bulkParentId || null })
         .in("id", selectedIds);
+
+      if (error) {
+        alert(`Set parent failed: ${error.message}`);
+        return;
+      }
 
       router.refresh();
       return;
@@ -123,27 +145,59 @@ export default function TermsTable({ taxonomy, terms }: Props) {
     const overTerm = terms.find((t) => t.id === over);
     if (!activeTerm || !overTerm) return;
 
-    // Only reorder within same parent_id (WP-like stable & predictable)
-    if ((activeTerm.parent_id || null) !== (overTerm.parent_id || null)) return;
+    // Same parent: reorder siblings.
+    if ((activeTerm.parent_id || null) === (overTerm.parent_id || null)) {
+      const siblings = localTerms
+        .filter((t) => (t.parent_id || null) === (activeTerm.parent_id || null))
+        .sort((a, b) => a.sort_order - b.sort_order);
 
-    // Build list of siblings
-    const siblings = localTerms
-      .filter((t) => (t.parent_id || null) === (activeTerm.parent_id || null))
+      const oldIndex = siblings.findIndex((t) => t.id === active);
+      const newIndex = siblings.findIndex((t) => t.id === over);
+      if (oldIndex < 0 || newIndex < 0) return;
+
+      const reordered = arrayMove(siblings, oldIndex, newIndex);
+      const updates = reordered.map((t, idx) => ({ id: t.id, sort_order: idx }));
+
+      for (const u of updates) {
+        const { error } = await supabase
+          .from("content_terms")
+          .update({ sort_order: u.sort_order })
+          .eq("id", u.id);
+        if (error) {
+          alert(`Reorder failed: ${error.message}`);
+          return;
+        }
+      }
+
+      router.refresh();
+      return;
+    }
+
+    // Different parent: drop under hovered row as new parent (hierarchical only).
+    if (!taxonomy.is_hierarchical) return;
+    if (isDescendant(overTerm.id, activeTerm.id)) {
+      alert("Cannot move a term under its own descendant.");
+      return;
+    }
+
+    const newSiblings = localTerms
+      .filter((t) => (t.parent_id || null) === overTerm.id)
       .sort((a, b) => a.sort_order - b.sort_order);
+    const nextOrder = newSiblings.length
+      ? (newSiblings[newSiblings.length - 1]?.sort_order ?? 0) + 1
+      : 0;
 
-    const oldIndex = siblings.findIndex((t) => t.id === active);
-    const newIndex = siblings.findIndex((t) => t.id === over);
-    if (oldIndex < 0 || newIndex < 0) return;
+    const { error } = await supabase
+      .from("content_terms")
+      .update({
+        parent_id: overTerm.id,
+        sort_order: nextOrder,
+      })
+      .eq("id", activeTerm.id);
 
-    const reordered = arrayMove(siblings, oldIndex, newIndex);
-
-    // Update sort_order sequentially
-    const updates = reordered.map((t, idx) => ({ id: t.id, sort_order: idx }));
-
-    // Persist (batched-ish)
-    // If you want truly atomic: create a RPC. For now: sequential update is ok.
-    for (const u of updates) {
-      await supabase.from("content_terms").update({ sort_order: u.sort_order }).eq("id", u.id);
+    if (error) {
+      alert(`Move failed: ${error.message}`);
+      return;
     }
 
     router.refresh();

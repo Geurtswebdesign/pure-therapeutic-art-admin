@@ -116,8 +116,8 @@ export default async function TrainingenPage() {
               className="overflow-hidden rounded-[1.5rem] border border-[#e5dbcf] bg-white shadow-[0_12px_30px_rgba(31,24,19,0.08)]"
             >
               <div className="h-1 w-full bg-[#b64040]" />
-              <div className="grid grid-cols-[84px_1fr] gap-0">
-                <div className="flex flex-col items-center justify-center border-r border-[#eee3d8] bg-[#f6eee6] px-2 py-4 text-center">
+              <div className="grid grid-cols-1 gap-0 sm:grid-cols-[84px_1fr]">
+                <div className="flex flex-col items-center justify-center border-b border-[#eee3d8] bg-[#f6eee6] px-2 py-4 text-center sm:border-b-0 sm:border-r">
                   {(() => {
                     const parts = formatDateParts(event.nextOccurrence);
                     return (

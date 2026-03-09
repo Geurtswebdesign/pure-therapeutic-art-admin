@@ -1,8 +1,10 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { getHomepageCategories } from "@/lib/content/public-queries";
+import { HOMEPAGE_SEED_CATEGORY_SLUGS } from "@/lib/content/homepageSeedCategories";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -15,6 +17,65 @@ type ProfileRow = {
     profile_image?: string | null;
   } | null;
 };
+
+type CategoryStyle = {
+  cardClass: string;
+  orbClass: string;
+  badge: string;
+};
+
+const CATEGORY_STYLE_BY_SLUG: Record<string, CategoryStyle> = {
+  gratis: {
+    cardClass: "bg-teal-100",
+    orbClass: "bg-[radial-gradient(circle_at_30%_30%,#e7fffb_0%,#a7efe4_55%,#67d8c8_100%)]",
+    badge: "🎁",
+  },
+  "cognitie-inzicht": {
+    cardClass: "bg-[#e3dbef]",
+    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#2c0838_0%,#0e0818_62%,#07060f_100%)]",
+    badge: "🧠",
+  },
+  "emoties-innerlijke-beleving": {
+    cardClass: "bg-[#ead8e7]",
+    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#f0dede_0%,#d8d8d8_55%,#c2c2c2_100%)]",
+    badge: "❤️",
+  },
+  "gedrag-interactie": {
+    cardClass: "bg-[#f2e3c8]",
+    orbClass: "bg-[radial-gradient(circle_at_30%_30%,#ffb01f_0%,#ef8b00_48%,#d76d00_100%)]",
+    badge: "👥",
+  },
+  "lichaam-zintuigen": {
+    cardClass: "bg-[#cddff0]",
+    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#28a6ff_0%,#0a86da_55%,#0471c2_100%)]",
+    badge: "🧘",
+  },
+  "natuur-symbolische-kracht": {
+    cardClass: "bg-[#cde8d2]",
+    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#cad6c9_0%,#aac2a9_50%,#8faa92_100%)]",
+    badge: "🌿",
+  },
+  "zingeving-ritualen-spiritualiteit": {
+    cardClass: "bg-[#e3dbef]",
+    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#5f9c62_0%,#2f6840_50%,#1f3f2c_100%)]",
+    badge: "🪷",
+  },
+  "specifieke-doelgroepen-context": {
+    cardClass: "bg-[#efe4b8]",
+    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#fafafa_0%,#ededed_52%,#d8d8d8_100%)]",
+    badge: "🧑‍🤝‍🧑",
+  },
+};
+
+function getCategoryStyle(slug: string): CategoryStyle {
+  return (
+    CATEGORY_STYLE_BY_SLUG[slug] ?? {
+      cardClass: "bg-[#e8e3ee]",
+      orbClass: "bg-[radial-gradient(circle_at_35%_30%,#d7d7d7_0%,#bdbdbd_60%,#a0a0a0_100%)]",
+      badge: "✨",
+    }
+  );
+}
 
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -55,13 +116,13 @@ export default async function Home() {
     "";
   const motivationalText =
     "Mooi dat je er bent. Pak een moment voor jezelf en zet vandaag een kleine stap.";
-  const categories = await getHomepageCategories(50);
+  const categories = await getHomepageCategories(50, HOMEPAGE_SEED_CATEGORY_SLUGS);
   return (
     <PublicAppShell activeTab="home" subtitle="Rust, groei en troost">
       <section className="space-y-4">
         <div className="rounded-[1.75rem] border border-stone-200 bg-white px-4 py-4 shadow-sm">
           {user ? (
-            <div className="grid grid-cols-[72px_1fr] gap-4">
+            <div className="grid gap-4 sm:grid-cols-[72px_1fr]">
               <div className="flex flex-col items-center gap-2">
                 {avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -117,37 +178,52 @@ export default async function Home() {
 
         <div className="grid grid-cols-2 gap-3">
           {categories.length ? (
-            categories.map((category, index) => (
+            categories.map((category) => {
+              const style = getCategoryStyle(category.slug);
+              return (
               <Link
                 key={category.id}
                 href={`/content?category=${category.slug}`}
-                className="group relative min-h-[132px] overflow-hidden rounded-[1.4rem] border border-stone-300 shadow-[0_8px_20px_rgba(31,24,19,0.15)] transition hover:-translate-y-0.5"
-                style={
-                  category.featured_image_url
-                    ? {
-                        backgroundImage: `url(${category.featured_image_url})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                      }
-                    : undefined
-                }
+                className={`group rounded-[1.5rem] p-3 text-center shadow-sm transition hover:-translate-y-0.5 ${style.cardClass}`}
               >
-                {!category.featured_image_url ? (
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#c9b3a3_0%,#a88875_40%,#6d4b40_100%)]" />
-                ) : null}
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(24,18,14,0.08)_25%,rgba(24,18,14,0.72)_100%)]" />
-                <div className="absolute left-2 top-2 rounded-full bg-white/85 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-stone-700">
-                  {index + 1}
+                <div className="relative mx-auto mb-3 h-20 w-20">
+                  {category.featured_image_url ? (
+                    <Image
+                      src={category.featured_image_url}
+                      alt={category.featured_image_alt || category.name}
+                      width={80}
+                      height={80}
+                      unoptimized
+                      className="h-20 w-20 rounded-full object-cover shadow-[0_10px_28px_rgba(18,20,26,0.14)]"
+                    />
+                  ) : (
+                    <div
+                      className={`h-20 w-20 rounded-full shadow-[0_10px_28px_rgba(18,20,26,0.14)] ${style.orbClass}`}
+                    />
+                  )}
+
+                  <span className="absolute -right-1 -top-1 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg shadow-[0_6px_16px_rgba(18,20,26,0.16)]">
+                    {style.badge}
+                  </span>
                 </div>
-                <div className="absolute inset-x-2 bottom-2 rounded-xl bg-black/35 px-2 py-2 text-center backdrop-blur-[1px]">
-                  <p className="text-sm font-semibold leading-5 text-white">
-                    {category.name}
-                  </p>
+
+                <h3 className="text-base font-semibold leading-tight text-[#1f2f43]">
+                  {category.name}
+                </h3>
+
+                <p className="mt-1 line-clamp-2 text-sm leading-5 text-[#31445c]">
+                  {category.description || "Verken thema's en oefeningen binnen deze categorie."}
+                </p>
+                <div className="mt-3">
+                  <span className="inline-flex rounded-full border border-[#30445c33] bg-white/70 px-3 py-1 text-xs font-medium text-[#1f2f43]">
+                    Open categorie
+                  </span>
                 </div>
               </Link>
-            ))
+            );
+          })
           ) : (
-            <div className="col-span-2 rounded-[1.5rem] border border-dashed border-stone-300 bg-stone-50 p-5 text-sm text-stone-600">
+            <div className="rounded-[1.5rem] border border-dashed border-stone-300 bg-stone-50 p-5 text-sm text-stone-600">
               Nog geen content beschikbaar.
             </div>
           )}

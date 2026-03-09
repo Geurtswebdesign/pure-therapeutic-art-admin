@@ -33,6 +33,7 @@ export default function EditTermForm(props: {
   const [parentId, setParentId] = useState<string>(props.term.parent_id || "");
   const [active, setActive] = useState<boolean>(props.term.is_active);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   async function handleSelectMedia(ids: string[]) {
     const id = ids[0];
@@ -52,7 +53,8 @@ export default function EditTermForm(props: {
   }
 
   async function save() {
-    await supabase
+    setFormError(null);
+    const { error } = await supabase
       .from("content_terms")
       .update({
         name,
@@ -65,6 +67,14 @@ export default function EditTermForm(props: {
       })
       .eq("id", props.term.id);
 
+    if (error) {
+      const hint = error.message.includes("featured_image_url") || error.message.includes("featured_image_alt")
+        ? "Controleer of sql/content_term_images.sql is uitgevoerd in Supabase."
+        : "";
+      setFormError(hint ? `${error.message} ${hint}` : error.message);
+      return;
+    }
+
     // WP-like: terug naar overzicht
     router.push(`/admin/content/taxonomies/${props.taxonomy.slug}/terms`);
     router.refresh();
@@ -72,6 +82,12 @@ export default function EditTermForm(props: {
 
   return (
     <div className="border rounded-lg p-6 space-y-4">
+      {formError ? (
+        <p className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {formError}
+        </p>
+      ) : null}
+
       <div>
         <label className="block text-sm font-medium">Name</label>
         <input

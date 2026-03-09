@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getPublishedContent } from "@/lib/content/public-queries";
+import { getHomepageCategories, getPublishedContent } from "@/lib/content/public-queries";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
@@ -9,6 +9,65 @@ import { getPublicBranding } from "@/lib/settings/public";
 type SearchParams = {
   category?: string | string[];
 };
+
+type CategoryStyle = {
+  cardClass: string;
+  orbClass: string;
+  badge: string;
+};
+
+const CATEGORY_STYLE_BY_SLUG: Record<string, CategoryStyle> = {
+  gratis: {
+    cardClass: "bg-teal-100",
+    orbClass: "bg-[radial-gradient(circle_at_30%_30%,#e7fffb_0%,#a7efe4_55%,#67d8c8_100%)]",
+    badge: "🎁",
+  },
+  "cognitie-inzicht": {
+    cardClass: "bg-[#e3dbef]",
+    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#2c0838_0%,#0e0818_62%,#07060f_100%)]",
+    badge: "🧠",
+  },
+  "emoties-innerlijke-beleving": {
+    cardClass: "bg-[#ead8e7]",
+    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#f0dede_0%,#d8d8d8_55%,#c2c2c2_100%)]",
+    badge: "❤️",
+  },
+  "gedrag-interactie": {
+    cardClass: "bg-[#f2e3c8]",
+    orbClass: "bg-[radial-gradient(circle_at_30%_30%,#ffb01f_0%,#ef8b00_48%,#d76d00_100%)]",
+    badge: "👥",
+  },
+  "lichaam-zintuigen": {
+    cardClass: "bg-[#cddff0]",
+    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#28a6ff_0%,#0a86da_55%,#0471c2_100%)]",
+    badge: "🧘",
+  },
+  "natuur-symbolische-kracht": {
+    cardClass: "bg-[#cde8d2]",
+    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#cad6c9_0%,#aac2a9_50%,#8faa92_100%)]",
+    badge: "🌿",
+  },
+  "zingeving-ritualen-spiritualiteit": {
+    cardClass: "bg-[#e3dbef]",
+    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#5f9c62_0%,#2f6840_50%,#1f3f2c_100%)]",
+    badge: "🪷",
+  },
+  "specifieke-doelgroepen-context": {
+    cardClass: "bg-[#efe4b8]",
+    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#fafafa_0%,#ededed_52%,#d8d8d8_100%)]",
+    badge: "🧑‍🤝‍🧑",
+  },
+};
+
+function getCategoryStyle(slug: string): CategoryStyle {
+  return (
+    CATEGORY_STYLE_BY_SLUG[slug] ?? {
+      cardClass: "bg-[#e8e3ee]",
+      orbClass: "bg-[radial-gradient(circle_at_35%_30%,#d7d7d7_0%,#bdbdbd_60%,#a0a0a0_100%)]",
+      badge: "✨",
+    }
+  );
+}
 
 function formatCategoryLabel(slug: string) {
   return slug
@@ -31,19 +90,22 @@ export default async function ContentIndexPage({
     ? params?.category[0]
     : params?.category;
   const categoryLabel = categorySlug ? formatCategoryLabel(categorySlug) : null;
-  const items = await getPublishedContent(categorySlug);
+  const [items, categories] = await Promise.all([
+    getPublishedContent(categorySlug),
+    categorySlug ? Promise.resolve([]) : getHomepageCategories(24),
+  ]);
 
   return (
-    <div className="space-y-10">
-      <section className="rounded-[2rem] border border-stone-200 bg-white/85 p-8 shadow-[0_24px_60px_rgba(28,25,23,0.08)] backdrop-blur md:p-10">
-        <div className="max-w-3xl space-y-4">
-          <span className="inline-flex rounded-full border border-stone-300 bg-stone-50 px-3 py-1 text-xs uppercase tracking-[0.24em] text-stone-600">
+    <div className="space-y-8">
+      <section className="rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-sm">
+        <div className="space-y-3">
+          <span className="inline-flex rounded-full border border-stone-300 bg-stone-50 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-stone-600">
             {branding.siteName}
           </span>
-          <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-stone-900 md:text-5xl">
+          <h1 className="text-3xl font-semibold leading-tight tracking-tight text-stone-900">
             {categoryLabel ? `Categorie: ${categoryLabel}` : app.home.viewContent}
           </h1>
-          <p className="max-w-2xl text-base leading-7 text-stone-600 md:text-lg">
+          <p className="text-sm leading-6 text-stone-600">
             {categorySlug
               ? "Je ziet nu alle gepubliceerde content binnen deze categorie."
               : app.home.subtitle}
@@ -59,17 +121,65 @@ export default async function ContentIndexPage({
         </div>
       </section>
 
-      {items.length ? (
-        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      {!categorySlug ? (
+        categories.length ? (
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {categories.map((category) => {
+              const style = getCategoryStyle(category.slug);
+              return (
+                <Link
+                  key={category.id}
+                  href={`/content?category=${category.slug}`}
+                  className={`group rounded-[2rem] p-6 text-center shadow-sm transition hover:-translate-y-0.5 ${style.cardClass}`}
+                >
+                  <div className="relative mx-auto mb-5 h-40 w-40">
+                    {category.featured_image_url ? (
+                      <Image
+                        src={category.featured_image_url}
+                        alt={category.featured_image_alt || category.name}
+                        width={160}
+                        height={160}
+                        unoptimized
+                        className="h-40 w-40 rounded-full object-cover shadow-[0_10px_28px_rgba(18,20,26,0.14)]"
+                      />
+                    ) : (
+                      <div
+                        className={`h-40 w-40 rounded-full shadow-[0_10px_28px_rgba(18,20,26,0.14)] ${style.orbClass}`}
+                      />
+                    )}
+
+                    <span className="absolute -right-1 top-0 inline-flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl shadow-[0_6px_16px_rgba(18,20,26,0.16)]">
+                      {style.badge}
+                    </span>
+                  </div>
+
+                  <h2 className="text-[2rem] font-semibold leading-tight text-[#1f2f43]">
+                    {category.name}
+                  </h2>
+
+                  <p className="mt-3 line-clamp-3 text-[1.65rem] leading-[1.45] text-[#31445c]">
+                    {category.description || "Verken thema's en oefeningen binnen deze categorie."}
+                  </p>
+                </Link>
+              );
+            })}
+          </section>
+        ) : (
+          <section className="rounded-[1.75rem] border border-dashed border-stone-300 bg-white/70 p-10 text-center text-stone-600">
+            Er staan nog geen categorieen klaar.
+          </section>
+        )
+      ) : items.length ? (
+        <section className="grid gap-4">
           {items.map((item) => {
             const href = item.language ? `/${item.language}/${item.slug}` : `/content/${item.slug}`;
             return (
               <article
                 key={item.id}
-                className="group overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white shadow-[0_20px_40px_rgba(28,25,23,0.06)] transition-transform duration-200 hover:-translate-y-1"
+                className="group overflow-hidden rounded-[1.5rem] border border-[#e5dbcf] bg-white shadow-[0_12px_30px_rgba(31,24,19,0.08)] transition"
               >
                 <Link href={href} className="block">
-                  <div className="aspect-[16/10] bg-stone-100">
+                  <div className="aspect-[16/10] bg-[#f6eee6]">
                     {item.featured_image_url ? (
                       <Image
                         src={item.featured_image_url}
@@ -77,20 +187,20 @@ export default async function ContentIndexPage({
                         width={1200}
                         height={750}
                         unoptimized
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
                       />
                     ) : (
-                      <div className="flex h-full items-end bg-[radial-gradient(circle_at_top_left,#d6c2b8_0%,#efe7df_42%,#f7f4ef_100%)] p-6">
-                        <span className="rounded-full border border-stone-300/70 bg-white/80 px-3 py-1 text-xs uppercase tracking-[0.24em] text-stone-600">
+                      <div className="flex h-full items-end bg-[radial-gradient(circle_at_top_left,#d6c2b8_0%,#efe7df_42%,#f7f4ef_100%)] p-4">
+                        <span className="rounded-full border border-stone-300/70 bg-white/85 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-stone-600">
                           {item.credit_cost && item.credit_cost > 0 ? `${item.credit_cost} credits` : "Open"}
                         </span>
                       </div>
                     )}
                   </div>
 
-                  <div className="space-y-4 p-6">
+                  <div className="space-y-3 p-4">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs uppercase tracking-[0.2em] text-stone-500">
+                      <span className="text-[11px] uppercase tracking-[0.2em] text-stone-500">
                         {(item.language || language).toUpperCase()}
                       </span>
                       <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs text-stone-600">
@@ -98,11 +208,11 @@ export default async function ContentIndexPage({
                       </span>
                     </div>
 
-                    <h2 className="text-2xl font-semibold leading-tight text-stone-900">
+                    <h2 className="text-4xl font-semibold leading-tight text-stone-900">
                       {item.title}
                     </h2>
 
-                    <p className="line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-stone-600">
+                    <p className="line-clamp-3 min-h-[3.75rem] text-sm leading-6 text-stone-600">
                       {item.excerpt || app.home.subtitle}
                     </p>
 

@@ -32,6 +32,7 @@ export default function AddTermForm({
   const [featuredImageAlt, setFeaturedImageAlt] = useState("");
   const [parentId, setParentId] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   async function handleSelectMedia(ids: string[]) {
     const id = ids[0];
@@ -53,6 +54,7 @@ export default function AddTermForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name) return;
+    setFormError(null);
 
     trackEvent({
       eventName: "admin_term_create_submit",
@@ -76,6 +78,10 @@ export default function AddTermForm({
 
     if (error) {
       console.error(error);
+      const hint = error.message.includes("featured_image_url") || error.message.includes("featured_image_alt")
+        ? "Controleer of sql/content_term_images.sql is uitgevoerd in Supabase."
+        : "";
+      setFormError(hint ? `${error.message} ${hint}` : error.message);
       trackEvent({
         eventName: "admin_term_create_failed",
         eventCategory: "admin_content",
@@ -112,6 +118,12 @@ export default function AddTermForm({
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {formError ? (
+          <p className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {formError}
+          </p>
+        ) : null}
+
         <input
           className="w-full border rounded px-3 py-2"
           placeholder="Name"

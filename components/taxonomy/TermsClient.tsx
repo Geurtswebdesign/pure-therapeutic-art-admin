@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TermsTable from "./TermsTable";
 import AddTermForm from "./AddTermForm";
 import type { Taxonomy, Term } from "./types";
@@ -12,6 +12,10 @@ type Props = {
 
 export default function TermsClient({ taxonomy, terms }: Props) {
   const [localTerms, setLocalTerms] = useState<Term[]>(terms);
+
+  useEffect(() => {
+    setLocalTerms(terms);
+  }, [terms]);
 
   return (
     <div className="grid grid-cols-3 gap-8">
