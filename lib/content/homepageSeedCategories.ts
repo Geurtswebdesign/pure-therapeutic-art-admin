@@ -8,3 +8,9 @@ export const HOMEPAGE_SEED_CATEGORY_SLUGS = [
   "specifieke-doelgroepen-context",
   "gratis",
 ] as const;
+
+export function isSeedCategorySlug(slug: string) {
+  return HOMEPAGE_SEED_CATEGORY_SLUGS.includes(
+    slug as (typeof HOMEPAGE_SEED_CATEGORY_SLUGS)[number]
+  );
+}

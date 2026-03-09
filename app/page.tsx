@@ -184,7 +184,7 @@ export default async function Home() {
               <Link
                 key={category.id}
                 href={`/content?category=${category.slug}`}
-                className={`group rounded-[1.5rem] p-3 text-center shadow-sm transition hover:-translate-y-0.5 ${style.cardClass}`}
+                className={`group flex h-full min-h-[260px] flex-col rounded-[1.5rem] p-3 text-center shadow-sm transition hover:-translate-y-0.5 ${style.cardClass}`}
               >
                 <div className="relative mx-auto mb-3 h-20 w-20">
                   {category.featured_image_url ? (
@@ -207,14 +207,14 @@ export default async function Home() {
                   </span>
                 </div>
 
-                <h3 className="text-base font-semibold leading-tight text-[#1f2f43]">
+                <h3 className="min-h-[40px] text-base font-semibold leading-tight text-[#1f2f43]">
                   {category.name}
                 </h3>
 
-                <p className="mt-1 line-clamp-2 text-sm leading-5 text-[#31445c]">
+                <p className="mt-1 min-h-[40px] line-clamp-2 text-sm leading-5 text-[#31445c]">
                   {category.description || "Verken thema's en oefeningen binnen deze categorie."}
                 </p>
-                <div className="mt-3">
+                <div className="mt-auto pt-3">
                   <span className="inline-flex rounded-full border border-[#30445c33] bg-white/70 px-3 py-1 text-xs font-medium text-[#1f2f43]">
                     Open categorie
                   </span>

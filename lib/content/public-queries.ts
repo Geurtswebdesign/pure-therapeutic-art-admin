@@ -63,6 +63,7 @@ export async function getHomepageCategories(limit = 10, slugs?: readonly string[
   let categories:
     | Array<{
         id: string;
+        parent_id: string | null;
         name: string;
         slug: string;
         description: string | null;
@@ -75,7 +76,7 @@ export async function getHomepageCategories(limit = 10, slugs?: readonly string[
   let withImageColumnsQuery = supabase
     .from("content_terms")
     .select(
-      "id, name, slug, description, sort_order, featured_image_url, featured_image_alt"
+      "id, parent_id, name, slug, description, sort_order, featured_image_url, featured_image_alt"
     )
     .eq("taxonomy_id", categoryTaxonomy)
     .eq("is_active", true)
@@ -91,7 +92,7 @@ export async function getHomepageCategories(limit = 10, slugs?: readonly string[
     // Backward compatible fallback when migration is not applied yet.
     let fallbackQuery = supabase
       .from("content_terms")
-      .select("id, name, slug, description, sort_order")
+      .select("id, parent_id, name, slug, description, sort_order")
       .eq("taxonomy_id", categoryTaxonomy)
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
