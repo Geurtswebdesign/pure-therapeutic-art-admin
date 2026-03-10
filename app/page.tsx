@@ -4,7 +4,6 @@ import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { getHomepageCategories } from "@/lib/content/public-queries";
-import { HOMEPAGE_SEED_CATEGORY_SLUGS } from "@/lib/content/homepageSeedCategories";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -116,7 +115,7 @@ export default async function Home() {
     "";
   const motivationalText =
     "Mooi dat je er bent. Pak een moment voor jezelf en zet vandaag een kleine stap.";
-  const categories = await getHomepageCategories(50, HOMEPAGE_SEED_CATEGORY_SLUGS);
+  const categories = await getHomepageCategories(50, { homepageOnly: true });
   return (
     <PublicAppShell activeTab="home" subtitle="Rust, groei en troost">
       <section className="space-y-4">

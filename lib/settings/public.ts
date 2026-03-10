@@ -5,7 +5,6 @@ import { DEFAULT_GENERAL_SETTINGS } from "@/lib/settings/types";
 type PublicBranding = {
   logoUrl: string | null;
   siteName: string;
-  tagline: string;
 };
 
 type PublicHeaderContext = {
@@ -47,13 +46,11 @@ export const getPublicBranding = cache(async (): Promise<PublicBranding> => {
     return {
       logoUrl: asString(value?.logoUrl, "") || null,
       siteName: asString(value?.siteName, DEFAULT_GENERAL_SETTINGS.siteName),
-      tagline: asString(value?.tagline, DEFAULT_GENERAL_SETTINGS.tagline),
     };
   } catch {
     return {
       logoUrl: DEFAULT_GENERAL_SETTINGS.logoUrl || null,
       siteName: DEFAULT_GENERAL_SETTINGS.siteName,
-      tagline: DEFAULT_GENERAL_SETTINGS.tagline,
     };
   }
 });

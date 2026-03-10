@@ -18,7 +18,7 @@ import MediaPicker from "@/components/content/media/MediaPicker";
 
 type Props = {
   initialValues: CustomizerSettings;
-  brandingValues: Pick<GeneralSettings, "siteName" | "tagline" | "logoUrl">;
+  brandingValues: Pick<GeneralSettings, "siteName" | "logoUrl">;
   headerConfig: CustomizerHeaderConfig;
 };
 
@@ -241,14 +241,6 @@ export default function CustomizerSettingsForm({
               <input
                 value={branding.siteName}
                 onChange={(e) => setBrandingField("siteName", e.target.value)}
-                className="w-full rounded border px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="space-y-1">
-              <span className="text-sm font-medium">Tagline</span>
-              <input
-                value={branding.tagline}
-                onChange={(e) => setBrandingField("tagline", e.target.value)}
                 className="w-full rounded border px-3 py-2 text-sm"
               />
             </label>

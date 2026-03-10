@@ -31,6 +31,8 @@ export default function AddTermForm({
   const [featuredImageUrl, setFeaturedImageUrl] = useState("");
   const [featuredImageAlt, setFeaturedImageAlt] = useState("");
   const [parentId, setParentId] = useState("");
+  const [isHomepageSeed, setIsHomepageSeed] = useState(false);
+  const [homepageSortOrder, setHomepageSortOrder] = useState<number>(0);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -72,6 +74,11 @@ export default function AddTermForm({
         featured_image_url: featuredImageUrl || null,
         featured_image_alt: featuredImageAlt || null,
         parent_id: parentId || null,
+        is_homepage_seed: taxonomy.slug === "category" ? isHomepageSeed : false,
+        homepage_sort_order:
+          taxonomy.slug === "category" && isHomepageSeed
+            ? homepageSortOrder
+            : null,
       })
       .select()
       .single();
@@ -109,6 +116,8 @@ export default function AddTermForm({
     setFeaturedImageUrl("");
     setFeaturedImageAlt("");
     setParentId("");
+    setIsHomepageSeed(false);
+    setHomepageSortOrder(0);
   }
 
   return (
@@ -202,6 +211,32 @@ export default function AddTermForm({
           value={featuredImageAlt}
           onChange={(e) => setFeaturedImageAlt(e.target.value)}
         />
+
+        {taxonomy.slug === "category" ? (
+          <div className="space-y-3 rounded border p-3">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={isHomepageSeed}
+                onChange={(e) => setIsHomepageSeed(e.target.checked)}
+              />
+              Toon op homepage (seed categorie)
+            </label>
+
+            {isHomepageSeed ? (
+              <label className="block text-sm">
+                <span className="mb-1 block">Homepage volgorde</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={homepageSortOrder}
+                  onChange={(e) => setHomepageSortOrder(Number(e.target.value))}
+                  className="w-full rounded border px-3 py-2"
+                />
+              </label>
+            ) : null}
+          </div>
+        ) : null}
 
         <button className="bg-black text-white px-4 py-2 rounded">
           Add

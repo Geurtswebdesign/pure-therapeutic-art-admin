@@ -55,7 +55,10 @@ export async function getPublishedContent(categorySlug?: string | null) {
   return data ?? [];
 }
 
-export async function getHomepageCategories(limit = 10, slugs?: readonly string[]) {
+export async function getHomepageCategories(
+  limit = 10,
+  options?: { homepageOnly?: boolean }
+) {
   const supabase = createAdminClient();
   const categoryTaxonomy = await getTaxonomyId("category");
   if (!categoryTaxonomy) return [];
@@ -64,6 +67,8 @@ export async function getHomepageCategories(limit = 10, slugs?: readonly string[
     | Array<{
         id: string;
         parent_id: string | null;
+        is_homepage_seed?: boolean;
+        homepage_sort_order?: number | null;
         name: string;
         slug: string;
         description: string | null;
@@ -76,14 +81,27 @@ export async function getHomepageCategories(limit = 10, slugs?: readonly string[
   let withImageColumnsQuery = supabase
     .from("content_terms")
     .select(
-      "id, parent_id, name, slug, description, sort_order, featured_image_url, featured_image_alt"
+      "id, parent_id, is_homepage_seed, homepage_sort_order, name, slug, description, sort_order, featured_image_url, featured_image_alt"
     )
     .eq("taxonomy_id", categoryTaxonomy)
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true });
+    .eq("is_active", true);
 
-  if (slugs?.length) {
-    withImageColumnsQuery = withImageColumnsQuery.in("slug", [...slugs]);
+  if (options?.homepageOnly) {
+    withImageColumnsQuery = withImageColumnsQuery.eq("is_homepage_seed", true);
+    withImageColumnsQuery = withImageColumnsQuery.order("homepage_sort_order", {
+      ascending: true,
+      nullsFirst: false,
+    });
+  }
+
+  withImageColumnsQuery = withImageColumnsQuery.order("sort_order", {
+    ascending: true,
+  });
+
+  if (!options?.homepageOnly) {
+    withImageColumnsQuery = withImageColumnsQuery.order("name", {
+      ascending: true,
+    });
   }
 
   const withImageColumns = await withImageColumnsQuery.limit(limit);
@@ -92,13 +110,22 @@ export async function getHomepageCategories(limit = 10, slugs?: readonly string[
     // Backward compatible fallback when migration is not applied yet.
     let fallbackQuery = supabase
       .from("content_terms")
-      .select("id, parent_id, name, slug, description, sort_order")
+      .select("id, parent_id, is_homepage_seed, homepage_sort_order, name, slug, description, sort_order")
       .eq("taxonomy_id", categoryTaxonomy)
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true });
+      .eq("is_active", true);
 
-    if (slugs?.length) {
-      fallbackQuery = fallbackQuery.in("slug", [...slugs]);
+    if (options?.homepageOnly) {
+      fallbackQuery = fallbackQuery.eq("is_homepage_seed", true);
+      fallbackQuery = fallbackQuery.order("homepage_sort_order", {
+        ascending: true,
+        nullsFirst: false,
+      });
+    }
+
+    fallbackQuery = fallbackQuery.order("sort_order", { ascending: true });
+
+    if (!options?.homepageOnly) {
+      fallbackQuery = fallbackQuery.order("name", { ascending: true });
     }
 
     const fallback = await fallbackQuery.limit(limit);
@@ -203,6 +230,35 @@ export async function getPublishedBlocks(contentItemId: string) {
 
   if (error) throw error;
   return data ?? [];
+}
+
+export async function getPrimaryCategoryForContentItem(contentItemId: string) {
+  const supabase = createAdminClient();
+  const categoryTaxonomy = await getTaxonomyId("category");
+  if (!categoryTaxonomy) return null;
+
+  const { data: relationships, error: relationshipError } = await supabase
+    .from("content_term_relationships")
+    .select("term_id")
+    .eq("content_item_id", contentItemId);
+
+  if (relationshipError) throw relationshipError;
+  const termIds = (relationships ?? [])
+    .map((row) => row.term_id)
+    .filter((termId): termId is string => Boolean(termId));
+
+  if (!termIds.length) return null;
+
+  const { data: terms, error: termsError } = await supabase
+    .from("content_terms")
+    .select("id, slug, name, description, parent_id, sort_order, is_homepage_seed")
+    .eq("taxonomy_id", categoryTaxonomy)
+    .in("id", termIds)
+    .order("sort_order", { ascending: true })
+    .limit(1);
+
+  if (termsError) throw termsError;
+  return terms?.[0] ?? null;
 }
 
 async function getTaxonomyId(slug: string) {

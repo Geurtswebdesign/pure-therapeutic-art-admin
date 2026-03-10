@@ -59,7 +59,6 @@ export async function getGeneralSettings(): Promise<GeneralSettings> {
 
   return {
     siteName: asString(value?.siteName, DEFAULT_GENERAL_SETTINGS.siteName),
-    tagline: asString(value?.tagline, DEFAULT_GENERAL_SETTINGS.tagline),
     logoUrl: asString(value?.logoUrl, DEFAULT_GENERAL_SETTINGS.logoUrl),
     timezone: asString(value?.timezone, DEFAULT_GENERAL_SETTINGS.timezone),
     locale: asString(value?.locale, DEFAULT_GENERAL_SETTINGS.locale),
@@ -142,7 +141,7 @@ export async function saveGeneralSettings(
 }
 
 export async function saveBrandingSettings(
-  branding: Pick<GeneralSettings, "siteName" | "tagline" | "logoUrl">,
+  branding: Pick<GeneralSettings, "siteName" | "logoUrl">,
   adminId?: string
 ) {
   const current = await getGeneralSettings();
@@ -150,7 +149,6 @@ export async function saveBrandingSettings(
     {
       ...current,
       siteName: branding.siteName,
-      tagline: branding.tagline,
       logoUrl: branding.logoUrl,
     },
     adminId

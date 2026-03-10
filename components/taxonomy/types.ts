@@ -10,6 +10,8 @@ export type Term = {
   id: string;
   taxonomy_id: string;
   parent_id: string | null;
+  is_homepage_seed?: boolean;
+  homepage_sort_order?: number | null;
   name: string;
   slug: string;
   description: string | null;

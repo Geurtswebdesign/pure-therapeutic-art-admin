@@ -1,12 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getHomepageCategories, getPublishedContent } from "@/lib/content/public-queries";
-import {
-  isSeedCategorySlug,
-} from "@/lib/content/homepageSeedCategories";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getPublicBranding } from "@/lib/settings/public";
+import logo from "@/assets/branding/logo.png";
 
 type SearchParams = {
   category?: string | string[];
@@ -71,8 +70,8 @@ function getCategoryStyle(slug: string): CategoryStyle {
   );
 }
 
-function isSeedCategory(slug: string) {
-  return isSeedCategorySlug(slug);
+function isSeedCategory(category: { is_homepage_seed?: boolean | null }) {
+  return Boolean(category.is_homepage_seed);
 }
 
 function formatCategoryLabel(slug: string) {
@@ -99,10 +98,14 @@ export default async function ContentIndexPage({
     getPublishedContent(categorySlug),
     getHomepageCategories(200),
   ]);
+  const branding = await getPublicBranding();
   const rootCategories = categories.filter((category) => !category.parent_id);
   const activeCategory = categorySlug
     ? categories.find((category) => category.slug === categorySlug) ?? null
     : null;
+  const isCompactCategoryPage = Boolean(
+    categorySlug && activeCategory && !isSeedCategory(activeCategory)
+  );
   const childCategories = activeCategory
     ? categories
         .filter((category) => category.parent_id === activeCategory.id)
@@ -111,34 +114,35 @@ export default async function ContentIndexPage({
 
   return (
     <div className="space-y-8">
-      <section className="rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-sm">
-        <div className="space-y-3">
-
-          <h1 className="text-3xl font-semibold leading-tight tracking-tight text-stone-900">
-            {categoryLabel ? `${categoryLabel}` : app.home.viewContent}
-          </h1>
-          <p className="text-sm leading-6 text-stone-600">
-            {categorySlug
-              ? (activeCategory?.description || "Je ziet nu alle gepubliceerde content binnen deze categorie.")
-              : app.home.subtitle}
-          </p>
-          {categorySlug ? (
-            <Link
-              href="/"
-              className="inline-flex rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700"
-            >
-              Terug
-            </Link>
-          ) : null}
-        </div>
-      </section>
+      {!isCompactCategoryPage ? (
+        <section className="rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-sm">
+          <div className="space-y-3">
+            <h1 className="text-3xl font-semibold leading-tight tracking-tight text-stone-900">
+              {categoryLabel ? `${categoryLabel}` : app.home.viewContent}
+            </h1>
+            <p className="text-sm leading-6 text-stone-600">
+              {categorySlug
+                ? (activeCategory?.description || "Je ziet nu alle gepubliceerde content binnen deze categorie.")
+                : app.home.subtitle}
+            </p>
+            {categorySlug ? (
+              <Link
+                href="/"
+                className="inline-flex rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700"
+              >
+                Terug
+              </Link>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       {!categorySlug ? (
         rootCategories.length ? (
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {rootCategories.map((category) => {
               const style = getCategoryStyle(category.slug);
-              const isSeed = isSeedCategory(category.slug);
+              const isSeed = isSeedCategory(category);
               return (
                 <Link
                   key={category.id}
@@ -195,24 +199,71 @@ export default async function ContentIndexPage({
           </section>
         )
       ) : items.length ? (
-        categorySlug && activeCategory && !isSeedCategory(activeCategory.slug) ? (
-          <section className="rounded-[1.75rem] border border-stone-200 bg-[#f8f3ed] p-5 shadow-sm">
-            <h2 className="text-3xl font-semibold text-stone-900">
-              {activeCategory.name}
-            </h2>
-            {activeCategory.description ? (
-              <p className="mt-2 text-sm text-stone-600">
-                {activeCategory.description}
-              </p>
-            ) : null}
+        isCompactCategoryPage && activeCategory ? (
+          <section className="mx-auto max-w-xl rounded-[1.75rem] border border-[#e4d8cb] bg-[#f8f3ed] px-5 py-6 shadow-sm sm:px-7">
+            <Link
+              href="/content"
+              className="mb-5 inline-flex items-center rounded-full border border-stone-300 bg-white/70 px-4 py-2 text-sm text-stone-700"
+            >
+              Alle categorieen
+            </Link>
 
-            <ol className="mt-5 space-y-3 text-stone-900">
+            <div className="mb-6 flex items-start gap-3">
+              {branding.logoUrl ? (
+                <img
+                  src={branding.logoUrl}
+                  alt={`${branding.siteName} logo`}
+                  className="h-[42px] w-[42px] object-contain"
+                />
+              ) : (
+                <Image
+                  src={logo}
+                  alt="Pure Grief and Therapeutic ART"
+                  width={42}
+                  height={42}
+                  priority
+                />
+              )}
+              <p className="max-w-[220px] font-serif text-[15px] leading-tight text-stone-700">
+                {branding.siteName || "Pure Grief and Therapeutic ART"}
+              </p>
+            </div>
+
+            <header className="text-center">
+              <h1 className="font-serif text-[2rem] leading-tight text-stone-950 sm:text-[2.3rem]">
+                {activeCategory.name}
+              </h1>
+              {activeCategory.description ? (
+                <p className="mt-1 text-xs italic text-stone-500">
+                  {activeCategory.description}
+                </p>
+              ) : null}
+            </header>
+
+            <ol className="mt-6 space-y-3 text-left text-stone-900">
               {items.map((item, index) => {
                 const href = item.language ? `/${item.language}/${item.slug}` : `/content/${item.slug}`;
                 return (
-                  <li key={item.id} className="border-b border-stone-200 pb-3 last:border-b-0">
-                    <Link href={href} className="text-lg font-medium leading-snug hover:underline">
-                      {index + 1}. {item.title}
+                  <li key={item.id}>
+                    <Link
+                      href={href}
+                      className="group block rounded-[1rem] px-3 py-2 transition hover:bg-white/60"
+                    >
+                      <div className="flex gap-3">
+                        <span className="mt-0.5 text-base font-semibold text-stone-800">
+                          {index + 1}.
+                        </span>
+                        <div className="min-w-0">
+                          <h2 className="text-[1.05rem] leading-snug text-stone-900">
+                            {item.title}
+                          </h2>
+                          {item.excerpt ? (
+                            <p className="mt-1 line-clamp-2 text-sm leading-5 text-stone-600">
+                              {item.excerpt}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
                     </Link>
                   </li>
                 );
@@ -279,60 +330,125 @@ export default async function ContentIndexPage({
         </section>
         )
       ) : categorySlug && childCategories.length ? (
-        <section className="grid grid-cols-2 gap-3">
-          {childCategories.map((category) => {
-            const style = getCategoryStyle(category.slug);
-            const isSeed = isSeedCategory(category.slug);
-            return (
-              <Link
-                key={category.id}
-                href={`/content?category=${category.slug}`}
-                className={
-                  isSeed
-                    ? `group rounded-[2rem] p-6 text-center shadow-sm transition hover:-translate-y-0.5 ${style.cardClass}`
-                    : "group rounded-[1.25rem] border border-stone-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5"
-                }
-              >
-                {isSeed ? (
-                  <>
-                    <div className="relative mx-auto mb-5 h-40 w-40">
-                      {category.featured_image_url ? (
-                        <Image
-                          src={category.featured_image_url}
-                          alt={category.featured_image_alt || category.name}
-                          width={160}
-                          height={160}
-                          unoptimized
-                          className="h-40 w-40 rounded-full object-cover shadow-[0_10px_28px_rgba(18,20,26,0.14)]"
-                        />
-                      ) : (
-                        <div
-                          className={`h-40 w-40 rounded-full shadow-[0_10px_28px_rgba(18,20,26,0.14)] ${style.orbClass}`}
-                        />
-                      )}
+        isCompactCategoryPage && activeCategory ? (
+          <section className="mx-auto max-w-xl rounded-[1.75rem] border border-[#e4d8cb] bg-[#f8f3ed] px-5 py-6 shadow-sm sm:px-7">
+            <Link
+              href="/content"
+              className="mb-5 inline-flex items-center rounded-full border border-stone-300 bg-white/70 px-4 py-2 text-sm text-stone-700"
+            >
+              Alle categorieen
+            </Link>
 
-                      <span className="absolute -right-1 top-0 inline-flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl shadow-[0_6px_16px_rgba(18,20,26,0.16)]">
-                        {style.badge}
+            <div className="mb-6 flex items-start gap-3">
+              {branding.logoUrl ? (
+                <img
+                  src={branding.logoUrl}
+                  alt={`${branding.siteName} logo`}
+                  className="h-[42px] w-[42px] object-contain"
+                />
+              ) : (
+                <Image
+                  src={logo}
+                  alt="Pure Grief and Therapeutic ART"
+                  width={42}
+                  height={42}
+                  priority
+                />
+              )}
+              <p className="max-w-[220px] font-serif text-[15px] leading-tight text-stone-700">
+                {branding.siteName || "Pure Grief and Therapeutic ART"}
+              </p>
+            </div>
+
+            <header className="text-center">
+              <h1 className="font-serif text-[2rem] leading-tight text-stone-950 sm:text-[2.3rem]">
+                {activeCategory.name}
+              </h1>
+              {activeCategory.description ? (
+                <p className="mt-1 text-xs italic text-stone-500">
+                  {activeCategory.description}
+                </p>
+              ) : null}
+            </header>
+
+            <ol className="mt-6 space-y-3 text-left text-stone-900">
+              {childCategories.map((category, index) => (
+                <li key={category.id}>
+                  <Link
+                    href={`/content?category=${category.slug}`}
+                    className="group block rounded-[1rem] px-3 py-2 transition hover:bg-white/60"
+                  >
+                    <div className="flex gap-3">
+                      <span className="mt-0.5 text-base font-semibold text-stone-800">
+                        {index + 1}.
                       </span>
+                      <div className="min-w-0">
+                        <h2 className="text-[1.05rem] leading-snug text-stone-900">
+                          {category.name}
+                        </h2>
+                      </div>
                     </div>
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ) : (
+          <section className="grid grid-cols-2 gap-3">
+            {childCategories.map((category) => {
+              const style = getCategoryStyle(category.slug);
+              const isSeed = isSeedCategory(category);
+              return (
+                <Link
+                  key={category.id}
+                  href={`/content?category=${category.slug}`}
+                  className={
+                    isSeed
+                      ? `group rounded-[2rem] p-6 text-center shadow-sm transition hover:-translate-y-0.5 ${style.cardClass}`
+                      : "group rounded-[1.25rem] border border-stone-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5"
+                  }
+                >
+                  {isSeed ? (
+                    <>
+                      <div className="relative mx-auto mb-5 h-40 w-40">
+                        {category.featured_image_url ? (
+                          <Image
+                            src={category.featured_image_url}
+                            alt={category.featured_image_alt || category.name}
+                            width={160}
+                            height={160}
+                            unoptimized
+                            className="h-40 w-40 rounded-full object-cover shadow-[0_10px_28px_rgba(18,20,26,0.14)]"
+                          />
+                        ) : (
+                          <div
+                            className={`h-40 w-40 rounded-full shadow-[0_10px_28px_rgba(18,20,26,0.14)] ${style.orbClass}`}
+                          />
+                        )}
 
-                    <h2 className="text-[2rem] font-semibold leading-tight text-[#1f2f43]">
+                        <span className="absolute -right-1 top-0 inline-flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl shadow-[0_6px_16px_rgba(18,20,26,0.16)]">
+                          {style.badge}
+                        </span>
+                      </div>
+
+                      <h2 className="text-[2rem] font-semibold leading-tight text-[#1f2f43]">
+                        {category.name}
+                      </h2>
+
+                      <p className="mt-3 line-clamp-3 text-[1.65rem] leading-[1.45] text-[#31445c]">
+                        {category.description || "Verken thema's en oefeningen binnen deze categorie."}
+                      </p>
+                    </>
+                  ) : (
+                    <h2 className="text-base font-semibold leading-tight text-stone-900">
                       {category.name}
                     </h2>
-
-                    <p className="mt-3 line-clamp-3 text-[1.65rem] leading-[1.45] text-[#31445c]">
-                      {category.description || "Verken thema's en oefeningen binnen deze categorie."}
-                    </p>
-                  </>
-                ) : (
-                  <h2 className="text-base font-semibold leading-tight text-stone-900">
-                    {category.name}
-                  </h2>
-                )}
-              </Link>
-            );
-          })}
-        </section>
+                  )}
+                </Link>
+              );
+            })}
+          </section>
+        )
       ) : (
         <section className="rounded-[1.75rem] border border-dashed border-stone-300 bg-white/70 p-10 text-center text-stone-600">
           Er staat nog geen gepubliceerde content klaar.

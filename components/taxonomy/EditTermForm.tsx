@@ -31,6 +31,12 @@ export default function EditTermForm(props: {
     props.term.featured_image_alt || ""
   );
   const [parentId, setParentId] = useState<string>(props.term.parent_id || "");
+  const [isHomepageSeed, setIsHomepageSeed] = useState<boolean>(
+    Boolean(props.term.is_homepage_seed)
+  );
+  const [homepageSortOrder, setHomepageSortOrder] = useState<number>(
+    props.term.homepage_sort_order ?? 0
+  );
   const [active, setActive] = useState<boolean>(props.term.is_active);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -63,6 +69,12 @@ export default function EditTermForm(props: {
         featured_image_url: featuredImageUrl || null,
         featured_image_alt: featuredImageAlt || null,
         parent_id: props.taxonomy.is_hierarchical ? (parentId || null) : null,
+        is_homepage_seed:
+          props.taxonomy.slug === "category" ? isHomepageSeed : false,
+        homepage_sort_order:
+          props.taxonomy.slug === "category" && isHomepageSeed
+            ? homepageSortOrder
+            : null,
         is_active: active,
       })
       .eq("id", props.term.id);
@@ -165,6 +177,32 @@ export default function EditTermForm(props: {
           onChange={(e) => setFeaturedImageAlt(e.target.value)}
         />
       </div>
+
+      {props.taxonomy.slug === "category" ? (
+        <div className="space-y-3 rounded border p-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isHomepageSeed}
+              onChange={(e) => setIsHomepageSeed(e.target.checked)}
+            />
+            Toon op homepage (seed categorie)
+          </label>
+
+          {isHomepageSeed ? (
+            <label className="block text-sm">
+              <span className="mb-1 block">Homepage volgorde</span>
+              <input
+                type="number"
+                min={0}
+                value={homepageSortOrder}
+                onChange={(e) => setHomepageSortOrder(Number(e.target.value))}
+                className="w-full rounded border px-3 py-2"
+              />
+            </label>
+          ) : null}
+        </div>
+      ) : null}
 
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />

@@ -9,6 +9,7 @@ type Props = {
   scope: ContentAccessScope;
   isLoggedIn: boolean;
   language: UiLanguage;
+  compactVariant?: boolean;
 };
 
 export default function LockedView(props: Props) {

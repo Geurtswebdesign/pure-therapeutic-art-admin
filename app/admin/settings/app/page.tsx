@@ -24,7 +24,6 @@ export default async function SettingsAppPage() {
         initialValues={settings}
         brandingValues={{
           siteName: general.siteName,
-          tagline: general.tagline,
           logoUrl: general.logoUrl,
         }}
         headerConfig={headerConfig}
