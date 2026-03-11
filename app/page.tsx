@@ -200,10 +200,6 @@ export default async function Home() {
                       className={`h-20 w-20 rounded-full shadow-[0_10px_28px_rgba(18,20,26,0.14)] ${style.orbClass}`}
                     />
                   )}
-
-                  <span className="absolute -right-1 -top-1 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg shadow-[0_6px_16px_rgba(18,20,26,0.16)]">
-                    {style.badge}
-                  </span>
                 </div>
 
                 <h3 className="min-h-[40px] text-base font-semibold leading-tight text-[#1f2f43]">

@@ -251,7 +251,7 @@ export async function getPrimaryCategoryForContentItem(contentItemId: string) {
 
   const { data: terms, error: termsError } = await supabase
     .from("content_terms")
-    .select("id, slug, name, description, parent_id, sort_order, is_homepage_seed")
+    .select("id, slug, name, parent_id, sort_order, is_homepage_seed")
     .eq("taxonomy_id", categoryTaxonomy)
     .in("id", termIds)
     .order("sort_order", { ascending: true })
