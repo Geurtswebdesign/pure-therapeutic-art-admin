@@ -16,6 +16,7 @@ type AdminMessages = {
     content: string;
     items: string;
     newItem: string;
+    themes: string;
     categories: string;
     tags: string;
     media: string;
@@ -289,6 +290,7 @@ const nl: AdminMessages = {
     content: "Content",
     items: "Items",
     newItem: "Nieuw item",
+    themes: "Themes",
     categories: "Categorieen",
     tags: "Tags",
     media: "Media",
@@ -576,6 +578,7 @@ const en: AdminMessages = {
     overview: "Overview",
     transactions: "Transactions",
     newItem: "New item",
+    themes: "Themes",
     categories: "Categories",
     insights: "Insights",
     settings: "Settings",
@@ -849,6 +852,7 @@ const de: AdminMessages = {
     content: "Inhalt",
     items: "Elemente",
     newItem: "Neues Element",
+    themes: "Themen",
     categories: "Kategorien",
     insights: "Einblicke",
     settings: "Einstellungen",

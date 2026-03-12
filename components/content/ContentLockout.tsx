@@ -31,30 +31,8 @@ export default async function ContentLockout({
   wrapInPageContainer = true,
 }: Props) {
   const t = getAppMessages(language).metadata;
-  const branding = await getPublicBranding();
   const content = (
     <article className="lockout-container space-y-5">
-      <header className="flex items-start gap-3">
-        {branding.logoUrl ? (
-          <img
-            src={branding.logoUrl}
-            alt={`${branding.siteName} logo`}
-            className="h-[46px] w-[46px] object-contain"
-          />
-        ) : (
-          <Image
-            src={logo}
-            alt="Pure Grief and Therapeutic ART"
-            width={46}
-            height={46}
-            priority
-          />
-        )}
-        <h3 className="lockout-brand-title">
-          {branding.siteName || "Pure Grief and Therapeutic ART"}
-        </h3>
-      </header>
-
       <h1 className="lockout-title">
         {item.title}
       </h1>

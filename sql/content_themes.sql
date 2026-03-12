@@ -2,6 +2,8 @@ begin;
 
 create table if not exists public.content_theme_pages (
   id uuid primary key default gen_random_uuid(),
+  parent_theme_page_id uuid null references public.content_theme_pages(id) on delete set null,
+  source_key text null unique,
   slug text not null unique,
   eyebrow text null,
   title text not null,
@@ -49,9 +51,15 @@ create table if not exists public.content_theme_section_items (
 );
 
 alter table public.content_theme_pages
+  add column if not exists parent_theme_page_id uuid null references public.content_theme_pages(id) on delete set null,
+  add column if not exists source_key text null,
   add column if not exists hero_image_url text null,
   add column if not exists hero_image_alt text null,
   add column if not exists hero_image_position text not null default 'right';
+
+create unique index if not exists content_theme_pages_source_key_uidx
+  on public.content_theme_pages (source_key)
+  where source_key is not null;
 
 alter table public.content_theme_sections
   add column if not exists section_image_url text null,
@@ -126,6 +134,9 @@ end $$;
 
 create index if not exists content_theme_pages_publish_sort_idx
   on public.content_theme_pages (is_published, sort_order, title);
+
+create index if not exists content_theme_pages_parent_sort_idx
+  on public.content_theme_pages (parent_theme_page_id, sort_order, title);
 
 create index if not exists content_theme_sections_page_sort_idx
   on public.content_theme_sections (theme_page_id, sort_order);

@@ -1,0 +1,1812 @@
+{
+  "createdContent": 225,
+  "createdLinks": 225,
+  "createdTermLinks": 0,
+  "dryRun": false,
+  "generatedAt": "2026-03-11T13:18:35.427Z",
+  "processed": 225,
+  "report": [
+    {
+      "contentItemId": "bcf28f38-eb9d-4c62-8835-92cda7a455b3",
+      "contentSlug": "archetypen-en-sprookjesfiguren-archetypen-inzetten-binnen-vaktherapie",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "Archetypen inzetten binnen vaktherapie"
+    },
+    {
+      "contentItemId": "f38b524d-8e73-418c-81ce-f455db1ed0da",
+      "contentSlug": "archetypen-en-sprookjesfiguren-1-de-held",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "1 De held"
+    },
+    {
+      "contentItemId": "87a15bdd-4c27-4e19-a49a-362900bf7726",
+      "contentSlug": "archetypen-en-sprookjesfiguren-2-de-schaduw",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "2 De schaduw"
+    },
+    {
+      "contentItemId": "6c74e972-6254-43b6-ae33-33a5215d524a",
+      "contentSlug": "archetypen-en-sprookjesfiguren-3-de-wijze",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "3 De wijze"
+    },
+    {
+      "contentItemId": "ee5900c8-61c6-423c-9c1a-8909c85337d8",
+      "contentSlug": "archetypen-en-sprookjesfiguren-4-het-kind",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "4 Het kind"
+    },
+    {
+      "contentItemId": "12043d0d-1f0b-4a7a-a81e-26eea8240b76",
+      "contentSlug": "archetypen-en-sprookjesfiguren-5-de-trickster",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "5 De trickster"
+    },
+    {
+      "contentItemId": "345eccef-ac99-4229-9947-c39a4596067a",
+      "contentSlug": "archetypen-en-sprookjesfiguren-6-de-verzorger",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "6 De verzorger"
+    },
+    {
+      "contentItemId": "fa9a16d6-249e-4c55-bde7-1220da822011",
+      "contentSlug": "archetypen-en-sprookjesfiguren-7-de-koning-koningin",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "7 De koning/ koningin"
+    },
+    {
+      "contentItemId": "49575dad-e701-4570-ac96-c46da85dfbd4",
+      "contentSlug": "archetypen-en-sprookjesfiguren-8-de-zoeker-avonturier",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "8 De zoeker/ avonturier"
+    },
+    {
+      "contentItemId": "9e48ce99-d699-4597-8e4e-3128a405b8e6",
+      "contentSlug": "archetypen-en-sprookjesfiguren-9-de-rebel-strijder",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "9 De rebel/ strijder"
+    },
+    {
+      "contentItemId": "01e19d0f-8de5-4e91-b6c5-355c56063e9d",
+      "contentSlug": "archetypen-en-sprookjesfiguren-10-de-magier-tovenaar",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "10 De magiër/ tovenaar"
+    },
+    {
+      "contentItemId": "b2a6388a-10ee-4c3f-b5a8-b1c572bc8e9f",
+      "contentSlug": "archetypen-en-sprookjesfiguren-11-de-onschuldige",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "11 De onschuldige"
+    },
+    {
+      "contentItemId": "f21fe080-f6e7-401d-927a-150bf5484214",
+      "contentSlug": "archetypen-en-sprookjesfiguren-12-de-geliefde",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "12 De geliefde"
+    },
+    {
+      "contentItemId": "8dbcfd89-7ef4-4c93-9ee0-0a3a47f2048e",
+      "contentSlug": "archetypen-en-sprookjesfiguren-13-de-beschermer-ridder",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "13 De beschermer/ ridder"
+    },
+    {
+      "contentItemId": "7e69a4d9-c5a9-4d8a-95e3-b21eff66bde6",
+      "contentSlug": "archetypen-en-sprookjesfiguren-14-de-vrouwelijke-wijze-heks",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "14 De vrouwelijke wijze/ heks"
+    },
+    {
+      "contentItemId": "c70ebb53-8da2-4036-96f0-e63102e3b901",
+      "contentSlug": "archetypen-en-sprookjesfiguren-15-de-monsterfiguur",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "15 De monsterfiguur"
+    },
+    {
+      "contentItemId": "5b5af10b-e6fe-4f88-bd0c-52c3a1f24125",
+      "contentSlug": "archetypen-en-sprookjesfiguren-16-de-helper-gids",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "16 De helper/ gids"
+    },
+    {
+      "contentItemId": "68c3af79-ec3f-4f1b-8707-c6511fcb5440",
+      "contentSlug": "archetypen-en-sprookjesfiguren-17-de-prins-prinses",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "17 De prins/ prinses"
+    },
+    {
+      "contentItemId": "cad11bf0-4aa3-40bc-af97-4fe0e71b053a",
+      "contentSlug": "archetypen-en-sprookjesfiguren-18-de-nar-hofnar",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "18 De nar/ hofnar"
+    },
+    {
+      "contentItemId": "e47ce272-3e57-4704-9676-ff3f1251ed04",
+      "contentSlug": "archetypen-en-sprookjesfiguren-19-de-stiefmoeder",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "19 De stiefmoeder"
+    },
+    {
+      "contentItemId": "d0f9c4d0-89c7-4af9-9d95-10a3752e5674",
+      "contentSlug": "archetypen-en-sprookjesfiguren-20-de-alchemist",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "20 De alchemist"
+    },
+    {
+      "contentItemId": "c4ec24d9-6df3-474d-b876-7d1eff09b825",
+      "contentSlug": "archetypen-en-sprookjesfiguren-de-held",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "created-and-linked",
+      "title": "De Held"
+    },
+    {
+      "contentItemId": "712d5932-1535-44a9-93fe-f90178b0703a",
+      "contentSlug": "bilaterale-oefeningen-lemniscaat-liggende-8",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "bilaterale-werkvormen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Lemniscaat (liggende 8)"
+    },
+    {
+      "contentItemId": "f2b71cee-609a-401a-98ae-497d4af61548",
+      "contentSlug": "bilaterale-oefeningen-tekenend-herstel",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "bilaterale-werkvormen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Tekenend herstel"
+    },
+    {
+      "contentItemId": "d4afec29-0cc5-44b2-b24b-90d0465b76d9",
+      "contentSlug": "bilaterale-oefeningen-yin-en-yang",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "bilaterale-werkvormen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Yin en yang"
+    },
+    {
+      "contentItemId": "a25d96ab-dde5-4301-ac18-5f0fc84cdb7d",
+      "contentSlug": "bilaterale-oefeningen-verborgen-patronen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "bilaterale-werkvormen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Verborgen patronen"
+    },
+    {
+      "contentItemId": "2b737649-2ca9-4411-8cd3-e51e8fb2794c",
+      "contentSlug": "bilaterale-oefeningen-spiegelspel",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "bilaterale-werkvormen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Spiegelspel"
+    },
+    {
+      "contentItemId": "403dc14c-d9b6-4f41-bba1-9520301099ee",
+      "contentSlug": "bilaterale-oefeningen-lemniscaat",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "bilaterale-werkvormen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Lemniscaat"
+    },
+    {
+      "contentItemId": "32e9a404-ad07-4343-8a22-719f7c4e7bbc",
+      "contentSlug": "cognitie-gedachten-hersenspinsels",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "cognitie-gedachten-piekeren-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Hersenspinsels"
+    },
+    {
+      "contentItemId": "c768da26-48f9-45fa-9b62-80d27c780306",
+      "contentSlug": "cognitie-gedachten-dwarsdoorsnede-van-je-hoofd",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "cognitie-gedachten-piekeren-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Dwarsdoorsnede van je hoofd"
+    },
+    {
+      "contentItemId": "44ad0177-d726-4fe7-8d68-ca8cec9dfe43",
+      "contentSlug": "cognitie-gedachten-een-wasknijperbordje-themabord-of-weekschema-maken",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "cognitie-gedachten-piekeren-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Een wasknijperbordje, themabord of weekschema maken"
+    },
+    {
+      "contentItemId": "a0cf7d1d-5697-4f9d-94a2-109051d2554b",
+      "contentSlug": "cognitie-gedachten-de-kapstok",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "cognitie-gedachten-piekeren-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "De kapstok"
+    },
+    {
+      "contentItemId": "3d349873-bdc6-4b4b-bd39-619153d29d37",
+      "contentSlug": "cognitie-gedachten-in-de-put-uit-de-put",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "cognitie-gedachten-piekeren-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "In de put – uit de put"
+    },
+    {
+      "contentItemId": "f07b2c09-6933-4359-917e-6a01fcd8b71a",
+      "contentSlug": "cognitie-gedachten-piekervriend",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "cognitie-gedachten-piekeren-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Piekervriend"
+    },
+    {
+      "contentItemId": "3507a986-9238-4e99-9013-4a213f568b19",
+      "contentSlug": "cognitie-gedachten-pieker-piekmoment",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "cognitie-gedachten-piekeren-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Pieker-piekmoment"
+    },
+    {
+      "contentItemId": "f4ef11a1-0df9-4dbc-8e81-0558909780d9",
+      "contentSlug": "cognitie-gedachten-denkwolken",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "cognitie-gedachten-piekeren-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Denkwolken"
+    },
+    {
+      "contentItemId": "a1d8f552-0c42-4b9c-9367-18f2c1471ecf",
+      "contentSlug": "cognitie-gedachten-zorgendoosje",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "cognitie-gedachten-piekeren-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Zorgendoosje"
+    },
+    {
+      "contentItemId": "584719de-f02b-49f6-8303-e052f57c6236",
+      "contentSlug": "cognitie-gedachten-dans-je-zorgen-weg",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "cognitie-gedachten-piekeren-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Dans je zorgen weg"
+    },
+    {
+      "contentItemId": "7a424270-b79c-4f99-8f75-bb8065344960",
+      "contentSlug": "cognitie-gedachten-praat-met-een-gekke-stem",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "cognitie-gedachten-piekeren-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Praat met een gekke stem"
+    },
+    {
+      "contentItemId": "ce85e149-ca8e-4757-ad3b-aa20c4ffb48e",
+      "contentSlug": "controle-en-loslaten-touwtjes-in-handen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "controle-en-loslaten-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Touwtjes in handen"
+    },
+    {
+      "contentItemId": "a68b5fed-fde0-422d-9353-330693df532b",
+      "contentSlug": "controle-en-loslaten-puntkomma",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "controle-en-loslaten-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Puntkomma"
+    },
+    {
+      "contentItemId": "448f87bc-3c00-4b42-959e-105a85e6e455",
+      "contentSlug": "controle-en-loslaten-loslaten",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "controle-en-loslaten-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Loslaten"
+    },
+    {
+      "contentItemId": "069869ee-bdfe-4797-b6f8-5f6f530ef305",
+      "contentSlug": "controle-en-loslaten-afpellen-zoals-een-ui",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "controle-en-loslaten-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Afpellen zoals een ui"
+    },
+    {
+      "contentItemId": "fd3bb619-ca5b-429d-8294-c308b79f07aa",
+      "contentSlug": "controle-en-loslaten-lichtpuntjes",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "controle-en-loslaten-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Lichtpuntjes"
+    },
+    {
+      "contentItemId": "bf0182a4-e582-46bd-967f-6a000e57ba44",
+      "contentSlug": "controle-en-loslaten-uitdagingen-aangaan",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "controle-en-loslaten-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Uitdagingen aangaan"
+    },
+    {
+      "contentItemId": "7376f1ca-ea85-4b8b-bda6-ec81e4220b45",
+      "contentSlug": "controle-en-loslaten-ballonnen-loslaten",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "controle-en-loslaten-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Ballonnen loslaten"
+    },
+    {
+      "contentItemId": "7c9414a6-f4e3-48d8-bf35-e8f0876472b8",
+      "contentSlug": "controle-en-loslaten-de-reiskoffer",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "controle-en-loslaten-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "De reiskoffer"
+    },
+    {
+      "contentItemId": "7a974be6-eae1-44e2-bbd1-626e53213cb3",
+      "contentSlug": "controle-en-loslaten-innerlijke-vrijheid",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "controle-en-loslaten-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Innerlijke vrijheid"
+    },
+    {
+      "contentItemId": "86caf60c-18b9-41ce-9d92-7a1c6e2082e7",
+      "contentSlug": "controle-en-loslaten-de-schommel",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "controle-en-loslaten-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "De schommel"
+    },
+    {
+      "contentItemId": "3d278f45-0d8a-4e14-843f-348530a451a8",
+      "contentSlug": "gevoelens-algemene-opdrachten-algemeen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Algemeen:"
+    },
+    {
+      "contentItemId": "a833c08c-fe23-4cb9-aeac-deb200ee830d",
+      "contentSlug": "gevoelens-algemene-opdrachten-maskers-om-emoties-te-verbergen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Maskers om emoties te verbergen"
+    },
+    {
+      "contentItemId": "19c47d12-5c6f-46ed-946b-d3e094f5692c",
+      "contentSlug": "gevoelens-algemene-opdrachten-emotiekussen-maken",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Emotiekussen maken"
+    },
+    {
+      "contentItemId": "209497b8-efe4-49ab-a310-2e81418ce5f1",
+      "contentSlug": "gevoelens-algemene-opdrachten-smileys-op-een-plankje",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Smileys op een plankje"
+    },
+    {
+      "contentItemId": "572dfa31-c1cc-4b7f-8c06-6da35c3f25da",
+      "contentSlug": "gevoelens-algemene-opdrachten-kleurenkauwgombal",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Kleurenkauwgombal"
+    },
+    {
+      "contentItemId": "262ac28b-90de-45fc-bcde-73a1a0722ca4",
+      "contentSlug": "gevoelens-algemene-opdrachten-baboesjka",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Baboesjka"
+    },
+    {
+      "contentItemId": "9209c24e-2025-4476-98c8-a226000d5e3f",
+      "contentSlug": "gevoelens-algemene-opdrachten-toverflesjes",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Toverflesjes"
+    },
+    {
+      "contentItemId": "6df404ad-b727-48b6-909a-d41c48ca6751",
+      "contentSlug": "gevoelens-algemene-opdrachten-binnen-en-buitenkant-stokpop",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Binnen- en buitenkant stokpop"
+    },
+    {
+      "contentItemId": "c476e9d5-c5ce-44b8-adcf-06618359fd2b",
+      "contentSlug": "gevoelens-algemene-opdrachten-het-hart",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Het hart"
+    },
+    {
+      "contentItemId": "dba12745-619b-4b84-bfca-d5a8766b56b1",
+      "contentSlug": "gevoelens-algemene-opdrachten-lichaamstekening",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Lichaamstekening"
+    },
+    {
+      "contentItemId": "11c9f593-8ae6-4b49-b834-60ff0d8e4e82",
+      "contentSlug": "gevoelens-algemene-opdrachten-gevoelsthermometer",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Gevoelsthermometer"
+    },
+    {
+      "contentItemId": "2e55d9ad-ec91-44ff-a793-f8a4848a9610",
+      "contentSlug": "gevoelens-algemene-opdrachten-weerkalender",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Weerkalender"
+    },
+    {
+      "contentItemId": "9ee43164-ecd8-4e9e-ad13-0663ae4373aa",
+      "contentSlug": "gevoelens-algemene-opdrachten-gevoelens-in-een-boekje",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Gevoelens in een boekje"
+    },
+    {
+      "contentItemId": "ff462291-0f80-460f-888e-acc051dd17e2",
+      "contentSlug": "gevoelens-algemene-opdrachten-gevoelens-memory",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Gevoelens-memory"
+    },
+    {
+      "contentItemId": "6a5c3c7f-feb9-461f-937f-eebc65f08835",
+      "contentSlug": "gevoelens-algemene-opdrachten-gebruiksaanwijzing-maken-voor-gevoelens",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Gebruiksaanwijzing maken voor gevoelens"
+    },
+    {
+      "contentItemId": "60d61230-6215-49f7-8022-3db0f3ea9dd3",
+      "contentSlug": "gevoelens-algemene-opdrachten-voel-je-kussen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Voel je kussen"
+    },
+    {
+      "contentItemId": "9031df2a-1007-4b9b-a625-dfc309cdaa5e",
+      "contentSlug": "gevoelens-algemene-opdrachten-masker-om-emoties-gevoelens-te-verbergen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/1-gevoelens-algemeen-foto-s",
+      "status": "created-and-linked",
+      "title": "Masker om emoties/ gevoelens te verbergen"
+    },
+    {
+      "contentItemId": "63cfe086-8211-4a7e-aec3-fe196dcc6f36",
+      "contentSlug": "zelfvertrouwen-supersterke-eigenschap",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/10-zelfvertrouwen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Supersterke eigenschap"
+    },
+    {
+      "contentItemId": "efe24a4d-a599-47da-b3f1-d7f260256ae8",
+      "contentSlug": "zelfvertrouwen-gekleurde-krachten",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/10-zelfvertrouwen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Gekleurde krachten"
+    },
+    {
+      "contentItemId": "e081705c-758f-4b4c-b858-511e1f14507a",
+      "contentSlug": "zelfvertrouwen-de-krachttrol",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/10-zelfvertrouwen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "De krachttrol"
+    },
+    {
+      "contentItemId": "7ae1f4f2-51e8-4720-b68b-faa1d50b55a8",
+      "contentSlug": "zelfvertrouwen-krachttotem",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/10-zelfvertrouwen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Krachttotem"
+    },
+    {
+      "contentItemId": "4eddc2d8-840f-4b67-afbe-7610d5727d26",
+      "contentSlug": "zelfvertrouwen-zelfliefde",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/10-zelfvertrouwen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Zelfliefde"
+    },
+    {
+      "contentItemId": "00f90a96-3efb-4f4a-8f15-464b3be2959d",
+      "contentSlug": "zelfvertrouwen-lichtpuntjes",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/10-zelfvertrouwen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Lichtpuntjes"
+    },
+    {
+      "contentItemId": "ec49eb74-5460-4299-95cc-6542a9d5b166",
+      "contentSlug": "zelfvertrouwen-klavertje-vier",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/10-zelfvertrouwen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Klavertje vier"
+    },
+    {
+      "contentItemId": "aff59811-c190-48bd-b5d2-5658e0ed956e",
+      "contentSlug": "zelfvertrouwen-powervorm-positieve-eigenschappen-in-vorm-en-lijn",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/10-zelfvertrouwen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Powervorm – positieve eigenschappen in vorm en lijn"
+    },
+    {
+      "contentItemId": "d21f198c-e36c-46f1-aac5-eee04f4ec0dd",
+      "contentSlug": "zelfvertrouwen-innerlijk-kompas",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/10-zelfvertrouwen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Innerlijk kompas"
+    },
+    {
+      "contentItemId": "0d80971a-575e-425a-8eec-421cdaa86e60",
+      "contentSlug": "zelfvertrouwen-verankeren",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/10-zelfvertrouwen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Verankeren"
+    },
+    {
+      "contentItemId": "fd3206e2-b1fe-43c5-a3bd-787de01b2fd1",
+      "contentSlug": "gevoelens-thema-angst-bang-1-angst-omarmen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/2-angst-bang-foto-s",
+      "status": "created-and-linked",
+      "title": "1. Angst omarmen"
+    },
+    {
+      "contentItemId": "2a4e997a-42ed-49cb-af63-74235632f98b",
+      "contentSlug": "gevoelens-thema-angst-bang-2-voelen-als-sleutel-tot-verandering",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/2-angst-bang-foto-s",
+      "status": "created-and-linked",
+      "title": "2. Voelen als sleutel tot verandering"
+    },
+    {
+      "contentItemId": "830d9136-6789-49c9-bf2e-401f82c9f504",
+      "contentSlug": "gevoelens-thema-angst-bang-3-ik-ben-niet-mijn-angst",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/2-angst-bang-foto-s",
+      "status": "created-and-linked",
+      "title": "3. Ik ben niet mijn angst"
+    },
+    {
+      "contentItemId": "474a5ba8-adcf-45f8-a8ba-37e39de32b54",
+      "contentSlug": "gevoelens-thema-angst-bang-4-zelfzorg-als-richtingwijzer",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/2-angst-bang-foto-s",
+      "status": "created-and-linked",
+      "title": "4. Zelfzorg als richtingwijzer"
+    },
+    {
+      "contentItemId": "594b4058-edae-4c45-bb1e-bdc13603deb2",
+      "contentSlug": "gevoelens-thema-angst-bang-5-het-keerpunt",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/2-angst-bang-foto-s",
+      "status": "created-and-linked",
+      "title": "5. Het keerpunt"
+    },
+    {
+      "contentItemId": "977565c0-ffe4-4222-9d57-c3bf9b21d246",
+      "contentSlug": "gevoelens-thema-angst-bang-6-wanneer-angst-uitnodigt-tot-groei",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/2-angst-bang-foto-s",
+      "status": "created-and-linked",
+      "title": "6. Wanneer angst uitnodigt tot groei"
+    },
+    {
+      "contentItemId": "a786b1a5-7950-45c0-9011-deba2ddb3e94",
+      "contentSlug": "gevoelens-thema-angst-bang-7-het-overlevingsmechanisme",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/2-angst-bang-foto-s",
+      "status": "created-and-linked",
+      "title": "7. Het overlevingsmechanisme"
+    },
+    {
+      "contentItemId": "b0835525-98e3-488c-a1f5-b2fd58954a0d",
+      "contentSlug": "gevoelens-thema-angst-bang-8-van-angst-naar-veerkracht",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/2-angst-bang-foto-s",
+      "status": "created-and-linked",
+      "title": "8. Van angst naar veerkracht"
+    },
+    {
+      "contentItemId": "d91c236e-a361-416d-8a55-df754fd15166",
+      "contentSlug": "gevoelens-thema-angst-bang-9-anti-monster",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/2-angst-bang-foto-s",
+      "status": "created-and-linked",
+      "title": "9. Anti-monster"
+    },
+    {
+      "contentItemId": "8fad9b68-b574-4538-acca-65cf3b30d038",
+      "contentSlug": "gevoelens-thema-angst-bang-10-er-tegenop-zien-als-een-berg",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/2-angst-bang-foto-s",
+      "status": "created-and-linked",
+      "title": "10. Er tegenop zien als een berg"
+    },
+    {
+      "contentItemId": "bd5294b6-475d-4891-a02b-4436459cab3a",
+      "contentSlug": "gevoelens-thema-angst-bang-angst-omarmen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/2-angst-bang-foto-s",
+      "status": "created-and-linked",
+      "title": "Angst omarmen"
+    },
+    {
+      "contentItemId": "0dbbe916-e97b-4ede-9fdf-781d0d067d25",
+      "contentSlug": "gevoelens-boos-kwaad-een-boze-woorden-scheldwoordentekening-krastekening-maken",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/3-boosheid-en-kwaadheid-foto-s",
+      "status": "created-and-linked",
+      "title": "Een boze woorden/ scheldwoordentekening - krastekening maken"
+    },
+    {
+      "contentItemId": "9264b9b0-bb69-4b9d-a6d7-71034f06ea85",
+      "contentSlug": "gevoelens-boos-kwaad-de-vulkaan",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/3-boosheid-en-kwaadheid-foto-s",
+      "status": "created-and-linked",
+      "title": "De vulkaan"
+    },
+    {
+      "contentItemId": "f9728449-9a19-4fb9-9640-d8ec8a969100",
+      "contentSlug": "gevoelens-boos-kwaad-snelkookpan-van-rust-naar-overkoken",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/3-boosheid-en-kwaadheid-foto-s",
+      "status": "created-and-linked",
+      "title": "Snelkookpan; van rust naar overkoken"
+    },
+    {
+      "contentItemId": "332303b0-9aa0-4888-9eff-7653f1e40ff4",
+      "contentSlug": "gevoelens-boos-kwaad-stoplicht-van-groen-naar-rood",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/3-boosheid-en-kwaadheid-foto-s",
+      "status": "created-and-linked",
+      "title": "Stoplicht; van groen naar rood"
+    },
+    {
+      "contentItemId": "13cd7795-d811-48dd-9aa4-9fb4f9b9cb81",
+      "contentSlug": "gevoelens-boos-kwaad-woede-en-onmacht-uitrazen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/3-boosheid-en-kwaadheid-foto-s",
+      "status": "created-and-linked",
+      "title": "Woede en onmacht uitrazen"
+    },
+    {
+      "contentItemId": "fb841616-d5ed-4a7a-83f7-585d4a7bddc3",
+      "contentSlug": "gevoelens-boos-kwaad-kwaadmuur",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/3-boosheid-en-kwaadheid-foto-s",
+      "status": "created-and-linked",
+      "title": "Kwaadmuur"
+    },
+    {
+      "contentItemId": "23241aa4-c739-4362-bc5e-1922b9b03eab",
+      "contentSlug": "gevoelens-boos-kwaad-bakstenen-slaan",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/3-boosheid-en-kwaadheid-foto-s",
+      "status": "created-and-linked",
+      "title": "Bakstenen slaan"
+    },
+    {
+      "contentItemId": "5eed71ce-1fe5-4991-bfe3-46a012425c2f",
+      "contentSlug": "gevoelens-boos-kwaad-boosheid-en-frustratie-aan-de-zee-meegeven",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/3-boosheid-en-kwaadheid-foto-s",
+      "status": "created-and-linked",
+      "title": "Boosheid en frustratie aan de zee meegeven"
+    },
+    {
+      "contentItemId": "292d1134-826e-40cb-adae-e44b4a8e1757",
+      "contentSlug": "gevoelens-boos-kwaad-de-boksbal",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/3-boosheid-en-kwaadheid-foto-s",
+      "status": "created-and-linked",
+      "title": "De boksbal"
+    },
+    {
+      "contentItemId": "60b89385-7aa7-46d7-bf21-d4078c9d7305",
+      "contentSlug": "gevoelens-boos-kwaad-de-storm-in-een-fles",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/3-boosheid-en-kwaadheid-foto-s",
+      "status": "created-and-linked",
+      "title": "De storm in een fles"
+    },
+    {
+      "contentItemId": "403131a4-9144-46ad-a631-8b99d2142637",
+      "contentSlug": "gevoelens-eenzaamheid-eenzaamheid-verbeelden",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/4-eenzaamheid-foto-s",
+      "status": "created-and-linked",
+      "title": "Eenzaamheid verbeelden"
+    },
+    {
+      "contentItemId": "0b3e0f8b-10c8-4182-aef1-58db75c51ef1",
+      "contentSlug": "gevoelens-eenzaamheid-isolement-verbreken",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/4-eenzaamheid-foto-s",
+      "status": "created-and-linked",
+      "title": "Isolement verbreken"
+    },
+    {
+      "contentItemId": "1991ba94-d9b5-483c-ace0-620b1b295187",
+      "contentSlug": "gevoelens-eenzaamheid-sociaal-netwerk-in-kaart",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/4-eenzaamheid-foto-s",
+      "status": "created-and-linked",
+      "title": "Sociaal netwerk in kaart"
+    },
+    {
+      "contentItemId": "f67b1e9c-e7d7-4a04-ad47-ebeb915a33bf",
+      "contentSlug": "gevoelens-eenzaamheid-solo-in-je-kracht",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/4-eenzaamheid-foto-s",
+      "status": "created-and-linked",
+      "title": "Solo in je kracht"
+    },
+    {
+      "contentItemId": "18a84427-7325-402b-8465-07fb414a9a03",
+      "contentSlug": "gevoelens-eenzaamheid-alleen-zijn-alleen-voelen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/4-eenzaamheid-foto-s",
+      "status": "created-and-linked",
+      "title": "Alleen zijn – Alleen voelen"
+    },
+    {
+      "contentItemId": "671d54d1-f39e-4aaf-ab18-1fedc989e16d",
+      "contentSlug": "gevoelens-van-gekwetstheid-en-teleurstelling-het-innerlijke-schild-tekenen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/5-gekwetstheid-en-teleurstelling-foto-s",
+      "status": "created-and-linked",
+      "title": "Het innerlijke schild tekenen"
+    },
+    {
+      "contentItemId": "e569abb3-2963-4028-9f49-274e53226b6b",
+      "contentSlug": "gevoelens-van-gekwetstheid-en-teleurstelling-gevoelens-in-objecten",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/5-gekwetstheid-en-teleurstelling-foto-s",
+      "status": "created-and-linked",
+      "title": "Gevoelens in objecten"
+    },
+    {
+      "contentItemId": "a58c1e15-3875-436c-9aba-e62ed493971f",
+      "contentSlug": "gevoelens-van-gekwetstheid-en-teleurstelling-teleurstellingslijn",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/5-gekwetstheid-en-teleurstelling-foto-s",
+      "status": "created-and-linked",
+      "title": "Teleurstellingslijn"
+    },
+    {
+      "contentItemId": "91ff5980-6f20-4d02-915f-9cbf6c87cc2d",
+      "contentSlug": "gevoelens-van-gekwetstheid-en-teleurstelling-de-teleurstellingsboom",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/5-gekwetstheid-en-teleurstelling-foto-s",
+      "status": "created-and-linked",
+      "title": "De teleurstellingsboom"
+    },
+    {
+      "contentItemId": "53f03d3e-32cd-423c-942e-1f22dbfb34a4",
+      "contentSlug": "gevoelens-van-gekwetstheid-en-teleurstelling-het-pijnmonster-tekenen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/5-gekwetstheid-en-teleurstelling-foto-s",
+      "status": "created-and-linked",
+      "title": "Het pijnmonster tekenen"
+    },
+    {
+      "contentItemId": "b74cb934-ec8e-4fad-95b2-10bfe0ca29e3",
+      "contentSlug": "gevoelens-van-gekwetstheid-en-teleurstelling-teleurstellingsritueel",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/5-gekwetstheid-en-teleurstelling-foto-s",
+      "status": "created-and-linked",
+      "title": "Teleurstellingsritueel"
+    },
+    {
+      "contentItemId": "43fa4756-59ff-490d-b498-c572ef3be5e8",
+      "contentSlug": "gevoelens-van-gekwetstheid-en-teleurstelling-de-herstellaag",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/5-gekwetstheid-en-teleurstelling-foto-s",
+      "status": "created-and-linked",
+      "title": "De herstellaag"
+    },
+    {
+      "contentItemId": "d483bfed-7114-4553-878b-5c29de27af7d",
+      "contentSlug": "gevoelens-van-gekwetstheid-en-teleurstelling-het-verzachtend-omhulsel",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/5-gekwetstheid-en-teleurstelling-foto-s",
+      "status": "created-and-linked",
+      "title": "Het verzachtend omhulsel"
+    },
+    {
+      "contentItemId": "bea2d502-5b88-490e-964b-d3be2565f94c",
+      "contentSlug": "gevoelens-van-gekwetstheid-en-teleurstelling-van-last-naar-herinnering",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/5-gekwetstheid-en-teleurstelling-foto-s",
+      "status": "created-and-linked",
+      "title": "Van last naar herinnering"
+    },
+    {
+      "contentItemId": "c1d3c563-c553-4cc9-9579-6848cb824175",
+      "contentSlug": "gevoelens-van-gekwetstheid-en-teleurstelling-de-afrondcirkel",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/5-gekwetstheid-en-teleurstelling-foto-s",
+      "status": "created-and-linked",
+      "title": "De afrondcirkel"
+    },
+    {
+      "contentItemId": "a6da0128-80a5-44a5-afc0-ab370a263333",
+      "contentSlug": "gevoelens-van-gekwetstheid-en-teleurstelling-het-innerlijke-schild",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/5-gekwetstheid-en-teleurstelling-foto-s",
+      "status": "created-and-linked",
+      "title": "Het innerlijke schild"
+    },
+    {
+      "contentItemId": "cf3e7a42-d313-4034-a19e-d4a4606fd91b",
+      "contentSlug": "gevoelens-van-opluchting-loslaten-in-kleur-en-beweging",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/6-opluchting-foto-s",
+      "status": "created-and-linked",
+      "title": "Loslaten in kleur en beweging"
+    },
+    {
+      "contentItemId": "30b2e1fc-47de-47c8-9655-9484f381b47c",
+      "contentSlug": "gevoelens-van-opluchting-schakels-van-opluchting",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/6-opluchting-foto-s",
+      "status": "created-and-linked",
+      "title": "Schakels van opluchting"
+    },
+    {
+      "contentItemId": "b8723ecb-2f26-4cc4-b33e-5cd340dbd701",
+      "contentSlug": "gevoelens-van-opluchting-lichaamskompas",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/6-opluchting-foto-s",
+      "status": "created-and-linked",
+      "title": "Lichaamskompas"
+    },
+    {
+      "contentItemId": "9300e243-caf8-4a32-a2aa-a2b4e6455a2e",
+      "contentSlug": "gevoelens-van-opluchting-hart-vol-opluchting",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/6-opluchting-foto-s",
+      "status": "created-and-linked",
+      "title": "Hart vol opluchting"
+    },
+    {
+      "contentItemId": "06cfe216-d943-4b67-aa51-7b886785ebde",
+      "contentSlug": "gevoelens-van-opluchting-opluchting-in-klei-beweging",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/6-opluchting-foto-s",
+      "status": "created-and-linked",
+      "title": "Opluchting in (klei) beweging"
+    },
+    {
+      "contentItemId": "64b1eb40-29bc-417e-8535-061f6e011156",
+      "contentSlug": "gevoelens-trots-hier-ben-ik-trots-op",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/7-trots-foto-s",
+      "status": "created-and-linked",
+      "title": "Hier ben ik trots op"
+    },
+    {
+      "contentItemId": "9f6f55f6-b814-403e-93b4-ee259c163a09",
+      "contentSlug": "gevoelens-trots-hand-van-trots",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/7-trots-foto-s",
+      "status": "created-and-linked",
+      "title": "Hand van trots"
+    },
+    {
+      "contentItemId": "9f766a9c-d13c-4b05-9dc3-771703f870a8",
+      "contentSlug": "gevoelens-trots-schatkist",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/7-trots-foto-s",
+      "status": "created-and-linked",
+      "title": "Schatkist"
+    },
+    {
+      "contentItemId": "308c8773-8555-4514-a31d-bf47e2363288",
+      "contentSlug": "gevoelens-trots-cadeautjes",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/7-trots-foto-s",
+      "status": "created-and-linked",
+      "title": "Cadeautjes"
+    },
+    {
+      "contentItemId": "7cada6c6-71c7-4df5-863f-aa1728db4c16",
+      "contentSlug": "gevoelens-trots-wegwijzers",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/7-trots-foto-s",
+      "status": "created-and-linked",
+      "title": "Wegwijzers"
+    },
+    {
+      "contentItemId": "cf24c769-7e30-46ed-a96a-587aae475a23",
+      "contentSlug": "gevoelens-trots-brief-aan-de-toekomst",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/7-trots-foto-s",
+      "status": "created-and-linked",
+      "title": "Brief aan de Toekomst"
+    },
+    {
+      "contentItemId": "fab77ab6-2793-44fa-838d-745aa028e689",
+      "contentSlug": "gevoelens-trots-trots-pot",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/7-trots-foto-s",
+      "status": "created-and-linked",
+      "title": "Trots-pot"
+    },
+    {
+      "contentItemId": "bd94317a-a40d-4bcb-b37b-7f1fdc815bd6",
+      "contentSlug": "gevoelens-trots-zaadjes-van-trots",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/7-trots-foto-s",
+      "status": "created-and-linked",
+      "title": "Zaadjes van trots"
+    },
+    {
+      "contentItemId": "758b67c6-beb9-44f9-ba3f-771bc2501bc0",
+      "contentSlug": "gevoelens-trots-bord-vol-trots",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/7-trots-foto-s",
+      "status": "created-and-linked",
+      "title": "Bord vol trots"
+    },
+    {
+      "contentItemId": "f88ca086-1eb3-4b71-a915-6d99540b0ef3",
+      "contentSlug": "gevoelens-trots-beeld-van-trots",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/7-trots-foto-s",
+      "status": "created-and-linked",
+      "title": "Beeld van trots"
+    },
+    {
+      "contentItemId": "2c8055f6-1a73-4464-94f3-1dba28b118de",
+      "contentSlug": "gevoelens-veilig-en-onveilig-het-eiland-van-rust-en-veiligheid",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/8-veilig-onveilig-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Het eiland van rust en veiligheid"
+    },
+    {
+      "contentItemId": "08c7a76c-e2ab-44f1-bc4f-cb32ef0166d6",
+      "contentSlug": "gevoelens-veilig-en-onveilig-jouw-overlevingsmaal",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/8-veilig-onveilig-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Jouw Overlevingsmaal"
+    },
+    {
+      "contentItemId": "0329904e-030d-4799-a992-58b955b1dbdc",
+      "contentSlug": "gevoelens-veilig-en-onveilig-veilige-muren-creeren",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/8-veilig-onveilig-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Veilige muren creëren"
+    },
+    {
+      "contentItemId": "b7c051b8-ef77-4330-b649-52ef04519cc4",
+      "contentSlug": "gevoelens-veilig-en-onveilig-veilige-plek-verbeelden",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/8-veilig-onveilig-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Veilige plek verbeelden"
+    },
+    {
+      "contentItemId": "68eb1296-6d1f-4a1b-b810-6eb760ebaf36",
+      "contentSlug": "gevoelens-veilig-en-onveilig-jouw-plek-op-de-wereldkaart",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/8-veilig-onveilig-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Jouw plek op de wereldkaart"
+    },
+    {
+      "contentItemId": "de9b33cd-7c78-4751-a079-93f683f7ee5f",
+      "contentSlug": "gevoelens-verdriet-emotiezakje",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/9-verdriet-foto-s",
+      "status": "created-and-linked",
+      "title": "Emotiezakje"
+    },
+    {
+      "contentItemId": "d66d32d4-b475-4f76-961f-d906c1e9c0b7",
+      "contentSlug": "gevoelens-verdriet-tranen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/9-verdriet-foto-s",
+      "status": "created-and-linked",
+      "title": "Tranen"
+    },
+    {
+      "contentItemId": "eac7e593-6511-4ea1-b2dd-9dc204c32fb7",
+      "contentSlug": "gevoelens-verdriet-tranenpotje",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/9-verdriet-foto-s",
+      "status": "created-and-linked",
+      "title": "Tranenpotje"
+    },
+    {
+      "contentItemId": "d7f2efc8-7a78-49d1-8d9a-744ef421639b",
+      "contentSlug": "gevoelens-verdriet-verdrietwolk",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/9-verdriet-foto-s",
+      "status": "created-and-linked",
+      "title": "Verdrietwolk"
+    },
+    {
+      "contentItemId": "a7746342-84ad-4d95-93a4-4d12b9601468",
+      "contentSlug": "gevoelens-verdriet-gekleurde-tranen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/9-verdriet-foto-s",
+      "status": "created-and-linked",
+      "title": "Gekleurde tranen"
+    },
+    {
+      "contentItemId": "a5cf49f7-3099-40dd-afaf-6abaea08d5ee",
+      "contentSlug": "gevoelens-verdriet-onzichtbaar-verdriet",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/9-verdriet-foto-s",
+      "status": "created-and-linked",
+      "title": "Onzichtbaar verdriet"
+    },
+    {
+      "contentItemId": "e7ae829e-1d73-445e-a83c-59e471f61ba6",
+      "contentSlug": "gevoelens-verdriet-verdriet-als-rimpel-in-het-water",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/9-verdriet-foto-s",
+      "status": "created-and-linked",
+      "title": "Verdriet als rimpel in het water"
+    },
+    {
+      "contentItemId": "17a688ac-fafc-4d6f-91f2-b8286eb228cc",
+      "contentSlug": "gevoelens-verdriet-tranen-laten-stromen-naar-de-zee",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/9-verdriet-foto-s",
+      "status": "created-and-linked",
+      "title": "Tranen laten stromen naar de zee"
+    },
+    {
+      "contentItemId": "6c39fe7b-61c1-4204-8568-3c06f11c8523",
+      "contentSlug": "gevoelens-verdriet-hartenpijn-tranen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/9-verdriet-foto-s",
+      "status": "created-and-linked",
+      "title": "Hartenpijn-tranen"
+    },
+    {
+      "contentItemId": "c7a89e85-f8fd-4c60-ab6d-a0cc8020de39",
+      "contentSlug": "gevoelens-verdriet-verdrietrups",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "gevoelens/9-verdriet-foto-s",
+      "status": "created-and-linked",
+      "title": "Verdrietrups"
+    },
+    {
+      "contentItemId": "463ef1cb-a9d6-4bca-b647-e5965abde0a8",
+      "contentSlug": "grenzen-werkvormen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "grenzen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Werkvormen"
+    },
+    {
+      "contentItemId": "e73b1f82-1421-4bcf-89ef-23e1fb69a4bd",
+      "contentSlug": "grenzen-binnen-de-lijn-buiten-de-lijn",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "grenzen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Binnen de Lijn – Buiten de Lijn"
+    },
+    {
+      "contentItemId": "097bc058-3b12-45f4-ac64-b626e51f3094",
+      "contentSlug": "magische-en-mythische-wezens-element-vuur",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "magische-en-mythische-wezens-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Element VUUR"
+    },
+    {
+      "contentItemId": "c0a69521-08ab-46c8-bb6f-67ef00bdf7ab",
+      "contentSlug": "magische-en-mythische-wezens-draak",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "magische-en-mythische-wezens-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Draak"
+    },
+    {
+      "contentItemId": "59d74805-bcd4-40c1-8d93-7615c7b121d3",
+      "contentSlug": "mindfulness-kleur-langzaam-en-met-aandacht-voor",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "mindfullness-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Kleur langzaam en met aandacht voor:"
+    },
+    {
+      "contentItemId": "81591835-b473-4f87-9062-3e9f853376b5",
+      "contentSlug": "mindfulness-de-beweging-van-je-hand",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "mindfullness-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "de beweging van je hand,"
+    },
+    {
+      "contentItemId": "396b4fc8-3b3d-4b1e-8498-7e98702f9c14",
+      "contentSlug": "mindfulness-de-druk-op-het-papier",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "mindfullness-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "de druk op het papier,"
+    },
+    {
+      "contentItemId": "39548de8-85bc-47ab-b876-02dfe68d6451",
+      "contentSlug": "mindfulness-de-kleuren-die-verschijnen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "mindfullness-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "de kleuren die verschijnen."
+    },
+    {
+      "contentItemId": "aac40e2f-dfc4-45a4-acfa-18c777c66f6a",
+      "contentSlug": "misbruik-mishandeling-veiligheid-en-vertrouwen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "misbruik-mishandeling-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Veiligheid en vertrouwen"
+    },
+    {
+      "contentItemId": "80bd63e3-4361-4b3b-b67f-bf0f13fac1c8",
+      "contentSlug": "misbruik-mishandeling-schaamte-schuld-en-zelfverwijt-grenzen-en-lichaamsbewustzijn",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "misbruik-mishandeling-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Schaamte, schuld en zelfverwijt Grenzen en lichaamsbewustzijn"
+    },
+    {
+      "contentItemId": "8587a101-84e6-489a-b80e-d1935cfb5aa4",
+      "contentSlug": "misbruik-mishandeling-zelfbeeld-en-identiteit",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "misbruik-mishandeling-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Zelfbeeld en identiteit"
+    },
+    {
+      "contentItemId": "1a901e46-dd5d-4bfe-896c-0069b43a7d58",
+      "contentSlug": "misbruik-mishandeling-emotieregulatie",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "misbruik-mishandeling-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Emotieregulatie"
+    },
+    {
+      "contentItemId": "fdf9339a-6f4f-4885-9854-d099883bab01",
+      "contentSlug": "misbruik-mishandeling-hechting-en-relaties",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "misbruik-mishandeling-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Hechting en relaties"
+    },
+    {
+      "contentItemId": "cf2ad0a0-4d96-4f76-b106-1335e478e8da",
+      "contentSlug": "misbruik-mishandeling-macht-controle-en-autonomie",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "misbruik-mishandeling-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Macht, controle en autonomie"
+    },
+    {
+      "contentItemId": "bd39acee-be77-48a5-8671-23ba59d5e12e",
+      "contentSlug": "misbruik-mishandeling-trauma-en-lichaamsreacties",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "misbruik-mishandeling-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Trauma- en lichaamsreacties"
+    },
+    {
+      "contentItemId": "7f207196-1298-449c-a89f-1bdca21694dd",
+      "contentSlug": "misbruik-mishandeling-loyaliteit-en-gezinsdynamieken",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "misbruik-mishandeling-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Loyaliteit en gezinsdynamieken"
+    },
+    {
+      "contentItemId": "dd3bb27c-51da-4b31-b8df-d77c07f94cdd",
+      "contentSlug": "misbruik-mishandeling-herstel-betekenisgeving-en-veerkracht",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "misbruik-mishandeling-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Herstel, betekenisgeving en veerkracht"
+    },
+    {
+      "contentItemId": "c6e3f7f8-3c01-44d1-8d69-ba65233709eb",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-stenenstapel",
+      "sectionSlug": "rouwtaak-0-leren-omgaan-met-verlies",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Stenenstapel"
+    },
+    {
+      "contentItemId": "7ce2104e-8c53-4944-95d3-79cf33cbf076",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-levensmandala-levenslijn",
+      "sectionSlug": "rouwtaak-0-leren-omgaan-met-verlies",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Levensmandala/ levenslijn"
+    },
+    {
+      "contentItemId": "47c8e119-06c3-497c-acdf-f6ad6e1e9ff5",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-verhaal-van-de-drie-bomen",
+      "sectionSlug": "rouwtaak-0-leren-omgaan-met-verlies",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Verhaal van de drie bomen"
+    },
+    {
+      "contentItemId": "fffe02ec-7de8-454c-be4a-20ac3341803b",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-zorgenboom",
+      "sectionSlug": "rouwtaak-0-leren-omgaan-met-verlies",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Zorgenboom"
+    },
+    {
+      "contentItemId": "03ac8d2c-251e-4d6c-8d51-ce168113465b",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-brievenbus-naar-de-hemel-maken",
+      "sectionSlug": "rouwtaak-0-leren-omgaan-met-verlies",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Brievenbus naar de hemel maken"
+    },
+    {
+      "contentItemId": "39c1b915-247e-4b19-af04-803700eae1ab",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-voor-en-na-tekening",
+      "sectionSlug": "rouwtaak-1-realiseren-wat-er-is-gebeurd",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Voor en na tekening"
+    },
+    {
+      "contentItemId": "ecdb855b-ed5c-4d32-b0b8-6295a3d64ac3",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-vroeger-nu-en-toekomst",
+      "sectionSlug": "rouwtaak-1-realiseren-wat-er-is-gebeurd",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Vroeger, nu en toekomst"
+    },
+    {
+      "contentItemId": "05b9d07a-a765-49b6-bfe0-611d5184dda7",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-begrafenis-crematie-uitvaart-tekenen-uitspelen",
+      "sectionSlug": "rouwtaak-1-realiseren-wat-er-is-gebeurd",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Begrafenis/crematie/ uitvaart tekenen/ uitspelen"
+    },
+    {
+      "contentItemId": "4cf74c8e-5b30-4847-9eda-8e74b079f749",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-een-herinneringskist-maken",
+      "sectionSlug": "rouwtaak-1-realiseren-wat-er-is-gebeurd",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Een herinneringskist maken"
+    },
+    {
+      "contentItemId": "cec5ee66-e9de-4670-9544-670e46296448",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-kaarsen-versieren",
+      "sectionSlug": "rouwtaak-1-realiseren-wat-er-is-gebeurd",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Kaarsen versieren"
+    },
+    {
+      "contentItemId": "f20d2975-94f6-4e23-bd33-798b2953da89",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-gevoelsrups",
+      "sectionSlug": "rouwtaak-2-gevoelens-en-pijn-ervaren",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Gevoelsrups"
+    },
+    {
+      "contentItemId": "4ef7cd6d-8ba1-4040-b7cd-427ef3cdac35",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-masker",
+      "sectionSlug": "rouwtaak-2-gevoelens-en-pijn-ervaren",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Masker"
+    },
+    {
+      "contentItemId": "66f9da83-1f24-4dc6-b73e-34e7f514f0aa",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-tranenpotje",
+      "sectionSlug": "rouwtaak-2-gevoelens-en-pijn-ervaren",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Tranenpotje"
+    },
+    {
+      "contentItemId": "13bf85fe-60ae-4453-82da-e44016380dc2",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-collage-over-de-verschillende-gevoelens",
+      "sectionSlug": "rouwtaak-2-gevoelens-en-pijn-ervaren",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Collage over de verschillende gevoelens"
+    },
+    {
+      "contentItemId": "acee7769-5830-4069-ba38-716fdf62df6b",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-lichaamstekening-met-gevoelens",
+      "sectionSlug": "rouwtaak-2-gevoelens-en-pijn-ervaren",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Lichaamstekening met gevoelens"
+    },
+    {
+      "contentItemId": "e254001e-109c-47bc-a782-96f912fed16d",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-zandpotje",
+      "sectionSlug": "rouwtaak-3-aanpassen-aan-de-omgeving-na-een-verlies",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Zandpotje"
+    },
+    {
+      "contentItemId": "d5ef86e0-fdf4-4293-98bc-d451faecf6ca",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-herinneringsbord-maken",
+      "sectionSlug": "rouwtaak-3-aanpassen-aan-de-omgeving-na-een-verlies",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Herinneringsbord maken"
+    },
+    {
+      "contentItemId": "86c94d36-cdee-4040-ab51-5c4d7c8a8bdb",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-fotoalbum-maken-met-fotos-herinneringen-anekdotes-etc",
+      "sectionSlug": "rouwtaak-3-aanpassen-aan-de-omgeving-na-een-verlies",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Fotoalbum maken met foto’s, herinneringen, anekdotes, etc"
+    },
+    {
+      "contentItemId": "e1039f18-35f5-4213-9a0a-fc85b209f656",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-schilderijlijst-maken",
+      "sectionSlug": "rouwtaak-3-aanpassen-aan-de-omgeving-na-een-verlies",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Schilderijlijst maken"
+    },
+    {
+      "contentItemId": "1071440f-c9ca-4628-8789-371105129be0",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-rituelen-rondom-rouw-vormgeven",
+      "sectionSlug": "rouwtaak-3-aanpassen-aan-de-omgeving-na-een-verlies",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Rituelen rondom rouw vormgeven"
+    },
+    {
+      "contentItemId": "b9494a6f-d2f0-4750-8d49-f776e9888a3d",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-stenen-versieren",
+      "sectionSlug": "rouwtaak-4-investeren-in-nieuwe-relaties",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Stenen versieren"
+    },
+    {
+      "contentItemId": "42f411d4-6c3a-4706-81e8-663b42f69bf1",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-cookie-jar",
+      "sectionSlug": "rouwtaak-4-investeren-in-nieuwe-relaties",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Cookie jar"
+    },
+    {
+      "contentItemId": "c081c2bc-325f-4c9d-aded-180173512b5d",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-naam-uit-karton-naam-met-natuurmaterialen",
+      "sectionSlug": "rouwtaak-4-investeren-in-nieuwe-relaties",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Naam uit karton, naam met natuurmaterialen"
+    },
+    {
+      "contentItemId": "46e0e8ab-ae74-4c33-af5d-6cb78d9108b4",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-gedachten-aan-de-natuur-meegeven",
+      "sectionSlug": "rouwtaak-4-investeren-in-nieuwe-relaties",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Gedachten aan de natuur meegeven"
+    },
+    {
+      "contentItemId": "e4f46ba0-7e22-4239-b4c4-f1e0237e38dc",
+      "contentSlug": "rouwtaken-psycholoog-j-w-worden-lampion-windlichtje-maken",
+      "sectionSlug": "rouwtaak-4-investeren-in-nieuwe-relaties",
+      "sourceKey": "rouwtaken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Lampion/ windlichtje maken"
+    },
+    {
+      "contentItemId": "015e4d63-f57a-4fe3-9e86-59fdf24d4cbe",
+      "contentSlug": "werken-vanuit-sensorisch-sensopathisch-en-kinesthetisch-invalshoek-beweging-bevordert-regulatie",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "sensorisch-sensopathisch-en-kinesthetisch-werken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "beweging bevordert regulatie"
+    },
+    {
+      "contentItemId": "ea697294-fd81-4420-869e-8e0983d8d715",
+      "contentSlug": "werken-vanuit-sensorisch-sensopathisch-en-kinesthetisch-invalshoek-ritme-van-stappen-geeft-structuur",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "sensorisch-sensopathisch-en-kinesthetisch-werken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "ritme van stappen geeft structuur"
+    },
+    {
+      "contentItemId": "fac7d171-00d7-47e6-80e1-33f7edfa605e",
+      "contentSlug": "werken-vanuit-sensorisch-sensopathisch-en-kinesthetisch-invalshoek-fysieke-actie-ondersteunt-emotieregulatie",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "sensorisch-sensopathisch-en-kinesthetisch-werken-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "fysieke actie ondersteunt emotieregulatie"
+    },
+    {
+      "contentItemId": "7a6b3af4-128b-4ebb-9dae-55b9aa6eeeca",
+      "contentSlug": "stenen-stenenmagie-1-wenssteen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "stenen-stenenmagie-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "1 wenssteen"
+    },
+    {
+      "contentItemId": "5974990d-f016-4d57-ac67-d5932e279bd3",
+      "contentSlug": "stenen-stenenmagie-2-heksensteen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "stenen-stenenmagie-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "2 heksensteen"
+    },
+    {
+      "contentItemId": "563773f7-6798-4848-9edd-e4a98563d951",
+      "contentSlug": "stenen-stenenmagie-3-edelsteen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "stenen-stenenmagie-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "3 edelsteen"
+    },
+    {
+      "contentItemId": "b13ff81b-68d3-41c9-bbb7-99bafc5d08ff",
+      "contentSlug": "stenen-stenenmagie-4-herinneringssteen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "stenen-stenenmagie-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "4 herinneringssteen"
+    },
+    {
+      "contentItemId": "ba8afcfb-cff0-497b-b928-115fc7aea1e7",
+      "contentSlug": "stenen-stenenmagie-5-knuffelsteen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "stenen-stenenmagie-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "5 knuffelsteen"
+    },
+    {
+      "contentItemId": "fc265bb7-126e-4db4-a8a5-cbb5c8c09002",
+      "contentSlug": "stenen-stenenmagie-wensstenen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "stenen-stenenmagie-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Wensstenen"
+    },
+    {
+      "contentItemId": "274b338a-b56b-4eaa-8481-353c7d31e6f3",
+      "contentSlug": "symbolen-leg-uit-dat-elk-onderdeel-een-persoonlijke-betekenis-kan-krijgen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "symbolen-tekens-metaforen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Leg uit dat elk onderdeel een persoonlijke betekenis kan krijgen:"
+    },
+    {
+      "contentItemId": "c38d6a20-fc2f-4e84-9e84-54e920eec395",
+      "contentSlug": "symbolen-wortels-bronnen-van-kracht-of-steun",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "symbolen-tekens-metaforen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Wortels: bronnen van kracht of steun"
+    },
+    {
+      "contentItemId": "b31e74f6-53ad-427b-bfe9-eb74ec12a162",
+      "contentSlug": "symbolen-stam-innerlijke-stabiliteit",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "symbolen-tekens-metaforen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Stam: innerlijke stabiliteit"
+    },
+    {
+      "contentItemId": "9d1be114-e212-4133-8f98-30b85bfc6fac",
+      "contentSlug": "symbolen-takken-dromen-doelen-of-relaties",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "symbolen-tekens-metaforen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Takken: dromen, doelen of relaties"
+    },
+    {
+      "contentItemId": "9e18a8cd-2f5d-4a1c-b688-8edf09d255fe",
+      "contentSlug": "symbolen-bladeren-of-bloemen-successen-vaardigheden-of-positieve-eigenschappen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "symbolen-tekens-metaforen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Bladeren of bloemen: successen, vaardigheden of positieve eigenschappen"
+    },
+    {
+      "contentItemId": "9fbf71aa-0d42-4525-9237-44003c68cb66",
+      "contentSlug": "symbolen-boom-van-papier-of-karton",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "symbolen-tekens-metaforen-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Boom van papier of karton"
+    },
+    {
+      "contentItemId": "9961934e-b511-4c66-ba1e-bbf054392d07",
+      "contentSlug": "toekomst-de-trechter",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "toekomst",
+      "status": "created-and-linked",
+      "title": "De trechter"
+    },
+    {
+      "contentItemId": "84e3d007-e89b-4bbb-b12c-959669a2b905",
+      "contentSlug": "toekomst-emmer-vol",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "toekomst",
+      "status": "created-and-linked",
+      "title": "Emmer vol"
+    },
+    {
+      "contentItemId": "3622524f-828b-4771-9f5f-dd4dc4b38434",
+      "contentSlug": "toekomst-wegwijzers",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "toekomst",
+      "status": "created-and-linked",
+      "title": "Wegwijzers"
+    },
+    {
+      "contentItemId": "24f9fa61-bbd9-480a-8736-f6474ee224b3",
+      "contentSlug": "toekomst-verleden-heden-toekomst",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "toekomst",
+      "status": "created-and-linked",
+      "title": "Verleden – heden – toekomst"
+    },
+    {
+      "contentItemId": "f04aae40-2db0-493d-89fa-634c918964ff",
+      "contentSlug": "toekomst-brug-slaan",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "toekomst",
+      "status": "created-and-linked",
+      "title": "Brug slaan"
+    },
+    {
+      "contentItemId": "428441ab-c387-4ebf-9b7c-9244887bc080",
+      "contentSlug": "troost-in-dit-overzicht-staan-werkvormen-zijn-bedoeld-om",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "troost-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "In dit overzicht staan werkvormen zijn bedoeld om:"
+    },
+    {
+      "contentItemId": "e68f53a6-6ce2-44ed-b3dd-97a5f3481f0c",
+      "contentSlug": "troost-het-bewustzijn-van-eigen-behoeften-rondom-troost-te-vergroten",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "troost-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Het bewustzijn van eigen behoeften rondom troost te vergroten;"
+    },
+    {
+      "contentItemId": "0f16ac30-0b9f-4d70-95a6-ef722c38b8fe",
+      "contentSlug": "troost-troostbronnen-te-verkennen-innerlijk-relationeel-of-zintuiglijk",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "troost-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Troostbronnen te verkennen (innerlijk, relationeel of zintuiglijk);"
+    },
+    {
+      "contentItemId": "a51973bf-caa2-40b9-b21a-a212c936c665",
+      "contentSlug": "troost-zelf-troostende-vaardigheden-te-versterken",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "troost-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Zelf troostende vaardigheden te versterken;"
+    },
+    {
+      "contentItemId": "164adaba-bd51-4d3f-89b8-d3873bca7208",
+      "contentSlug": "verslaving-craving",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "verslaving-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Craving"
+    },
+    {
+      "contentItemId": "5f767719-6790-45a7-b084-20e3bd4a633e",
+      "contentSlug": "verslaving-opruimen-van-binnenuit",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "verslaving-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Opruimen van binnenuit"
+    },
+    {
+      "contentItemId": "a43fa7ed-9dd0-417c-823a-77de1f59b8d2",
+      "contentSlug": "verslaving-stress-in-beeld",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "verslaving-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Stress in beeld"
+    },
+    {
+      "contentItemId": "3cbb3782-9500-416b-8d7b-d4a0eb405648",
+      "contentSlug": "verslaving-hardnekkige-patronen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "verslaving-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Hardnekkige patronen"
+    },
+    {
+      "contentItemId": "74e00640-66dd-482e-9a3a-9e4eea5fbf3e",
+      "contentSlug": "verslaving-op-weg-naar-zelfvertrouwen",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "verslaving-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Op weg naar zelfvertrouwen"
+    },
+    {
+      "contentItemId": "c4a17f33-ac5d-40ee-8963-3d16ca09781a",
+      "contentSlug": "verslaving-herstelkracht",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "verslaving-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Herstelkracht"
+    },
+    {
+      "contentItemId": "503ff01a-be3a-4b5c-93c7-e05b467eddcd",
+      "contentSlug": "zelfbeeld-zelfportret-in-kleur",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "zelfbeeld-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Zelfportret in kleur"
+    },
+    {
+      "contentItemId": "3c701eb6-b9f3-481a-b8b7-08c782640f2a",
+      "contentSlug": "zelfbeeld-paspoort-maken",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "zelfbeeld-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Paspoort maken"
+    },
+    {
+      "contentItemId": "5f5707af-3d2f-4bd3-9ae4-5a6c266e9441",
+      "contentSlug": "zelfbeeld-spiegelbeeld",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "zelfbeeld-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Spiegelbeeld"
+    },
+    {
+      "contentItemId": "69f9d031-4bc2-43d5-8c14-938f379efdf9",
+      "contentSlug": "zelfbeeld-van-niets-naar-iets",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "zelfbeeld-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Van niets naar iets"
+    },
+    {
+      "contentItemId": "3141b345-837d-4f6b-90f6-ec4db9706dc6",
+      "contentSlug": "zelfbeeld-ik-ben-trots-op",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "zelfbeeld-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Ik ben trots op"
+    },
+    {
+      "contentItemId": "2ec0388c-f8e3-4d9e-b30f-bea6b9fd220e",
+      "contentSlug": "zelfbeeld-gedachtenstroom",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "zelfbeeld-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Gedachtenstroom"
+    },
+    {
+      "contentItemId": "f9372bf0-5b08-4de9-8769-942bada1783c",
+      "contentSlug": "zelfbeeld-schaduwtekening-zicht-op-jezelf",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "zelfbeeld-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Schaduwtekening – zicht op jezelf"
+    },
+    {
+      "contentItemId": "fbd416db-bda9-494f-92ca-ac96490adc85",
+      "contentSlug": "zelfbeeld-drieluik",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "zelfbeeld-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Drieluik"
+    },
+    {
+      "contentItemId": "cbcd620e-424d-45d2-b2fc-eb5e5758f1ce",
+      "contentSlug": "zelfbeeld-ik-omarm-cadeautjes-voor-jezelf",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "zelfbeeld-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "Ik-omarm-cadeautjes voor jezelf"
+    },
+    {
+      "contentItemId": "3c8b5ee0-bc1a-48ec-a6cf-1e778eb51d03",
+      "contentSlug": "zelfbeeld-de-talententrein",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "zelfbeeld-incl-foto-s",
+      "status": "created-and-linked",
+      "title": "De Talententrein"
+    }
+  ],
+  "skipped": [],
+  "updatedContent": 0
+}

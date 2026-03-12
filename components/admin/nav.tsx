@@ -53,6 +53,7 @@ export function getAdminNav(language: string): AdminNavItem[] {
       children: [
         { label: t.items, href: "/admin/content" },
         { label: t.newItem, href: "/admin/content/new" },
+        { label: t.themes, href: "/admin/content/themes" },
         { label: t.categories, href: "/admin/content/taxonomies/category/terms" },
         { label: t.tags, href: "/admin/content/taxonomies/tag/terms" },
         { label: t.media, href: "/admin/media" },

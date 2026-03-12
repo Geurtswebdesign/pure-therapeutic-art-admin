@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ThemePageCard from "@/components/content/ThemePageCard";
 import HistoryBackButton from "@/components/public/HistoryBackButton";
-import { getHomepageCategories, getPublishedContent } from "@/lib/content/public-queries";
+import { getHomepageCategories } from "@/lib/content/public-queries";
 import { getPublishedThemePages } from "@/lib/content/theme-queries";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { getAppMessages } from "@/lib/i18n/appMessages";
@@ -94,43 +94,40 @@ export default async function ContentIndexPage({
   const categorySlug = Array.isArray(params?.category)
     ? params?.category[0]
     : params?.category;
-  const categoryLabel = categorySlug ? formatCategoryLabel(categorySlug) : null;
-  const [items, categories, themes] = await Promise.all([
-    getPublishedContent(categorySlug),
-    getHomepageCategories(200),
-    categorySlug ? Promise.resolve([]) : getPublishedThemePages(),
-  ]);
-  const rootCategories = categories.filter((category) => !category.parent_id);
+  const categories = await getHomepageCategories(200);
   const activeCategory = categorySlug
     ? categories.find((category) => category.slug === categorySlug) ?? null
     : null;
+  const categoryLabel = activeCategory?.name || (categorySlug ? formatCategoryLabel(categorySlug) : null);
+  const showingSeedCategory = Boolean(activeCategory && isSeedCategory(activeCategory));
+  const showingRegularCategory = Boolean(activeCategory && !isSeedCategory(activeCategory));
+  const themes = showingRegularCategory ? await getPublishedThemePages() : [];
+  const rootCategories = categories
+    .filter((category) => !category.parent_id && isSeedCategory(category))
+    .sort((a, b) => a.sort_order - b.sort_order);
   const childCategories = activeCategory
     ? categories
         .filter((category) => category.parent_id === activeCategory.id)
         .sort((a, b) => a.sort_order - b.sort_order)
+    : [];
+  const categoryThemes = activeCategory
+    ? themes.filter((theme) => theme.primaryCategory?.id === activeCategory.id)
     : [];
 
   return (
     <div className="space-y-8">
       <section className="rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-sm">
         <div className="space-y-3">
-
           <h1 className="text-3xl font-semibold leading-tight tracking-tight text-stone-900">
             {categoryLabel ? `${categoryLabel}` : app.home.viewContent}
           </h1>
           <p className="text-sm leading-6 text-stone-600">
-            {categorySlug
-              ? (activeCategory?.description || "Je ziet nu alle gepubliceerde content binnen deze categorie.")
-              : app.home.subtitle}
+            {!categorySlug
+              ? app.home.subtitle
+              : showingSeedCategory
+                ? activeCategory?.description || "Kies een gewone categorie binnen deze seed-categorie."
+                : activeCategory?.description || "Kies een thema binnen deze categorie."}
           </p>
-          {!categorySlug ? (
-            <Link
-              href="/content/themas"
-              className="inline-flex rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700"
-            >
-              Bekijk themapagina&apos;s
-            </Link>
-          ) : null}
           {categorySlug ? (
             <HistoryBackButton
               className="inline-flex rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700"
@@ -142,175 +139,122 @@ export default async function ContentIndexPage({
       </section>
 
       {!categorySlug ? (
-        <>
-          {themes.length ? (
-            <section className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-2xl font-semibold text-stone-900">
-                    Samengestelde thema&apos;s
-                  </h2>
-                  <p className="text-sm text-stone-600">
-                    Gecureerde routes met secties en een vaste itemvolgorde.
-                  </p>
-                </div>
-
+        rootCategories.length ? (
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {rootCategories.map((category) => {
+              const style = getCategoryStyle(category.slug);
+              return (
                 <Link
-                  href="/content/themas"
-                  className="text-sm font-medium text-stone-700 underline-offset-4 hover:underline"
+                  key={category.id}
+                  href={`/content?category=${category.slug}`}
+                  className={`group rounded-[2rem] p-6 text-center shadow-sm transition hover:-translate-y-0.5 ${style.cardClass}`}
                 >
-                  Alles bekijken
-                </Link>
-              </div>
-
-              <div className="grid gap-4">
-                {themes.slice(0, 3).map((theme) => (
-                  <ThemePageCard key={theme.id} theme={theme} />
-                ))}
-              </div>
-            </section>
-          ) : null}
-
-          {rootCategories.length ? (
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {rootCategories.map((category) => {
-                const style = getCategoryStyle(category.slug);
-                const isSeed = isSeedCategory(category);
-                return (
-                  <Link
-                    key={category.id}
-                    href={`/content?category=${category.slug}`}
-                    className={
-                      isSeed
-                        ? `group rounded-[2rem] p-6 text-center shadow-sm transition hover:-translate-y-0.5 ${style.cardClass}`
-                        : "group rounded-[1.25rem] border border-stone-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5"
-                    }
-                  >
-                    {isSeed ? (
-                      <>
-                        <div className="relative mx-auto mb-5 h-40 w-40">
-                          {category.featured_image_url ? (
-                            <Image
-                              src={category.featured_image_url}
-                              alt={category.featured_image_alt || category.name}
-                              width={160}
-                              height={160}
-                              unoptimized
-                              className="h-40 w-40 rounded-full object-cover shadow-[0_10px_28px_rgba(18,20,26,0.14)]"
-                            />
-                          ) : (
-                            <div
-                              className={`h-40 w-40 rounded-full shadow-[0_10px_28px_rgba(18,20,26,0.14)] ${style.orbClass}`}
-                            />
-                          )}
-                        </div>
-
-                        <h2 className="text-[2rem] font-semibold leading-tight text-[#1f2f43]">
-                          {category.name}
-                        </h2>
-
-                        <p className="mt-3 line-clamp-3 text-[1.65rem] leading-[1.45] text-[#31445c]">
-                          {category.description || "Verken thema's en oefeningen binnen deze categorie."}
-                        </p>
-                      </>
-                    ) : (
-                      <h2 className="text-base font-semibold leading-tight text-stone-900">
-                        {category.name}
-                      </h2>
-                    )}
-                  </Link>
-                );
-              })}
-            </section>
-          ) : (
-            <section className="rounded-[1.75rem] border border-dashed border-stone-300 bg-white/70 p-10 text-center text-stone-600">
-              Er staan nog geen categorieen klaar.
-            </section>
-          )}
-        </>
-      ) : items.length ? (
-        categorySlug && activeCategory && !isSeedCategory(activeCategory) ? (
-          <section className="rounded-[1.75rem] border border-stone-200 bg-[#f8f3ed] p-5 shadow-sm">
-            <h2 className="text-3xl font-semibold text-stone-900">
-              {activeCategory.name}
-            </h2>
-            {activeCategory.description ? (
-              <p className="mt-2 text-sm text-stone-600">
-                {activeCategory.description}
-              </p>
-            ) : null}
-
-            <ol className="mt-5 space-y-3 text-stone-900">
-              {items.map((item, index) => {
-                const href = item.language ? `/${item.language}/${item.slug}` : `/content/${item.slug}`;
-                return (
-                  <li key={item.id} className="border-b border-stone-200 pb-3 last:border-b-0">
-                    <Link href={href} className="text-lg font-medium leading-snug hover:underline">
-                      {index + 1}. {item.title}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ol>
-          </section>
-        ) : (
-        <section className="grid grid-cols-2 gap-3">
-          {items.map((item) => {
-            const href = item.language ? `/${item.language}/${item.slug}` : `/content/${item.slug}`;
-            return (
-              <article
-                key={item.id}
-                className="group flex h-full min-h-[280px] flex-col overflow-hidden rounded-[1.5rem] border border-[#e5dbcf] bg-white shadow-[0_12px_30px_rgba(31,24,19,0.08)] transition"
-              >
-                <Link href={href} className="flex h-full flex-col">
-                  <div className="aspect-[16/10] shrink-0 bg-[#f6eee6]">
-                    {item.featured_image_url ? (
+                  <div className="relative mx-auto mb-5 h-40 w-40">
+                    {category.featured_image_url ? (
                       <Image
-                        src={item.featured_image_url}
-                        alt={item.featured_image_alt || item.title}
-                        width={1200}
-                        height={750}
+                        src={category.featured_image_url}
+                        alt={category.featured_image_alt || category.name}
+                        width={160}
+                        height={160}
                         unoptimized
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
+                        className="h-40 w-40 rounded-full object-cover shadow-[0_10px_28px_rgba(18,20,26,0.14)]"
                       />
                     ) : (
-                      <div className="flex h-full items-end bg-[radial-gradient(circle_at_top_left,#d6c2b8_0%,#efe7df_42%,#f7f4ef_100%)] p-4">
-                        <span className="rounded-full border border-stone-300/70 bg-white/85 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-stone-600">
-                          {item.credit_cost && item.credit_cost > 0 ? `${item.credit_cost} credits` : "Open"}
-                        </span>
-                      </div>
+                      <div
+                        className={`h-40 w-40 rounded-full shadow-[0_10px_28px_rgba(18,20,26,0.14)] ${style.orbClass}`}
+                      />
                     )}
                   </div>
 
-                  <div className="flex flex-1 flex-col space-y-3 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-[11px] uppercase tracking-[0.2em] text-stone-500">
-                        {(item.language || language).toUpperCase()}
-                      </span>
-                      <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs text-stone-600">
-                        {item.credit_cost && item.credit_cost > 0 ? `${item.credit_cost} credits` : "Vrij"}
-                      </span>
+                  <h2 className="text-[2rem] font-semibold leading-tight text-[#1f2f43]">
+                    {category.name}
+                  </h2>
+
+                  <p className="mt-3 line-clamp-3 text-[1.65rem] leading-[1.45] text-[#31445c]">
+                    {category.description || "Verken de gewone categorieen binnen dit domein."}
+                  </p>
+                </Link>
+              );
+            })}
+          </section>
+        ) : (
+          <section className="rounded-[1.75rem] border border-dashed border-stone-300 bg-white/70 p-10 text-center text-stone-600">
+            Er staan nog geen seed-categorieen klaar.
+          </section>
+        )
+      ) : showingSeedCategory && childCategories.length ? (
+        <section className="grid grid-cols-2 gap-3">
+          {childCategories.map((category) => {
+            const style = getCategoryStyle(category.slug);
+            const isSeed = isSeedCategory(category);
+            return (
+              <Link
+                key={category.id}
+                href={`/content?category=${category.slug}`}
+                className={
+                  isSeed
+                    ? `group rounded-[2rem] p-6 text-center shadow-sm transition hover:-translate-y-0.5 ${style.cardClass}`
+                    : "group rounded-[1.25rem] border border-stone-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5"
+                }
+              >
+                {isSeed ? (
+                  <>
+                    <div className="relative mx-auto mb-5 h-40 w-40">
+                      {category.featured_image_url ? (
+                        <Image
+                          src={category.featured_image_url}
+                          alt={category.featured_image_alt || category.name}
+                          width={160}
+                          height={160}
+                          unoptimized
+                          className="h-40 w-40 rounded-full object-cover shadow-[0_10px_28px_rgba(18,20,26,0.14)]"
+                        />
+                      ) : (
+                        <div
+                          className={`h-40 w-40 rounded-full shadow-[0_10px_28px_rgba(18,20,26,0.14)] ${style.orbClass}`}
+                        />
+                      )}
                     </div>
 
-                    <h2 className="min-h-[56px] text-2xl font-semibold leading-tight text-stone-900">
-                      {item.title}
+                    <h2 className="text-[2rem] font-semibold leading-tight text-[#1f2f43]">
+                      {category.name}
                     </h2>
 
-                    <p className="min-h-[60px] line-clamp-3 text-sm leading-6 text-stone-600">
-                      {item.excerpt || app.home.subtitle}
+                    <p className="mt-3 line-clamp-3 text-[1.65rem] leading-[1.45] text-[#31445c]">
+                      {category.description || "Verken thema's en oefeningen binnen deze categorie."}
                     </p>
-
-                    <div className="mt-auto pt-1">
-                      <span className="inline-flex items-center text-sm font-medium text-stone-900">
-                        Lees verder
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              </article>
+                  </>
+                ) : (
+                  <h2 className="text-base font-semibold leading-tight text-stone-900">
+                    {category.name}
+                  </h2>
+                )}
+              </Link>
             );
           })}
         </section>
+      ) : showingRegularCategory ? (
+        categoryThemes.length ? (
+          <section className="space-y-4">
+            <div>
+              <h2 className="text-2xl font-semibold text-stone-900">
+                Thema&apos;s
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-stone-600">
+                Kies een thema om de werkvormen in vaste volgorde te openen.
+              </p>
+            </div>
+
+            <div className="grid gap-4">
+              {categoryThemes.map((theme) => (
+                <ThemePageCard key={theme.id} theme={theme} />
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section className="rounded-[1.75rem] border border-dashed border-stone-300 bg-white/70 p-10 text-center text-stone-600">
+            Er staan nog geen gepubliceerde thema&apos;s klaar binnen deze categorie.
+          </section>
         )
       ) : categorySlug && childCategories.length ? (
         <section className="grid grid-cols-2 gap-3">
@@ -365,7 +309,7 @@ export default async function ContentIndexPage({
         </section>
       ) : (
         <section className="rounded-[1.75rem] border border-dashed border-stone-300 bg-white/70 p-10 text-center text-stone-600">
-          Er staat nog geen gepubliceerde content klaar.
+          Er staat nog niets klaar binnen dit niveau.
         </section>
       )}
     </div>

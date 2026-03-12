@@ -2,6 +2,209 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
+type ThemePageCategoryRow = {
+  id: string;
+  parent_theme_page_id: string | null;
+  primary_category_term_id: string | null;
+};
+
+type ThemeSectionRow = {
+  id: string;
+  theme_page_id: string;
+};
+
+type ThemeSectionItemRow = {
+  theme_section_id: string;
+  content_item_id: string;
+};
+
+function createEmptyItemSetMap(termIds: string[]) {
+  return new Map(termIds.map((termId) => [termId, new Set<string>()]));
+}
+
+async function getThemeLinkedContentIdsByCategoryTermIds(termIds: string[]) {
+  if (!termIds.length) {
+    return new Map<string, Set<string>>();
+  }
+
+  const supabase = createAdminClient();
+  const uniqueTermIds = Array.from(new Set(termIds.filter(Boolean)));
+  const termIdSet = new Set(uniqueTermIds);
+  const itemIdsByTermId = createEmptyItemSetMap(uniqueTermIds);
+
+  const { data: pages, error: pagesError } = await supabase
+    .from("content_theme_pages")
+    .select("id, parent_theme_page_id, primary_category_term_id")
+    .eq("is_published", true);
+
+  if (pagesError) {
+    console.error("getThemeLinkedContentIdsByCategoryTermIds:pages", pagesError);
+    return itemIdsByTermId;
+  }
+
+  const pageRows = (pages ?? []) as ThemePageCategoryRow[];
+  if (!pageRows.length) {
+    return itemIdsByTermId;
+  }
+
+  const childPageIdsByParentId = new Map<string, string[]>();
+  for (const page of pageRows) {
+    if (!page.parent_theme_page_id) continue;
+    const siblings = childPageIdsByParentId.get(page.parent_theme_page_id) ?? [];
+    siblings.push(page.id);
+    childPageIdsByParentId.set(page.parent_theme_page_id, siblings);
+  }
+
+  const pageIdsByTermId = new Map(uniqueTermIds.map((termId) => [termId, new Set<string>()]));
+
+  for (const page of pageRows) {
+    if (!page.primary_category_term_id || !termIdSet.has(page.primary_category_term_id)) {
+      continue;
+    }
+
+    const pageIds = pageIdsByTermId.get(page.primary_category_term_id);
+    if (!pageIds) continue;
+
+    const queue = [page.id];
+    while (queue.length) {
+      const currentPageId = queue.shift();
+      if (!currentPageId || pageIds.has(currentPageId)) continue;
+
+      pageIds.add(currentPageId);
+      const childPageIds = childPageIdsByParentId.get(currentPageId) ?? [];
+      queue.push(...childPageIds);
+    }
+  }
+
+  const allPageIds = Array.from(
+    new Set(
+      Array.from(pageIdsByTermId.values()).flatMap((pageIds) => Array.from(pageIds))
+    )
+  );
+
+  if (!allPageIds.length) {
+    return itemIdsByTermId;
+  }
+
+  const { data: sections, error: sectionsError } = await supabase
+    .from("content_theme_sections")
+    .select("id, theme_page_id")
+    .in("theme_page_id", allPageIds);
+
+  if (sectionsError) {
+    console.error("getThemeLinkedContentIdsByCategoryTermIds:sections", sectionsError);
+    return itemIdsByTermId;
+  }
+
+  const sectionRows = (sections ?? []) as ThemeSectionRow[];
+  if (!sectionRows.length) {
+    return itemIdsByTermId;
+  }
+
+  const termIdsByPageId = new Map<string, string[]>();
+  for (const [termId, pageIds] of pageIdsByTermId.entries()) {
+    for (const pageId of pageIds) {
+      const currentTermIds = termIdsByPageId.get(pageId) ?? [];
+      currentTermIds.push(termId);
+      termIdsByPageId.set(pageId, currentTermIds);
+    }
+  }
+
+  const termIdsBySectionId = new Map<string, string[]>();
+  for (const section of sectionRows) {
+    const pageTermIds = termIdsByPageId.get(section.theme_page_id) ?? [];
+    if (!pageTermIds.length) continue;
+    termIdsBySectionId.set(section.id, pageTermIds);
+  }
+
+  const { data: sectionItems, error: sectionItemsError } = await supabase
+    .from("content_theme_section_items")
+    .select("theme_section_id, content_item_id")
+    .in(
+      "theme_section_id",
+      sectionRows.map((section) => section.id)
+    );
+
+  if (sectionItemsError) {
+    console.error(
+      "getThemeLinkedContentIdsByCategoryTermIds:sectionItems",
+      sectionItemsError
+    );
+    return itemIdsByTermId;
+  }
+
+  for (const sectionItem of (sectionItems ?? []) as ThemeSectionItemRow[]) {
+    const sectionTermIds = termIdsBySectionId.get(sectionItem.theme_section_id) ?? [];
+    if (!sectionTermIds.length || !sectionItem.content_item_id) continue;
+
+    for (const termId of sectionTermIds) {
+      itemIdsByTermId.get(termId)?.add(sectionItem.content_item_id);
+    }
+  }
+
+  return itemIdsByTermId;
+}
+
+async function getFallbackCategoryTermForContentItem(contentItemId: string) {
+  const supabase = createAdminClient();
+  const { data: sectionItems, error: sectionItemsError } = await supabase
+    .from("content_theme_section_items")
+    .select("theme_section_id")
+    .eq("content_item_id", contentItemId);
+
+  if (sectionItemsError) {
+    throw sectionItemsError;
+  }
+
+  const sectionIds = Array.from(
+    new Set(
+      (sectionItems ?? [])
+        .map((row) => row.theme_section_id)
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+
+  if (!sectionIds.length) {
+    return null;
+  }
+
+  const { data: sections, error: sectionsError } = await supabase
+    .from("content_theme_sections")
+    .select("id, theme_page_id")
+    .in("id", sectionIds);
+
+  if (sectionsError) {
+    throw sectionsError;
+  }
+
+  const pageIds = Array.from(
+    new Set(
+      (sections ?? [])
+        .map((row) => row.theme_page_id)
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+
+  if (!pageIds.length) {
+    return null;
+  }
+
+  const { data: pages, error: pagesError } = await supabase
+    .from("content_theme_pages")
+    .select("primary_category_term_id, sort_order")
+    .in("id", pageIds)
+    .eq("is_published", true)
+    .not("primary_category_term_id", "is", null)
+    .order("sort_order", { ascending: true })
+    .limit(1);
+
+  if (pagesError) {
+    throw pagesError;
+  }
+
+  return pages?.[0]?.primary_category_term_id ?? null;
+}
+
 export async function getPublishedContent(categorySlug?: string | null) {
   const supabase = createAdminClient();
   let categoryContentIds: string[] | null = null;
@@ -26,12 +229,17 @@ export async function getPublishedContent(categorySlug?: string | null) {
 
     if (relationshipsError) throw relationshipsError;
 
+    const themeLinkedContentIds =
+      (await getThemeLinkedContentIdsByCategoryTermIds([term.id])).get(term.id) ??
+      new Set<string>();
+
     categoryContentIds = Array.from(
-      new Set(
-        (relationships ?? [])
+      new Set([
+        ...(relationships ?? [])
           .map((row) => row.content_item_id)
-          .filter((value): value is string => Boolean(value))
-      )
+          .filter((value): value is string => Boolean(value)),
+        ...themeLinkedContentIds,
+      ])
     );
 
     if (!categoryContentIds.length) return [];
@@ -138,6 +346,10 @@ export async function getHomepageCategories(
 
   if (!categories?.length) return [];
 
+  const themeItemIdsByCategoryId = await getThemeLinkedContentIdsByCategoryTermIds(
+    categories.map((category) => category.id)
+  );
+
   const { data: items, error: itemsError } = await supabase
     .from("content_items")
     .select(
@@ -172,6 +384,33 @@ export async function getHomepageCategories(
     ])
   );
 
+  const itemIdsByCategoryId = createEmptyItemSetMap(categories.map((category) => category.id));
+  const categoryIdsByContentItemId = new Map<string, Set<string>>();
+
+  for (const [termId, contentItemIds] of themeItemIdsByCategoryId.entries()) {
+    const categoryItemIds = itemIdsByCategoryId.get(termId);
+    if (!categoryItemIds) continue;
+
+    for (const contentItemId of contentItemIds) {
+      categoryItemIds.add(contentItemId);
+      const categoryIds = categoryIdsByContentItemId.get(contentItemId) ?? new Set<string>();
+      categoryIds.add(termId);
+      categoryIdsByContentItemId.set(contentItemId, categoryIds);
+    }
+  }
+
+  for (const relationship of relationships ?? []) {
+    if (!relationship.term_id || !relationship.content_item_id) {
+      continue;
+    }
+
+    itemIdsByCategoryId.get(relationship.term_id)?.add(relationship.content_item_id);
+    const categoryIds =
+      categoryIdsByContentItemId.get(relationship.content_item_id) ?? new Set<string>();
+    categoryIds.add(relationship.term_id);
+    categoryIdsByContentItemId.set(relationship.content_item_id, categoryIds);
+  }
+
   const firstItemByCategory = new Map<
     string,
     {
@@ -184,19 +423,22 @@ export async function getHomepageCategories(
     }
   >();
 
-  for (const relationship of relationships ?? []) {
-    if (!relationship.term_id || firstItemByCategory.has(relationship.term_id)) {
-      continue;
-    }
+  for (const item of items ?? []) {
+    const categoryIds = categoryIdsByContentItemId.get(item.id) ?? new Set<string>();
+    if (!categoryIds.size) continue;
 
-    const item = itemById.get(relationship.content_item_id);
-    if (!item) continue;
-    firstItemByCategory.set(relationship.term_id, item);
+    const itemSummary = itemById.get(item.id);
+    if (!itemSummary) continue;
+
+    for (const categoryId of categoryIds) {
+      if (firstItemByCategory.has(categoryId)) continue;
+      firstItemByCategory.set(categoryId, itemSummary);
+    }
   }
 
   const rows = categories.map((category) => ({
     ...category,
-    itemCount: firstItemByCategory.has(category.id) ? 1 : 0,
+    itemCount: itemIdsByCategoryId.get(category.id)?.size ?? 0,
     featuredItem: firstItemByCategory.get(category.id) ?? null,
   }));
 
@@ -247,13 +489,22 @@ export async function getPrimaryCategoryForContentItem(contentItemId: string) {
     .map((row) => row.term_id)
     .filter((termId): termId is string => Boolean(termId));
 
-  if (!termIds.length) return null;
+  const fallbackTermId = termIds.length
+    ? null
+    : await getFallbackCategoryTermForContentItem(contentItemId);
+  const lookupTermIds = termIds.length
+    ? termIds
+    : fallbackTermId
+      ? [fallbackTermId]
+      : [];
+
+  if (!lookupTermIds.length) return null;
 
   const { data: terms, error: termsError } = await supabase
     .from("content_terms")
     .select("id, slug, name, parent_id, sort_order, is_homepage_seed")
     .eq("taxonomy_id", categoryTaxonomy)
-    .in("id", termIds)
+    .in("id", lookupTermIds)
     .order("sort_order", { ascending: true })
     .limit(1);
 

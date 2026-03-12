@@ -1,0 +1,96 @@
+{
+  "createdContent": 0,
+  "createdLinks": 0,
+  "createdTermLinks": 0,
+  "dryRun": true,
+  "generatedAt": "2026-03-11T13:17:42.576Z",
+  "processed": 12,
+  "report": [
+    {
+      "contentSlug": "archetypen-en-sprookjesfiguren-archetypen-inzetten-binnen-vaktherapie",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "would-create",
+      "title": "Archetypen inzetten binnen vaktherapie"
+    },
+    {
+      "contentSlug": "archetypen-en-sprookjesfiguren-1-de-held",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "would-create",
+      "title": "1 De held"
+    },
+    {
+      "contentSlug": "archetypen-en-sprookjesfiguren-2-de-schaduw",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "would-create",
+      "title": "2 De schaduw"
+    },
+    {
+      "contentSlug": "archetypen-en-sprookjesfiguren-3-de-wijze",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "would-create",
+      "title": "3 De wijze"
+    },
+    {
+      "contentSlug": "archetypen-en-sprookjesfiguren-4-het-kind",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "would-create",
+      "title": "4 Het kind"
+    },
+    {
+      "contentSlug": "archetypen-en-sprookjesfiguren-5-de-trickster",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "would-create",
+      "title": "5 De trickster"
+    },
+    {
+      "contentSlug": "archetypen-en-sprookjesfiguren-6-de-verzorger",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "would-create",
+      "title": "6 De verzorger"
+    },
+    {
+      "contentSlug": "archetypen-en-sprookjesfiguren-7-de-koning-koningin",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "would-create",
+      "title": "7 De koning/ koningin"
+    },
+    {
+      "contentSlug": "archetypen-en-sprookjesfiguren-8-de-zoeker-avonturier",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "would-create",
+      "title": "8 De zoeker/ avonturier"
+    },
+    {
+      "contentSlug": "archetypen-en-sprookjesfiguren-9-de-rebel-strijder",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "would-create",
+      "title": "9 De rebel/ strijder"
+    },
+    {
+      "contentSlug": "archetypen-en-sprookjesfiguren-10-de-magier-tovenaar",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "would-create",
+      "title": "10 De magiër/ tovenaar"
+    },
+    {
+      "contentSlug": "archetypen-en-sprookjesfiguren-11-de-onschuldige",
+      "sectionSlug": "werkvormen",
+      "sourceKey": "archetypen-en-sprookjesfiguren-voorlopig-geen-foto-s",
+      "status": "would-create",
+      "title": "11 De onschuldige"
+    }
+  ],
+  "skipped": [],
+  "updatedContent": 0
+}

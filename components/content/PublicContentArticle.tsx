@@ -16,8 +16,6 @@ export default function PublicContentArticle({
   item,
   blocks,
   isSeedCategory,
-  languageLabel,
-  statusLabel,
 }: {
   item: Item;
   blocks: ContentBlock[];
@@ -33,17 +31,7 @@ export default function PublicContentArticle({
           : "mx-auto max-w-2xl rounded-[1.5rem] border border-[#e4d8cb] bg-[#f8f3ed] p-5 shadow-sm sm:p-7"
       }
     >
-      <header className={isSeedCategory ? "mb-8 space-y-4" : "mb-7 space-y-3 text-center"}>
-        <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.22em] text-stone-500">
-          <span>{languageLabel.toUpperCase()}</span>
-          {statusLabel ? <span>{statusLabel}</span> : null}
-          {item.credit_cost && item.credit_cost > 0 ? (
-            <span>{item.credit_cost} credits</span>
-          ) : (
-            <span>Vrij toegankelijk</span>
-          )}
-        </div>
-
+      <header className={isSeedCategory ? "mb-8 space-y-4" : "mb-7 space-y-3"}>
         <h1
           className={
             isSeedCategory

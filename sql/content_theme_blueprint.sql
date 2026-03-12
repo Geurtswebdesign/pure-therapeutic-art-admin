@@ -2,6 +2,7 @@ begin;
 
 -- Gebruik dit bestand als invulbare blueprint voor echte themapagina's.
 -- Vervang de voorbeeldwaarden hieronder door jullie eigen slugs, teksten en beeld-URLs.
+-- Als het thema uit de zip-structuur komt, vul dan ook een unieke source_key in.
 --
 -- Layout-richtlijnen:
 -- content_theme_pages.hero_image_position:
@@ -33,8 +34,16 @@ with selected_category as (
   where slug = 'vervang-door-categorie-slug'
   limit 1
 ),
+selected_parent_theme as (
+  select id
+  from public.content_theme_pages
+  where source_key = 'optionele-parent-source-key'
+  limit 1
+),
 upsert_theme as (
   insert into public.content_theme_pages (
+    parent_theme_page_id,
+    source_key,
     slug,
     eyebrow,
     title,
@@ -47,6 +56,8 @@ upsert_theme as (
     sort_order
   )
   select
+    selected_parent_theme.id,
+    'optionele-unieke-source-key',
     'vervang-door-thema-slug',
     'Thema',
     'Vervang door thematitel',
@@ -58,8 +69,11 @@ upsert_theme as (
     false,
     10
   from selected_category
+  left join selected_parent_theme on true
   on conflict (slug) do update
   set
+    parent_theme_page_id = excluded.parent_theme_page_id,
+    source_key = excluded.source_key,
     eyebrow = excluded.eyebrow,
     title = excluded.title,
     description = excluded.description,
