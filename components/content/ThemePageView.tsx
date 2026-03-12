@@ -16,16 +16,7 @@ export default function ThemePageView({
   return (
     <div className="mx-auto max-w-2xl space-y-5">
       <section className="rounded-[1.75rem] border border-[#e4d8cb] bg-[#f8f3ed] p-5 shadow-sm sm:p-7">
-        <div className="flex items-start justify-between gap-3">
-          <HistoryBackButton className="inline-flex rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700">
-            Terug
-          </HistoryBackButton>
-          <div className="text-right text-[11px] uppercase tracking-[0.24em] text-stone-500">
-            {getThemeMeta(theme)}
-          </div>
-        </div>
-
-        <header className="mt-6 text-center">
+        <header className="mt-6">
           <h1 className="font-serif text-4xl leading-tight text-stone-950 sm:text-5xl">
             {theme.title}
           </h1>
@@ -35,7 +26,11 @@ export default function ThemePageView({
             </p>
           ) : null}
         </header>
-
+        <div className="flex items-start justify-between gap-3">
+          <HistoryBackButton className="inline-flex rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700">
+            Terug
+          </HistoryBackButton>
+        </div>
         {theme.childThemes.length ? (
           <div className="mt-6 border-t border-[#ddd0c4] pt-5">
             <div className="text-[11px] uppercase tracking-[0.24em] text-stone-500">
@@ -62,9 +57,6 @@ export default function ThemePageView({
           <ol className="space-y-7">
             {theme.sections.map((section, sectionIndex) => (
               <li key={section.id}>
-                <h2 className="font-serif text-2xl leading-tight text-stone-950">
-                  {sectionIndex + 1}. {section.title}
-                </h2>
                 {section.description ? (
                   <p className="mt-1 text-sm italic leading-6 text-stone-600">
                     {section.description}

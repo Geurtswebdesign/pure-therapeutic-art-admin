@@ -311,7 +311,9 @@ async function getSectionAndItemCounts(pageIds: string[]) {
   };
 }
 
-export async function getPublishedThemePages(): Promise<ThemePageSummary[]> {
+export async function getPublishedThemePages(options?: {
+  includeChildren?: boolean;
+}): Promise<ThemePageSummary[]> {
   const pages = await getThemeRows();
   if (!pages.length) return [];
 
@@ -339,7 +341,7 @@ export async function getPublishedThemePages(): Promise<ThemePageSummary[]> {
   ]);
 
   return pages
-    .filter((page) => !page.parent_theme_page_id)
+    .filter((page) => options?.includeChildren || !page.parent_theme_page_id)
     .map((page) =>
       mapThemeSummary(
         page,

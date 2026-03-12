@@ -1,9 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
+import ThemePageView from "@/components/content/ThemePageView";
 import ThemePageCard from "@/components/content/ThemePageCard";
 import HistoryBackButton from "@/components/public/HistoryBackButton";
 import { getHomepageCategories } from "@/lib/content/public-queries";
-import { getPublishedThemePages } from "@/lib/content/theme-queries";
+import {
+  getPublishedThemePageBySlug,
+  getPublishedThemePages,
+} from "@/lib/content/theme-queries";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
@@ -101,7 +105,9 @@ export default async function ContentIndexPage({
   const categoryLabel = activeCategory?.name || (categorySlug ? formatCategoryLabel(categorySlug) : null);
   const showingSeedCategory = Boolean(activeCategory && isSeedCategory(activeCategory));
   const showingRegularCategory = Boolean(activeCategory && !isSeedCategory(activeCategory));
-  const themes = showingRegularCategory ? await getPublishedThemePages() : [];
+  const themes = showingRegularCategory
+    ? await getPublishedThemePages({ includeChildren: true })
+    : [];
   const rootCategories = categories
     .filter((category) => !category.parent_id && isSeedCategory(category))
     .sort((a, b) => a.sort_order - b.sort_order);
@@ -113,6 +119,14 @@ export default async function ContentIndexPage({
   const categoryThemes = activeCategory
     ? themes.filter((theme) => theme.primaryCategory?.id === activeCategory.id)
     : [];
+  const inlineTheme =
+    showingRegularCategory && categoryThemes.length === 1
+      ? await getPublishedThemePageBySlug(categoryThemes[0].slug)
+      : null;
+
+  if (inlineTheme) {
+    return <ThemePageView theme={inlineTheme} />;
+  }
 
   return (
     <div className="space-y-8">
