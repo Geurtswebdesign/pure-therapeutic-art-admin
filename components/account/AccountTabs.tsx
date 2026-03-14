@@ -8,6 +8,12 @@ import CreditTransactions from "@/components/users/CreditTransactions";
 import AccountProfileForm from "@/components/account/AccountProfileForm";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
+import {
+  getEffectiveAccountType,
+  getProfileAccountType,
+  getTherapistProfileData,
+  type AppProfileData,
+} from "@/lib/users/accountTypes";
 
 type UnlockItem = {
   id: string;
@@ -21,10 +27,12 @@ type UnlockItem = {
 };
 
 type Props = {
+  userId: string;
   role: string;
   displayName: string;
   email: string;
   bio: string;
+  profileData?: AppProfileData | null;
   wallet: CreditWallet;
   transactions: CreditTransaction[];
   unlockedContent: UnlockItem[];
@@ -33,18 +41,23 @@ type Props = {
 
 type Tab = "overview" | "profile" | "credits" | "unlocked" | "therapist";
 
-function labelForRole(role: string, t: ReturnType<typeof getAppMessages>["accountTabs"]) {
-  if (role === "therapist") return t.roleTherapist;
-  if (role === "admin") return t.roleAdmin;
-  if (role === "client") return t.roleClient;
+function labelForAccountType(
+  accountType: "admin" | "user" | "client" | "therapist",
+  t: ReturnType<typeof getAppMessages>["accountTabs"]
+) {
+  if (accountType === "therapist") return t.roleTherapist;
+  if (accountType === "admin") return t.roleAdmin;
+  if (accountType === "client") return t.roleClient;
   return t.roleUser;
 }
 
 export default function AccountTabs({
+  userId,
   role,
   displayName,
   email,
   bio,
+  profileData,
   wallet,
   transactions,
   unlockedContent,
@@ -52,7 +65,10 @@ export default function AccountTabs({
 }: Props) {
   const t = getAppMessages(language).accountTabs;
   const locale = language === "en" ? "en-US" : language === "de" ? "de-DE" : "nl-NL";
-  const isTherapist = role === "therapist";
+  const accountType = getEffectiveAccountType(role, profileData ?? null);
+  const userAccountType = getProfileAccountType(profileData ?? null);
+  const therapistProfile = getTherapistProfileData(profileData ?? null);
+  const isTherapist = accountType === "therapist";
   const [tab, setTab] = useState<Tab>("overview");
 
   return (
@@ -95,7 +111,9 @@ export default function AccountTabs({
       {tab === "overview" ? (
         <section className="rounded border bg-white p-4 space-y-3">
           <h2 className="text-lg font-semibold">{t.welcome}, {displayName || email}</h2>
-          <p className="text-sm text-gray-600">{t.accountType}: {labelForRole(role, t)}</p>
+          <p className="text-sm text-gray-600">
+            {t.accountType}: {labelForAccountType(accountType, t)}
+          </p>
           <p className="text-sm text-gray-600">{t.availableCredits}: {wallet.credits_available}</p>
           <p className="text-sm text-gray-600">{t.unlockedItems}: {unlockedContent.length}</p>
         </section>
@@ -103,8 +121,15 @@ export default function AccountTabs({
 
       {tab === "profile" ? (
         <AccountProfileForm
+          userId={userId}
+          accountType={userAccountType}
           initialDisplayName={displayName}
           initialBio={bio}
+          initialFirstName={profileData?.first_name ?? ""}
+          initialLastName={profileData?.last_name ?? ""}
+          initialWebsite={profileData?.website ?? ""}
+          initialAvatarUrl={profileData?.avatar_url ?? ""}
+          initialTherapistProfile={therapistProfile}
           email={email}
           language={language}
         />

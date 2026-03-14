@@ -4,19 +4,14 @@ import { requireAdmin } from "@/lib/auth";
 import { getWallet } from "@/lib/credits/getWallet";
 import { getTransactions } from "@/lib/credits/getTransactions";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { AppProfileData } from "@/lib/users/accountTypes";
 
 export type AdminUserProfile = {
   user_id: string;
   email?: string | null;   // 👈 optioneel
   display_name: string | null;
   role: "user" | "admin";
-  profile_data?: {
-    first_name?: string | null;
-    last_name?: string | null;
-    nickname?: string | null;
-    website?: string | null;
-    bio?: string | null;
-  } | null;
+  profile_data?: AppProfileData | null;
   bio?: string | null;
   created_at?: string | null;
 };

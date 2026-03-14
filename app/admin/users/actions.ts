@@ -6,11 +6,17 @@ import { getAdminUser } from "@/lib/auth/getAdminUser";
 import { grantCredits } from "@/lib/credits/grantCredits";
 import { logSecurityAuditEvent } from "@/lib/security/audit";
 import { invalidateUserSessions } from "@/lib/security/session";
+import {
+  normalizeAccessRole,
+  normalizeTherapistProfileData,
+  normalizeUserAccountType,
+} from "@/lib/users/accountTypes";
 
 export type CreateUserInput = {
   email: string;
   displayName?: string;
   role?: "user" | "admin";
+  accountType?: "user" | "client" | "therapist";
   creditsInitial?: number;
   // kies 1 van beide flows:
   password?: string; // als je direct wachtwoord wil zetten
@@ -23,6 +29,7 @@ export async function createUser({
   sendInvite,
   displayName,
   role,
+  accountType,
   creditsInitial,
 }: {
   email: string;
@@ -30,8 +37,13 @@ export async function createUser({
   sendInvite: boolean;
   displayName: string;
   role: "user" | "admin";
+  accountType?: "user" | "client" | "therapist";
   creditsInitial: number;
 }) {
+  const accessRole = normalizeAccessRole(role);
+  const nextAccountType =
+    accessRole === "admin" ? "user" : normalizeUserAccountType(accountType);
+
   // 1️⃣ Auth
   const authResult = sendInvite
     ? await supabaseAdmin.auth.admin.inviteUserByEmail(email)
@@ -50,7 +62,10 @@ export async function createUser({
   // 2️⃣ Profile
   await supabaseAdmin.from("profiles").update({
     display_name: displayName,
-    role,
+    role: accessRole,
+    profile_data: {
+      account_type: nextAccountType,
+    },
   }).eq("user_id", userId);
 
   // 3️⃣ Wallet
@@ -237,6 +252,11 @@ export async function updateUserProfileExtended(input: {
   profileData?: Record<string, unknown>;
 }) {
   const supabase = createAdminClient();
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("profile_data")
+    .eq("user_id", input.userId)
+    .maybeSingle<{ profile_data?: Record<string, unknown> | null }>();
 
   const update: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
@@ -250,7 +270,20 @@ export async function updateUserProfileExtended(input: {
   if (input.timezone) update.timezone = input.timezone;
 
   if (input.profileData) {
-    update.profile_data = input.profileData;
+    const mergedProfileData = {
+      ...(existingProfile?.profile_data ?? {}),
+      ...input.profileData,
+    };
+
+    if (mergedProfileData.therapist_profile === null) {
+      mergedProfileData.therapist_profile = null;
+    } else if ("therapist_profile" in mergedProfileData) {
+      mergedProfileData.therapist_profile = normalizeTherapistProfileData(
+        mergedProfileData.therapist_profile as Record<string, unknown> | null
+      );
+    }
+
+    update.profile_data = mergedProfileData;
   }
 
   const { error } = await supabase
@@ -263,6 +296,7 @@ export async function updateUserProfileExtended(input: {
   }
 
   revalidatePath(`/admin/users/${input.userId}`);
+  revalidatePath("/therapeuten");
 }
 
 export async function bulkDeleteUsers(userIds: string[]) {

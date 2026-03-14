@@ -1,56 +1,60 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { updateContentItem } from "@/lib/content/actions";
 
 export type QuickEditPatch = {
   title?: string;
-  status?: "draft" | "published" | "trash";
+  status?: "draft" | "published";
   published_at?: string | null;
   credit_cost?: number;
   category_ids?: string[];
   tags?: string[];
 };
 
+function hasQuickEditChanges(patch: QuickEditPatch) {
+  return !(
+    patch.title === undefined &&
+    patch.status === undefined &&
+    patch.published_at === undefined &&
+    patch.credit_cost === undefined &&
+    patch.category_ids === undefined
+  );
+}
+
 export async function quickEditContentItem(
   id: string,
   patch: QuickEditPatch
 ) {
-  const supabase = createAdminClient();
-
-  const updateData: Partial<{
-    title: string;
-    status: "draft" | "published" | "trash";
-    published_at: string | null;
-    credit_cost: number;
-  }> = {};
-
-  if (patch.title !== undefined) {
-    updateData.title = patch.title;
-  }
-
-  if (patch.status !== undefined) {
-    updateData.status = patch.status;
-  }
-
-  if (patch.published_at !== undefined) {
-    updateData.published_at = patch.published_at;
-  }
-  
-  if (patch.credit_cost !== undefined) {
-    updateData.credit_cost = patch.credit_cost;
-  }
-
-  if (Object.keys(updateData).length === 0) {
+  if (!hasQuickEditChanges(patch)) {
     return;
   }
 
-  const { error } = await supabase
-    .from("content_items")
-    .update(updateData)
-    .eq("id", id);
+  await updateContentItem({
+    id,
+    title: patch.title,
+    status: patch.status,
+    published_at: patch.published_at,
+    credit_cost: patch.credit_cost,
+    category_term_ids: patch.category_ids,
+  });
+}
 
-  if (error) {
-    console.error("QUICK EDIT ERROR:", error);
-    throw new Error("Quick Edit opslaan mislukt");
+export async function bulkQuickEditContentItems(
+  ids: string[],
+  patch: QuickEditPatch
+) {
+  if (ids.length === 0 || !hasQuickEditChanges(patch)) {
+    return;
+  }
+
+  for (const id of ids) {
+    await updateContentItem({
+      id,
+      title: patch.title,
+      status: patch.status,
+      published_at: patch.published_at,
+      credit_cost: patch.credit_cost,
+      category_term_ids: patch.category_ids,
+    });
   }
 }

@@ -6,12 +6,7 @@ const tabs = [
   { label: "Publishers", href: "/admin/insights/publishers/pages" },
   { label: "Search Console", href: "/admin/insights/search-console" },
   { label: "eCommerce", href: "/admin/insights/ecommerce" },
-  { label: "Dimensions", href: "/admin/insights/dimensions" },
-  { label: "Forms", href: "/admin/insights/forms" },
   { label: "Realtime", href: "/admin/insights/realtime" },
-  { label: "Site Speed", href: "/admin/insights/site-speed" },
-  { label: "Media", href: "/admin/insights/media" },
-  { label: "Exceptions", href: "/admin/insights/exceptions" },
 ];
 
 export default function InsightsLayout({

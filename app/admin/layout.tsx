@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getRuntimeSecuritySettings } from "@/lib/security/runtime";
+import { isAdminRole } from "@/lib/users/accountTypes";
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminTopbar from "@/components/admin/AdminTopbar";
@@ -61,7 +62,7 @@ export default async function AdminLayout({
     .eq("user_id", user.id)
     .single();
 
-  if (profile?.role !== "admin") {
+  if (!isAdminRole(profile?.role)) {
     redirect("/unauthorized");
   }
 

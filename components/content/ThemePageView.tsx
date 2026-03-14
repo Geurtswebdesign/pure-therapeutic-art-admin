@@ -2,12 +2,6 @@ import Link from "next/link";
 import HistoryBackButton from "@/components/public/HistoryBackButton";
 import type { ThemePageDetail } from "@/lib/content/theme-queries";
 
-function getThemeMeta(theme: ThemePageDetail) {
-  return [theme.eyebrow || "Thema", theme.primaryCategory?.name, theme.parentTheme?.title]
-    .filter((value): value is string => Boolean(value))
-    .join(" • ");
-}
-
 export default function ThemePageView({
   theme,
 }: {
@@ -55,7 +49,7 @@ export default function ThemePageView({
       <section className="rounded-[1.75rem] border border-[#e4d8cb] bg-white p-5 shadow-sm sm:p-7">
         {theme.sections.length ? (
           <ol className="space-y-7">
-            {theme.sections.map((section, sectionIndex) => (
+            {theme.sections.map((section) => (
               <li key={section.id}>
                 {section.description ? (
                   <p className="mt-1 text-sm italic leading-6 text-stone-600">
@@ -66,11 +60,11 @@ export default function ThemePageView({
                 {section.items.length ? (
                   <ol
                     type="a"
-                    className="mt-3 list-outside space-y-1.5 pl-5 text-sm leading-6 text-stone-900 marker:font-medium"
+                    className="mt-4 list-outside space-y-2.5 pl-6 text-lg leading-8 text-stone-900 marker:font-semibold"
                   >
                     {section.items.map((item) => (
                       <li key={item.id}>
-                        <Link href={item.href} className="hover:underline">
+                        <Link href={item.href} className="block py-1 hover:underline">
                           {item.title}
                         </Link>
                       </li>

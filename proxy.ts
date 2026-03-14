@@ -80,15 +80,6 @@ async function getSecuritySettingsFromDb(): Promise<SecuritySettings> {
   }
 }
 
-function clearAuthCookies(req: NextRequest, res: NextResponse) {
-  res.cookies.delete("admin_session_started_at");
-  for (const cookie of req.cookies.getAll()) {
-    if (cookie.name.startsWith("sb-")) {
-      res.cookies.delete(cookie.name);
-    }
-  }
-}
-
 export async function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
@@ -107,21 +98,6 @@ export async function proxy(req: NextRequest) {
         path: "/",
       });
     }
-
-    const security = await getSecuritySettingsFromDb();
-    const startedAtRaw = req.cookies.get("admin_session_started_at")?.value;
-    if (startedAtRaw) {
-      const startedAt = Date.parse(startedAtRaw);
-      const timeoutMs = security.adminSessionTimeoutMinutes * 60_000;
-      if (Number.isFinite(startedAt) && Date.now() - startedAt > timeoutMs) {
-        const loginUrl = new URL("/login", req.url);
-        loginUrl.searchParams.set("reason", "session-timeout");
-        const timeoutRes = NextResponse.redirect(loginUrl);
-        clearAuthCookies(req, timeoutRes);
-        return timeoutRes;
-      }
-    }
-
   }
 
   const security = await getSecuritySettingsFromDb();

@@ -1,11 +1,12 @@
 import { supabase } from "@/lib/supabase/browser";
 
-export async function uploadImageClient(
+export async function uploadMediaAssetClient(
   file: File,
-  contentItemId: string
+  pathPrefix: string
 ) {
-  const ext = file.name.split(".").pop();
-  const fileName = `${contentItemId}/${crypto.randomUUID()}.${ext}`;
+  const ext = file.name.split(".").pop() || "bin";
+  const normalizedPrefix = pathPrefix.replace(/^\/+|\/+$/g, "");
+  const fileName = `${normalizedPrefix}/${crypto.randomUUID()}.${ext}`;
 
   const { error } = await supabase.storage
     .from("media")
@@ -29,11 +30,13 @@ export async function uploadImageClient(
     console.warn("media_assets insert failed:", insertError.message);
   }
 
-  const { data } = supabase.storage
-    .from("media")
-    .getPublicUrl(fileName);
-
-  console.log("PUBLIC URL:", data.publicUrl); // 👈 BELANGRIJK
-
+  const { data } = supabase.storage.from("media").getPublicUrl(fileName);
   return data.publicUrl;
+}
+
+export async function uploadImageClient(
+  file: File,
+  contentItemId: string
+) {
+  return uploadMediaAssetClient(file, contentItemId);
 }

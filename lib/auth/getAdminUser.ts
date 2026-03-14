@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { SUPER_ADMIN_ID } from "@/lib/auth/constants";
+import { isAdminRole } from "@/lib/users/accountTypes";
 
 export async function getAdminUser() {
   const cookieStore = await cookies();
@@ -39,7 +40,7 @@ export async function getAdminUser() {
   }
 
   // 3️⃣ Admin check (DEZE regel is cruciaal)
-  if (profile.role !== "admin") {
+  if (!isAdminRole(profile.role)) {
     return null;
   }
 

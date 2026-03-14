@@ -144,6 +144,10 @@ type AdminMessages = {
     edit: string;
     disable: string;
     enable: string;
+    delete: string;
+    deleted: string;
+    deleteFailed: string;
+    deleteConfirm: string;
     noPacksFound: string;
     actionsLegend: string;
     editPackTitle: string;
@@ -231,6 +235,7 @@ type AdminMessages = {
     published: string;
     trash: string;
     bulkActions: string;
+    quickEdit: string;
     restore: string;
     deletePermanent: string;
     moveToTrash: string;
@@ -241,6 +246,21 @@ type AdminMessages = {
     categories: string;
     tags: string;
     date: string;
+    allCategories: string;
+    creditsLabel: string;
+    allCredits: string;
+    freeOnly: string;
+    creditRangeHighLow: string;
+    creditRangeLowHigh: string;
+    sortLabel: string;
+    sortUpdatedDesc: string;
+    sortUpdatedAsc: string;
+    sortPublishedDesc: string;
+    sortPublishedAsc: string;
+    sortTitleAsc: string;
+    sortTitleDesc: string;
+    previous: string;
+    next: string;
     creditsSuffix: string;
     noContentFound: string;
   };
@@ -255,12 +275,17 @@ type AdminMessages = {
   };
   quickEditForm: {
     title: string;
+    bulkEditTitle: string;
+    bulkEditHint: string;
     creditCost: string;
     date: string;
+    keepCurrent: string;
+    clearDate: string;
     status: string;
     draft: string;
     published: string;
     categories: string;
+    replaceCategories: string;
     update: string;
     cancel: string;
   };
@@ -436,6 +461,10 @@ const nl: AdminMessages = {
     edit: "Bewerken",
     disable: "Uitschakelen",
     enable: "Inschakelen",
+    delete: "Verwijderen",
+    deleted: "Creditpack verwijderd.",
+    deleteFailed: "Verwijderen mislukt.",
+    deleteConfirm: "Weet je zeker dat je '{name}' definitief wilt verwijderen?",
     noPacksFound: "Geen packs gevonden.",
     actionsLegend: "Legenda acties:",
     editPackTitle: "Creditpack bewerken",
@@ -523,6 +552,7 @@ const nl: AdminMessages = {
     published: "Gepubliceerd",
     trash: "Prullenbak",
     bulkActions: "Bulkacties",
+    quickEdit: "Snel bewerken",
     restore: "Herstellen",
     deletePermanent: "Permanent verwijderen",
     moveToTrash: "Verplaatsen naar prullenbak",
@@ -533,6 +563,21 @@ const nl: AdminMessages = {
     categories: "Categorieen",
     tags: "Tags",
     date: "Datum",
+    allCategories: "Alle categorieen",
+    creditsLabel: "Credits filter",
+    allCredits: "Alle credits",
+    freeOnly: "Gratis",
+    creditRangeHighLow: "Credits hoog-laag",
+    creditRangeLowHigh: "Credits laag-hoog",
+    sortLabel: "Sorteren op",
+    sortUpdatedDesc: "Laatst bijgewerkt",
+    sortUpdatedAsc: "Eerst oudste wijziging",
+    sortPublishedDesc: "Publicatiedatum nieuw-oud",
+    sortPublishedAsc: "Publicatiedatum oud-nieuw",
+    sortTitleAsc: "Titel A-Z",
+    sortTitleDesc: "Titel Z-A",
+    previous: "Vorige",
+    next: "Volgende",
     creditsSuffix: "credits",
     noContentFound: "Geen content gevonden.",
   },
@@ -547,12 +592,17 @@ const nl: AdminMessages = {
   },
   quickEditForm: {
     title: "Titel",
+    bulkEditTitle: "Snel bewerken",
+    bulkEditHint: "Lege velden blijven ongewijzigd voor de geselecteerde items.",
     creditCost: "Credit kosten",
     date: "Datum",
+    keepCurrent: "Niet wijzigen",
+    clearDate: "Datum leegmaken",
     status: "Status",
     draft: "Concept",
     published: "Gepubliceerd",
     categories: "Categorieen",
+    replaceCategories: "Categorieen vervangen",
     update: "Bijwerken",
     cancel: "Annuleren",
   },
@@ -710,6 +760,10 @@ const en: AdminMessages = {
     edit: "Edit",
     disable: "Disable",
     enable: "Enable",
+    delete: "Delete",
+    deleted: "Credit pack deleted.",
+    deleteFailed: "Deleting failed.",
+    deleteConfirm: "Are you sure you want to permanently delete '{name}'?",
     noPacksFound: "No packs found.",
     actionsLegend: "Actions legend:",
     editPackTitle: "Edit credit pack",
@@ -793,6 +847,7 @@ const en: AdminMessages = {
     published: "Published",
     trash: "Trash",
     bulkActions: "Bulk actions",
+    quickEdit: "Quick edit",
     restore: "Restore",
     deletePermanent: "Delete permanently",
     moveToTrash: "Move to trash",
@@ -801,6 +856,21 @@ const en: AdminMessages = {
     title: "Title",
     status: "Status",
     categories: "Categories",
+    allCategories: "All categories",
+    creditsLabel: "Credits filter",
+    allCredits: "All credits",
+    freeOnly: "Free",
+    creditRangeHighLow: "Credits high to low",
+    creditRangeLowHigh: "Credits low to high",
+    sortLabel: "Sort by",
+    sortUpdatedDesc: "Recently updated",
+    sortUpdatedAsc: "Oldest updated first",
+    sortPublishedDesc: "Published date newest first",
+    sortPublishedAsc: "Published date oldest first",
+    sortTitleAsc: "Title A-Z",
+    sortTitleDesc: "Title Z-A",
+    previous: "Previous",
+    next: "Next",
     date: "Date",
     creditsSuffix: "credits",
     noContentFound: "No content found.",
@@ -818,12 +888,17 @@ const en: AdminMessages = {
   quickEditForm: {
     ...nl.quickEditForm,
     title: "Title",
+    bulkEditTitle: "Quick edit",
+    bulkEditHint: "Empty fields stay unchanged for the selected items.",
     creditCost: "Credit cost",
     date: "Date",
+    keepCurrent: "Keep current",
+    clearDate: "Clear date",
     status: "Status",
     draft: "Draft",
     published: "Published",
     categories: "Categories",
+    replaceCategories: "Replace categories",
     update: "Update",
     cancel: "Cancel",
   },
@@ -981,6 +1056,10 @@ const de: AdminMessages = {
     edit: "Bearbeiten",
     disable: "Deaktivieren",
     enable: "Aktivieren",
+    delete: "Loschen",
+    deleted: "Creditpaket entfernt.",
+    deleteFailed: "Loschen fehlgeschlagen.",
+    deleteConfirm: "Mochtest du '{name}' wirklich dauerhaft loschen?",
     noPacksFound: "Keine Pakete gefunden.",
     actionsLegend: "Legende Aktionen:",
     editPackTitle: "Creditpaket bearbeiten",
@@ -1064,6 +1143,7 @@ const de: AdminMessages = {
     published: "Veroffentlicht",
     trash: "Papierkorb",
     bulkActions: "Sammelaktionen",
+    quickEdit: "Schnell bearbeiten",
     restore: "Wiederherstellen",
     deletePermanent: "Endgultig loschen",
     moveToTrash: "In Papierkorb verschieben",
@@ -1072,6 +1152,21 @@ const de: AdminMessages = {
     title: "Titel",
     status: "Status",
     categories: "Kategorien",
+    allCategories: "Alle Kategorien",
+    creditsLabel: "Credits-Filter",
+    allCredits: "Alle Credits",
+    freeOnly: "Kostenlos",
+    creditRangeHighLow: "Credits hoch-niedrig",
+    creditRangeLowHigh: "Credits niedrig-hoch",
+    sortLabel: "Sortieren nach",
+    sortUpdatedDesc: "Zuletzt aktualisiert",
+    sortUpdatedAsc: "Alteste Anderung zuerst",
+    sortPublishedDesc: "Neueste zuerst veroffentlicht",
+    sortPublishedAsc: "Alteste zuerst veroffentlicht",
+    sortTitleAsc: "Titel A-Z",
+    sortTitleDesc: "Titel Z-A",
+    previous: "Zuruck",
+    next: "Weiter",
     date: "Datum",
     creditsSuffix: "credits",
     noContentFound: "Kein Inhalt gefunden.",
@@ -1089,12 +1184,17 @@ const de: AdminMessages = {
   quickEditForm: {
     ...nl.quickEditForm,
     title: "Titel",
+    bulkEditTitle: "Schnell bearbeiten",
+    bulkEditHint: "Leere Felder bleiben fur die ausgewahlten Elemente unverandert.",
     creditCost: "Credit-Kosten",
     date: "Datum",
+    keepCurrent: "Nicht andern",
+    clearDate: "Datum leeren",
     status: "Status",
     draft: "Entwurf",
     published: "Veroffentlicht",
     categories: "Kategorien",
+    replaceCategories: "Kategorien ersetzen",
     update: "Aktualisieren",
     cancel: "Abbrechen",
   },

@@ -1,7 +1,9 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { ContentBlock } from "@/lib/content/types";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
 import PublicBlockRenderer from "@/components/content/PublicBlockRenderer";
+import type { ThemeItemNavigation } from "@/lib/content/public-queries";
 
 type Item = {
   title: string | null;
@@ -16,10 +18,12 @@ export default function PublicContentArticle({
   item,
   blocks,
   isSeedCategory,
+  themeNavigation,
 }: {
   item: Item;
   blocks: ContentBlock[];
   isSeedCategory: boolean;
+  themeNavigation?: ThemeItemNavigation | null;
   languageLabel: string;
   statusLabel?: string | null;
 }) {
@@ -85,6 +89,60 @@ export default function PublicContentArticle({
         <div className={isSeedCategory ? "space-y-8" : "space-y-6"}>
           <PublicBlockRenderer blocks={blocks} />
         </div>
+      ) : null}
+
+      {themeNavigation ? (
+        <section className="mt-8 rounded-[1.25rem] border border-[#ddcfbf] bg-white/80 p-4 sm:p-5">
+          <div className="text-[11px] uppercase tracking-[0.24em] text-stone-500">
+            Onderdeel van thema
+          </div>
+          <div className="mt-2">
+            <Link
+              href={`/content/themas/${themeNavigation.theme.slug}`}
+              className="font-medium text-stone-900 hover:underline"
+            >
+              {themeNavigation.theme.title}
+            </Link>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {themeNavigation.previous ? (
+              <Link
+                href={themeNavigation.previous.href}
+                className="rounded-[1rem] border border-stone-200 bg-[#f8f3ed] px-4 py-3"
+              >
+                <div className="text-[11px] uppercase tracking-[0.2em] text-stone-500">
+                  Vorige
+                </div>
+                <div className="mt-1 text-base font-medium leading-6 text-stone-900">
+                  {themeNavigation.previous.title}
+                </div>
+              </Link>
+            ) : (
+              <div className="rounded-[1rem] border border-dashed border-stone-200 px-4 py-3 text-sm text-stone-400">
+                Geen vorig onderdeel
+              </div>
+            )}
+
+            {themeNavigation.next ? (
+              <Link
+                href={themeNavigation.next.href}
+                className="rounded-[1rem] border border-stone-200 bg-[#f8f3ed] px-4 py-3"
+              >
+                <div className="text-[11px] uppercase tracking-[0.2em] text-stone-500">
+                  Volgende
+                </div>
+                <div className="mt-1 text-base font-medium leading-6 text-stone-900">
+                  {themeNavigation.next.title}
+                </div>
+              </Link>
+            ) : (
+              <div className="rounded-[1rem] border border-dashed border-stone-200 px-4 py-3 text-sm text-stone-400">
+                Geen volgend onderdeel
+              </div>
+            )}
+          </div>
+        </section>
       ) : null}
     </article>
   );

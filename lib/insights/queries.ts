@@ -5,6 +5,24 @@ export type DateRange = {
   to: Date;
 };
 
+export function resolveMonthRange(month: string | undefined): DateRange | null {
+  if (!month || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    return null;
+  }
+
+  const [yearRaw, monthRaw] = month.split("-");
+  const year = Number.parseInt(yearRaw, 10);
+  const monthIndex = Number.parseInt(monthRaw, 10) - 1;
+
+  if (!Number.isInteger(year) || !Number.isInteger(monthIndex)) {
+    return null;
+  }
+
+  const from = new Date(Date.UTC(year, monthIndex, 1, 0, 0, 0, 0));
+  const to = new Date(Date.UTC(year, monthIndex + 1, 1, 0, 0, 0, 0) - 1);
+  return { from, to };
+}
+
 export function resolveRange(range: string | undefined): DateRange {
   const now = new Date();
   const days = range === "7d" ? 7 : range === "90d" ? 90 : 30;

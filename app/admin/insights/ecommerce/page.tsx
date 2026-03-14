@@ -1,5 +1,6 @@
 import {
   resolveRange,
+  resolveMonthRange,
   getEcommerceOverview,
   getEcommerceDailyRevenue,
   getTopCreditPacks,
@@ -11,9 +12,11 @@ import {
 import RangeTabs from "@/components/analytics/RangeTabs";
 import LineChart from "@/components/analytics/LineChart";
 import BarList from "@/components/analytics/BarList";
+import MonthFilter from "@/components/analytics/MonthFilter";
 
 type SearchParams = {
   range?: string | string[];
+  month?: string | string[];
 };
 
 function formatCurrency(amountCents: number, currency: string) {
@@ -35,7 +38,31 @@ export default async function EcommercePage({
 }) {
   const params = await searchParams;
   const rangeValue = Array.isArray(params?.range) ? params?.range[0] : params?.range;
-  const range = resolveRange(rangeValue);
+  const monthValue = Array.isArray(params?.month) ? params?.month[0] : params?.month;
+  const monthRange = resolveMonthRange(monthValue);
+  const range = monthRange ?? resolveRange(rangeValue);
+  const periodLabel = monthRange
+    ? new Intl.DateTimeFormat("nl-NL", {
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      }).format(range.from)
+    : rangeValue ?? "30d";
+  const monthOptions = Array.from({ length: 12 }, (_, index) => {
+    const date = new Date();
+    date.setUTCDate(1);
+    date.setUTCHours(0, 0, 0, 0);
+    date.setUTCMonth(date.getUTCMonth() - index);
+
+    return {
+      value: `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`,
+      label: new Intl.DateTimeFormat("nl-NL", {
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      }).format(date),
+    };
+  });
 
   const [
     overview,
@@ -91,7 +118,15 @@ export default async function EcommercePage({
 
   return (
     <section className="space-y-6">
-      <RangeTabs basePath="/admin/insights/ecommerce" value={rangeValue} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <RangeTabs basePath="/admin/insights/ecommerce" value={rangeValue} />
+        <MonthFilter
+          basePath="/admin/insights/ecommerce"
+          month={monthRange ? monthValue : undefined}
+          range={rangeValue}
+          options={monthOptions}
+        />
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article className="rounded border bg-white p-4">
@@ -127,7 +162,7 @@ export default async function EcommercePage({
         <article className="rounded border bg-white p-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">Revenue trend</h3>
-            <span className="text-xs text-gray-500">{rangeValue ?? "30d"}</span>
+            <span className="text-xs capitalize text-gray-500">{periodLabel}</span>
           </div>
           <div className="mt-4">
             {revenueSeries.length ? (

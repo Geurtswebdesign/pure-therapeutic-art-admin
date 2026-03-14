@@ -11,7 +11,10 @@ import { parseContentBlocks } from "@/lib/content/renderer";
 import { hasAccess } from "@/lib/unlock/hasAccess";
 import { getBalanceByScope } from "@/lib/users/getBalanceByScope";
 import { getContentAccessScope } from "@/lib/content/access";
-import { getPrimaryCategoryForContentItem } from "@/lib/content/public-queries";
+import {
+  getPrimaryCategoryForContentItem,
+  getThemeNavigationForContentItem,
+} from "@/lib/content/public-queries";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { logServerEvent } from "@/lib/analytics/server";
 
@@ -124,7 +127,10 @@ export default async function ContentPage({
     .order("order_index");
 
   const blocks = parseContentBlocks(rawBlocks ?? []);
-  const category = await getPrimaryCategoryForContentItem(item.id);
+  const [category, themeNavigation] = await Promise.all([
+    getPrimaryCategoryForContentItem(item.id),
+    getThemeNavigationForContentItem(item.id),
+  ]);
   const isSeedCategory = Boolean(category?.is_homepage_seed);
 
   /* -------------------------------------------------
@@ -143,6 +149,7 @@ export default async function ContentPage({
         item={item}
         blocks={blocks}
         isSeedCategory={isSeedCategory}
+        themeNavigation={themeNavigation}
         languageLabel={locale}
         statusLabel={isPreview ? item.status : null}
       />

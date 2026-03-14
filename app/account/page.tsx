@@ -1,25 +1,43 @@
 import Link from "next/link";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import AppLogoutButton from "@/components/account/AppLogoutButton";
+import AccountProfileForm from "@/components/account/AccountProfileForm";
 import { login } from "@/components/login/actions";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
+import { getAppMessages } from "@/lib/i18n/appMessages";
+import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  type AppProfileData,
+  getEffectiveAccountType,
+  getProfileAccountType,
+  getTherapistProfileData,
+} from "@/lib/users/accountTypes";
 
 type AccountSearchParams = {
   error?: string | string[];
+  tab?: string | string[];
 };
 
 type ProfileRow = {
   display_name: string | null;
-  profile_data?: {
-    first_name?: string | null;
-    avatar_url?: string | null;
-    profile_image?: string | null;
-  } | null;
+  role?: string | null;
+  profile_data?: AppProfileData | null;
 };
 
 type WalletRow = {
   credits_available: number | null;
+};
+
+type LatestUnlockRow = {
+  content_item_id: string | null;
+  unlocked_at: string;
+};
+
+type ContentItemRow = {
+  title: string | null;
+  slug: string | null;
 };
 
 function getInitials(name: string) {
@@ -35,14 +53,97 @@ function accountCardClassName() {
   return "rounded-2xl border border-[#e5dbcf] bg-[#f7f0e9] p-3";
 }
 
+function tabButtonClassName(isActive: boolean) {
+  return isActive
+    ? "rounded-full bg-[#b64040] px-4 py-2 text-sm font-medium text-white"
+    : "rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700";
+}
+
+function labelForAccountType(
+  accountType: "admin" | "user" | "client" | "therapist",
+  t: ReturnType<typeof getAppMessages>["accountTabs"]
+) {
+  if (accountType === "therapist") return t.roleTherapist;
+  if (accountType === "admin") return t.roleAdmin;
+  if (accountType === "client") return t.roleClient;
+  return t.roleUser;
+}
+
+function formatDate(value: string | null | undefined, locale: string) {
+  if (!value) return "-";
+
+  return new Date(value).toLocaleDateString(locale, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatBooleanLabel(
+  value: boolean,
+  language: "nl" | "en" | "de"
+) {
+  if (language === "en") {
+    return value ? "Yes" : "No";
+  }
+
+  if (language === "de") {
+    return value ? "Ja" : "Nein";
+  }
+
+  return value ? "Ja" : "Nee";
+}
+
+function DetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-xl bg-white px-3 py-3">
+      <span className="text-sm text-stone-500">{label}</span>
+      <span className="max-w-[65%] text-right text-sm text-stone-800">{value}</span>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+}) {
+  return (
+    <div className="rounded-xl bg-white px-3 py-3">
+      <p className="text-xs uppercase tracking-[0.18em] text-stone-500">{label}</p>
+      <p className="mt-2 text-lg font-medium text-stone-900">{value}</p>
+      {detail ? <p className="mt-1 text-sm text-stone-500">{detail}</p> : null}
+    </div>
+  );
+}
+
 export default async function AccountPage({
   searchParams,
 }: {
   searchParams?: Promise<AccountSearchParams>;
 }) {
+  const language = resolveUiLanguage(await getPrimaryLanguage());
+  const messages = getAppMessages(language);
+  const tabsT = messages.accountTabs;
+  const generalT = messages.userGeneral;
+  const headerT = messages.userHeader;
+  const locale =
+    language === "en" ? "en-US" : language === "de" ? "de-DE" : "nl-NL";
   const params = await searchParams;
   const error = Array.isArray(params?.error) ? params?.error[0] : params?.error;
+  const tab = Array.isArray(params?.tab) ? params?.tab[0] : params?.tab;
   const hasInvalidError = error === "invalid";
+  const activeTab = tab === "profile" ? "profile" : "overview";
 
   const user = await getCurrentUser();
   const supabase = createAdminClient();
@@ -101,7 +202,7 @@ export default async function AccountPage({
                 Inloggen
               </button>
               <Link
-                href="/login"
+                href="/login?mode=register"
                 className="inline-flex rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-800"
               >
                 Aanmelden
@@ -113,30 +214,81 @@ export default async function AccountPage({
     );
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name, profile_data")
-    .eq("user_id", user.id)
-    .maybeSingle<ProfileRow>();
+  const [
+    { data: profile },
+    { data: wallet },
+    { count: unlockedCount },
+    { data: latestUnlock },
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("display_name, role, profile_data")
+      .eq("user_id", user.id)
+      .maybeSingle<ProfileRow>(),
+    supabase
+      .from("credit_wallets")
+      .select("credits_available")
+      .eq("user_id", user.id)
+      .maybeSingle<WalletRow>(),
+    supabase
+      .from("content_unlocks")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id),
+    supabase
+      .from("content_unlocks")
+      .select("content_item_id, unlocked_at")
+      .eq("user_id", user.id)
+      .order("unlocked_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<LatestUnlockRow>(),
+  ]);
 
-  const { data: wallet } = await supabase
-    .from("credit_wallets")
-    .select("credits_available")
-    .eq("user_id", user.id)
-    .maybeSingle<WalletRow>();
+  let latestUnlockedContent: ContentItemRow | null = null;
 
+  if (latestUnlock?.content_item_id) {
+    const { data } = await supabase
+      .from("content_items")
+      .select("title, slug")
+      .eq("id", latestUnlock.content_item_id)
+      .maybeSingle<ContentItemRow>();
+    latestUnlockedContent = data ?? null;
+  }
+
+  const firstName = profile?.profile_data?.first_name?.trim() ?? "";
+  const lastName = profile?.profile_data?.last_name?.trim() ?? "";
+  const website = profile?.profile_data?.website?.trim() ?? "";
+  const fullName = [firstName, lastName].filter(Boolean).join(" ");
   const displayName =
-    profile?.display_name ??
-    profile?.profile_data?.first_name ??
-    user.user_metadata?.name ??
-    user.email?.split("@")[0] ??
+    profile?.display_name?.trim() ||
+    fullName ||
+    firstName ||
+    (typeof user.user_metadata?.name === "string" ? user.user_metadata.name : "") ||
+    user.email?.split("@")[0] ||
     "Gebruiker";
   const avatarUrl =
-    profile?.profile_data?.avatar_url ??
-    profile?.profile_data?.profile_image ??
-    user.user_metadata?.avatar_url ??
-    user.user_metadata?.picture ??
+    profile?.profile_data?.avatar_url?.trim() ||
+    profile?.profile_data?.profile_image ||
+    (typeof user.user_metadata?.avatar_url === "string"
+      ? user.user_metadata.avatar_url
+      : "") ||
+    (typeof user.user_metadata?.picture === "string"
+      ? user.user_metadata.picture
+      : "") ||
     "";
+  const bio = profile?.profile_data?.bio?.trim() ?? "";
+  const userAccountType = getProfileAccountType(profile?.profile_data ?? null);
+  const therapistProfile = getTherapistProfileData(profile?.profile_data ?? null);
+  const accountType = getEffectiveAccountType(
+    profile?.role ??
+      user.user_metadata?.role ??
+      user.app_metadata?.role ??
+      "user",
+    profile?.profile_data ?? null
+  );
+  const memberSince = formatDate(user.created_at, locale);
+  const lastUnlockedDate = formatDate(latestUnlock?.unlocked_at, locale);
+  const safeUnlockedCount = unlockedCount ?? 0;
+  const booleanLabel = (value: boolean) => formatBooleanLabel(value, language);
 
   return (
     <PublicAppShell activeTab="profiel">
@@ -160,69 +312,271 @@ export default async function AccountPage({
             <p className="mt-2 text-center font-serif text-xl text-stone-900">
               {displayName}
             </p>
+            <p className="mt-1 text-center text-sm text-stone-600">
+              {user.email ?? ""}
+            </p>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <span className="rounded-full bg-white/80 px-3 py-1 text-xs uppercase tracking-[0.18em] text-stone-700">
+                {labelForAccountType(accountType, tabsT)}
+              </span>
+              <span className="rounded-full bg-white/60 px-3 py-1 text-xs text-stone-700">
+                {headerT.createdAt}: {memberSince}
+              </span>
+            </div>
+            <div className="mt-3 flex justify-center">
+              <Link
+                href="/account?tab=profile"
+                className="inline-flex rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-800"
+              >
+                {tabsT.profile}
+              </Link>
+            </div>
           </div>
         </div>
 
-        <div className={accountCardClassName()}>
-          <h3 className="mb-2 font-medium text-stone-900">Persoonlijke gegevens</h3>
-          <ul className="space-y-2 text-sm text-stone-700">
-            <li>E-mail: {user.email ?? "-"}</li>
-            <li>Beschikbare credits: {wallet?.credits_available ?? 0}</li>
-          </ul>
-          <div className="mt-3">
-            <Link
-              href="/account?tab=profile"
-              className="inline-flex rounded-full bg-white px-3 py-1.5 text-xs text-stone-800"
-            >
-              Wijzig gegevens
-            </Link>
-          </div>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/account" className={tabButtonClassName(activeTab === "overview")}>
+            {tabsT.overview}
+          </Link>
+          <Link
+            href="/account?tab=profile"
+            className={tabButtonClassName(activeTab === "profile")}
+          >
+            {tabsT.profile}
+          </Link>
         </div>
 
-        <div className={accountCardClassName()}>
-          <h3 className="mb-2 font-medium text-stone-900">Activiteiten & voortgang</h3>
-          <div className="space-y-2 text-sm">
-            <Link href="/content" className="block rounded-xl bg-white px-3 py-2">
-              Mijn traject
-            </Link>
-            <Link href="/trainingen" className="block rounded-xl bg-white px-3 py-2">
-              Voortgang
-            </Link>
-            <Link href="/therapeuten" className="block rounded-xl bg-white px-3 py-2">
-              Therapeuten
-            </Link>
-            <Link href="/account?tab=unlocked" className="block rounded-xl bg-white px-3 py-2">
-              Opgeslagen opdrachten
-            </Link>
-          </div>
-        </div>
+        {activeTab === "profile" ? (
+          <>
+            <div className={accountCardClassName()}>
+              <h3 className="mb-2 font-medium text-stone-900">Profieloverzicht</h3>
+              <div className="space-y-2">
+                <DetailRow label={generalT.firstName} value={firstName || "-"} />
+                <DetailRow label={generalT.lastName} value={lastName || "-"} />
+                <DetailRow
+                  label={tabsT.accountType}
+                  value={labelForAccountType(accountType, tabsT)}
+                />
+                <DetailRow label={generalT.displayName} value={displayName} />
+                <DetailRow label="E-mail" value={user.email ?? "-"} />
+                <DetailRow label={generalT.website} value={website || "-"} />
+                {userAccountType === "therapist" ? (
+                  <>
+                    <DetailRow
+                      label={generalT.publicDirectory}
+                      value={booleanLabel(
+                        Boolean(therapistProfile.public_profile_enabled)
+                      )}
+                    />
+                    <DetailRow
+                      label={generalT.professionalTitle}
+                      value={therapistProfile.professional_title || "-"}
+                    />
+                    <DetailRow
+                      label={generalT.practiceName}
+                      value={therapistProfile.practice_name || "-"}
+                    />
+                    <DetailRow
+                      label={generalT.publicEmail}
+                      value={therapistProfile.public_email || "-"}
+                    />
+                    <DetailRow
+                      label={generalT.phone}
+                      value={therapistProfile.phone || "-"}
+                    />
+                    <DetailRow
+                      label={generalT.city}
+                      value={
+                        [therapistProfile.city, therapistProfile.region]
+                          .filter(Boolean)
+                          .join(", ") || "-"
+                      }
+                    />
+                    <DetailRow
+                      label={generalT.onlineAvailable}
+                      value={booleanLabel(Boolean(therapistProfile.online_available))}
+                    />
+                    <DetailRow
+                      label={generalT.inPersonAvailable}
+                      value={booleanLabel(Boolean(therapistProfile.in_person_available))}
+                    />
+                    <DetailRow
+                      label={generalT.acceptingNewClients}
+                      value={booleanLabel(
+                        Boolean(therapistProfile.accepting_new_clients)
+                      )}
+                    />
+                  </>
+                ) : null}
+              </div>
+              {bio ? (
+                <p className="mt-3 rounded-xl bg-white px-3 py-3 text-sm leading-6 text-stone-700">
+                  {bio}
+                </p>
+              ) : (
+                <p className="mt-3 rounded-xl bg-white px-3 py-3 text-sm leading-6 text-stone-500">
+                  Voeg een korte bio toe om je profiel persoonlijker te maken.
+                </p>
+              )}
+              {userAccountType === "therapist" ? (
+                <div className="mt-3 space-y-3">
+                  {therapistProfile.short_intro ? (
+                    <p className="rounded-xl bg-white px-3 py-3 text-sm leading-6 text-stone-700">
+                      {therapistProfile.short_intro}
+                    </p>
+                  ) : null}
+                  {therapistProfile.specializations?.length ? (
+                    <div className="rounded-xl bg-white px-3 py-3">
+                      <p className="text-xs uppercase tracking-[0.18em] text-stone-500">
+                        {generalT.specializations}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {therapistProfile.specializations.map((entry) => (
+                          <span
+                            key={entry}
+                            className="rounded-full bg-[#f4ece4] px-3 py-1 text-xs text-stone-700"
+                          >
+                            {entry}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                  {(therapistProfile.methods?.length ||
+                    therapistProfile.target_groups?.length ||
+                    therapistProfile.languages?.length) ? (
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <StatCard
+                        label={generalT.methods}
+                        value={therapistProfile.methods?.join(", ") || "-"}
+                      />
+                      <StatCard
+                        label={generalT.targetGroups}
+                        value={therapistProfile.target_groups?.join(", ") || "-"}
+                      />
+                      <StatCard
+                        label={generalT.languages}
+                        value={therapistProfile.languages?.join(", ") || "-"}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
 
-        <div className={accountCardClassName()}>
-          <h3 className="mb-2 font-medium text-stone-900">Content & producten</h3>
-          <div className="space-y-2 text-sm">
-            <Link href="/shop" className="block rounded-xl bg-white px-3 py-2">
-              Mijn aankopen
-            </Link>
-            <Link href="/shop" className="block rounded-xl bg-white px-3 py-2">
-              Mijn downloads
-            </Link>
-            <Link href="/shop" className="block rounded-xl bg-white px-3 py-2">
-              Mijn abonnementen
-            </Link>
-          </div>
-        </div>
+            <AccountProfileForm
+              userId={user.id}
+              accountType={userAccountType}
+              initialDisplayName={displayName}
+              initialBio={bio}
+              initialFirstName={firstName}
+              initialLastName={lastName}
+              initialWebsite={website}
+              initialAvatarUrl={avatarUrl}
+              initialTherapistProfile={therapistProfile}
+              email={user.email ?? ""}
+              language={language}
+            />
+          </>
+        ) : (
+          <>
+            <div className={accountCardClassName()}>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-medium text-stone-900">Mijn gegevens</h3>
+                <Link
+                  href="/account?tab=profile"
+                  className="inline-flex rounded-full bg-white px-3 py-1.5 text-xs text-stone-800"
+                >
+                  {tabsT.profile}
+                </Link>
+              </div>
+              <div className="mt-3 space-y-2">
+                <DetailRow label={generalT.firstName} value={firstName || "-"} />
+                <DetailRow label={generalT.lastName} value={lastName || "-"} />
+                <DetailRow label={generalT.displayName} value={displayName} />
+                <DetailRow label="E-mail" value={user.email ?? "-"} />
+                <DetailRow label={generalT.website} value={website || "-"} />
+              </div>
+            </div>
 
-        <div className={accountCardClassName()}>
-          <h3 className="mb-2 font-medium text-stone-900">Veiligheid & privacy</h3>
-          <div className="space-y-2 text-sm">
-            <Link href="/admin/settings/security" className="block rounded-xl bg-white px-3 py-2">
-              Veiligheidsinstellingen
-            </Link>
-            <Link href="/account?tab=credits" className="block rounded-xl bg-white px-3 py-2">
-              Logboek
-            </Link>
-          </div>
-        </div>
+            <div className={accountCardClassName()}>
+              <h3 className="mb-3 font-medium text-stone-900">Mijn account</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <StatCard
+                  label={tabsT.accountType}
+                  value={labelForAccountType(accountType, tabsT)}
+                />
+                <StatCard
+                  label={headerT.createdAt}
+                  value={memberSince}
+                />
+                <StatCard
+                  label={tabsT.availableCredits}
+                  value={String(wallet?.credits_available ?? 0)}
+                />
+                <StatCard
+                  label={tabsT.unlockedItems}
+                  value={String(safeUnlockedCount)}
+                />
+              </div>
+            </div>
+
+            <div className={accountCardClassName()}>
+              <h3 className="mb-2 font-medium text-stone-900">Mijn voortgang</h3>
+              <div className="rounded-xl bg-white px-3 py-3 text-sm text-stone-700">
+                {latestUnlockedContent ? (
+                  <>
+                    <p className="font-medium text-stone-900">
+                      Laatst ontgrendeld: {latestUnlockedContent.title ?? "Onbekende content"}
+                    </p>
+                    <p className="mt-1 text-stone-500">{lastUnlockedDate}</p>
+                    {latestUnlockedContent.slug ? (
+                      <Link
+                        href={`/content/${latestUnlockedContent.slug}`}
+                        className="mt-3 inline-flex rounded-full border border-stone-300 px-3 py-1.5 text-xs text-stone-800"
+                      >
+                        Verder lezen
+                      </Link>
+                    ) : null}
+                  </>
+                ) : (
+                  <p>Nog geen ontgrendelde content beschikbaar.</p>
+                )}
+              </div>
+            </div>
+
+            <div className={accountCardClassName()}>
+              <h3 className="mb-2 font-medium text-stone-900">Verder in de app</h3>
+              <div className="space-y-2 text-sm">
+                <Link href="/content" className="block rounded-xl bg-white px-3 py-2">
+                  Bekijk content
+                </Link>
+                <Link href="/trainingen" className="block rounded-xl bg-white px-3 py-2">
+                  Trainingen
+                </Link>
+                <Link href="/therapeuten" className="block rounded-xl bg-white px-3 py-2">
+                  Therapeuten
+                </Link>
+                <Link href="/shop" className="block rounded-xl bg-white px-3 py-2">
+                  Shop en aankopen
+                </Link>
+              </div>
+            </div>
+
+            <div className={accountCardClassName()}>
+              <h3 className="mb-2 font-medium text-stone-900">Over mij</h3>
+              {bio ? (
+                <p className="rounded-xl bg-white px-3 py-3 text-sm leading-6 text-stone-700">
+                  {bio}
+                </p>
+              ) : (
+                <p className="rounded-xl bg-white px-3 py-3 text-sm leading-6 text-stone-500">
+                  Voeg via je profiel een korte introductie toe.
+                </p>
+              )}
+            </div>
+          </>
+        )}
 
         <div className="pb-2 pt-1">
           <AppLogoutButton />

@@ -9,9 +9,20 @@ type AppMessages = {
   };
   login: {
     title: string;
+    modeLogin: string;
+    modeRegister: string;
     email: string;
     password: string;
+    firstName: string;
+    lastName: string;
+    accountType: string;
+    accountTypeClient: string;
+    accountTypeTherapist: string;
     submit: string;
+    registerTitle: string;
+    registerSubmit: string;
+    registerSuccess: string;
+    registerFailed: string;
     mfaTitle: string;
     mfaPrompt: string;
     mfaCode: string;
@@ -53,6 +64,14 @@ type AppMessages = {
     saveFailed: string;
     title: string;
     email: string;
+    avatar: string;
+    avatarUpload: string;
+    avatarUploading: string;
+    avatarRemove: string;
+    avatarUploaded: string;
+    avatarUploadFailed: string;
+    avatarHint: string;
+    avatarEmpty: string;
     displayName: string;
     bio: string;
     save: string;
@@ -72,9 +91,34 @@ type AppMessages = {
     lastName: string;
     nickname: string;
     displayName: string;
+    accountType: string;
+    accountTypeUser: string;
+    accountTypeClient: string;
+    accountTypeTherapist: string;
     contactInfo: string;
     website: string;
     aboutYou: string;
+    therapistDetails: string;
+    publicDirectory: string;
+    publicDirectoryHint: string;
+    professionalTitle: string;
+    shortIntro: string;
+    practiceName: string;
+    registrationNumber: string;
+    publicEmail: string;
+    phone: string;
+    city: string;
+    region: string;
+    location: string;
+    onlineAvailable: string;
+    inPersonAvailable: string;
+    acceptingNewClients: string;
+    specializations: string;
+    targetGroups: string;
+    languages: string;
+    methods: string;
+    yearsExperience: string;
+    intakeNote: string;
     saveChanges: string;
     saving: string;
     accountSecurity: string;
@@ -227,9 +271,21 @@ const nl: AppMessages = {
   },
   login: {
     title: "Inloggen",
+    modeLogin: "Inloggen",
+    modeRegister: "Registreren",
     email: "E-mail",
     password: "Wachtwoord",
+    firstName: "Voornaam",
+    lastName: "Achternaam",
+    accountType: "Ik meld me aan als",
+    accountTypeClient: "Gebruiker (client)",
+    accountTypeTherapist: "Therapeut",
     submit: "Inloggen",
+    registerTitle: "Account aanmaken",
+    registerSubmit: "Account aanmaken",
+    registerSuccess:
+      "Je account is aangemaakt. Log in of controleer je e-mail als bevestiging nodig is.",
+    registerFailed: "Registreren mislukt. Controleer je gegevens en probeer opnieuw.",
     mfaTitle: "Bevestig 2FA",
     mfaPrompt: "Vul de code uit je authenticator app in.",
     mfaCode: "2FA-code",
@@ -245,7 +301,7 @@ const nl: AppMessages = {
   },
   accountTabs: {
     overview: "Overzicht",
-    profile: "Profiel",
+    profile: "Profiel bewerken",
     credits: "Credits",
     unlocked: "Ontgrendelde content",
     clients: "Clienten",
@@ -272,6 +328,14 @@ const nl: AppMessages = {
     saveFailed: "Opslaan mislukt.",
     title: "Profiel",
     email: "E-mail",
+    avatar: "Profielfoto",
+    avatarUpload: "Foto uploaden",
+    avatarUploading: "Foto uploaden...",
+    avatarRemove: "Foto verwijderen",
+    avatarUploaded: "Foto geupload. Sla je profiel op om deze te bewaren.",
+    avatarUploadFailed: "Uploaden van de profielfoto mislukt.",
+    avatarHint: "Upload een vierkante of staande afbeelding voor je profiel.",
+    avatarEmpty: "Geen foto",
     displayName: "Weergavenaam",
     bio: "Biografie",
     save: "Opslaan",
@@ -291,9 +355,35 @@ const nl: AppMessages = {
     lastName: "Achternaam",
     nickname: "Bijnaam",
     displayName: "Weergavenaam",
+    accountType: "Accounttype",
+    accountTypeUser: "Gebruiker",
+    accountTypeClient: "Client",
+    accountTypeTherapist: "Therapeut",
     contactInfo: "Contactinformatie",
     website: "Website",
     aboutYou: "Over jezelf",
+    therapistDetails: "Therapeutgegevens",
+    publicDirectory: "Toon in therapeutenoverzicht",
+    publicDirectoryHint:
+      "Zet dit aan als clienten je publieke profiel mogen zien in het therapeutenoverzicht.",
+    professionalTitle: "Functietitel",
+    shortIntro: "Korte introductie",
+    practiceName: "Praktijknaam",
+    registrationNumber: "Registratienummer",
+    publicEmail: "Publiek e-mailadres",
+    phone: "Telefoon",
+    city: "Plaats",
+    region: "Regio",
+    location: "Locatie",
+    onlineAvailable: "Online sessies mogelijk",
+    inPersonAvailable: "Fysieke sessies mogelijk",
+    acceptingNewClients: "Neemt nieuwe clienten aan",
+    specializations: "Specialisaties",
+    targetGroups: "Doelgroepen",
+    languages: "Talen",
+    methods: "Methodieken",
+    yearsExperience: "Jaren ervaring",
+    intakeNote: "Intake of beschikbaarheid",
     saveChanges: "Wijzigingen opslaan",
     saving: "Opslaan...",
     accountSecurity: "Account & beveiliging",
@@ -442,9 +532,21 @@ const en: AppMessages = {
   home: { title: "Welcome to Pure Therapeutic ART", subtitle: "Discover assignments and content that support you step by step.", viewContent: "View content", login: "Log in" },
   login: {
     title: "Log in",
+    modeLogin: "Log in",
+    modeRegister: "Register",
     email: "Email",
     password: "Password",
+    firstName: "First name",
+    lastName: "Last name",
+    accountType: "I am registering as",
+    accountTypeClient: "User (client)",
+    accountTypeTherapist: "Therapist",
     submit: "Log in",
+    registerTitle: "Create account",
+    registerSubmit: "Create account",
+    registerSuccess:
+      "Your account was created. Log in or check your email if confirmation is required.",
+    registerFailed: "Registration failed. Check your details and try again.",
     mfaTitle: "Confirm 2FA",
     mfaPrompt: "Enter the code from your authenticator app.",
     mfaCode: "2FA code",
@@ -455,11 +557,11 @@ const en: AppMessages = {
     mfaSetupContinue: "Continue to admin",
   },
   accountPage: { title: "My account", subtitle: "Manage your profile, credits and unlocked content." },
-  accountTabs: { ...nl.accountTabs, overview: "Overview", profile: "Profile", unlocked: "Unlocked content", clients: "Clients", welcome: "Welcome", accountType: "Account type", availableCredits: "Available credits", unlockedItems: "Unlocked items", unlockedTitle: "Unlocked content", noUnlocked: "No unlocked content yet.", unknownContent: "Unknown content", titleCol: "Title", categoryCol: "Category", dateCol: "Date", therapistDesc: "This is the base for the therapist account. We can add client linking and progress next.", roleTherapist: "Therapist", roleAdmin: "Administrator", roleClient: "Client", roleUser: "User" },
-  accountProfile: { ...nl.accountProfile, saved: "Profile saved.", saveFailed: "Saving failed.", title: "Profile", displayName: "Display name", bio: "Biography", save: "Save", saving: "Saving..." },
+  accountTabs: { ...nl.accountTabs, overview: "Overview", profile: "Edit profile", unlocked: "Unlocked content", clients: "Clients", welcome: "Welcome", accountType: "Account type", availableCredits: "Available credits", unlockedItems: "Unlocked items", unlockedTitle: "Unlocked content", noUnlocked: "No unlocked content yet.", unknownContent: "Unknown content", titleCol: "Title", categoryCol: "Category", dateCol: "Date", therapistDesc: "This is the base for the therapist account. We can add client linking and progress next.", roleTherapist: "Therapist", roleAdmin: "Administrator", roleClient: "Client", roleUser: "User" },
+  accountProfile: { ...nl.accountProfile, saved: "Profile saved.", saveFailed: "Saving failed.", title: "Profile", avatar: "Profile photo", avatarUpload: "Upload photo", avatarUploading: "Uploading photo...", avatarRemove: "Remove photo", avatarUploaded: "Photo uploaded. Save your profile to keep it.", avatarUploadFailed: "Uploading the profile photo failed.", avatarHint: "Upload a square or portrait image for your profile.", avatarEmpty: "No photo", displayName: "Display name", bio: "Biography", save: "Save", saving: "Saving..." },
   userHeader: { createdAt: "Created" },
   userTabs: { general: "General", credits: "Credits", unlocked: "Unlocked content" },
-  userGeneral: { ...nl.userGeneral, name: "Name", firstName: "First name", lastName: "Last name", nickname: "Nickname", displayName: "Display name", contactInfo: "Contact info", aboutYou: "About you", saveChanges: "Save changes", saving: "Saving...", accountSecurity: "Account & security" },
+  userGeneral: { ...nl.userGeneral, name: "Name", firstName: "First name", lastName: "Last name", nickname: "Nickname", displayName: "Display name", accountType: "Account type", accountTypeUser: "User", accountTypeClient: "Client", accountTypeTherapist: "Therapist", contactInfo: "Contact info", aboutYou: "About you", therapistDetails: "Therapist details", publicDirectory: "Show in therapist directory", publicDirectoryHint: "Enable this if clients may see your public profile in the therapist directory.", professionalTitle: "Professional title", shortIntro: "Short introduction", practiceName: "Practice name", registrationNumber: "Registration number", publicEmail: "Public email address", phone: "Phone", city: "City", region: "Region", location: "Location", onlineAvailable: "Offers online sessions", inPersonAvailable: "Offers in-person sessions", acceptingNewClients: "Accepting new clients", specializations: "Specializations", targetGroups: "Target groups", languages: "Languages", methods: "Methods", yearsExperience: "Years of experience", intakeNote: "Intake or availability", saveChanges: "Save changes", saving: "Saving...", accountSecurity: "Account & security" },
   roleEditor: { ...nl.roleEditor, unknownError: "Unknown error", title: "User role", updated: "Role updated successfully", adminWarning: "Admins have full access to the system", save: "Save role", saving: "Saving...", user: "User", admin: "Admin" },
   resetPassword: { ...nl.resetPassword, unknownError: "Unknown error", title: "Reset password", updated: "Password updated successfully", placeholder: "New password (min. 8 chars)", reset: "Reset password", busy: "Working..." },
   userCredits: { ...nl.userCredits, adjustCredits: "Adjust credits", selfGuard: "You cannot adjust your own credits.", add: "Add", subtract: "Subtract", yearSubTitle: "Year subscription assignments", noYearSub: "No year subscriptions found.", start: "Start", endLabel: "End", indefinite: "indefinite", status: "Status", active: "active", ended: "ended", ending: "Ending...", endAction: "End", adjustFailed: "Adjusting credits failed", endFailed: "Ending subscription failed" },
@@ -477,9 +579,22 @@ const de: AppMessages = {
   home: { title: "Willkommen bei Pure Therapeutic ART", subtitle: "Entdecke Aufgaben und Inhalte, die dich Schritt fur Schritt unterstutzen.", viewContent: "Inhalte ansehen", login: "Anmelden" },
   login: {
     title: "Anmelden",
+    modeLogin: "Anmelden",
+    modeRegister: "Registrieren",
     email: "E-Mail",
     password: "Passwort",
+    firstName: "Vorname",
+    lastName: "Nachname",
+    accountType: "Ich registriere mich als",
+    accountTypeClient: "Benutzer (Klient)",
+    accountTypeTherapist: "Therapeut",
     submit: "Anmelden",
+    registerTitle: "Konto erstellen",
+    registerSubmit: "Konto erstellen",
+    registerSuccess:
+      "Dein Konto wurde erstellt. Melde dich an oder pruefe deine E-Mail, falls eine Bestatigung erforderlich ist.",
+    registerFailed:
+      "Registrierung fehlgeschlagen. Bitte prufe deine Angaben und versuche es erneut.",
     mfaTitle: "2FA bestaetigen",
     mfaPrompt: "Code aus der Authenticator-App eingeben.",
     mfaCode: "2FA-Code",
@@ -490,11 +605,11 @@ const de: AppMessages = {
     mfaSetupContinue: "Weiter zum Admin",
   },
   accountPage: { title: "Mein Konto", subtitle: "Verwalte dein Profil, Credits und freigeschaltete Inhalte." },
-  accountTabs: { ...nl.accountTabs, overview: "Ubersicht", profile: "Profil", unlocked: "Freigeschaltete Inhalte", clients: "Klienten", welcome: "Willkommen", accountType: "Kontotyp", availableCredits: "Verfugbare Credits", unlockedItems: "Freigeschaltete Elemente", unlockedTitle: "Freigeschaltete Inhalte", noUnlocked: "Noch keine freigeschalteten Inhalte.", unknownContent: "Unbekannter Inhalt", titleCol: "Titel", categoryCol: "Kategorie", dateCol: "Datum", therapistDesc: "Dies ist die Basis fur das Therapeutenkonto. Verknupfung von Klienten und Fortschritt folgt als nachstes.", roleTherapist: "Therapeut", roleAdmin: "Administrator", roleClient: "Klient", roleUser: "Benutzer" },
-  accountProfile: { ...nl.accountProfile, saved: "Profil gespeichert.", saveFailed: "Speichern fehlgeschlagen.", title: "Profil", displayName: "Anzeigename", bio: "Biografie", save: "Speichern", saving: "Speichern..." },
+  accountTabs: { ...nl.accountTabs, overview: "Ubersicht", profile: "Profil bearbeiten", unlocked: "Freigeschaltete Inhalte", clients: "Klienten", welcome: "Willkommen", accountType: "Kontotyp", availableCredits: "Verfugbare Credits", unlockedItems: "Freigeschaltete Elemente", unlockedTitle: "Freigeschaltete Inhalte", noUnlocked: "Noch keine freigeschalteten Inhalte.", unknownContent: "Unbekannter Inhalt", titleCol: "Titel", categoryCol: "Kategorie", dateCol: "Datum", therapistDesc: "Dies ist die Basis fur das Therapeutenkonto. Verknupfung von Klienten und Fortschritt folgt als nachstes.", roleTherapist: "Therapeut", roleAdmin: "Administrator", roleClient: "Klient", roleUser: "Benutzer" },
+  accountProfile: { ...nl.accountProfile, saved: "Profil gespeichert.", saveFailed: "Speichern fehlgeschlagen.", title: "Profil", avatar: "Profilfoto", avatarUpload: "Foto hochladen", avatarUploading: "Foto wird hochgeladen...", avatarRemove: "Foto entfernen", avatarUploaded: "Foto hochgeladen. Speichere dein Profil, um es zu behalten.", avatarUploadFailed: "Das Hochladen des Profilfotos ist fehlgeschlagen.", avatarHint: "Lade ein quadratisches oder hochformatiges Bild fur dein Profil hoch.", avatarEmpty: "Kein Foto", displayName: "Anzeigename", bio: "Biografie", save: "Speichern", saving: "Speichern..." },
   userHeader: { createdAt: "Erstellt" },
   userTabs: { general: "Allgemein", credits: "Credits", unlocked: "Freigeschaltete Inhalte" },
-  userGeneral: { ...nl.userGeneral, name: "Name", firstName: "Vorname", lastName: "Nachname", nickname: "Spitzname", displayName: "Anzeigename", contactInfo: "Kontaktinformationen", aboutYou: "Uber dich", saveChanges: "Anderungen speichern", saving: "Speichern...", accountSecurity: "Konto & Sicherheit" },
+  userGeneral: { ...nl.userGeneral, name: "Name", firstName: "Vorname", lastName: "Nachname", nickname: "Spitzname", displayName: "Anzeigename", accountType: "Kontotyp", accountTypeUser: "Benutzer", accountTypeClient: "Klient", accountTypeTherapist: "Therapeut", contactInfo: "Kontaktinformationen", aboutYou: "Uber dich", therapistDetails: "Therapeutendaten", publicDirectory: "Im Therapeutenverzeichnis anzeigen", publicDirectoryHint: "Aktiviere dies, wenn Klienten dein offentliches Profil im Therapeutenverzeichnis sehen durfen.", professionalTitle: "Berufsbezeichnung", shortIntro: "Kurze Einfuhrung", practiceName: "Praxisname", registrationNumber: "Registrierungsnummer", publicEmail: "Offentliche E-Mail-Adresse", phone: "Telefon", city: "Ort", region: "Region", location: "Standort", onlineAvailable: "Online-Sitzungen moglich", inPersonAvailable: "Vor-Ort-Sitzungen moglich", acceptingNewClients: "Nimmt neue Klienten an", specializations: "Spezialisierungen", targetGroups: "Zielgruppen", languages: "Sprachen", methods: "Methoden", yearsExperience: "Jahre Erfahrung", intakeNote: "Intake oder Verfugbarkeit", saveChanges: "Anderungen speichern", saving: "Speichern...", accountSecurity: "Konto & Sicherheit" },
   roleEditor: { ...nl.roleEditor, unknownError: "Unbekannter Fehler", title: "Benutzerrolle", updated: "Rolle erfolgreich aktualisiert", adminWarning: "Admins haben vollen Zugriff auf das System", save: "Rolle speichern", saving: "Speichern...", user: "Benutzer", admin: "Admin" },
   resetPassword: { ...nl.resetPassword, unknownError: "Unbekannter Fehler", title: "Passwort zurucksetzen", updated: "Passwort erfolgreich geandert", placeholder: "Neues Passwort (min. 8 Zeichen)", reset: "Passwort zurucksetzen", busy: "In Bearbeitung..." },
   userCredits: { ...nl.userCredits, adjustCredits: "Credits anpassen", selfGuard: "Du kannst deine eigenen Credits nicht anpassen.", add: "Hinzufugen", subtract: "Abziehen", yearSubTitle: "Jahresabo Aufgaben", noYearSub: "Keine Jahresabos gefunden.", start: "Start", endLabel: "Ende", indefinite: "unbegrenzt", status: "Status", active: "aktiv", ended: "beendet", ending: "Beenden...", endAction: "Beenden", adjustFailed: "Credits anpassen fehlgeschlagen", endFailed: "Abo beenden fehlgeschlagen" },

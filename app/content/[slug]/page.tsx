@@ -3,6 +3,7 @@ import {
   getPrimaryCategoryForContentItem,
   getPublishedContentBySlug,
   getPublishedBlocks,
+  getThemeNavigationForContentItem,
 } from "@/lib/content/public-queries";
 import PublicContentArticle from "@/components/content/PublicContentArticle";
 import { hasAccess } from "@/lib/unlock/hasAccess";
@@ -49,8 +50,11 @@ export default async function ContentDetailPage({
     );
   }
 
-  const blocks = await getPublishedBlocks(item.id);
-  const category = await getPrimaryCategoryForContentItem(item.id);
+  const [blocks, category, themeNavigation] = await Promise.all([
+    getPublishedBlocks(item.id),
+    getPrimaryCategoryForContentItem(item.id),
+    getThemeNavigationForContentItem(item.id),
+  ]);
   const isSeedCategory = Boolean(category?.is_homepage_seed);
 
   return (
@@ -58,6 +62,7 @@ export default async function ContentDetailPage({
       item={item}
       blocks={blocks}
       isSeedCategory={isSeedCategory}
+      themeNavigation={themeNavigation}
       languageLabel={language}
     />
   );

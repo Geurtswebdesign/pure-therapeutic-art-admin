@@ -121,27 +121,27 @@ export default async function Home() {
       <section className="space-y-4">
         <div className="rounded-[1.75rem] border border-stone-200 bg-white px-4 py-4 shadow-sm">
           {user ? (
-            <div className="grid gap-4 sm:grid-cols-[72px_1fr]">
-              <div className="flex flex-col items-center gap-2">
+            <div className="grid grid-cols-[84px_1fr] items-start gap-4">
+              <div className="flex flex-col items-center gap-2 pt-1">
                 {avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={avatarUrl}
                     alt={displayName || "Gebruiker"}
-                    className="h-[72px] w-[72px] overflow-hidden rounded-2xl object-cover"
+                    className="h-[72px] w-[72px] overflow-hidden rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_top,#c47f62_0%,#b34c42_35%,#7d2f2f_100%)] text-xl font-semibold text-white">
+                  <div className="flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-full bg-[radial-gradient(circle_at_top,#c47f62_0%,#b34c42_35%,#7d2f2f_100%)] text-xl font-semibold text-white">
                     {getInitials(displayName)}
                   </div>
                 )}
-                <span className="text-xs text-stone-500">
+                <span className="max-w-[84px] text-center text-xs leading-4 text-stone-500">
                   {displayName || "Gebruiker"}
                 </span>
               </div>
 
-              <div className="space-y-2">
-                <h2 className="font-serif text-2xl leading-tight text-stone-950">
+              <div className="space-y-2 pt-1">
+                <h2 className="font-serif text-xl leading-tight text-stone-950 sm:text-2xl">
                   Welkom terug
                 </h2>
                 <p className="text-sm leading-6 text-stone-600">
@@ -166,7 +166,7 @@ export default async function Home() {
                 </Link>
                 <Link
                   className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white"
-                  href="/login"
+                  href="/login?mode=register"
                 >
                   Aanmelden
                 </Link>

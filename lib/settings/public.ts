@@ -1,6 +1,9 @@
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEFAULT_GENERAL_SETTINGS } from "@/lib/settings/types";
+import {
+  DEFAULT_CUSTOMIZER_SETTINGS,
+  DEFAULT_GENERAL_SETTINGS,
+} from "@/lib/settings/types";
 
 type PublicBranding = {
   logoUrl: string | null;
@@ -17,6 +20,11 @@ type PublicHeaderOverride = {
   logoUrl: string | null;
   logoAlt: string | null;
   subtitle: string | null;
+};
+
+type PublicSplashSettings = {
+  imageUrl: string | null;
+  slogan: string;
 };
 
 function asObject(value: unknown): Record<string, unknown> | null {
@@ -54,6 +62,40 @@ export const getPublicBranding = cache(async (): Promise<PublicBranding> => {
     };
   }
 });
+
+export const getPublicSplashSettings = cache(
+  async (): Promise<PublicSplashSettings> => {
+    try {
+      const supabase = createAdminClient();
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("scope", "global")
+        .is("scope_id", null)
+        .eq("key", "customizer")
+        .maybeSingle<{ value: unknown }>();
+
+      const value = asObject(data?.value);
+
+      return {
+        imageUrl:
+          asString(
+            value?.splashImageUrl,
+            DEFAULT_CUSTOMIZER_SETTINGS.splashImageUrl
+          ) || null,
+        slogan: asString(
+          value?.splashSlogan,
+          DEFAULT_CUSTOMIZER_SETTINGS.splashSlogan
+        ),
+      };
+    } catch {
+      return {
+        imageUrl: DEFAULT_CUSTOMIZER_SETTINGS.splashImageUrl || null,
+        slogan: DEFAULT_CUSTOMIZER_SETTINGS.splashSlogan,
+      };
+    }
+  }
+);
 
 export const getPublicHeaderOverride = cache(
   async (context: PublicHeaderContext): Promise<PublicHeaderOverride | null> => {

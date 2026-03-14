@@ -50,9 +50,45 @@ function normalizeSectionItems(section: ThemePageDraft["sections"][number]) {
   });
 }
 
+async function validatePrimaryCategoryTerm(
+  primaryCategoryTermId: string | null,
+  supabase: ReturnType<typeof createAdminClient>
+) {
+  if (!primaryCategoryTermId) {
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("content_terms")
+    .select("id, name, parent_id, is_homepage_seed")
+    .eq("id", primaryCategoryTermId)
+    .maybeSingle<{
+      id: string;
+      name: string;
+      parent_id: string | null;
+      is_homepage_seed: boolean | null;
+    }>();
+
+  if (error) {
+    throw new Error(`Themacategorie laden mislukt: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error("De gekozen themacategorie bestaat niet meer.");
+  }
+
+  if (data.is_homepage_seed || !data.parent_id) {
+    throw new Error(
+      `Koppel een thema aan een gewone categorie onder een seed-categorie. "${data.name}" is geen geldige themacategorie.`
+    );
+  }
+}
+
 export async function saveThemePage(input: ThemePageDraft) {
   const supabase = createAdminClient();
   const fallbackSlug = slugify(input.title || "thema");
+
+  await validatePrimaryCategoryTerm(input.primaryCategoryTermId || null, supabase);
 
   const pagePayload = {
     parent_theme_page_id: input.parentThemePageId || null,

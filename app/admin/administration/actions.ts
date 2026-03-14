@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/auth/getAdminUser";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  getDeletedCreditPackIds,
+  markCreditPackDeleted,
+} from "@/lib/credits/deletedPacks";
 
 type CreditPackInput = {
   slug: string;
@@ -96,6 +100,41 @@ export async function setCreditPackActive(packId: string, isActive: boolean) {
   revalidatePath("/admin/administration");
 }
 
+export async function deleteCreditPack(packId: string) {
+  const admin = await requireAdmin();
+  if (!packId) throw new Error("packId ontbreekt");
+
+  const supabase = createAdminClient();
+  const { data: pack, error: packError } = await supabase
+    .from("credit_packs")
+    .select("slug")
+    .eq("id", packId)
+    .maybeSingle<{ slug: string }>();
+
+  if (packError) throw new Error(packError.message);
+  if (!pack) throw new Error("Creditpack niet gevonden");
+
+  const { error: iapProductsError } = await supabase
+    .from("iap_products")
+    .delete()
+    .eq("pack_id", packId);
+
+  if (iapProductsError) throw new Error(iapProductsError.message);
+
+  const { error } = await supabase
+    .from("credit_packs")
+    .update({
+      is_active: false,
+      slug: `${pack.slug}__deleted__${packId.slice(0, 8)}`,
+      updated_by: admin.id,
+    })
+    .eq("id", packId);
+
+  if (error) throw new Error(error.message);
+  await markCreditPackDeleted(packId, admin.id);
+  revalidatePath("/admin/administration");
+}
+
 export async function purchaseCreditPack(input: {
   userId: string;
   packId: string;
@@ -108,6 +147,11 @@ export async function purchaseCreditPack(input: {
   if (!input.packId) throw new Error("packId ontbreekt");
   if (!Number.isInteger(input.quantity) || input.quantity <= 0) {
     throw new Error("quantity moet een positief geheel getal zijn");
+  }
+
+  const deletedPackIds = await getDeletedCreditPackIds();
+  if (deletedPackIds.includes(input.packId)) {
+    throw new Error("Dit creditpack is verwijderd en kan niet meer gekocht worden.");
   }
 
   const supabase = createAdminClient();

@@ -5,6 +5,7 @@ import CreditPacksManager from "@/components/admin/administration/CreditPacksMan
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getDeletedCreditPackIds } from "@/lib/credits/deletedPacks";
 
 type PageProps = {
   searchParams: Promise<{ tab?: string }>;
@@ -62,7 +63,7 @@ type ScopedTransactionRow = {
 type PurchaseRow = {
   id: string;
   user_id: string;
-  pack_id: string;
+  pack_id: string | null;
   quantity: number;
   credits_total: number;
   amount_cents: number;
@@ -118,7 +119,11 @@ function scopeLabel(
 
 export default async function AdministrationPage({ searchParams }: PageProps) {
   const supabase = createAdminClient();
-  const primaryLanguage = resolveUiLanguage(await getPrimaryLanguage());
+  const [primaryLanguageValue, deletedPackIds] = await Promise.all([
+    getPrimaryLanguage(),
+    getDeletedCreditPackIds(),
+  ]);
+  const primaryLanguage = resolveUiLanguage(primaryLanguageValue);
   const t = getAdminMessages(primaryLanguage).administrationPage;
   const locale = primaryLanguage === "en" ? "en-US" : primaryLanguage === "de" ? "de-DE" : "nl-NL";
   const { tab } = await searchParams;
@@ -130,6 +135,9 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false })
     .returns<CreditPack[]>();
+  const visiblePacks = (packs ?? []).filter(
+    (pack) => !deletedPackIds.includes(pack.id)
+  );
 
   let users: UserOption[] = [];
   const { data: usersRpc, error: usersRpcError } = await supabase
@@ -296,7 +304,7 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
 
       {activeTab === "credits" ? (
         <CreditPacksManager
-          packs={packs ?? []}
+          packs={visiblePacks}
           users={users}
           language={primaryLanguage}
         />

@@ -23,6 +23,8 @@ export type CustomizerSettings = {
   gradientTo: string;
   cardRadius: string;
   fontScale: string;
+  splashImageUrl: string;
+  splashSlogan: string;
 };
 
 export const DEFAULT_CUSTOMIZER_SETTINGS: CustomizerSettings = {
@@ -32,6 +34,8 @@ export const DEFAULT_CUSTOMIZER_SETTINGS: CustomizerSettings = {
   gradientTo: "#e8d0cb",
   cardRadius: "16",
   fontScale: "100",
+  splashImageUrl: "",
+  splashSlogan: "Rust, groei en troost\nin een plek",
 };
 
 export type CustomizerHeaderTargetType = "category" | "route" | "page";

@@ -196,6 +196,14 @@ export async function getCustomizerSettings(): Promise<CustomizerSettings> {
     ),
     cardRadius: asString(value?.cardRadius, DEFAULT_CUSTOMIZER_SETTINGS.cardRadius),
     fontScale: asString(value?.fontScale, DEFAULT_CUSTOMIZER_SETTINGS.fontScale),
+    splashImageUrl: asString(
+      value?.splashImageUrl,
+      DEFAULT_CUSTOMIZER_SETTINGS.splashImageUrl
+    ),
+    splashSlogan: asString(
+      value?.splashSlogan,
+      DEFAULT_CUSTOMIZER_SETTINGS.splashSlogan
+    ),
   };
 }
 
@@ -260,6 +268,7 @@ export async function saveCustomizerSettings(
   });
 
   revalidatePath("/admin/settings/app");
+  revalidatePath("/", "layout");
 }
 
 export async function getCustomizerHeaderConfig(): Promise<CustomizerHeaderConfig> {

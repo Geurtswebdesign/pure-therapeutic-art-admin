@@ -4,18 +4,22 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createUser } from "../actions";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import { getAppMessages } from "@/lib/i18n/appMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { trackEvent } from "@/lib/analytics/track";
+import type { UserAccountType } from "@/lib/users/accountTypes";
 
 type UserRole = "user" | "admin";
 
 export default function CreateUserForm({ language }: { language: UiLanguage }) {
   const t = getAdminMessages(language).createUserForm;
+  const profileT = getAppMessages(language).userGeneral;
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [role, setRole] = useState<UserRole>("user");
+  const [accountType, setAccountType] = useState<UserAccountType>("user");
   const [creditsInitial, setCreditsInitial] = useState<number>(0);
 
   const [mode, setMode] = useState<"invite" | "password">("invite");
@@ -39,6 +43,7 @@ export default function CreateUserForm({ language }: { language: UiLanguage }) {
         email,
         displayName,
         role,
+        accountType,
         creditsInitial,
         sendInvite: mode === "invite",
         password: mode === "password" ? password : undefined,
@@ -108,6 +113,30 @@ export default function CreateUserForm({ language }: { language: UiLanguage }) {
           <option value="admin">{t.admin}</option>
         </select>
       </div>
+
+      {role === "user" ? (
+        <div className="space-y-1">
+          <label className="text-sm font-medium">{profileT.accountType}</label>
+          <select
+            className="w-full rounded border px-3 py-2"
+            value={accountType}
+            onChange={(e) => {
+              const nextType = e.target.value;
+              if (
+                nextType === "user" ||
+                nextType === "client" ||
+                nextType === "therapist"
+              ) {
+                setAccountType(nextType);
+              }
+            }}
+          >
+            <option value="user">{profileT.accountTypeUser}</option>
+            <option value="client">{profileT.accountTypeClient}</option>
+            <option value="therapist">{profileT.accountTypeTherapist}</option>
+          </select>
+        </div>
+      ) : null}
 
       <div className="space-y-1">
         <label className="text-sm font-medium">{t.initialCredits}</label>

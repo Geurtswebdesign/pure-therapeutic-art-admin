@@ -7,6 +7,8 @@ import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { getWallet } from "@/lib/credits/getWallet";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import TrackPageView from "@/components/analytics/TrackPageView";
+import { SplashGate } from "@/app/features/splash";
+import { getPublicSplashSettings } from "@/lib/settings/public";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +30,11 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
+  const [user, primaryLanguage, splashSettings] = await Promise.all([
+    getCurrentUser(),
+    getPrimaryLanguage(),
+    getPublicSplashSettings(),
+  ]);
 
   let balance = 0;
 
@@ -36,7 +42,6 @@ export default async function RootLayout({
     const wallet = await getWallet(user.id);
     balance = wallet?.credits_available ?? 0;
   }
-  const primaryLanguage = await getPrimaryLanguage();
 
   return (
     <html lang={primaryLanguage}>
@@ -44,8 +49,13 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <WalletProvider initialBalance={balance}>
-          <TrackPageView />
-          {children}
+          <SplashGate
+            imageUrl={splashSettings.imageUrl}
+            slogan={splashSettings.slogan}
+          >
+            <TrackPageView />
+            {children}
+          </SplashGate>
         </WalletProvider>
       </body>
     </html>

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useTransition } from "react";
 import {
   saveBrandingSettings,
@@ -15,6 +16,7 @@ import type {
 } from "@/lib/settings/types";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import MediaPicker from "@/components/content/media/MediaPicker";
+import logo from "@/assets/branding/logo.png";
 
 type Props = {
   initialValues: CustomizerSettings;
@@ -39,7 +41,7 @@ export default function CustomizerSettingsForm({
   const [error, setError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<{
-    kind: "branding" | "header";
+    kind: "branding" | "header" | "splash";
     headerId?: string;
   }>({ kind: "branding" });
   const [uploading, setUploading] = useState(false);
@@ -56,6 +58,9 @@ export default function CustomizerSettingsForm({
       label: `Categorie: ${category.name}`,
     })),
   ];
+  const previewSplashImageUrl = form.splashImageUrl.trim();
+  const previewSplashSlogan =
+    form.splashSlogan.trim() || "Rust, groei en troost\nin een plek";
 
   function setField<K extends keyof CustomizerSettings>(
     key: K,
@@ -193,13 +198,15 @@ export default function CustomizerSettingsForm({
       if (data?.publicUrl) {
         if (pickerTarget.kind === "header" && pickerTarget.headerId) {
           setHeaderField(pickerTarget.headerId, "logoUrl", data.publicUrl);
+        } else if (pickerTarget.kind === "splash") {
+          setField("splashImageUrl", data.publicUrl);
         } else {
           setBrandingField("logoUrl", data.publicUrl);
         }
       }
       setPickerOpen(false);
     } catch {
-      setUploadError("Upload mislukt. Probeer opnieuw.");
+      setUploadError("Afbeelding uploaden mislukt. Probeer opnieuw.");
     } finally {
       setUploading(false);
     }
@@ -218,6 +225,8 @@ export default function CustomizerSettingsForm({
       const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${data.file_path}`;
       if (pickerTarget.kind === "header" && pickerTarget.headerId) {
         setHeaderField(pickerTarget.headerId, "logoUrl", url);
+      } else if (pickerTarget.kind === "splash") {
+        setField("splashImageUrl", url);
       } else {
         setBrandingField("logoUrl", url);
       }
@@ -232,6 +241,9 @@ export default function CustomizerSettingsForm({
         <p className="text-sm text-gray-600">
           Beheer kleurthema en basis weergave voor de app.
         </p>
+        {uploadError ? (
+          <p className="text-xs text-red-600">{uploadError}</p>
+        ) : null}
 
         <div className="rounded-lg border p-4">
           <h3 className="mb-3 text-sm font-semibold">Branding</h3>
@@ -327,6 +339,66 @@ export default function CustomizerSettingsForm({
         </div>
 
         <div className="space-y-3 rounded-lg border p-4">
+          <div>
+            <h3 className="text-sm font-semibold">Splash screen</h3>
+            <p className="mt-1 text-xs text-gray-500">
+              Stel de opstartafbeelding en slogan in voor het laadscherm van de app.
+            </p>
+          </div>
+
+          <label className="space-y-1">
+            <span className="text-sm font-medium">Splash afbeelding URL</span>
+            <input
+              value={form.splashImageUrl}
+              onChange={(e) => setField("splashImageUrl", e.target.value)}
+              placeholder="https://..."
+              className="w-full rounded border px-3 py-2 text-sm"
+            />
+          </label>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setPickerTarget({ kind: "splash" });
+                setPickerOpen(true);
+              }}
+              className="rounded border px-3 py-1.5 text-xs hover:bg-gray-50"
+            >
+              Kies afbeelding uit mediatheek
+            </button>
+            <label className="inline-flex cursor-pointer items-center rounded border px-3 py-1.5 text-xs hover:bg-gray-50">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setPickerTarget({ kind: "splash" });
+                  handleUploadLogo(file);
+                }}
+              />
+              {uploading ? "Uploaden..." : "Upload splash afbeelding"}
+            </label>
+          </div>
+
+          <label className="space-y-1">
+            <span className="text-sm font-medium">Splash slogan</span>
+            <textarea
+              value={form.splashSlogan}
+              onChange={(e) => setField("splashSlogan", e.target.value)}
+              rows={3}
+              placeholder={"Rust, groei en troost\nin een plek"}
+              className="w-full rounded border px-3 py-2 text-sm"
+            />
+            <p className="text-xs text-gray-500">
+              Gebruik Enter als je de slogan op meerdere regels wilt tonen.
+            </p>
+          </label>
+        </div>
+
+        <div className="space-y-3 rounded-lg border p-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">Headers</h3>
             <button
@@ -337,9 +409,6 @@ export default function CustomizerSettingsForm({
               Header toevoegen
             </button>
           </div>
-          {uploadError ? (
-            <p className="text-xs text-red-600">{uploadError}</p>
-          ) : null}
           <div className="space-y-3">
             {headers.map((header, index) => (
               <div key={header.id} className="rounded border p-3">
@@ -537,8 +606,38 @@ export default function CustomizerSettingsForm({
 
       <section className="rounded-lg border bg-white p-5 shadow-sm">
         <h3 className="text-sm font-semibold">Live preview</h3>
+        <div className="mt-3 overflow-hidden rounded-[1.75rem] border border-stone-200 bg-[linear-gradient(180deg,#fbf3e7_0%,#faf5ef_58%,#edd7d2_100%)] px-5 pb-6 pt-4 text-center shadow-sm">
+          <div className="flex flex-col items-center">
+            {previewSplashImageUrl ? (
+              <Image
+                src={previewSplashImageUrl}
+                alt="Splash preview"
+                width={406}
+                height={319}
+                unoptimized
+                className="h-auto max-h-64 w-full max-w-[10rem] object-contain"
+              />
+            ) : (
+              <Image
+                src={logo}
+                alt="Splash preview"
+                className="h-auto max-h-64 w-full max-w-[10rem] object-contain"
+              />
+            )}
+            <div className="mt-2 font-serif text-3xl leading-[0.95] text-stone-700">
+              <div>Pure Grief</div>
+              <div>and</div>
+              <div>Therapeutic</div>
+              <div>ART</div>
+            </div>
+            <div className="mt-4 h-[2rem] w-[2rem] rounded-full border-[3px] border-[#9fb29c] border-r-[#8f372f]" />
+            <p className="mt-4 max-w-[12ch] whitespace-pre-line font-serif text-2xl leading-[1.05] text-stone-900">
+              &ldquo;{previewSplashSlogan}&rdquo;
+            </p>
+          </div>
+        </div>
         <div
-          className="mt-3 rounded-xl p-4"
+          className="mt-6 rounded-xl p-4"
           style={{
             background: `linear-gradient(180deg, ${form.gradientFrom} 0%, ${form.gradientTo} 100%)`,
             fontSize: `${Number(form.fontScale || 100)}%`,
@@ -569,7 +668,7 @@ export default function CustomizerSettingsForm({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-4xl rounded-lg bg-white p-5 shadow-lg">
             <div className="mb-3 flex items-center justify-between">
-              <h4 className="text-sm font-semibold">Kies logo uit mediatheek</h4>
+              <h4 className="text-sm font-semibold">Kies afbeelding uit mediatheek</h4>
               <button
                 type="button"
                 onClick={() => setPickerOpen(false)}

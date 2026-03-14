@@ -2,35 +2,156 @@
 
 import { useState, useTransition } from "react";
 import { updateMyProfile } from "@/app/account/actions";
+import MultiSelectDropdown from "@/components/forms/MultiSelectDropdown";
+import { uploadMediaAssetClient } from "@/lib/content/uploadClient";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
+import {
+  type TherapistProfileData,
+  type UserAccountType,
+} from "@/lib/users/accountTypes";
+import { THERAPIST_PROFILE_OPTION_SETS } from "@/lib/users/therapistProfileOptions";
 
 type Props = {
+  userId: string;
+  accountType: UserAccountType;
   initialDisplayName: string;
   initialBio: string;
+  initialFirstName: string;
+  initialLastName: string;
+  initialWebsite: string;
+  initialAvatarUrl: string;
+  initialTherapistProfile: TherapistProfileData | null;
   email: string;
   language: UiLanguage;
 };
 
 export default function AccountProfileForm({
+  userId,
+  accountType,
   initialDisplayName,
   initialBio,
+  initialFirstName,
+  initialLastName,
+  initialWebsite,
+  initialAvatarUrl,
+  initialTherapistProfile,
   email,
   language,
 }: Props) {
-  const t = getAppMessages(language).accountProfile;
+  const messages = getAppMessages(language);
+  const t = messages.accountProfile;
+  const general = messages.userGeneral;
+  const therapist = initialTherapistProfile;
+  const [firstName, setFirstName] = useState(initialFirstName);
+  const [lastName, setLastName] = useState(initialLastName);
   const [displayName, setDisplayName] = useState(initialDisplayName);
+  const [website, setWebsite] = useState(initialWebsite);
+  const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
   const [bio, setBio] = useState(initialBio);
+  const [publicDirectory, setPublicDirectory] = useState(
+    therapist?.public_profile_enabled ?? false
+  );
+  const [professionalTitle, setProfessionalTitle] = useState(
+    therapist?.professional_title ?? ""
+  );
+  const [shortIntro, setShortIntro] = useState(therapist?.short_intro ?? "");
+  const [practiceName, setPracticeName] = useState(
+    therapist?.practice_name ?? ""
+  );
+  const [registrationNumber, setRegistrationNumber] = useState(
+    therapist?.registration_number ?? ""
+  );
+  const [publicEmail, setPublicEmail] = useState(therapist?.public_email ?? "");
+  const [phone, setPhone] = useState(therapist?.phone ?? "");
+  const [city, setCity] = useState(therapist?.city ?? "");
+  const [region, setRegion] = useState(therapist?.region ?? "");
+  const [location, setLocation] = useState(therapist?.location ?? "");
+  const [onlineAvailable, setOnlineAvailable] = useState(
+    therapist?.online_available ?? false
+  );
+  const [inPersonAvailable, setInPersonAvailable] = useState(
+    therapist?.in_person_available ?? false
+  );
+  const [acceptingNewClients, setAcceptingNewClients] = useState(
+    therapist?.accepting_new_clients ?? false
+  );
+  const [specializations, setSpecializations] = useState(
+    therapist?.specializations ?? []
+  );
+  const [targetGroups, setTargetGroups] = useState(
+    therapist?.target_groups ?? []
+  );
+  const [languages, setLanguages] = useState(
+    therapist?.languages ?? []
+  );
+  const [methods, setMethods] = useState(
+    therapist?.methods ?? []
+  );
+  const [yearsExperience, setYearsExperience] = useState(
+    therapist?.years_experience?.toString() ?? ""
+  );
+  const [intakeNote, setIntakeNote] = useState(therapist?.intake_note ?? "");
   const [message, setMessage] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  async function handleAvatarChange(file: File | null) {
+    if (!file) return;
+
+    setMessage(null);
+    setUploadError(null);
+    setIsUploadingAvatar(true);
+
+    try {
+      const url = await uploadMediaAssetClient(file, `profiles/${userId}`);
+      setAvatarUrl(url);
+      setMessage(t.avatarUploaded);
+    } catch {
+      setUploadError(t.avatarUploadFailed);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }
 
   function onSave() {
     setMessage(null);
+    setUploadError(null);
     startTransition(async () => {
       try {
         await updateMyProfile({
+          firstName,
+          lastName,
           displayName,
+          website,
+          avatarUrl,
           bio,
+          accountType,
+          therapistProfile:
+            accountType === "therapist"
+              ? {
+                  public_profile_enabled: publicDirectory,
+                  professional_title: professionalTitle,
+                  short_intro: shortIntro,
+                  practice_name: practiceName,
+                  registration_number: registrationNumber,
+                  public_email: publicEmail,
+                  phone,
+                  city,
+                  region,
+                  location,
+                  online_available: onlineAvailable,
+                  in_person_available: inPersonAvailable,
+                  accepting_new_clients: acceptingNewClients,
+                  specializations,
+                  target_groups: targetGroups,
+                  languages,
+                  methods,
+                  years_experience: yearsExperience,
+                  intake_note: intakeNote,
+                }
+              : null,
         });
         setMessage(t.saved);
       } catch (e) {
@@ -41,48 +162,336 @@ export default function AccountProfileForm({
   }
 
   return (
-    <section className="rounded border bg-white p-4 space-y-4">
-      <h2 className="text-lg font-semibold">{t.title}</h2>
+    <section className="space-y-4 rounded-2xl border border-[#e5dbcf] bg-[#f7f0e9] p-4">
+      <h2 className="text-lg font-semibold text-stone-900">{t.title}</h2>
 
       <label className="block space-y-1">
-        <span className="text-sm text-gray-600">{t.email}</span>
+        <span className="text-sm text-stone-600">{t.email}</span>
         <input
           value={email}
           disabled
-          className="w-full rounded border bg-gray-100 px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2 text-sm text-stone-700"
         />
       </label>
 
       <label className="block space-y-1">
-        <span className="text-sm text-gray-600">{t.displayName}</span>
+        <span className="text-sm text-stone-600">{t.avatar}</span>
+      </label>
+      <div className="rounded-2xl border border-dashed border-stone-300 bg-white px-4 py-4">
+        <div className="flex items-center gap-4">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl}
+              alt={displayName || email}
+              className="h-20 w-20 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-stone-100 text-sm text-stone-500">
+              {t.avatarEmpty}
+            </div>
+          )}
+          <div className="space-y-2">
+            <label className="inline-flex cursor-pointer rounded-full bg-[#b64040] px-4 py-2 text-sm text-white">
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                disabled={isUploadingAvatar}
+                onChange={(event) => {
+                  void handleAvatarChange(event.target.files?.[0] ?? null);
+                  event.currentTarget.value = "";
+                }}
+              />
+              {isUploadingAvatar ? t.avatarUploading : t.avatarUpload}
+            </label>
+            {avatarUrl ? (
+              <button
+                type="button"
+                onClick={() => setAvatarUrl("")}
+                className="block rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700"
+              >
+                {t.avatarRemove}
+              </button>
+            ) : null}
+            <p className="text-xs leading-5 text-stone-500">{t.avatarHint}</p>
+            {uploadError ? (
+              <p className="text-sm text-red-600">{uploadError}</p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block space-y-1">
+          <span className="text-sm text-stone-600">{general.firstName}</span>
+          <input
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+          />
+        </label>
+
+        <label className="block space-y-1">
+          <span className="text-sm text-stone-600">{general.lastName}</span>
+          <input
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+          />
+        </label>
+      </div>
+
+      <label className="block space-y-1">
+        <span className="text-sm text-stone-600">{t.displayName}</span>
         <input
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
-          className="w-full rounded border px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
         />
       </label>
 
       <label className="block space-y-1">
-        <span className="text-sm text-gray-600">{t.bio}</span>
+        <span className="text-sm text-stone-600">{general.website}</span>
+        <input
+          type="url"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          placeholder="https://"
+          className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+        />
+      </label>
+
+      <label className="block space-y-1">
+        <span className="text-sm text-stone-600">{general.aboutYou}</span>
         <textarea
           rows={4}
           value={bio}
           onChange={(e) => setBio(e.target.value)}
-          className="w-full rounded border px-3 py-2 text-sm"
+          className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
         />
       </label>
+
+      {accountType === "therapist" ? (
+        <div className="space-y-4 rounded-2xl border border-[#decfbe] bg-white/70 p-4">
+          <div>
+            <h3 className="text-base font-semibold text-stone-900">
+              {general.therapistDetails}
+            </h3>
+            <p className="mt-1 text-sm leading-6 text-stone-600">
+              {general.publicDirectoryHint}
+            </p>
+          </div>
+
+          <label className="flex items-start gap-3 rounded-xl border border-stone-200 bg-white px-3 py-3">
+            <input
+              type="checkbox"
+              checked={publicDirectory}
+              onChange={(e) => setPublicDirectory(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-stone-300"
+            />
+            <span className="text-sm text-stone-700">{general.publicDirectory}</span>
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block space-y-1">
+              <span className="text-sm text-stone-600">{general.professionalTitle}</span>
+              <input
+                value={professionalTitle}
+                onChange={(e) => setProfessionalTitle(e.target.value)}
+                className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+              />
+            </label>
+
+            <label className="block space-y-1">
+              <span className="text-sm text-stone-600">{general.practiceName}</span>
+              <input
+                value={practiceName}
+                onChange={(e) => setPracticeName(e.target.value)}
+                className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+              />
+            </label>
+          </div>
+
+          <label className="block space-y-1">
+            <span className="text-sm text-stone-600">{general.shortIntro}</span>
+            <textarea
+              rows={3}
+              value={shortIntro}
+              onChange={(e) => setShortIntro(e.target.value)}
+              className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+            />
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block space-y-1">
+              <span className="text-sm text-stone-600">{general.publicEmail}</span>
+              <input
+                type="email"
+                value={publicEmail}
+                onChange={(e) => setPublicEmail(e.target.value)}
+                className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+              />
+            </label>
+
+            <label className="block space-y-1">
+              <span className="text-sm text-stone-600">{general.phone}</span>
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <label className="block space-y-1">
+              <span className="text-sm text-stone-600">{general.city}</span>
+              <input
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+              />
+            </label>
+
+            <label className="block space-y-1">
+              <span className="text-sm text-stone-600">{general.region}</span>
+              <input
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+              />
+            </label>
+
+            <label className="block space-y-1">
+              <span className="text-sm text-stone-600">{general.yearsExperience}</span>
+              <input
+                type="number"
+                min="0"
+                value={yearsExperience}
+                onChange={(e) => setYearsExperience(e.target.value)}
+                className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block space-y-1">
+              <span className="text-sm text-stone-600">{general.location}</span>
+              <input
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+              />
+            </label>
+
+            <label className="block space-y-1">
+              <span className="text-sm text-stone-600">{general.registrationNumber}</span>
+              <input
+                value={registrationNumber}
+                onChange={(e) => setRegistrationNumber(e.target.value)}
+                className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-3 py-3 text-sm text-stone-700">
+              <input
+                type="checkbox"
+                checked={onlineAvailable}
+                onChange={(e) => setOnlineAvailable(e.target.checked)}
+                className="h-4 w-4 rounded border-stone-300"
+              />
+              {general.onlineAvailable}
+            </label>
+
+            <label className="flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-3 py-3 text-sm text-stone-700">
+              <input
+                type="checkbox"
+                checked={inPersonAvailable}
+                onChange={(e) => setInPersonAvailable(e.target.checked)}
+                className="h-4 w-4 rounded border-stone-300"
+              />
+              {general.inPersonAvailable}
+            </label>
+
+            <label className="flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-3 py-3 text-sm text-stone-700">
+              <input
+                type="checkbox"
+                checked={acceptingNewClients}
+                onChange={(e) => setAcceptingNewClients(e.target.checked)}
+                className="h-4 w-4 rounded border-stone-300"
+              />
+              {general.acceptingNewClients}
+            </label>
+          </div>
+
+          <label className="block space-y-1">
+            <span className="text-sm text-stone-600">{general.specializations}</span>
+            <MultiSelectDropdown
+              label={general.specializations}
+              options={THERAPIST_PROFILE_OPTION_SETS.specializations}
+              selectedValues={specializations}
+              onChange={setSpecializations}
+            />
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block space-y-1">
+              <span className="text-sm text-stone-600">{general.targetGroups}</span>
+              <MultiSelectDropdown
+                label={general.targetGroups}
+                options={THERAPIST_PROFILE_OPTION_SETS.targetGroups}
+                selectedValues={targetGroups}
+                onChange={setTargetGroups}
+              />
+            </label>
+
+            <label className="block space-y-1">
+              <span className="text-sm text-stone-600">{general.languages}</span>
+              <MultiSelectDropdown
+                label={general.languages}
+                options={THERAPIST_PROFILE_OPTION_SETS.languages}
+                selectedValues={languages}
+                onChange={setLanguages}
+              />
+            </label>
+          </div>
+
+          <label className="block space-y-1">
+            <span className="text-sm text-stone-600">{general.methods}</span>
+            <MultiSelectDropdown
+              label={general.methods}
+              options={THERAPIST_PROFILE_OPTION_SETS.methods}
+              selectedValues={methods}
+              onChange={setMethods}
+            />
+          </label>
+
+          <label className="block space-y-1">
+            <span className="text-sm text-stone-600">{general.intakeNote}</span>
+            <textarea
+              rows={4}
+              value={intakeNote}
+              onChange={(e) => setIntakeNote(e.target.value)}
+              className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+            />
+          </label>
+        </div>
+      ) : null}
 
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={onSave}
-          disabled={isPending}
-          className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-60"
+          disabled={isPending || isUploadingAvatar}
+          className="rounded-full bg-[#b64040] px-4 py-2 text-sm text-white disabled:opacity-60"
         >
           {isPending ? t.saving : t.save}
         </button>
 
-        {message ? <p className="text-sm text-gray-600">{message}</p> : null}
+        {message ? <p className="text-sm text-stone-600">{message}</p> : null}
       </div>
     </section>
   );

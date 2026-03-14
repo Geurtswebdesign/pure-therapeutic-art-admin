@@ -86,7 +86,6 @@ export default function SecuritySettingsForm({ initialValues, language }: Props)
         : {
             sectionLimits: "Loginlimieten",
             sectionEscalation: "Escalatie",
-            sectionSession: "Admin sessie",
             sectionMfa: "Two-factor authenticatie",
             sectionMaintenance: "Onderhoud",
             loginAttemptLimit: "Limiet loginpogingen",
@@ -102,8 +101,6 @@ export default function SecuritySettingsForm({ initialValues, language }: Props)
               "Aantal mislukte pogingen dat een escalatie triggert.",
             escalationWindowMinutes: "Escalatievenster (minuten)",
             escalationWindowHint: "Tijdsvenster voor de escalatie-evaluatie.",
-            adminSessionTimeoutMinutes: "Admin sessie-timeout (minuten)",
-            adminSessionHint: "Logt admins automatisch uit bij inactiviteit.",
             mfaPolicy: "2FA-beleid",
             mfaPolicyHint:
               "Kies of 2FA optioneel is of verplicht voor admins.",
@@ -247,24 +244,6 @@ export default function SecuritySettingsForm({ initialValues, language }: Props)
                 </p>
                 <p className="mt-1 text-xs text-gray-400">{t.minValue}</p>
               </div>
-            </div>
-          </section>
-
-          <section className="rounded-lg border bg-white p-5 shadow-sm">
-            <h3 className="text-sm font-semibold">{t.sectionSession}</h3>
-            <div className="mt-4">
-              <label className="block text-sm font-medium">
-                {t.adminSessionTimeoutMinutes}
-              </label>
-              <input
-                type="number"
-                min={1}
-                className="mt-1 w-full max-w-sm rounded border px-3 py-2 text-sm"
-                value={form.adminSessionTimeoutMinutes}
-                onChange={(e) => setNumber("adminSessionTimeoutMinutes", e.target.value)}
-              />
-              <p className="mt-1 text-xs text-gray-500">{t.adminSessionHint}</p>
-              <p className="mt-1 text-xs text-gray-400">{t.minValue}</p>
             </div>
           </section>
 

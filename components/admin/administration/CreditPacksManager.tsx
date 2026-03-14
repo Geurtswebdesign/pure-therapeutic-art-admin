@@ -2,11 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Pencil, Power, PowerOff } from "lucide-react";
+import { ChevronDown, Pencil, Power, PowerOff, Trash2 } from "lucide-react";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import {
   createCreditPack,
+  deleteCreditPack,
   grantYearAssignmentsAccess,
   purchaseCreditPack,
   setCreditPackActive,
@@ -153,6 +154,28 @@ export default function CreditPacksManager({
     });
   }
 
+  function removePack(pack: CreditPack) {
+    const confirmed = window.confirm(
+      t.deleteConfirm.replace("{name}", pack.name)
+    );
+    if (!confirmed) return;
+
+    setMessage(null);
+    setError(null);
+    startTransition(async () => {
+      try {
+        await deleteCreditPack(pack.id);
+        if (editingPackId === pack.id) {
+          resetPackForm();
+        }
+        setMessage(t.deleted);
+        router.refresh();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : t.deleteFailed);
+      }
+    });
+  }
+
   function submitPurchase(event: React.FormEvent) {
     event.preventDefault();
     setMessage(null);
@@ -257,6 +280,15 @@ export default function CreditPacksManager({
                             >
                               {pack.is_active ? <PowerOff size={14} /> : <Power size={14} />}
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => removePack(pack)}
+                              className="rounded border p-1.5 text-red-600 hover:bg-red-50"
+                              title={t.delete}
+                              aria-label={t.delete}
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -284,6 +316,10 @@ export default function CreditPacksManager({
               •{" "}
               <span className="inline-flex items-center gap-1">
                 <Power size={12} /> {t.enable}
+              </span>{" "}
+              •{" "}
+              <span className="inline-flex items-center gap-1">
+                <Trash2 size={12} /> {t.delete}
               </span>
             </div>
           </section>

@@ -16,10 +16,37 @@ type ThemeSectionRow = {
 type ThemeSectionItemRow = {
   theme_section_id: string;
   content_item_id: string;
+  custom_title?: string | null;
+  sort_order?: number;
+};
+
+type ThemeItemNavigationLink = {
+  href: string;
+  title: string;
+};
+
+export type ThemeItemNavigation = {
+  theme: {
+    slug: string;
+    title: string;
+  };
+  previous: ThemeItemNavigationLink | null;
+  next: ThemeItemNavigationLink | null;
 };
 
 function createEmptyItemSetMap(termIds: string[]) {
   return new Map(termIds.map((termId) => [termId, new Set<string>()]));
+}
+
+function buildContentHref(item: {
+  slug: string | null;
+  language: string | null;
+}) {
+  if (!item.slug) {
+    return "/content";
+  }
+
+  return item.language ? `/${item.language}/${item.slug}` : `/content/${item.slug}`;
 }
 
 async function getThemeLinkedContentIdsByCategoryTermIds(termIds: string[]) {
@@ -472,6 +499,241 @@ export async function getPublishedBlocks(contentItemId: string) {
 
   if (error) throw error;
   return data ?? [];
+}
+
+export async function getThemeNavigationForContentItem(
+  contentItemId: string
+): Promise<ThemeItemNavigation | null> {
+  const supabase = createAdminClient();
+
+  const { data: currentLinks, error: currentLinksError } = await supabase
+    .from("content_theme_section_items")
+    .select("theme_section_id, content_item_id, sort_order")
+    .eq("content_item_id", contentItemId);
+
+  if (currentLinksError) {
+    throw currentLinksError;
+  }
+
+  const currentSectionIds = Array.from(
+    new Set(
+      (currentLinks ?? [])
+        .map((row) => row.theme_section_id)
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+
+  if (!currentSectionIds.length) {
+    return null;
+  }
+
+  const { data: currentSections, error: currentSectionsError } = await supabase
+    .from("content_theme_sections")
+    .select("id, theme_page_id, sort_order")
+    .in("id", currentSectionIds);
+
+  if (currentSectionsError) {
+    throw currentSectionsError;
+  }
+
+  const currentPageIds = Array.from(
+    new Set(
+      (currentSections ?? [])
+        .map((row) => row.theme_page_id)
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+
+  if (!currentPageIds.length) {
+    return null;
+  }
+
+  const { data: currentPages, error: currentPagesError } = await supabase
+    .from("content_theme_pages")
+    .select("id, slug, title, sort_order")
+    .in("id", currentPageIds)
+    .eq("is_published", true)
+    .order("sort_order", { ascending: true })
+    .order("title", { ascending: true });
+
+  if (currentPagesError) {
+    throw currentPagesError;
+  }
+
+  const pageById = new Map(
+    (currentPages ?? []).map((page) => [page.id, page])
+  );
+
+  const candidateRows = (currentLinks ?? [])
+    .map((link) => {
+      const section = (currentSections ?? []).find(
+        (row) => row.id === link.theme_section_id
+      );
+      const page = section ? pageById.get(section.theme_page_id) ?? null : null;
+
+      if (!section || !page) {
+        return null;
+      }
+
+      return {
+        page,
+        section,
+        itemSortOrder: link.sort_order ?? 0,
+      };
+    })
+    .filter(
+      (
+        row
+      ): row is {
+        page: { id: string; slug: string; title: string; sort_order: number };
+        section: { id: string; theme_page_id: string; sort_order: number };
+        itemSortOrder: number;
+      } => Boolean(row)
+    )
+    .sort((left, right) => {
+      if (left.page.sort_order !== right.page.sort_order) {
+        return left.page.sort_order - right.page.sort_order;
+      }
+
+      if (left.section.sort_order !== right.section.sort_order) {
+        return left.section.sort_order - right.section.sort_order;
+      }
+
+      return left.itemSortOrder - right.itemSortOrder;
+    });
+
+  const currentTheme = candidateRows[0]?.page;
+  if (!currentTheme) {
+    return null;
+  }
+
+  const { data: themeSections, error: themeSectionsError } = await supabase
+    .from("content_theme_sections")
+    .select("id, sort_order")
+    .eq("theme_page_id", currentTheme.id)
+    .order("sort_order", { ascending: true });
+
+  if (themeSectionsError) {
+    throw themeSectionsError;
+  }
+
+  const themeSectionRows =
+    (themeSections as Array<{ id: string; sort_order: number }> | null) ?? [];
+  const themeSectionIds = themeSectionRows.map((section) => section.id);
+
+  if (!themeSectionIds.length) {
+    return null;
+  }
+
+  const { data: themeSectionItems, error: themeSectionItemsError } = await supabase
+    .from("content_theme_section_items")
+    .select("theme_section_id, content_item_id, custom_title, sort_order")
+    .in("theme_section_id", themeSectionIds);
+
+  if (themeSectionItemsError) {
+    throw themeSectionItemsError;
+  }
+
+  const orderedThemeSectionItems =
+    ((themeSectionItems ?? []) as ThemeSectionItemRow[])
+      .filter((row) => Boolean(row.content_item_id))
+      .sort((left, right) => {
+        const leftSectionOrder =
+          themeSectionRows.find((section) => section.id === left.theme_section_id)
+            ?.sort_order ?? 0;
+        const rightSectionOrder =
+          themeSectionRows.find((section) => section.id === right.theme_section_id)
+            ?.sort_order ?? 0;
+
+        if (leftSectionOrder !== rightSectionOrder) {
+          return leftSectionOrder - rightSectionOrder;
+        }
+
+        return (left.sort_order ?? 0) - (right.sort_order ?? 0);
+      });
+
+  const themeContentIds = Array.from(
+    new Set(
+      orderedThemeSectionItems
+        .map((row) => row.content_item_id)
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+
+  if (!themeContentIds.length) {
+    return null;
+  }
+
+  const { data: contentRows, error: contentRowsError } = await supabase
+    .from("content_items")
+    .select("id, title, slug, language")
+    .in("id", themeContentIds)
+    .eq("status", "published");
+
+  if (contentRowsError) {
+    throw contentRowsError;
+  }
+
+  const contentById = new Map(
+    (contentRows ?? []).map((item) => [item.id, item])
+  );
+
+  const orderedPublishedItems = orderedThemeSectionItems
+    .map((row) => {
+      const content = contentById.get(row.content_item_id);
+      if (!content) {
+        return null;
+      }
+
+      return {
+        id: content.id,
+        href: buildContentHref(content),
+        title: row.custom_title || content.title || "Ongetitelde content",
+      };
+    })
+    .filter(
+      (
+        row
+      ): row is {
+        id: string;
+        href: string;
+        title: string;
+      } => Boolean(row)
+    );
+
+  const currentIndex = orderedPublishedItems.findIndex(
+    (item) => item.id === contentItemId
+  );
+
+  if (currentIndex === -1) {
+    return null;
+  }
+
+  const previousItem = orderedPublishedItems[currentIndex - 1] ?? null;
+  const nextItem = orderedPublishedItems[currentIndex + 1] ?? null;
+
+  if (!previousItem && !nextItem) {
+    return null;
+  }
+
+  return {
+    theme: {
+      slug: currentTheme.slug,
+      title: currentTheme.title,
+    },
+    previous: previousItem
+      ? {
+          href: previousItem.href,
+          title: previousItem.title,
+        }
+      : null,
+    next: nextItem
+      ? {
+          href: nextItem.href,
+          title: nextItem.title,
+        }
+      : null,
+  };
 }
 
 export async function getPrimaryCategoryForContentItem(contentItemId: string) {

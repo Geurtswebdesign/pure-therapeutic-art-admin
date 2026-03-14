@@ -8,7 +8,7 @@ type ContentStatus = "draft" | "published" | "trash";
 
 export type QuickEditPatch = {
   title?: string;
-  status?: ContentStatus;
+  status?: Exclude<ContentStatus, "trash">;
   published_at?: string | null;   // ← TOEVOEGEN
   category_ids?: string[];
   credit_cost?: number;
@@ -40,7 +40,7 @@ export default function QuickEditForm({
 }: Props) {
   const t = getAdminMessages(language).quickEditForm;
   const [title, setTitle] = useState(item.title);
-  const [status, setStatus] = useState<ContentStatus>(
+  const [status, setStatus] = useState<Exclude<ContentStatus, "trash">>(
     item.status === "trash" ? "draft" : item.status
   );
   const [date, setDate] = useState(
@@ -129,7 +129,7 @@ export default function QuickEditForm({
             className="w-full border px-3 py-1 text-sm"
             value={status}
             onChange={(e) =>
-              setStatus(e.target.value as ContentStatus)
+              setStatus(e.target.value as Exclude<ContentStatus, "trash">)
             }
           >
             <option value="draft">{t.draft}</option>

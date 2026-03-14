@@ -8,6 +8,8 @@ import { getRuntimeSecuritySettings } from "@/lib/security/runtime";
 import { logSecurityAuditEvent } from "@/lib/security/audit";
 import { sendMail } from "@/lib/mail/sendMail";
 import { logServerEvent } from "@/lib/analytics/server";
+import { isAdminRole } from "@/lib/users/accountTypes";
+import type { UserAccountType } from "@/lib/users/accountTypes";
 
 async function maybeSendSecurityAlert(input: {
   email: string;
@@ -81,6 +83,123 @@ async function maybeSendSecurityAlert(input: {
       // Non-blocking alert channel
     }
   }
+}
+
+function resolveFrontendAccountType(value: string): UserAccountType {
+  return value === "therapist" ? "therapist" : "client";
+}
+
+export async function registerAccount(formData: FormData) {
+  const firstName = String(formData.get("first_name") ?? "").trim();
+  const lastName = String(formData.get("last_name") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  const requestedNext = String(formData.get("next") ?? "").trim();
+  const accountType = resolveFrontendAccountType(
+    String(formData.get("account_type") ?? "client").trim()
+  );
+  const displayName = [firstName, lastName].filter(Boolean).join(" ").trim();
+  const safeNext =
+    requestedNext.startsWith("/") && !requestedNext.startsWith("//")
+      ? requestedNext
+      : "/account";
+
+  if (!firstName || !lastName || !email || password.length < 8) {
+    redirect("/login?mode=register&error=register");
+  }
+
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+  const supabaseAdmin = createAdminClient();
+
+  await logServerEvent({
+    eventName: "register_submit",
+    eventCategory: "auth",
+    eventLabel: accountType,
+    path: "/login",
+  });
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+      },
+    },
+  });
+
+  if (error || !data.user) {
+    await logServerEvent({
+      eventName: "register_failed",
+      eventCategory: "auth",
+      eventLabel: error?.message ?? "unknown",
+      path: "/login",
+    });
+    redirect("/login?mode=register&error=register");
+  }
+
+  const { error: profileError } = await supabaseAdmin.from("profiles").upsert(
+    {
+      user_id: data.user.id,
+      display_name: displayName || null,
+      role: "user",
+      profile_data: {
+        first_name: firstName,
+        last_name: lastName,
+        account_type: accountType,
+      },
+    },
+    { onConflict: "user_id" }
+  );
+
+  const { error: walletError } = await supabaseAdmin.from("credit_wallets").upsert(
+    {
+      user_id: data.user.id,
+      credits_available: 0,
+      credits_total_purchased: 0,
+    },
+    { onConflict: "user_id" }
+  );
+
+  if (profileError || walletError) {
+    await logServerEvent({
+      eventName: "register_failed",
+      eventCategory: "auth",
+      eventLabel: profileError?.message ?? walletError?.message ?? "profile_setup",
+      path: "/login",
+    });
+    redirect("/login?mode=register&error=register");
+  }
+
+  await logServerEvent({
+    eventName: "register_success",
+    eventCategory: "auth",
+    eventLabel: accountType,
+    path: "/login",
+  });
+
+  if (data.session) {
+    redirect(safeNext);
+  }
+
+  redirect("/login?registered=1");
 }
 
 export async function login(formData: FormData) {
@@ -314,15 +433,14 @@ export async function login(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAdmin = user
-    ? (
-        await supabaseAdmin
-          .from("profiles")
-          .select("role")
-          .eq("user_id", user.id)
-          .maybeSingle<{ role?: string }>()
-      ).data?.role === "admin"
-    : false;
+  const adminProfile = user
+    ? await supabaseAdmin
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle<{ role?: string }>()
+    : null;
+  const isAdmin = isAdminRole(adminProfile?.data?.role);
 
   if (isAdmin && user) {
     const { data: factors } = await supabase.auth.mfa.listFactors();
