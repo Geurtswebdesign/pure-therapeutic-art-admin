@@ -5,6 +5,26 @@ export type DateRange = {
   to: Date;
 };
 
+type EcommercePurchaseStore = "apple" | "google" | "other";
+
+const APPLE_SOURCES = new Set(["apple", "app_store", "appstore", "ios"]);
+const GOOGLE_SOURCES = new Set(["google", "play_store", "playstore", "android"]);
+
+function detectPurchaseStore(
+  source: string | null | undefined,
+  note: string | null | undefined
+): EcommercePurchaseStore {
+  const normalizedSource = source?.trim().toLowerCase() ?? "";
+  if (APPLE_SOURCES.has(normalizedSource)) return "apple";
+  if (GOOGLE_SOURCES.has(normalizedSource)) return "google";
+
+  const normalizedNote = note?.trim().toLowerCase() ?? "";
+  if (/\bapple\s+iap\b/.test(normalizedNote)) return "apple";
+  if (/\bgoogle\s+iap\b/.test(normalizedNote)) return "google";
+
+  return "other";
+}
+
 export function resolveMonthRange(month: string | undefined): DateRange | null {
   if (!month || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
     return null;
@@ -223,11 +243,15 @@ export async function getEcommerceOverview(range: DateRange) {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("credit_pack_purchases")
-    .select("amount_cents, credits_total, currency, created_at")
+    .select("amount_cents, credits_total, currency, created_at, source, note")
     .gte("created_at", range.from.toISOString())
     .lte("created_at", range.to.toISOString());
 
   const revenueByCurrency = new Map<string, number>();
+  const storeRevenueByCurrency = new Map<
+    string,
+    { appleAmountCents: number; googleAmountCents: number; otherAmountCents: number }
+  >();
   let creditsSold = 0;
   let transactions = 0;
 
@@ -235,8 +259,24 @@ export async function getEcommerceOverview(range: DateRange) {
     transactions += 1;
     creditsSold += Number(row.credits_total ?? 0);
     const currency = row.currency ?? "EUR";
-    const next = (revenueByCurrency.get(currency) ?? 0) + Number(row.amount_cents ?? 0);
+    const amountCents = Number(row.amount_cents ?? 0);
+    const next = (revenueByCurrency.get(currency) ?? 0) + amountCents;
     revenueByCurrency.set(currency, next);
+
+    const storeRevenue = storeRevenueByCurrency.get(currency) ?? {
+      appleAmountCents: 0,
+      googleAmountCents: 0,
+      otherAmountCents: 0,
+    };
+    const purchaseStore = detectPurchaseStore(row.source, row.note);
+    if (purchaseStore === "apple") {
+      storeRevenue.appleAmountCents += amountCents;
+    } else if (purchaseStore === "google") {
+      storeRevenue.googleAmountCents += amountCents;
+    } else {
+      storeRevenue.otherAmountCents += amountCents;
+    }
+    storeRevenueByCurrency.set(currency, storeRevenue);
   }
 
   const revenueEntries = Array.from(revenueByCurrency.entries()).map(
@@ -245,9 +285,16 @@ export async function getEcommerceOverview(range: DateRange) {
       amountCents,
     })
   );
+  const storeRevenueEntries = Array.from(storeRevenueByCurrency.entries()).map(
+    ([currency, amounts]) => ({
+      currency,
+      ...amounts,
+    })
+  );
 
   return {
     revenueEntries,
+    storeRevenueEntries,
     creditsSold,
     transactions,
   };

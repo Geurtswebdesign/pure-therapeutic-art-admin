@@ -1,6 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getTherapistProfileData, type AppProfileData } from "@/lib/users/accountTypes";
 import { mergeTherapistOptions, THERAPIST_PROFILE_OPTION_SETS } from "@/lib/users/therapistProfileOptions";
+import {
+  isTimedEntitlementActive,
+  THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
+} from "@/lib/users/entitlements";
 
 export type PublicTherapist = {
   userId: string;
@@ -44,6 +48,13 @@ type ProfileRow = {
   user_id: string;
   display_name: string | null;
   profile_data?: AppProfileData | null;
+};
+
+type TherapistEntitlementRow = {
+  user_id: string;
+  starts_at: string;
+  ends_at: string | null;
+  is_active: boolean;
 };
 
 function normalizeText(value: string) {
@@ -183,9 +194,35 @@ export async function getPublicTherapistDirectoryData(
     throw new Error("Therapeuten laden mislukt");
   }
 
+  const therapistUserIds = (data ?? [])
+    .filter((row) => row.profile_data?.account_type === "therapist")
+    .map((row) => row.user_id);
+
+  const { data: entitlements, error: entitlementError } = therapistUserIds.length
+    ? await supabase
+        .from("user_entitlements")
+        .select("user_id, starts_at, ends_at, is_active")
+        .eq("entitlement_key", THERAPIST_DIRECTORY_ENTITLEMENT_KEY)
+        .eq("is_active", true)
+        .in("user_id", therapistUserIds)
+        .returns<TherapistEntitlementRow[]>()
+    : { data: [] as TherapistEntitlementRow[], error: null };
+
+  if (entitlementError) {
+    throw new Error("Therapeutenabonnementen laden mislukt");
+  }
+
+  const nowIso = new Date().toISOString();
+  const activeTherapistIds = new Set(
+    (entitlements ?? [])
+      .filter((item) => isTimedEntitlementActive(item, nowIso))
+      .map((item) => item.user_id)
+  );
+
   const allTherapists = (data ?? [])
     .map(toPublicTherapist)
     .filter((item): item is PublicTherapist => Boolean(item))
+    .filter((item) => activeTherapistIds.has(item.userId))
     .sort((a, b) => a.displayName.localeCompare(b.displayName, "nl"));
 
   const therapists = allTherapists.filter((item) => matchesTherapist(item, filters));

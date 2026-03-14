@@ -7,6 +7,13 @@ import {
   getDeletedCreditPackIds,
   markCreditPackDeleted,
 } from "@/lib/credits/deletedPacks";
+import {
+  getTherapistSubscriptionMonths,
+  getTherapistSubscriptionPackSlug,
+  isTimedEntitlementActive,
+  THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
+  type TherapistSubscriptionPlan,
+} from "@/lib/users/entitlements";
 
 type CreditPackInput = {
   slug: string;
@@ -45,6 +52,37 @@ async function requireAdmin() {
   const admin = await getAdminUser();
   if (!admin) throw new Error("Niet geautoriseerd");
   return admin;
+}
+
+function addMonths(baseDate: Date, months: number) {
+  const endDate = new Date(baseDate);
+  endDate.setMonth(endDate.getMonth() + months);
+  return endDate;
+}
+
+async function getTherapistSubscriptionPack(plan: TherapistSubscriptionPlan) {
+  const supabase = createAdminClient();
+  const slug = getTherapistSubscriptionPackSlug(plan);
+  const { data: pack, error } = await supabase
+    .from("credit_packs")
+    .select("id, name, price_cents, currency, is_active")
+    .eq("slug", slug)
+    .maybeSingle<{
+      id: string;
+      name: string;
+      price_cents: number;
+      currency: string;
+      is_active: boolean;
+    }>();
+
+  if (error) throw new Error(error.message);
+  if (!pack || !pack.is_active) {
+    throw new Error(
+      `Geen actief therapeut-abonnement gevonden voor '${slug}'. Maak of activeer dit pack in Administratie > Credits.`
+    );
+  }
+
+  return pack;
 }
 
 export async function createCreditPack(input: CreditPackInput) {
@@ -234,4 +272,77 @@ export async function grantYearAssignmentsAccess(input: {
   }
 
   revalidatePath("/admin/administration");
+}
+
+export async function grantTherapistDirectoryAccess(input: {
+  userId: string;
+  plan: TherapistSubscriptionPlan;
+  note?: string;
+}) {
+  const admin = await requireAdmin();
+  if (!input.userId) throw new Error("userId ontbreekt");
+  if (input.plan !== "monthly" && input.plan !== "yearly") {
+    throw new Error("plan is ongeldig");
+  }
+
+  const supabase = createAdminClient();
+  const pack = await getTherapistSubscriptionPack(input.plan);
+  const months = getTherapistSubscriptionMonths(input.plan);
+  const now = new Date();
+  const nowIso = now.toISOString();
+
+  const { data: existingEntitlements, error: entitlementError } = await supabase
+    .from("user_entitlements")
+    .select("starts_at, ends_at, is_active")
+    .eq("user_id", input.userId)
+    .eq("entitlement_key", THERAPIST_DIRECTORY_ENTITLEMENT_KEY)
+    .eq("is_active", true)
+    .returns<Array<{ starts_at: string; ends_at: string | null; is_active: boolean }>>();
+
+  if (entitlementError) {
+    throw new Error(`Therapeut-abonnement ophalen mislukt: ${entitlementError.message}`);
+  }
+
+  const activeOrPlannedEntitlements = (existingEntitlements ?? []).filter((item) =>
+    isTimedEntitlementActive(item, nowIso) || item.starts_at > nowIso
+  );
+
+  const latestEndAt = activeOrPlannedEntitlements.reduce<string | null>((latest, item) => {
+    if (!item.ends_at) return latest;
+    if (!latest || item.ends_at > latest) {
+      return item.ends_at;
+    }
+    return latest;
+  }, null);
+
+  const startsAt =
+    latestEndAt && latestEndAt > nowIso ? new Date(latestEndAt) : now;
+  const endsAt = addMonths(startsAt, months);
+
+  const { error } = await supabase.from("user_entitlements").insert({
+    user_id: input.userId,
+    entitlement_key: THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
+    starts_at: startsAt.toISOString(),
+    ends_at: endsAt.toISOString(),
+    is_active: true,
+    source: "admin",
+    metadata: {
+      pack_id: pack.id,
+      pack_name: pack.name,
+      plan: input.plan,
+      duration_months: months,
+      amount_cents: pack.price_cents,
+      currency: pack.currency,
+      note: input.note?.trim() || null,
+    },
+    created_by: admin.id,
+  });
+
+  if (error) {
+    throw new Error(`Therapeut-abonnement toekennen mislukt: ${error.message}`);
+  }
+
+  revalidatePath("/admin/administration");
+  revalidatePath(`/admin/users/${input.userId}`);
+  revalidatePath("/therapeuten");
 }

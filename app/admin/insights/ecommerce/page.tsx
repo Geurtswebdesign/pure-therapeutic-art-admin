@@ -19,6 +19,10 @@ type SearchParams = {
   month?: string | string[];
 };
 
+const DANNY_SHARE = 0.22;
+const STORE_SHARE = 0.15;
+const VAT_SHARE = 0.09;
+
 function formatCurrency(amountCents: number, currency: string) {
   try {
     return new Intl.NumberFormat("nl-NL", {
@@ -29,6 +33,88 @@ function formatCurrency(amountCents: number, currency: string) {
   } catch {
     return `${(amountCents / 100).toFixed(2)} ${currency}`;
   }
+}
+
+function calculateRevenueSplit(input: {
+  grossAmountCents: number;
+  dannyEligibleAmountCents: number;
+  appleGrossAmountCents: number;
+  googleGrossAmountCents: number;
+}) {
+  const {
+    grossAmountCents,
+    dannyEligibleAmountCents,
+    appleGrossAmountCents,
+    googleGrossAmountCents,
+  } = input;
+
+  const dannyAmountCents = Math.round(dannyEligibleAmountCents * DANNY_SHARE);
+  const appleAmountCents = Math.round(appleGrossAmountCents * STORE_SHARE);
+  const googleAmountCents = Math.round(googleGrossAmountCents * STORE_SHARE);
+  const storeAmountCents = appleAmountCents + googleAmountCents;
+  const vatAmountCents = Math.round(grossAmountCents * VAT_SHARE);
+  const remainingAmountCents =
+    grossAmountCents - dannyAmountCents - storeAmountCents - vatAmountCents;
+
+  return {
+    grossAmountCents,
+    dannyEligibleAmountCents,
+    appleGrossAmountCents,
+    googleGrossAmountCents,
+    dannyAmountCents,
+    appleAmountCents,
+    googleAmountCents,
+    storeAmountCents,
+    vatAmountCents,
+    remainingAmountCents,
+  };
+}
+
+function getEmptyStoreRevenue() {
+  return {
+    appleAmountCents: 0,
+    googleAmountCents: 0,
+    otherAmountCents: 0,
+  };
+}
+
+function getStoreBreakdownByCurrency(
+  storeRevenueEntries: Array<{
+    currency: string;
+    appleAmountCents: number;
+    googleAmountCents: number;
+    otherAmountCents: number;
+  }>
+) {
+  return new Map(storeRevenueEntries.map((entry) => [entry.currency, entry]));
+}
+
+function calculateRevenueBreakdown(
+  revenueEntries: Array<{ currency: string; amountCents: number }>,
+  storeRevenueEntries: Array<{
+    currency: string;
+    appleAmountCents: number;
+    googleAmountCents: number;
+    otherAmountCents: number;
+  }>
+) {
+  const storeBreakdownByCurrency = getStoreBreakdownByCurrency(storeRevenueEntries);
+
+  return revenueEntries.map((entry) => {
+    const storeBreakdown = storeBreakdownByCurrency.get(entry.currency) ?? getEmptyStoreRevenue();
+    const dannyEligibleAmountCents =
+      storeBreakdown.appleAmountCents + storeBreakdown.googleAmountCents;
+
+    return {
+      currency: entry.currency,
+      ...calculateRevenueSplit({
+        grossAmountCents: entry.amountCents,
+        dannyEligibleAmountCents,
+        appleGrossAmountCents: storeBreakdown.appleAmountCents,
+        googleGrossAmountCents: storeBreakdown.googleAmountCents,
+      }),
+    };
+  });
 }
 
 export default async function EcommercePage({
@@ -84,6 +170,10 @@ export default async function EcommercePage({
 
   const revenueEntries = overview.revenueEntries.sort(
     (a, b) => b.amountCents - a.amountCents
+  );
+  const revenueBreakdown = calculateRevenueBreakdown(
+    revenueEntries,
+    overview.storeRevenueEntries
   );
   const primaryRevenue = revenueEntries[0];
   const revenueLabel = primaryRevenue
@@ -157,6 +247,82 @@ export default async function EcommercePage({
           </p>
         </article>
       </div>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold">Afdrachten op omzet</h3>
+          </div>
+          <span className="text-xs capitalize text-gray-500">{periodLabel}</span>
+        </div>
+
+        {revenueBreakdown.length ? (
+          <div className="grid gap-4">
+            {revenueBreakdown.map((entry) => (
+              <article
+                key={entry.currency}
+                className="rounded border bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-4 border-b border-stone-200 pb-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-gray-500">
+                      {entry.currency}
+                    </p>
+                    <h4 className="mt-1 text-lg font-semibold text-stone-900">
+                      {formatCurrency(entry.grossAmountCents, entry.currency)}
+                    </h4>
+                    <p className="mt-1 text-xs text-gray-500">Bruto omzet</p>
+                  </div>
+                  <div className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700">
+                    Netto over: {formatCurrency(entry.remainingAmountCents, entry.currency)}
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                  <div className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-3">
+                    <p className="text-xs font-medium text-rose-700">
+                      Danny (22% op app-credits)
+                    </p>
+                    <p className="mt-1 text-base font-semibold text-rose-900">
+                      {formatCurrency(entry.dannyAmountCents, entry.currency)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-3">
+                    <p className="text-xs font-medium text-amber-700">Apple (15%)</p>
+                    <p className="mt-1 text-base font-semibold text-amber-900">
+                      {formatCurrency(entry.appleAmountCents, entry.currency)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-orange-100 bg-orange-50 px-3 py-3">
+                    <p className="text-xs font-medium text-orange-700">Google (15%)</p>
+                    <p className="mt-1 text-base font-semibold text-orange-900">
+                      {formatCurrency(entry.googleAmountCents, entry.currency)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-sky-100 bg-sky-50 px-3 py-3">
+                    <p className="text-xs font-medium text-sky-700">BTW (9%)</p>
+                    <p className="mt-1 text-base font-semibold text-sky-900">
+                      {formatCurrency(entry.vatAmountCents, entry.currency)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-3">
+                    <p className="text-xs font-medium text-emerald-700">Resterend</p>
+                    <p className="mt-1 text-base font-semibold text-emerald-900">
+                      {formatCurrency(entry.remainingAmountCents, entry.currency)}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <article className="rounded border bg-white p-4">
+            <p className="text-xs text-gray-400">
+              Nog geen omzet beschikbaar om de afdracht te berekenen.
+            </p>
+          </article>
+        )}
+      </section>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <article className="rounded border bg-white p-4">

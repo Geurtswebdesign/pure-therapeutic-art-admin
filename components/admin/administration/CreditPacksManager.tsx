@@ -40,7 +40,7 @@ type PackFormState = {
   credit_scope: "assignment" | "book" | "game" | "referral";
   credits_base: number;
   bonus_credits: number;
-  price_cents: number;
+  price_eur: string;
   currency: string;
   sort_order: number;
   is_active: boolean;
@@ -52,11 +52,29 @@ const EMPTY_PACK_FORM: PackFormState = {
   credit_scope: "assignment",
   credits_base: 10,
   bonus_credits: 0,
-  price_cents: 1000,
+  price_eur: "10,00",
   currency: "EUR",
   sort_order: 0,
   is_active: true,
 };
+
+function formatEuroInputFromCents(amountCents: number) {
+  return (amountCents / 100).toFixed(2).replace(".", ",");
+}
+
+function parseEuroInputToCents(value: string) {
+  const normalized = value.trim().replace(/\s+/g, "").replace(",", ".");
+  if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) {
+    return null;
+  }
+
+  const amountCents = Math.round(Number(normalized) * 100);
+  if (!Number.isFinite(amountCents) || amountCents < 0) {
+    return null;
+  }
+
+  return amountCents;
+}
 
 function scopeLabel(
   scope: CreditPack["credit_scope"],
@@ -103,7 +121,7 @@ export default function CreditPacksManager({
       credit_scope: pack.credit_scope,
       credits_base: pack.credits_base,
       bonus_credits: pack.bonus_credits,
-      price_cents: pack.price_cents,
+      price_eur: formatEuroInputFromCents(pack.price_cents),
       currency: pack.currency,
       sort_order: pack.sort_order,
       is_active: pack.is_active,
@@ -121,13 +139,31 @@ export default function CreditPacksManager({
     setMessage(null);
     setError(null);
 
+    const priceCents = parseEuroInputToCents(packForm.price_eur);
+    if (priceCents === null) {
+      setError(t.invalidEuroPrice);
+      return;
+    }
+
+    const packInput = {
+      slug: packForm.slug,
+      name: packForm.name,
+      credit_scope: packForm.credit_scope,
+      credits_base: packForm.credits_base,
+      bonus_credits: packForm.bonus_credits,
+      price_cents: priceCents,
+      currency: packForm.currency,
+      sort_order: packForm.sort_order,
+      is_active: packForm.is_active,
+    };
+
     startTransition(async () => {
       try {
         if (editingPackId) {
-          await updateCreditPack(editingPackId, packForm);
+          await updateCreditPack(editingPackId, packInput);
           setMessage(t.updated);
         } else {
-          await createCreditPack(packForm);
+          await createCreditPack(packInput);
           setMessage(t.created);
         }
         resetPackForm();
@@ -407,12 +443,13 @@ export default function CreditPacksManager({
                   <label className="space-y-1">
                     <span className="text-sm text-gray-600">{t.priceCents}</span>
                     <input
-                      type="number"
-                      min={0}
-                      value={packForm.price_cents}
+                      type="text"
+                      inputMode="decimal"
+                      value={packForm.price_eur}
                       onChange={(e) =>
-                        setPackForm((s) => ({ ...s, price_cents: Number(e.target.value) }))
+                        setPackForm((s) => ({ ...s, price_eur: e.target.value }))
                       }
+                      placeholder="9,99"
                       className="w-full rounded border px-2 py-1.5 text-sm"
                       required
                     />

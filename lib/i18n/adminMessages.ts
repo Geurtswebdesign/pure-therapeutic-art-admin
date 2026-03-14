@@ -156,6 +156,7 @@ type AdminMessages = {
     baseCredits: string;
     bonusCredits: string;
     priceCents: string;
+    invalidEuroPrice: string;
     currency: string;
     sortOrder: string;
     activeToggle: string;
@@ -472,7 +473,8 @@ const nl: AdminMessages = {
     scopeLabel: "Type credits",
     baseCredits: "Basiscredits",
     bonusCredits: "Bonuscredits",
-    priceCents: "Prijs (cents)",
+    priceCents: "Prijs (EUR)",
+    invalidEuroPrice: "Voer een geldige prijs in euro's in, bijvoorbeeld 9,99.",
     currency: "Valuta",
     sortOrder: "Sorteervolgorde",
     activeToggle: "Actief",
@@ -771,6 +773,8 @@ const en: AdminMessages = {
     scopeLabel: "Credit type",
     baseCredits: "Base credits",
     bonusCredits: "Bonus credits",
+    priceCents: "Price (EUR)",
+    invalidEuroPrice: "Enter a valid euro price, for example 9.99.",
     currency: "Currency",
     sortOrder: "Sort order",
     activeToggle: "Active",
@@ -1091,6 +1095,8 @@ const de: AdminMessages = {
     scopeBook: "Bucher",
     scopeGame: "Spiele",
     scopeReferral: "Verweisdateien",
+    priceCents: "Preis (EUR)",
+    invalidEuroPrice: "Gib einen gultigen Euro-Betrag ein, zum Beispiel 9,99.",
   },
   usersPage: {
     unauthorized: "Nicht autorisiert",
