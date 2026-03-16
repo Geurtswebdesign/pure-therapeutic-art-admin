@@ -1,0 +1,269 @@
+import { cache } from "react";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+export type CatalogCategory = "boeken" | "spellen";
+export type CatalogStatus = "live" | "in_development";
+
+export type CatalogItem = {
+  id: string;
+  category: CatalogCategory;
+  title: string;
+  format: string;
+  price: number;
+  description: string;
+  details: string[];
+  tag: string;
+  href?: string;
+  status?: CatalogStatus;
+  palette: "rain" | "hearts" | "moods" | "cards" | "board" | "digital";
+};
+
+export type ShopCatalogSettings = {
+  books: CatalogItem[];
+  games: CatalogItem[];
+};
+
+export const SHOP_CATALOG_SETTINGS_KEY = "shop_catalog";
+
+export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
+  books: [
+    {
+      id: "gekleurde-tranen",
+      category: "boeken",
+      title: "Gekleurde tranen",
+      format: "Paperback",
+      price: 29.95,
+      description:
+        "Paperback met creatieve opdrachten en handvatten om rouw en verlies bespreekbaar te maken.",
+      details: [
+        "Gericht op rouw, verlies en het verkennen van gevoelens via creatieve werkvormen.",
+        "Geschikt voor thuis, begeleiding, coaching en therapeutische gesprekken.",
+        "Aankoop en afhandeling verlopen via De Troostboom.",
+      ],
+      tag: "Paperback",
+      href: "https://detroostboom.nl/product/gekleurde-tranen/",
+      status: "live",
+      palette: "rain",
+    },
+    {
+      id: "onzichtbaar-verdriet",
+      category: "boeken",
+      title: "Onzichtbaar verdriet",
+      format: "Paperback",
+      price: 29.95,
+      description:
+        "Paperback voor verlies bij leven en andere vormen van verdriet die vaak minder zichtbaar blijven.",
+      details: [
+        "Richt zich op verlieservaringen die niet altijd direct door de omgeving worden gezien.",
+        "Helpt taal en vorm te geven aan verdriet dat moeilijk bespreekbaar is.",
+        "Aankoop en afhandeling verlopen via De Troostboom.",
+      ],
+      tag: "Paperback",
+      href: "https://detroostboom.nl/product/onzichtbaar-verdriet/",
+      status: "live",
+      palette: "hearts",
+    },
+    {
+      id: "liefdevol-koesteren",
+      category: "boeken",
+      title: "Liefdevol koesteren",
+      format: "Paperback",
+      price: 29.95,
+      description:
+        "Paperback met creatieve oefeningen rond verlies, troost en het vasthouden van betekenisvolle herinneringen.",
+      details: [
+        "Ondersteunt bij het bewaren en vormgeven van dierbare herinneringen.",
+        "Inzetbaar als rustig werkboek binnen rouwbegeleiding of persoonlijk gebruik.",
+        "Aankoop en afhandeling verlopen via De Troostboom.",
+      ],
+      tag: "Paperback",
+      href: "https://detroostboom.nl/product/liefdevol-koesteren-2/",
+      status: "live",
+      palette: "moods",
+    },
+  ],
+  games: [
+    {
+      id: "memospel-vergeet-niet-me-verdrietjes",
+      category: "spellen",
+      title: "Vergeet-niet-me-verdrietjes",
+      format: "Memospel",
+      price: 29.95,
+      description:
+        "Memospel om spelenderwijs stil te staan bij emoties, herinneringen en contact rond verlies.",
+      details: [
+        "Spelvorm die uitnodigt tot herkennen, benoemen en delen van gevoelens.",
+        "Laagdrempelig inzetbaar in gezinnen, begeleiding en therapeutische setting.",
+        "Aankoop en afhandeling verlopen via De Troostboom.",
+      ],
+      tag: "Memospel",
+      href: "https://detroostboom.nl/product/memospel-vergeet-niet-me-verdrietjes/",
+      status: "live",
+      palette: "cards",
+    },
+    {
+      id: "kwartetspel-niet-hier-wel-dichtbij",
+      category: "spellen",
+      title: "Niet hier, wel dichtbij",
+      format: "Kwartetspel",
+      price: 54.95,
+      description:
+        "Kwartetspel als laagdrempelige ingang voor gesprek, herinneren en samen stilstaan bij gemis.",
+      details: [
+        "Stimuleert gesprek en ontmoeting rond gemis, herinnering en verbondenheid.",
+        "Geschikt voor samen spelen in gezinnen, klas, groep of begeleiding.",
+        "Aankoop en afhandeling verlopen via De Troostboom.",
+      ],
+      tag: "Kwartetspel",
+      href: "https://detroostboom.nl/product/kwartetspel-niet-hier-wel-dichtbij/",
+      status: "live",
+      palette: "board",
+    },
+    {
+      id: "digitale-werkset",
+      category: "spellen",
+      title: "Digitale werkset",
+      format: "Download",
+      price: 24.95,
+      description:
+        "Digitale spel- en werkvormen voor print of schermgebruik, handig voor online begeleiding en snelle inzet in sessies.",
+      details: [
+        "Bedoeld als digitale aanvulling voor online begeleiding en flexibel gebruik.",
+        "Kan later als download of printbare set beschikbaar worden gemaakt.",
+        "Deze optie is op dit moment nog in ontwikkeling.",
+      ],
+      tag: "Download",
+      href: "",
+      status: "in_development",
+      palette: "digital",
+    },
+  ],
+};
+
+function asObject(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function asString(value: unknown, fallback: string) {
+  return typeof value === "string" ? value : fallback;
+}
+
+function asNumber(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function asStringArray(value: unknown, fallback: string[]) {
+  if (!Array.isArray(value)) return fallback;
+  const strings = value.filter((entry): entry is string => typeof entry === "string");
+  return strings.length ? strings : fallback;
+}
+
+function normalizeCatalogStatus(value: unknown, fallback: CatalogStatus): CatalogStatus {
+  return value === "in_development" || value === "live" ? value : fallback;
+}
+
+function normalizeCatalogCategory(
+  value: unknown,
+  fallback: CatalogCategory
+): CatalogCategory {
+  return value === "boeken" || value === "spellen" ? value : fallback;
+}
+
+function normalizeCatalogItem(
+  value: unknown,
+  fallback: CatalogItem
+): CatalogItem {
+  const item = asObject(value);
+
+  return {
+    id: asString(item?.id, fallback.id),
+    category: normalizeCatalogCategory(item?.category, fallback.category),
+    title: asString(item?.title, fallback.title),
+    format: asString(item?.format, fallback.format),
+    price: asNumber(item?.price, fallback.price),
+    description: asString(item?.description, fallback.description),
+    details: asStringArray(item?.details, fallback.details),
+    tag: asString(item?.tag, fallback.tag),
+    href: asString(item?.href, fallback.href || ""),
+    status: normalizeCatalogStatus(item?.status, fallback.status || "live"),
+    palette:
+      item?.palette === "rain" ||
+      item?.palette === "hearts" ||
+      item?.palette === "moods" ||
+      item?.palette === "cards" ||
+      item?.palette === "board" ||
+      item?.palette === "digital"
+        ? item.palette
+        : fallback.palette,
+  };
+}
+
+function normalizeCatalogArray(
+  value: unknown,
+  fallback: CatalogItem[]
+): CatalogItem[] {
+  if (!Array.isArray(value)) {
+    return fallback;
+  }
+
+  return fallback.map((fallbackItem, index) => {
+    const byId = value.find((entry) => asObject(entry)?.id === fallbackItem.id);
+    const candidate = byId ?? value[index] ?? null;
+    return normalizeCatalogItem(candidate, fallbackItem);
+  });
+}
+
+export function normalizeShopCatalogSettings(value: unknown): ShopCatalogSettings {
+  const settings = asObject(value);
+
+  return {
+    books: normalizeCatalogArray(settings?.books, DEFAULT_SHOP_CATALOG_SETTINGS.books),
+    games: normalizeCatalogArray(settings?.games, DEFAULT_SHOP_CATALOG_SETTINGS.games),
+  };
+}
+
+export const getPublicShopCatalog = cache(
+  async (): Promise<ShopCatalogSettings> => {
+    try {
+      const supabase = createAdminClient();
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("scope", "global")
+        .is("scope_id", null)
+        .eq("key", SHOP_CATALOG_SETTINGS_KEY)
+        .maybeSingle<{ value: unknown }>();
+
+      return normalizeShopCatalogSettings(data?.value);
+    } catch {
+      return DEFAULT_SHOP_CATALOG_SETTINGS;
+    }
+  }
+);
+
+export function getCatalogItemsByCategory(
+  catalog: ShopCatalogSettings,
+  category: CatalogCategory
+) {
+  return category === "boeken" ? catalog.books : catalog.games;
+}
+
+export function getCatalogItem(
+  catalog: ShopCatalogSettings,
+  category: CatalogCategory,
+  slug: string
+) {
+  return getCatalogItemsByCategory(catalog, category).find((item) => item.id === slug) ?? null;
+}
+
+export function getCatalogItemPath(item: CatalogItem) {
+  return `/shop/${item.category}/${item.id}`;
+}
+
+export function isCatalogItemInDevelopment(item: CatalogItem) {
+  return item.status === "in_development";
+}

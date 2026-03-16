@@ -1,9 +1,14 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { ArrowRight, Download } from "lucide-react";
+import { ArrowRight, Download, ExternalLink } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isTherapistSubscriptionPackSlug } from "@/lib/users/entitlements";
+import {
+  getCatalogItemPath,
+  isCatalogItemInDevelopment,
+  type CatalogItem,
+} from "@/lib/shop/catalog";
 
 export type CreditScope = "assignment" | "book" | "game" | "referral";
 
@@ -20,86 +25,10 @@ export type CreditPack = {
   sort_order: number;
 };
 
-export type CatalogItem = {
-  id: string;
-  title: string;
-  format: string;
-  price: number;
-  description: string;
-  tag: string;
-  palette: "rain" | "hearts" | "moods" | "cards" | "board" | "digital";
-};
-
-export type AssignmentCreditShopData = {
+type AssignmentCreditShopData = {
   creditPacks: CreditPack[];
   yearSubscriptionPack: CreditPack | null;
 };
-
-export const BOOKS: CatalogItem[] = [
-  {
-    id: "gekleurde-tranen",
-    title: "Gekleurde tranen",
-    format: "Paperback",
-    price: 29.95,
-    description:
-      "Werkboek met beeldende opdrachten en zachte gespreksopeners rond verlies, rouw en herinneren.",
-    tag: "Paperback",
-    palette: "rain",
-  },
-  {
-    id: "hartkaarten",
-    title: "Hartkaarten",
-    format: "Paperback",
-    price: 29.95,
-    description:
-      "Kaartenboek met visuele prompts om gevoelens, behoeften en verbinding laagdrempelig bespreekbaar te maken.",
-    tag: "Paperback",
-    palette: "hearts",
-  },
-  {
-    id: "emoties-in-kleur",
-    title: "Emoties in kleur",
-    format: "Paperback",
-    price: 29.95,
-    description:
-      "Compact boek vol kleurvakken, symbolen en oefenpagina's voor therapie, coaching en thuisgebruik.",
-    tag: "Paperback",
-    palette: "moods",
-  },
-];
-
-export const GAMES: CatalogItem[] = [
-  {
-    id: "verlieskaarten",
-    title: "Verlieskaarten",
-    format: "Spelset",
-    price: 29.95,
-    description:
-      "Set met opdrachtkaarten en beeldmateriaal om verhalen, herinneringen en emoties spelenderwijs te openen.",
-    tag: "Spelset",
-    palette: "cards",
-  },
-  {
-    id: "therapiebox",
-    title: "Therapiebox",
-    format: "Luxe box",
-    price: 54.95,
-    description:
-      "Uitgebreide box met kaarten, werkvormen en begeleidersmateriaal voor sessies, groepen en trainingen.",
-    tag: "Luxe box",
-    palette: "board",
-  },
-  {
-    id: "digitale-werkset",
-    title: "Digitale werkset",
-    format: "Download",
-    price: 24.95,
-    description:
-      "Digitale exemplaren voor print of schermgebruik, handig voor online begeleiding en snelle inzet in sessies.",
-    tag: "Download",
-    palette: "digital",
-  },
-];
 
 export async function getAssignmentCreditShopData(): Promise<AssignmentCreditShopData> {
   try {
@@ -443,26 +372,57 @@ function Artwork({ item }: { item: CatalogItem }) {
 }
 
 export function ProductPreviewCard({ item }: { item: CatalogItem }) {
-  return (
+  const isInDevelopment = isCatalogItemInDevelopment(item);
+  const content = (
     <article className="space-y-2">
       <div className="text-center text-[11px] font-semibold tracking-[0.02em] text-stone-800">
         {item.tag}
       </div>
-      <div className="aspect-[0.86] rounded-[1.35rem] border border-[#e4d7c8] bg-white p-2 shadow-[0_12px_24px_rgba(53,37,26,0.07)]">
+      <div
+        className={`relative aspect-[0.86] rounded-[1.35rem] border border-[#e4d7c8] bg-white p-2 shadow-[0_12px_24px_rgba(53,37,26,0.07)] transition ${
+          isInDevelopment
+            ? "opacity-80"
+            : "group-hover:shadow-[0_16px_28px_rgba(53,37,26,0.12)]"
+        }`}
+      >
         <Artwork item={item} />
+        {isInDevelopment ? (
+          <div className="absolute inset-x-2 top-2 rounded-full border border-[#ead6c6] bg-white/95 px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a5f49]">
+            In ontwikkeling
+          </div>
+        ) : null}
       </div>
       <div className="text-center text-sm font-medium text-stone-900">
-        {formatCatalogPrice(item)}
+        {isInDevelopment ? "Nog niet beschikbaar" : formatCatalogPrice(item)}
+      </div>
+      <div className="text-center text-[11px] font-medium text-[#8a5f49]">
+        Meer info
       </div>
     </article>
+  );
+
+  return (
+    <Link
+      href={getCatalogItemPath(item)}
+      className="group block transition hover:-translate-y-0.5"
+    >
+      {content}
+    </Link>
   );
 }
 
 export function ProductDetailCard({ item }: { item: CatalogItem }) {
+  const isInDevelopment = isCatalogItemInDevelopment(item);
+
   return (
     <article className="grid grid-cols-[92px_1fr] gap-3 rounded-[1.4rem] border border-[#eadfce] bg-white/90 p-3">
-      <div className="aspect-[0.82] rounded-[1rem] border border-[#eadfce] bg-white p-1.5">
+      <div className="relative aspect-[0.82] rounded-[1rem] border border-[#eadfce] bg-white p-1.5">
         <Artwork item={item} />
+        {isInDevelopment ? (
+          <div className="absolute inset-x-1.5 top-1.5 rounded-full border border-[#ead6c6] bg-white/95 px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a5f49]">
+            In ontwikkeling
+          </div>
+        ) : null}
       </div>
 
       <div className="space-y-2">
@@ -476,10 +436,99 @@ export function ProductDetailCard({ item }: { item: CatalogItem }) {
             </h4>
           </div>
           <span className="shrink-0 rounded-full border border-[#ead6c6] bg-[#fcf6f1] px-2.5 py-1 text-xs font-medium text-[#8a5f49]">
-            {formatCatalogPrice(item)}
+            {isInDevelopment ? "In ontwikkeling" : formatCatalogPrice(item)}
           </span>
         </div>
         <p className="text-xs leading-5 text-[#6f6154]">{item.description}</p>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={getCatalogItemPath(item)}
+            className="inline-flex items-center gap-1 rounded-full border border-[#decfbe] bg-[#fcf6f1] px-3 py-1.5 text-xs font-medium text-[#8a5f49] transition hover:bg-white"
+          >
+            Meer info
+            <ArrowRight size={14} strokeWidth={1.8} />
+          </Link>
+          {isInDevelopment ? (
+            <div className="inline-flex rounded-full border border-[#decfbe] bg-[#fcf6f1] px-3 py-1.5 text-xs font-medium text-[#8a5f49]">
+              Digitale versie is in ontwikkeling
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export function ProductInfoHero({ item }: { item: CatalogItem }) {
+  const isInDevelopment = isCatalogItemInDevelopment(item);
+
+  return (
+    <article className="rounded-[1.7rem] border border-[#e5d8ca] bg-[linear-gradient(180deg,#fffaf6_0%,#f8f1e8_100%)] p-5 shadow-[0_18px_36px_rgba(59,40,28,0.07)]">
+      <div className="grid gap-4 sm:grid-cols-[140px_1fr]">
+        <div className="relative aspect-[0.82] rounded-[1.2rem] border border-[#eadfce] bg-white p-2">
+          <Artwork item={item} />
+          {isInDevelopment ? (
+            <div className="absolute inset-x-2 top-2 rounded-full border border-[#ead6c6] bg-white/95 px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a5f49]">
+              In ontwikkeling
+            </div>
+          ) : null}
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-[#ead6c6] bg-white/85 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8a5f49]">
+              {item.format}
+            </span>
+            <span className="rounded-full border border-[#ead6c6] bg-white/85 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8a5f49]">
+              {item.tag}
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="font-serif text-[2rem] leading-none text-stone-950">
+              {item.title}
+            </h2>
+            <p className="text-sm leading-6 text-[#6b5d50]">{item.description}</p>
+          </div>
+
+          <div className="inline-flex rounded-full border border-[#ead6c6] bg-[#fcf6f1] px-3 py-1.5 text-sm font-medium text-[#8a5f49]">
+            {isInDevelopment ? "In ontwikkeling" : formatCatalogPrice(item)}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export function ProductPurchaseCard({ item }: { item: CatalogItem }) {
+  const isInDevelopment = isCatalogItemInDevelopment(item);
+
+  return (
+    <article className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-4 shadow-sm">
+      <h3 className="font-serif text-[1.45rem] leading-none text-stone-950">
+        Bestellen
+      </h3>
+      <p className="mt-3 text-sm leading-6 text-[#6b5d50]">
+        {isInDevelopment
+          ? "Deze digitale optie is nog niet live. Je kunt hem nu nog niet bestellen."
+          : "Wanneer je doorgaat, open je de productpagina van De Troostboom om het product daar verder te bekijken en te kopen."}
+      </p>
+      <div className="mt-4">
+        {item.href && !isInDevelopment ? (
+          <a
+            href={item.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full border border-[#9e3a3a] bg-[#b64040] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#9e3a3a]"
+          >
+            Kopen via De Troostboom
+            <ExternalLink size={16} strokeWidth={1.8} />
+          </a>
+        ) : (
+          <div className="inline-flex rounded-full border border-[#decfbe] bg-[#fcf6f1] px-4 py-2 text-sm font-medium text-[#8a5f49]">
+            Deze optie is in ontwikkeling
+          </div>
+        )}
       </div>
     </article>
   );

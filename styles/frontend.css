@@ -229,7 +229,6 @@ select {
 
 body:not(:has(.admin-shell)) :where(
   [class*="text-white"],
-  [class*="text-stone-50"],
   [class*="text-stone-100"],
   [class*="text-gray-50"],
   [class*="text-zinc-50"],
@@ -265,7 +264,6 @@ body:not(:has(.admin-shell)) :where(
   label[class*="bg-orange-600"],
   label[class*="bg-rose-600"],
   [class*="text-white"] *,
-  [class*="text-stone-50"] *,
   [class*="text-stone-100"] *,
   [class*="text-gray-50"] *,
   [class*="text-zinc-50"] *,

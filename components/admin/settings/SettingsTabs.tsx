@@ -12,6 +12,7 @@ export default function SettingsTabs({ language = "nl" }: { language?: string })
     { label: labels.general, href: "/admin/settings/general" },
     { label: labels.security, href: "/admin/settings/security" },
     { label: labels.app, href: "/admin/settings/app" },
+    { label: labels.shop, href: "/admin/settings/shop" },
     { label: labels.email, href: "/admin/settings/email" },
     { label: labels.system, href: "/admin/settings/system" },
   ];

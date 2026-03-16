@@ -24,6 +24,7 @@ type AdminMessages = {
     settings: string;
     security: string;
     app: string;
+    shop: string;
     email: string;
     system: string;
   };
@@ -332,6 +333,7 @@ const nl: AdminMessages = {
     settings: "Instellingen",
     security: "Beveiliging",
     app: "Customizer",
+    shop: "Shop",
     email: "Email",
     system: "Systeem",
   },
@@ -651,6 +653,7 @@ const en: AdminMessages = {
     insights: "Insights",
     settings: "Settings",
     security: "Security",
+    shop: "Shop",
     system: "System",
   },
   settingsLayout: {
@@ -960,6 +963,7 @@ const de: AdminMessages = {
     insights: "Einblicke",
     settings: "Einstellungen",
     security: "Sicherheit",
+    shop: "Shop",
     email: "E-Mail",
     system: "System",
   },

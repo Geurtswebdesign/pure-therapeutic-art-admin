@@ -4,14 +4,16 @@ import HistoryBackButton from "@/components/public/HistoryBackButton";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import {
   AssignmentCreditsEmptyState,
-  BOOKS,
   CreditPackDetailCard,
   DetailList,
-  GAMES,
   getAssignmentCreditShopData,
   ProductDetailCard,
   YearSubscriptionDetailCard,
 } from "@/components/shop/ShopCatalog";
+import {
+  getCatalogItemsByCategory,
+  getPublicShopCatalog,
+} from "@/lib/shop/catalog";
 
 const CATEGORY_CONFIG = {
   credits: {
@@ -31,7 +33,7 @@ const CATEGORY_CONFIG = {
   spellen: {
     title: "Spellen",
     intro:
-      "Overzicht van de spelmaterialen en digitale sets binnen de shop. Ontworpen voor sessies, groepen en training.",
+      "Overzicht van de spelmaterialen binnen de shop, inclusief digitale varianten die nog in ontwikkeling kunnen zijn.",
     listTitle: "Alle spellen",
     icon: Puzzle,
   },
@@ -57,6 +59,11 @@ export default async function ShopCategoryPage({
       ? await getAssignmentCreditShopData()
       : { creditPacks: [], yearSubscriptionPack: null };
   const { creditPacks, yearSubscriptionPack } = creditShopData;
+  const catalog = await getPublicShopCatalog();
+  const categoryItems =
+    category === "boeken" || category === "spellen"
+      ? getCatalogItemsByCategory(catalog, category)
+      : [];
 
   return (
     <PublicAppShell activeTab="shop" title={config.title}>
@@ -100,13 +107,13 @@ export default async function ShopCategoryPage({
             )
           ) : category === "boeken" ? (
             <div className="grid gap-3">
-              {BOOKS.map((item) => (
+              {categoryItems.map((item) => (
                 <ProductDetailCard key={item.id} item={item} />
               ))}
             </div>
           ) : (
             <div className="grid gap-3">
-              {GAMES.map((item) => (
+              {categoryItems.map((item) => (
                 <ProductDetailCard key={item.id} item={item} />
               ))}
             </div>

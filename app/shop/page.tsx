@@ -2,21 +2,23 @@ import { BookOpenText, Coins, Puzzle } from "lucide-react";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import {
   AssignmentCreditsEmptyState,
-  BOOKS,
   CreditPreviewCard,
-  GAMES,
   getAssignmentCreditShopData,
   ProductPreviewCard,
   SectionFooterLink,
   SectionHeader,
   YearSubscriptionPreviewCard,
 } from "@/components/shop/ShopCatalog";
+import { getCatalogItemsByCategory, getPublicShopCatalog } from "@/lib/shop/catalog";
 
 export const dynamic = "force-dynamic";
 
 export default async function ShopPage() {
   const { creditPacks, yearSubscriptionPack } =
     await getAssignmentCreditShopData();
+  const catalog = await getPublicShopCatalog();
+  const books = getCatalogItemsByCategory(catalog, "boeken");
+  const games = getCatalogItemsByCategory(catalog, "spellen");
   const previewCreditPacks = creditPacks.slice(0, 3);
 
   return (
@@ -55,7 +57,7 @@ export default async function ShopPage() {
         <section className="space-y-4">
           <SectionHeader icon={BookOpenText} title="Boeken" href="/shop/boeken" />
           <div className="grid grid-cols-3 gap-3">
-            {BOOKS.map((item) => (
+            {books.map((item) => (
               <ProductPreviewCard key={item.id} item={item} />
             ))}
           </div>
@@ -65,7 +67,7 @@ export default async function ShopPage() {
         <section className="space-y-4">
           <SectionHeader icon={Puzzle} title="Spellen" href="/shop/spellen" />
           <div className="grid grid-cols-3 gap-3">
-            {GAMES.map((item) => (
+            {games.map((item) => (
               <ProductPreviewCard key={item.id} item={item} />
             ))}
           </div>

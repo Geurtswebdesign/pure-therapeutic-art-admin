@@ -13,6 +13,12 @@ import {
   type GeneralSettings,
 } from "@/lib/settings/types";
 import {
+  DEFAULT_SHOP_CATALOG_SETTINGS,
+  normalizeShopCatalogSettings,
+  SHOP_CATALOG_SETTINGS_KEY,
+  type ShopCatalogSettings,
+} from "@/lib/shop/catalog";
+import {
   DEFAULT_PRIMARY_LANGUAGE,
   normalizeLanguageCode,
 } from "@/lib/i18n/languages";
@@ -154,6 +160,100 @@ export async function saveBrandingSettings(
     adminId
   );
   revalidatePath("/admin/settings/app");
+}
+
+export async function getShopCatalogSettings(): Promise<ShopCatalogSettings> {
+  const admin = await getAdminUser();
+  if (!admin) {
+    throw new Error("Niet geautoriseerd");
+  }
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("app_settings")
+    .select("value")
+    .eq("scope", "global")
+    .is("scope_id", null)
+    .eq("key", SHOP_CATALOG_SETTINGS_KEY)
+    .maybeSingle<{ value: unknown }>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return normalizeShopCatalogSettings(
+    data?.value ?? DEFAULT_SHOP_CATALOG_SETTINGS
+  );
+}
+
+export async function saveShopCatalogSettings(
+  settings: ShopCatalogSettings,
+  adminId?: string
+) {
+  const admin = await getAdminUser();
+  if (!admin) {
+    throw new Error("Niet geautoriseerd");
+  }
+
+  const supabase = createAdminClient();
+  const normalized = normalizeShopCatalogSettings(settings);
+
+  const { data: existing, error: existingError } = await supabase
+    .from("app_settings")
+    .select("id")
+    .eq("scope", "global")
+    .is("scope_id", null)
+    .eq("key", SHOP_CATALOG_SETTINGS_KEY)
+    .maybeSingle<{ id: string }>();
+
+  if (existingError) {
+    throw new Error(existingError.message);
+  }
+
+  const previousSettings = existing
+    ? await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("id", existing.id)
+        .maybeSingle<{ value: unknown }>()
+    : null;
+
+  const payload = {
+    books: normalized.books,
+    games: normalized.games,
+  };
+
+  const { error } = existing
+    ? await supabase
+        .from("app_settings")
+        .update({
+          value: payload,
+          updated_by: adminId ?? admin.id,
+        })
+        .eq("id", existing.id)
+    : await supabase.from("app_settings").insert({
+        scope: "global",
+        scope_id: null,
+        key: SHOP_CATALOG_SETTINGS_KEY,
+        value: payload,
+        updated_by: adminId ?? admin.id,
+      });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await logSecurityAuditEvent({
+    eventType: "shop_catalog_settings_updated",
+    actorUserId: adminId ?? admin.id,
+    details: {
+      previous: previousSettings?.data?.value ?? null,
+      next: payload,
+    },
+  });
+
+  revalidatePath("/admin/settings/shop");
+  revalidatePath("/shop", "layout");
 }
 
 export async function getCustomizerSettings(): Promise<CustomizerSettings> {

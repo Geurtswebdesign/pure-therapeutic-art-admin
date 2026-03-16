@@ -71,6 +71,7 @@ export function getAdminNav(language: string): AdminNavItem[] {
         { label: t.general, href: "/admin/settings/general" },
         { label: t.security, href: "/admin/settings/security" },
         { label: t.app, href: "/admin/settings/app" },
+        { label: t.shop, href: "/admin/settings/shop" },
         { label: t.email, href: "/admin/settings/email" },
         { label: t.system, href: "/admin/settings/system" },
       ],
