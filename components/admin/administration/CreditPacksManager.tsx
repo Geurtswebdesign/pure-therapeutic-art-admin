@@ -9,11 +9,13 @@ import {
   createCreditPack,
   deleteCreditPack,
   grantYearAssignmentsAccess,
+  grantTherapistDirectoryAccess,
   purchaseCreditPack,
   setCreditPackActive,
   updateCreditPack,
 } from "@/app/admin/administration/actions";
 import { trackEvent } from "@/lib/analytics/track";
+import type { TherapistSubscriptionPlan } from "@/lib/users/entitlements";
 
 type CreditPack = {
   id: string;
@@ -111,7 +113,12 @@ export default function CreditPacksManager({
   const [entitlementUserId, setEntitlementUserId] = useState<string>("");
   const [entitlementMonths, setEntitlementMonths] = useState<number>(12);
   const [entitlementNote, setEntitlementNote] = useState("");
-  const [openSection, setOpenSection] = useState<"pack" | "purchase" | "entitlement">("pack");
+  const [therapistUserId, setTherapistUserId] = useState<string>("");
+  const [therapistPlan, setTherapistPlan] = useState<TherapistSubscriptionPlan>("monthly");
+  const [therapistNote, setTherapistNote] = useState("");
+  const [openSection, setOpenSection] = useState<
+    "pack" | "purchase" | "entitlement" | "therapistEntitlement"
+  >("pack");
 
   function fillEdit(pack: CreditPack) {
     setEditingPackId(pack.id);
@@ -258,6 +265,31 @@ export default function CreditPacksManager({
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : t.entitlementFailed);
+      }
+    });
+  }
+
+  function submitTherapistEntitlement(event: React.FormEvent) {
+    event.preventDefault();
+    setMessage(null);
+    setError(null);
+
+    startTransition(async () => {
+      try {
+        await grantTherapistDirectoryAccess({
+          userId: therapistUserId,
+          plan: therapistPlan,
+          note: therapistNote,
+        });
+        setMessage(t.therapistEntitlementGranted);
+        setTherapistNote("");
+        router.refresh();
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : t.therapistEntitlementFailed
+        );
       }
     });
   }
@@ -655,6 +687,81 @@ export default function CreditPacksManager({
                       className="rounded bg-black px-3 py-1.5 text-sm text-white disabled:opacity-60"
                     >
                       {isPending ? t.processing : t.grantYear}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : null}
+          </section>
+
+          <section className="rounded border bg-white">
+            <button
+              type="button"
+              onClick={() => setOpenSection("therapistEntitlement")}
+              className="flex w-full items-center justify-between p-4 text-left"
+            >
+              <h2 className="text-base font-semibold">{t.grantTherapistTitle}</h2>
+              <ChevronDown
+                size={16}
+                className={
+                  openSection === "therapistEntitlement"
+                    ? "rotate-180 transition-transform"
+                    : "transition-transform"
+                }
+              />
+            </button>
+            {openSection === "therapistEntitlement" ? (
+              <div className="border-t p-4">
+                <form onSubmit={submitTherapistEntitlement} className="grid gap-3">
+                  <label className="space-y-1">
+                    <span className="text-sm text-gray-600">{t.user}</span>
+                    <select
+                      value={therapistUserId}
+                      onChange={(e) => setTherapistUserId(e.target.value)}
+                      className="w-full rounded border px-2 py-1.5 text-sm"
+                      required
+                    >
+                      <option value="">{t.selectUser}</option>
+                      {users.map((user) => (
+                        <option key={user.user_id} value={user.user_id}>
+                          {(user.display_name || user.email || user.user_id) +
+                            ` (${user.user_id.slice(0, 8)})`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="space-y-1">
+                    <span className="text-sm text-gray-600">{t.therapistPlan}</span>
+                    <select
+                      value={therapistPlan}
+                      onChange={(e) =>
+                        setTherapistPlan(e.target.value as TherapistSubscriptionPlan)
+                      }
+                      className="w-full rounded border px-2 py-1.5 text-sm"
+                    >
+                      <option value="monthly">{t.monthlyPlan}</option>
+                      <option value="yearly">{t.yearlyPlan}</option>
+                    </select>
+                  </label>
+
+                  <label className="space-y-1">
+                    <span className="text-sm text-gray-600">{t.note}</span>
+                    <input
+                      value={therapistNote}
+                      onChange={(e) => setTherapistNote(e.target.value)}
+                      className="w-full rounded border px-2 py-1.5 text-sm"
+                      placeholder={t.optional}
+                    />
+                  </label>
+
+                  <div>
+                    <button
+                      type="submit"
+                      disabled={isPending}
+                      className="rounded bg-black px-3 py-1.5 text-sm text-white disabled:opacity-60"
+                    >
+                      {isPending ? t.processing : t.grantTherapist}
                     </button>
                   </div>
                 </form>

@@ -1,0 +1,157 @@
+.admin-shell {
+  min-height: 100vh;
+  background: #f0f0f1;
+  color: #4a4a4a;
+  font-family: Corbel, sans-serif;
+}
+
+.admin-main {
+  padding: 1.5rem;
+}
+
+.admin-shell :where(
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  div,
+  span,
+  a,
+  li,
+  label,
+  button,
+  input,
+  textarea,
+  select,
+  option,
+  figcaption,
+  small,
+  strong,
+  em,
+  blockquote,
+  legend,
+  dt,
+  dd,
+  td,
+  th
+) {
+  color: #4a4a4a !important;
+}
+
+.admin-shell :where(h1, h2, h3, h4, h5, h6) {
+  font-family: Joan, serif;
+}
+
+.admin-shell :where(button, input, textarea, select) {
+  font-family: Corbel, sans-serif;
+}
+
+.admin-shell :where(input, textarea)::placeholder {
+  color: #4a4a4a;
+  opacity: 1;
+}
+
+.image-caption {
+  margin-top: -0.5rem;
+  margin-bottom: 1.5rem;
+  color: #4a4a4a;
+  font-size: 0.875rem;
+  font-style: italic;
+  text-align: center;
+  font-family: Corbel, sans-serif;
+}
+
+.image-caption:empty::before {
+  content: "Bijschrift toevoegen";
+  color: #4a4a4a;
+}
+
+.image-caption:focus {
+  outline: none;
+  color: #4a4a4a;
+  font-style: normal;
+}
+
+.admin-shell :where(
+  [class*="text-white"],
+  [class*="text-stone-50"],
+  [class*="text-stone-100"],
+  [class*="text-zinc-50"],
+  [class*="text-neutral-50"],
+  a[class*="bg-black"],
+  a[class*="bg-stone-900"],
+  a[class*="bg-[#1d2327]"],
+  a[class*="bg-[#2271b1]"],
+  a[class*="bg-[#b64040]"],
+  a[class*="bg-blue-600"],
+  a[class*="bg-green-600"],
+  a[class*="bg-red-600"],
+  a[class*="bg-emerald-600"],
+  a[class*="bg-orange-600"],
+  a[class*="bg-rose-600"],
+  button[class*="bg-black"],
+  button[class*="bg-stone-900"],
+  button[class*="bg-[#1d2327]"],
+  button[class*="bg-[#2271b1]"],
+  button[class*="bg-[#b64040]"],
+  button[class*="bg-blue-600"],
+  button[class*="bg-green-600"],
+  button[class*="bg-red-600"],
+  button[class*="bg-emerald-600"],
+  button[class*="bg-orange-600"],
+  button[class*="bg-rose-600"],
+  label[class*="bg-black"],
+  label[class*="bg-stone-900"],
+  label[class*="bg-[#1d2327]"],
+  label[class*="bg-[#2271b1]"],
+  label[class*="bg-[#b64040]"],
+  label[class*="bg-blue-600"],
+  label[class*="bg-green-600"],
+  label[class*="bg-red-600"],
+  label[class*="bg-emerald-600"],
+  label[class*="bg-orange-600"],
+  label[class*="bg-rose-600"],
+  [class*="text-white"] *,
+  [class*="text-stone-50"] *,
+  [class*="text-stone-100"] *,
+  [class*="text-zinc-50"] *,
+  [class*="text-neutral-50"] *,
+  a[class*="bg-black"] *,
+  a[class*="bg-stone-900"] *,
+  a[class*="bg-[#1d2327]"] *,
+  a[class*="bg-[#2271b1]"] *,
+  a[class*="bg-[#b64040]"] *,
+  a[class*="bg-blue-600"] *,
+  a[class*="bg-green-600"] *,
+  a[class*="bg-red-600"] *,
+  a[class*="bg-emerald-600"] *,
+  a[class*="bg-orange-600"] *,
+  a[class*="bg-rose-600"] *,
+  button[class*="bg-black"] *,
+  button[class*="bg-stone-900"] *,
+  button[class*="bg-[#1d2327]"] *,
+  button[class*="bg-[#2271b1]"] *,
+  button[class*="bg-[#b64040]"] *,
+  button[class*="bg-blue-600"] *,
+  button[class*="bg-green-600"] *,
+  button[class*="bg-red-600"] *,
+  button[class*="bg-emerald-600"] *,
+  button[class*="bg-orange-600"] *,
+  button[class*="bg-rose-600"] *,
+  label[class*="bg-black"] *,
+  label[class*="bg-stone-900"] *,
+  label[class*="bg-[#1d2327]"] *,
+  label[class*="bg-[#2271b1]"] *,
+  label[class*="bg-[#b64040]"] *,
+  label[class*="bg-blue-600"] *,
+  label[class*="bg-green-600"] *,
+  label[class*="bg-red-600"] *,
+  label[class*="bg-emerald-600"] *,
+  label[class*="bg-orange-600"] *,
+  label[class*="bg-rose-600"] *
+) {
+  color: #ffffff !important;
+}

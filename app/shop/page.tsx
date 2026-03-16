@@ -1,32 +1,76 @@
+import { BookOpenText, Coins, Puzzle } from "lucide-react";
 import PublicAppShell from "@/components/public/PublicAppShell";
+import {
+  AssignmentCreditsEmptyState,
+  BOOKS,
+  CreditPreviewCard,
+  GAMES,
+  getAssignmentCreditShopData,
+  ProductPreviewCard,
+  SectionFooterLink,
+  SectionHeader,
+  YearSubscriptionPreviewCard,
+} from "@/components/shop/ShopCatalog";
+
+export const dynamic = "force-dynamic";
 
 export default async function ShopPage() {
+  const { creditPacks, yearSubscriptionPack } =
+    await getAssignmentCreditShopData();
+  const previewCreditPacks = creditPacks.slice(0, 3);
+
   return (
     <PublicAppShell activeTab="shop">
-      <section className="space-y-4">
-        <div className="rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-sm">
-          <h2 className="font-serif text-2xl text-stone-950">
-            Winkelomgeving
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-stone-600">
-            Dit scherm reserveren we voor producten, werkboeken en later ook de
-            in-app aankopen.
+      <section className="space-y-8">
+        <section className="space-y-4">
+          <SectionHeader
+            icon={Coins}
+            title="Opdrachtcredits"
+            href="/shop/credits"
+          />
+          <p className="max-w-sm text-sm leading-6 text-[#6b5d50]">
+            Hier tonen we de actieve opdrachtpakketten en het jaarabonnement
+            voor opdrachten. Daarmee speel je opdrachten vrij of krijg je een
+            jaar lang volledige toegang.
           </p>
-        </div>
+          {previewCreditPacks.length || yearSubscriptionPack ? (
+            <div className="space-y-3">
+              {previewCreditPacks.length ? (
+                <div className="grid grid-cols-3 gap-3">
+                  {previewCreditPacks.map((pack) => (
+                    <CreditPreviewCard key={pack.id} pack={pack} />
+                  ))}
+                </div>
+              ) : null}
+              {yearSubscriptionPack ? (
+                <YearSubscriptionPreviewCard pack={yearSubscriptionPack} />
+              ) : null}
+            </div>
+          ) : (
+            <AssignmentCreditsEmptyState compact />
+          )}
+          <SectionFooterLink href="/shop/credits" />
+        </section>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {["Werkboek", "Kaartenset", "Audio", "Bundels"].map((label) => (
-            <article
-              key={label}
-              className="min-h-[120px] rounded-[1.4rem] border border-stone-200 bg-[#efe6dc] p-4"
-            >
-              <h3 className="text-sm font-medium text-stone-900">{label}</h3>
-              <p className="mt-2 text-xs leading-5 text-stone-600">
-                Nog niet ingericht.
-              </p>
-            </article>
-          ))}
-        </div>
+        <section className="space-y-4">
+          <SectionHeader icon={BookOpenText} title="Boeken" href="/shop/boeken" />
+          <div className="grid grid-cols-3 gap-3">
+            {BOOKS.map((item) => (
+              <ProductPreviewCard key={item.id} item={item} />
+            ))}
+          </div>
+          <SectionFooterLink href="/shop/boeken" />
+        </section>
+
+        <section className="space-y-4">
+          <SectionHeader icon={Puzzle} title="Spellen" href="/shop/spellen" />
+          <div className="grid grid-cols-3 gap-3">
+            {GAMES.map((item) => (
+              <ProductPreviewCard key={item.id} item={item} />
+            ))}
+          </div>
+          <SectionFooterLink href="/shop/spellen" />
+        </section>
       </section>
     </PublicAppShell>
   );

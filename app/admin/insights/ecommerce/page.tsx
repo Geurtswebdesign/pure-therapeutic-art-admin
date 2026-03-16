@@ -102,8 +102,7 @@ function calculateRevenueBreakdown(
 
   return revenueEntries.map((entry) => {
     const storeBreakdown = storeBreakdownByCurrency.get(entry.currency) ?? getEmptyStoreRevenue();
-    const dannyEligibleAmountCents =
-      storeBreakdown.appleAmountCents + storeBreakdown.googleAmountCents;
+    const dannyEligibleAmountCents = entry.amountCents;
 
     return {
       currency: entry.currency,
@@ -281,10 +280,13 @@ export default async function EcommercePage({
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                   <div className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-3">
                     <p className="text-xs font-medium text-rose-700">
-                      Danny (22% op app-credits)
+                      Danny (22% op credits/microtransacties)
                     </p>
                     <p className="mt-1 text-base font-semibold text-rose-900">
                       {formatCurrency(entry.dannyAmountCents, entry.currency)}
+                    </p>
+                    <p className="mt-1 text-xs text-rose-700/80">
+                      Basis: {formatCurrency(entry.dannyEligibleAmountCents, entry.currency)}
                     </p>
                   </div>
                   <div className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-3">

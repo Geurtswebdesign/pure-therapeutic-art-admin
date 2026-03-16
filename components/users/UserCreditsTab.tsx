@@ -4,9 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { grantCredits } from "@/lib/credits/grantCredits";
 import type { CreditWallet, CreditTransaction } from "@/lib/credits/types";
-import { deactivateYearAssignmentsEntitlement } from "@/app/admin/users/actions";
+import {
+  deactivateTherapistDirectoryEntitlement,
+  deactivateYearAssignmentsEntitlement,
+} from "@/app/admin/users/actions";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
+import {
+  getTimedEntitlementSummary,
+  isTimedEntitlementActive,
+} from "@/lib/users/entitlements";
 
 import CreditOverview from "@/components/users/CreditOverview";
 import CreditTransactions from "@/components/users/CreditTransactions";
@@ -16,6 +23,14 @@ type Props = {
   wallet: CreditWallet;
   transactions: CreditTransaction[];
   yearEntitlements: {
+    id: string;
+    entitlement_key: string;
+    starts_at: string;
+    ends_at: string | null;
+    is_active: boolean;
+    created_at: string;
+  }[];
+  therapistEntitlements: {
     id: string;
     entitlement_key: string;
     starts_at: string;
@@ -33,6 +48,7 @@ export default function UserCreditsTab({
   wallet,
   transactions,
   yearEntitlements,
+  therapistEntitlements,
   isSelf,
   isSuperAdmin,
   language,
@@ -43,6 +59,28 @@ export default function UserCreditsTab({
   const [amount, setAmount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [entitlementBusyId, setEntitlementBusyId] = useState<string | null>(null);
+  const therapistSubscription = getTimedEntitlementSummary(therapistEntitlements);
+  const therapistSubscriptionStatus =
+    therapistSubscription.status === "active"
+      ? t.active
+      : therapistSubscription.status === "planned"
+        ? t.planned
+        : t.ended;
+  const therapistSubscriptionStart =
+    therapistSubscription.current?.starts_at ??
+    therapistSubscription.next?.starts_at ??
+    null;
+  const therapistSubscriptionActiveUntil =
+    therapistSubscription.current?.ends_at
+      ? new Date(therapistSubscription.current.ends_at).toLocaleDateString(locale)
+      : therapistSubscription.current
+        ? t.indefinite
+        : "-";
+  const therapistSubscriptionRenewedUntil = therapistSubscription.hasOpenEnded
+    ? t.indefinite
+    : therapistSubscription.latestRelevantEndAt
+      ? new Date(therapistSubscription.latestRelevantEndAt).toLocaleDateString(locale)
+      : t.notScheduled;
 
   // ✅ JUISTE UI-GUARD
   const disableActions = isSelf && !isSuperAdmin;
@@ -70,13 +108,23 @@ export default function UserCreditsTab({
     }
   }
 
-  async function handleDeactivate(entitlementId: string) {
+  async function handleDeactivate(
+    entitlementId: string,
+    kind: "year" | "therapist"
+  ) {
     setEntitlementBusyId(entitlementId);
     try {
-      await deactivateYearAssignmentsEntitlement({
-        entitlementId,
-        userId,
-      });
+      if (kind === "therapist") {
+        await deactivateTherapistDirectoryEntitlement({
+          entitlementId,
+          userId,
+        });
+      } else {
+        await deactivateYearAssignmentsEntitlement({
+          entitlementId,
+          userId,
+        });
+      }
       router.refresh();
     } catch (e: unknown) {
       const message =
@@ -141,32 +189,113 @@ export default function UserCreditsTab({
           </p>
         ) : (
           <div className="space-y-2">
-            {yearEntitlements.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between rounded border px-3 py-2 text-sm"
-              >
-                <div>
+            {yearEntitlements.map((item) => {
+              const isActive = isTimedEntitlementActive(item);
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between rounded border px-3 py-2 text-sm"
+                >
                   <div>
-                    {t.start}: {new Date(item.starts_at).toLocaleDateString(locale)} • {t.endLabel}: {item.ends_at ? new Date(item.ends_at).toLocaleDateString(locale) : t.indefinite}
+                    <div>
+                      {t.start}: {new Date(item.starts_at).toLocaleDateString(locale)} • {t.endLabel}: {item.ends_at ? new Date(item.ends_at).toLocaleDateString(locale) : t.indefinite}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {t.status}: {isActive ? t.active : t.ended}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500">
-                    {t.status}: {item.is_active ? t.active : t.ended}
-                  </div>
-                </div>
 
-                {item.is_active ? (
-                  <button
-                    type="button"
-                    onClick={() => handleDeactivate(item.id)}
-                    disabled={entitlementBusyId === item.id}
-                    className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 disabled:opacity-50"
-                  >
-                    {entitlementBusyId === item.id ? t.ending : t.endAction}
-                  </button>
-                ) : null}
+                  {isActive ? (
+                    <button
+                      type="button"
+                      onClick={() => handleDeactivate(item.id, "year")}
+                      disabled={entitlementBusyId === item.id}
+                      className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 disabled:opacity-50"
+                    >
+                      {entitlementBusyId === item.id ? t.ending : t.endAction}
+                    </button>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded border bg-white p-4 space-y-3">
+        <h2 className="text-sm font-semibold">
+          {t.therapistSubTitle}
+        </h2>
+
+        <div className="grid gap-2 sm:grid-cols-3">
+          <div className="rounded border bg-stone-50 px-3 py-2 text-sm">
+            <div className="text-xs uppercase tracking-[0.16em] text-stone-500">
+              {t.status}
+            </div>
+            <div className="mt-1 font-medium text-stone-900">
+              {therapistSubscriptionStatus}
+            </div>
+            {therapistSubscriptionStart ? (
+              <div className="mt-1 text-xs text-stone-500">
+                {t.start}: {new Date(therapistSubscriptionStart).toLocaleDateString(locale)}
               </div>
-            ))}
+            ) : null}
+          </div>
+
+          <div className="rounded border bg-stone-50 px-3 py-2 text-sm">
+            <div className="text-xs uppercase tracking-[0.16em] text-stone-500">
+              {t.activeUntil}
+            </div>
+            <div className="mt-1 font-medium text-stone-900">
+              {therapistSubscriptionActiveUntil}
+            </div>
+          </div>
+
+          <div className="rounded border bg-stone-50 px-3 py-2 text-sm">
+            <div className="text-xs uppercase tracking-[0.16em] text-stone-500">
+              {t.renewedUntil}
+            </div>
+            <div className="mt-1 font-medium text-stone-900">
+              {therapistSubscriptionRenewedUntil}
+            </div>
+          </div>
+        </div>
+
+        {therapistEntitlements.length === 0 ? (
+          <p className="text-sm text-gray-600">
+            {t.noTherapistSub}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {therapistEntitlements.map((item) => {
+              const isActive = isTimedEntitlementActive(item);
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between rounded border px-3 py-2 text-sm"
+                >
+                  <div>
+                    <div>
+                      {t.start}: {new Date(item.starts_at).toLocaleDateString(locale)} • {t.endLabel}: {item.ends_at ? new Date(item.ends_at).toLocaleDateString(locale) : t.indefinite}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {t.status}: {isActive ? t.active : t.ended}
+                    </div>
+                  </div>
+
+                  {isActive ? (
+                    <button
+                      type="button"
+                      onClick={() => handleDeactivate(item.id, "therapist")}
+                      disabled={entitlementBusyId === item.id}
+                      className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 disabled:opacity-50"
+                    >
+                      {entitlementBusyId === item.id ? t.ending : t.endAction}
+                    </button>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         )}
       </section>

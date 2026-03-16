@@ -11,6 +11,10 @@ import UserHeader from "@/components/users/UserHeader";
 import UserTabs from "@/components/users/UserTabs";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import {
+  THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
+  YEAR_ASSIGNMENTS_ENTITLEMENT_KEY,
+} from "@/lib/users/entitlements";
 
 type PageProps = {
   params: Promise<{
@@ -162,13 +166,23 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
       : null,
   }));
 
-  const { data: yearEntitlements } = await supabase
+  const { data: entitlements } = await supabase
     .from("user_entitlements")
     .select("id, entitlement_key, starts_at, ends_at, is_active, created_at")
     .eq("user_id", user_id)
-    .eq("entitlement_key", "year_assignments")
+    .in("entitlement_key", [
+      YEAR_ASSIGNMENTS_ENTITLEMENT_KEY,
+      THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
+    ])
     .order("created_at", { ascending: false })
     .returns<YearEntitlement[]>();
+
+  const yearEntitlements = (entitlements ?? []).filter(
+    (item) => item.entitlement_key === YEAR_ASSIGNMENTS_ENTITLEMENT_KEY
+  );
+  const therapistEntitlements = (entitlements ?? []).filter(
+    (item) => item.entitlement_key === THERAPIST_DIRECTORY_ENTITLEMENT_KEY
+  );
 
   /* =========================
      6. Render
@@ -184,6 +198,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
         transactions={transactions ?? []}
         unlockedContent={unlockedContentWithItem}
         yearEntitlements={yearEntitlements ?? []}
+        therapistEntitlements={therapistEntitlements ?? []}
         currentAdminId={adminUser.id}
         isSuperAdmin={adminUser.isSuperAdmin}   // ⬅️ MOET ERIN
       />

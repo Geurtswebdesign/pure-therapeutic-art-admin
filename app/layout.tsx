@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "@/styles/globals.css";
+import "@/styles/frontend.css";
 
 import { WalletProvider } from "@/components/providers/WalletProvider";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";

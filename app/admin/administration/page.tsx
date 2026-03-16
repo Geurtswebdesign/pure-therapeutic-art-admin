@@ -6,6 +6,10 @@ import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getDeletedCreditPackIds } from "@/lib/credits/deletedPacks";
+import {
+  THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
+  YEAR_ASSIGNMENTS_ENTITLEMENT_KEY,
+} from "@/lib/users/entitlements";
 
 type PageProps = {
   searchParams: Promise<{ tab?: string }>;
@@ -74,6 +78,7 @@ type PurchaseRow = {
 type EntitlementRow = {
   id: string;
   user_id: string;
+  entitlement_key: string;
   is_active: boolean;
   starts_at: string;
   ends_at: string | null;
@@ -88,8 +93,12 @@ type CombinedTransactionRow = {
   id: string;
   created_at: string;
   user_id: string;
-  type: "assignment_pack" | "scoped_pack" | "year_subscription";
-  scope: "assignment" | "book" | "game" | "referral";
+  type:
+    | "assignment_pack"
+    | "scoped_pack"
+    | "year_subscription"
+    | "therapist_subscription";
+  scope: "assignment" | "book" | "game" | "referral" | "therapist";
   delta: number | null;
   reason: string;
   amount: string;
@@ -114,6 +123,7 @@ function scopeLabel(
   if (scope === "assignment") return labels.scopeAssignment;
   if (scope === "book") return labels.scopeBook;
   if (scope === "game") return labels.scopeGame;
+  if (scope === "therapist") return labels.scopeTherapist;
   return labels.scopeReferral;
 }
 
@@ -209,8 +219,11 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
 
   const { data: entitlements } = await supabase
     .from("user_entitlements")
-    .select("id, user_id, is_active, starts_at, ends_at, created_at, metadata")
-    .eq("entitlement_key", "year_assignments")
+    .select("id, user_id, entitlement_key, is_active, starts_at, ends_at, created_at, metadata")
+    .in("entitlement_key", [
+      YEAR_ASSIGNMENTS_ENTITLEMENT_KEY,
+      THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
+    ])
     .order("created_at", { ascending: false })
     .limit(100)
     .returns<EntitlementRow[]>();
@@ -247,15 +260,21 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
           : end && end <= now
             ? t.statusExpired
             : t.statusActive;
+      const isTherapistSubscription =
+        row.entitlement_key === THERAPIST_DIRECTORY_ENTITLEMENT_KEY;
 
       return {
         id: row.id,
         created_at: row.created_at,
         user_id: row.user_id,
-        type: "year_subscription" as const,
-        scope: "assignment" as const,
+        type: isTherapistSubscription
+          ? ("therapist_subscription" as const)
+          : ("year_subscription" as const),
+        scope: isTherapistSubscription
+          ? ("therapist" as const)
+          : ("assignment" as const),
         delta: null,
-        reason: `year_assignments:${status}`,
+        reason: `${row.entitlement_key}:${status}`,
         amount:
           typeof row.metadata?.amount_cents === "number"
             ? `${(row.metadata.amount_cents / 100).toFixed(2)} ${row.metadata?.currency ?? "EUR"}`

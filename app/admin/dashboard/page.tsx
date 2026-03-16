@@ -1,6 +1,4 @@
 import Link from "next/link";
-import "@/styles/globals.css";
-import "@/styles/content.css";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";

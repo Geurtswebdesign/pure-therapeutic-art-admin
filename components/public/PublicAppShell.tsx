@@ -56,7 +56,7 @@ export default async function PublicAppShell({
               />
             )}
             <div className="min-w-0">
-              <div className="truncate font-serif text-xl leading-tight text-stone-900">
+              <div className="truncate text-xl leading-tight text-stone-900">
                 {branding.siteName}
               </div>
               {headerSubtitle ? (

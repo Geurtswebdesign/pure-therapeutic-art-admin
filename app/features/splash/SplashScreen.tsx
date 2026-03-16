@@ -66,7 +66,7 @@ export default function SplashScreen({
               />
             </div>
 
-            <p className="mt-4 whitespace-pre-line">
+            <p className="splash-slogan mt-4 whitespace-pre-line">
               &ldquo;{splashSlogan}&rdquo;
             </p>
           </div>

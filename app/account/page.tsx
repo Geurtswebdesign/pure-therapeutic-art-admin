@@ -9,6 +9,10 @@ import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  getTimedEntitlementSummary,
+  THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
+} from "@/lib/users/entitlements";
+import {
   type AppProfileData,
   getEffectiveAccountType,
   getProfileAccountType,
@@ -38,6 +42,13 @@ type LatestUnlockRow = {
 type ContentItemRow = {
   title: string | null;
   slug: string | null;
+};
+
+type TherapistEntitlementRow = {
+  starts_at: string;
+  ends_at: string | null;
+  is_active: boolean;
+  created_at: string;
 };
 
 function getInitials(name: string) {
@@ -77,21 +88,6 @@ function formatDate(value: string | null | undefined, locale: string) {
     month: "long",
     year: "numeric",
   });
-}
-
-function formatBooleanLabel(
-  value: boolean,
-  language: "nl" | "en" | "de"
-) {
-  if (language === "en") {
-    return value ? "Yes" : "No";
-  }
-
-  if (language === "de") {
-    return value ? "Ja" : "Nein";
-  }
-
-  return value ? "Ja" : "Nee";
 }
 
 function DetailRow({
@@ -137,6 +133,7 @@ export default async function AccountPage({
   const tabsT = messages.accountTabs;
   const generalT = messages.userGeneral;
   const headerT = messages.userHeader;
+  const creditsT = messages.userCredits;
   const locale =
     language === "en" ? "en-US" : language === "de" ? "de-DE" : "nl-NL";
   const params = await searchParams;
@@ -219,6 +216,7 @@ export default async function AccountPage({
     { data: wallet },
     { count: unlockedCount },
     { data: latestUnlock },
+    { data: therapistEntitlements },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -241,6 +239,13 @@ export default async function AccountPage({
       .order("unlocked_at", { ascending: false })
       .limit(1)
       .maybeSingle<LatestUnlockRow>(),
+    supabase
+      .from("user_entitlements")
+      .select("starts_at, ends_at, is_active, created_at")
+      .eq("user_id", user.id)
+      .eq("entitlement_key", THERAPIST_DIRECTORY_ENTITLEMENT_KEY)
+      .order("created_at", { ascending: false })
+      .returns<TherapistEntitlementRow[]>(),
   ]);
 
   let latestUnlockedContent: ContentItemRow | null = null;
@@ -288,7 +293,38 @@ export default async function AccountPage({
   const memberSince = formatDate(user.created_at, locale);
   const lastUnlockedDate = formatDate(latestUnlock?.unlocked_at, locale);
   const safeUnlockedCount = unlockedCount ?? 0;
-  const booleanLabel = (value: boolean) => formatBooleanLabel(value, language);
+  const therapistSubscription = getTimedEntitlementSummary(
+    therapistEntitlements ?? []
+  );
+  const therapistSubscriptionStatus =
+    therapistSubscription.status === "active"
+      ? creditsT.active
+      : therapistSubscription.status === "planned"
+        ? creditsT.planned
+        : creditsT.ended;
+  const therapistSubscriptionStart =
+    therapistSubscription.current?.starts_at ??
+    therapistSubscription.next?.starts_at ??
+    null;
+  const therapistSubscriptionActiveUntil =
+    therapistSubscription.current?.ends_at
+      ? formatDate(therapistSubscription.current.ends_at, locale)
+      : therapistSubscription.current
+        ? creditsT.indefinite
+        : "-";
+  const therapistSubscriptionRenewedUntil = therapistSubscription.hasOpenEnded
+    ? creditsT.indefinite
+    : therapistSubscription.latestRelevantEndAt
+      ? formatDate(therapistSubscription.latestRelevantEndAt, locale)
+      : creditsT.notScheduled;
+  const therapistDirectoryVisible =
+    userAccountType === "therapist" &&
+    Boolean(therapistProfile.public_profile_enabled) &&
+    therapistSubscription.status === "active";
+  const showPublicDirectoryHint =
+    userAccountType === "therapist" &&
+    !therapistProfile.public_profile_enabled &&
+    therapistSubscription.status !== "ended";
 
   return (
     <PublicAppShell activeTab="profiel">
@@ -309,7 +345,7 @@ export default async function AccountPage({
                 </div>
               )}
             </div>
-            <p className="mt-2 text-center font-serif text-xl text-stone-900">
+            <p className="mt-2 text-center text-xl text-stone-900">
               {displayName}
             </p>
             <p className="mt-1 text-center text-sm text-stone-600">
@@ -348,122 +384,6 @@ export default async function AccountPage({
 
         {activeTab === "profile" ? (
           <>
-            <div className={accountCardClassName()}>
-              <h3 className="mb-2 font-medium text-stone-900">Profieloverzicht</h3>
-              <div className="space-y-2">
-                <DetailRow label={generalT.firstName} value={firstName || "-"} />
-                <DetailRow label={generalT.lastName} value={lastName || "-"} />
-                <DetailRow
-                  label={tabsT.accountType}
-                  value={labelForAccountType(accountType, tabsT)}
-                />
-                <DetailRow label={generalT.displayName} value={displayName} />
-                <DetailRow label="E-mail" value={user.email ?? "-"} />
-                <DetailRow label={generalT.website} value={website || "-"} />
-                {userAccountType === "therapist" ? (
-                  <>
-                    <DetailRow
-                      label={generalT.publicDirectory}
-                      value={booleanLabel(
-                        Boolean(therapistProfile.public_profile_enabled)
-                      )}
-                    />
-                    <DetailRow
-                      label={generalT.professionalTitle}
-                      value={therapistProfile.professional_title || "-"}
-                    />
-                    <DetailRow
-                      label={generalT.practiceName}
-                      value={therapistProfile.practice_name || "-"}
-                    />
-                    <DetailRow
-                      label={generalT.publicEmail}
-                      value={therapistProfile.public_email || "-"}
-                    />
-                    <DetailRow
-                      label={generalT.phone}
-                      value={therapistProfile.phone || "-"}
-                    />
-                    <DetailRow
-                      label={generalT.city}
-                      value={
-                        [therapistProfile.city, therapistProfile.region]
-                          .filter(Boolean)
-                          .join(", ") || "-"
-                      }
-                    />
-                    <DetailRow
-                      label={generalT.onlineAvailable}
-                      value={booleanLabel(Boolean(therapistProfile.online_available))}
-                    />
-                    <DetailRow
-                      label={generalT.inPersonAvailable}
-                      value={booleanLabel(Boolean(therapistProfile.in_person_available))}
-                    />
-                    <DetailRow
-                      label={generalT.acceptingNewClients}
-                      value={booleanLabel(
-                        Boolean(therapistProfile.accepting_new_clients)
-                      )}
-                    />
-                  </>
-                ) : null}
-              </div>
-              {bio ? (
-                <p className="mt-3 rounded-xl bg-white px-3 py-3 text-sm leading-6 text-stone-700">
-                  {bio}
-                </p>
-              ) : (
-                <p className="mt-3 rounded-xl bg-white px-3 py-3 text-sm leading-6 text-stone-500">
-                  Voeg een korte bio toe om je profiel persoonlijker te maken.
-                </p>
-              )}
-              {userAccountType === "therapist" ? (
-                <div className="mt-3 space-y-3">
-                  {therapistProfile.short_intro ? (
-                    <p className="rounded-xl bg-white px-3 py-3 text-sm leading-6 text-stone-700">
-                      {therapistProfile.short_intro}
-                    </p>
-                  ) : null}
-                  {therapistProfile.specializations?.length ? (
-                    <div className="rounded-xl bg-white px-3 py-3">
-                      <p className="text-xs uppercase tracking-[0.18em] text-stone-500">
-                        {generalT.specializations}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {therapistProfile.specializations.map((entry) => (
-                          <span
-                            key={entry}
-                            className="rounded-full bg-[#f4ece4] px-3 py-1 text-xs text-stone-700"
-                          >
-                            {entry}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                  {(therapistProfile.methods?.length ||
-                    therapistProfile.target_groups?.length ||
-                    therapistProfile.languages?.length) ? (
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <StatCard
-                        label={generalT.methods}
-                        value={therapistProfile.methods?.join(", ") || "-"}
-                      />
-                      <StatCard
-                        label={generalT.targetGroups}
-                        value={therapistProfile.target_groups?.join(", ") || "-"}
-                      />
-                      <StatCard
-                        label={generalT.languages}
-                        value={therapistProfile.languages?.join(", ") || "-"}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-
             <AccountProfileForm
               userId={user.id}
               accountType={userAccountType}
@@ -520,6 +440,49 @@ export default async function AccountPage({
                 />
               </div>
             </div>
+
+            {userAccountType === "therapist" ? (
+              <div className={accountCardClassName()}>
+                <h3 className="mb-3 font-medium text-stone-900">
+                  {creditsT.therapistSubTitle}
+                </h3>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <StatCard
+                    label={creditsT.status}
+                    value={therapistSubscriptionStatus}
+                    detail={
+                      therapistSubscriptionStart
+                        ? `${creditsT.start}: ${formatDate(
+                            therapistSubscriptionStart,
+                            locale
+                          )}`
+                        : undefined
+                    }
+                  />
+                  <StatCard
+                    label={creditsT.activeUntil}
+                    value={therapistSubscriptionActiveUntil}
+                  />
+                  <StatCard
+                    label={creditsT.renewedUntil}
+                    value={therapistSubscriptionRenewedUntil}
+                  />
+                  <StatCard
+                    label={creditsT.directoryVisibility}
+                    value={
+                      therapistDirectoryVisible
+                        ? creditsT.visibleInDirectory
+                        : creditsT.hiddenInDirectory
+                    }
+                  />
+                </div>
+                {showPublicDirectoryHint ? (
+                  <p className="mt-3 text-xs leading-5 text-stone-500">
+                    {generalT.publicDirectoryHint}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className={accountCardClassName()}>
               <h3 className="mb-2 font-medium text-stone-900">Mijn voortgang</h3>

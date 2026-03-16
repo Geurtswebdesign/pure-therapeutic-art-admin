@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getRuntimeSecuritySettings } from "@/lib/security/runtime";
 import { isAdminRole } from "@/lib/users/accountTypes";
+import "@/styles/backend.css";
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminTopbar from "@/components/admin/AdminTopbar";
@@ -81,12 +82,12 @@ export default async function AdminLayout({
   const primaryLanguage = await getPrimaryLanguage();
 
   return (
-    <div className="flex min-h-screen bg-[#f0f0f1]">
+    <div className="admin-shell flex">
       <AdminSidebar language={primaryLanguage} />
 
       <div className="flex flex-col flex-1">
         <AdminTopbar actions={<LogoutButton />} />
-        <main className="p-6">{children}</main>
+        <main className="admin-main">{children}</main>
       </div>
     </div>
   );

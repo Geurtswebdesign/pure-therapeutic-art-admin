@@ -1,0 +1,305 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --text: #4a4a4a;
+  --text-on-dark: #ffffff;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: Corbel, sans-serif;
+  --font-serif: Joan, serif;
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--text);
+  font-family: Corbel, sans-serif;
+}
+
+body:not(:has(.admin-shell)) {
+  color: #4a4a4a;
+}
+
+body:not(:has(.admin-shell)) :where(
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  div,
+  span,
+  a,
+  li,
+  label,
+  button,
+  input,
+  textarea,
+  select,
+  option,
+  figcaption,
+  small,
+  strong,
+  em,
+  blockquote,
+  legend,
+  dt,
+  dd,
+  td,
+  th
+) {
+  color: #4a4a4a !important;
+}
+
+body:not(:has(.admin-shell)) :where(input, textarea)::placeholder {
+  color: #4a4a4a;
+  opacity: 1;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: Joan, serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: Corbel, sans-serif;
+}
+
+.lockout-container {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 320px;
+  padding: 20px 12px;
+}
+
+.lockout-brand-title {
+  color: #4a4a4a;
+  font-size: 20px;
+  font-family: Joan, serif;
+  font-weight: 400;
+  line-height: 1.05;
+  word-wrap: break-word;
+}
+
+.lockout-title {
+  color: #4a4a4a;
+  font-size: 32px;
+  font-family: Joan, serif;
+  font-weight: 400;
+  word-wrap: break-word;
+}
+
+.lockout-copy {
+  color: #4a4a4a;
+  font-size: 16px;
+  font-family: Corbel, sans-serif;
+  font-weight: 400;
+  word-wrap: break-word;
+}
+
+.lockout-lock-icon {
+  color: #4a4a4a;
+  width: 2.5rem;
+  height: 53px;
+}
+
+.lockout-cta {
+  border-color: #c6d2c0;
+  background-color: #ede3d6;
+  color: #4a4a4a;
+}
+
+.lockout-cta-text {
+  color: #4a4a4a;
+  font-size: 16px;
+  font-family: Corbel, sans-serif;
+  font-weight: 400;
+  word-wrap: break-word;
+}
+
+.lockout-muted {
+  color: #4a4a4a;
+  font-family: Corbel, sans-serif;
+}
+
+.lockout-error {
+  color: #4a4a4a;
+  font-family: Corbel, sans-serif;
+}
+
+.splash-slogan {
+  font-size: 24px;
+}
+
+.prose figure {
+  margin: 2rem auto;
+  text-align: center;
+}
+
+.prose figure img {
+  max-width: 100%;
+  height: auto;
+}
+
+.prose figcaption {
+  margin-top: 0.5rem;
+  color: #4a4a4a;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.prose figure.alignleft {
+  float: left;
+  max-width: 50%;
+  margin-right: 2rem;
+}
+
+.prose figure.alignright {
+  float: right;
+  max-width: 50%;
+  margin-left: 2rem;
+}
+
+.prose figure.aligncenter {
+  text-align: center;
+}
+
+.prose figure.alignwide {
+  width: 120%;
+  margin-left: -10%;
+}
+
+.prose figure.alignfull {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+}
+
+.prose figure.gallery {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.prose figure.gallery.columns-2,
+.prose figure.gallery[data-columns="2"] {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.prose figure.gallery.columns-3,
+.prose figure.gallery[data-columns="3"] {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.prose figure.gallery.columns-4,
+.prose figure.gallery[data-columns="4"] {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.prose figure.gallery figure {
+  margin: 0;
+}
+
+.prose figure.gallery img {
+  width: 100%;
+  height: auto;
+}
+
+.prose figure.gallery figcaption {
+  margin-top: 0.25rem;
+  color: #4a4a4a;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+body:not(:has(.admin-shell)) :where(
+  [class*="text-white"],
+  [class*="text-stone-50"],
+  [class*="text-stone-100"],
+  [class*="text-gray-50"],
+  [class*="text-zinc-50"],
+  [class*="text-neutral-50"],
+  a[class*="bg-black"],
+  a[class*="bg-stone-900"],
+  a[class*="bg-[#b64040]"],
+  a[class*="bg-[#2271b1]"],
+  a[class*="bg-blue-600"],
+  a[class*="bg-green-600"],
+  a[class*="bg-red-600"],
+  a[class*="bg-emerald-600"],
+  a[class*="bg-orange-600"],
+  a[class*="bg-rose-600"],
+  button[class*="bg-black"],
+  button[class*="bg-stone-900"],
+  button[class*="bg-[#b64040]"],
+  button[class*="bg-[#2271b1]"],
+  button[class*="bg-blue-600"],
+  button[class*="bg-green-600"],
+  button[class*="bg-red-600"],
+  button[class*="bg-emerald-600"],
+  button[class*="bg-orange-600"],
+  button[class*="bg-rose-600"],
+  label[class*="bg-black"],
+  label[class*="bg-stone-900"],
+  label[class*="bg-[#b64040]"],
+  label[class*="bg-[#2271b1]"],
+  label[class*="bg-blue-600"],
+  label[class*="bg-green-600"],
+  label[class*="bg-red-600"],
+  label[class*="bg-emerald-600"],
+  label[class*="bg-orange-600"],
+  label[class*="bg-rose-600"],
+  [class*="text-white"] *,
+  [class*="text-stone-50"] *,
+  [class*="text-stone-100"] *,
+  [class*="text-gray-50"] *,
+  [class*="text-zinc-50"] *,
+  [class*="text-neutral-50"] *,
+  a[class*="bg-black"] *,
+  a[class*="bg-stone-900"] *,
+  a[class*="bg-[#b64040]"] *,
+  a[class*="bg-[#2271b1]"] *,
+  a[class*="bg-blue-600"] *,
+  a[class*="bg-green-600"] *,
+  a[class*="bg-red-600"] *,
+  a[class*="bg-emerald-600"] *,
+  a[class*="bg-orange-600"] *,
+  a[class*="bg-rose-600"] *,
+  button[class*="bg-black"] *,
+  button[class*="bg-stone-900"] *,
+  button[class*="bg-[#b64040]"] *,
+  button[class*="bg-[#2271b1]"] *,
+  button[class*="bg-blue-600"] *,
+  button[class*="bg-green-600"] *,
+  button[class*="bg-red-600"] *,
+  button[class*="bg-emerald-600"] *,
+  button[class*="bg-orange-600"] *,
+  button[class*="bg-rose-600"] *,
+  label[class*="bg-black"] *,
+  label[class*="bg-stone-900"] *,
+  label[class*="bg-[#b64040]"] *,
+  label[class*="bg-[#2271b1]"] *,
+  label[class*="bg-blue-600"] *,
+  label[class*="bg-green-600"] *,
+  label[class*="bg-red-600"] *,
+  label[class*="bg-emerald-600"] *,
+  label[class*="bg-orange-600"] *,
+  label[class*="bg-rose-600"] *
+) {
+  color: var(--text-on-dark) !important;
+}

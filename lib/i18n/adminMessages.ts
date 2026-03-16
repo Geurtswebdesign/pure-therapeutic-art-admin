@@ -119,6 +119,7 @@ type AdminMessages = {
     scopeBook: string;
     scopeGame: string;
     scopeReferral: string;
+    scopeTherapist: string;
   };
   creditPacksManager: {
     updated: string;
@@ -131,6 +132,8 @@ type AdminMessages = {
     purchaseFailed: string;
     entitlementGranted: string;
     entitlementFailed: string;
+    therapistEntitlementGranted: string;
+    therapistEntitlementFailed: string;
     packsTitle: string;
     name: string;
     slug: string;
@@ -177,6 +180,11 @@ type AdminMessages = {
     grantYearTitle: string;
     durationMonths: string;
     grantYear: string;
+    grantTherapistTitle: string;
+    therapistPlan: string;
+    monthlyPlan: string;
+    yearlyPlan: string;
+    grantTherapist: string;
     scopeAssignment: string;
     scopeBook: string;
     scopeGame: string;
@@ -437,6 +445,7 @@ const nl: AdminMessages = {
     scopeBook: "boeken",
     scopeGame: "spellen",
     scopeReferral: "verwijsbestanden",
+    scopeTherapist: "therapeutenlijst",
   },
   creditPacksManager: {
     updated: "Creditpack bijgewerkt.",
@@ -449,6 +458,8 @@ const nl: AdminMessages = {
     purchaseFailed: "Aankoop mislukt.",
     entitlementGranted: "Jaarabonnement (opdrachten) toegekend.",
     entitlementFailed: "Toekennen mislukt.",
+    therapistEntitlementGranted: "Therapeut-abonnement toegekend.",
+    therapistEntitlementFailed: "Therapeut-abonnement toekennen mislukt.",
     packsTitle: "Pakketten",
     name: "Naam",
     slug: "Slug",
@@ -495,6 +506,11 @@ const nl: AdminMessages = {
     grantYearTitle: "Jaarabonnement toekennen (alleen opdrachten)",
     durationMonths: "Duur (maanden)",
     grantYear: "Jaarabonnement toekennen",
+    grantTherapistTitle: "Therapeut-abonnement toekennen",
+    therapistPlan: "Abonnement",
+    monthlyPlan: "Maandelijks",
+    yearlyPlan: "Jaarlijks",
+    grantTherapist: "Therapeut-abonnement toekennen",
     scopeAssignment: "Opdrachten",
     scopeBook: "Boeken",
     scopeGame: "Spellen",
@@ -739,6 +755,7 @@ const en: AdminMessages = {
     scopeBook: "books",
     scopeGame: "games",
     scopeReferral: "referrals",
+    scopeTherapist: "therapist directory",
   },
   creditPacksManager: {
     ...nl.creditPacksManager,
@@ -752,6 +769,8 @@ const en: AdminMessages = {
     purchaseFailed: "Purchase failed.",
     entitlementGranted: "Year subscription (assignments) granted.",
     entitlementFailed: "Grant failed.",
+    therapistEntitlementGranted: "Therapist subscription granted.",
+    therapistEntitlementFailed: "Granting therapist subscription failed.",
     packsTitle: "Packs",
     type: "Type",
     price: "Price",
@@ -795,6 +814,11 @@ const en: AdminMessages = {
     grantYearTitle: "Grant year subscription (assignments only)",
     durationMonths: "Duration (months)",
     grantYear: "Grant year subscription",
+    grantTherapistTitle: "Grant therapist subscription",
+    therapistPlan: "Subscription",
+    monthlyPlan: "Monthly",
+    yearlyPlan: "Yearly",
+    grantTherapist: "Grant therapist subscription",
     scopeAssignment: "Assignments",
     scopeBook: "Books",
     scopeGame: "Games",
@@ -1040,6 +1064,7 @@ const de: AdminMessages = {
     scopeBook: "bucher",
     scopeGame: "spiele",
     scopeReferral: "verweisdateien",
+    scopeTherapist: "therapeutenverzeichnis",
   },
   creditPacksManager: {
     ...nl.creditPacksManager,
@@ -1053,6 +1078,8 @@ const de: AdminMessages = {
     purchaseFailed: "Kauf fehlgeschlagen.",
     entitlementGranted: "Jahresabonnement (Aufgaben) zugewiesen.",
     entitlementFailed: "Zuweisung fehlgeschlagen.",
+    therapistEntitlementGranted: "Therapeuten-Abo zugewiesen.",
+    therapistEntitlementFailed: "Therapeuten-Abo konnte nicht zugewiesen werden.",
     packsTitle: "Pakete",
     actions: "Aktionen",
     active: "Aktiv",
@@ -1091,6 +1118,11 @@ const de: AdminMessages = {
     grantYearTitle: "Jahresabonnement zuweisen (nur Aufgaben)",
     durationMonths: "Dauer (Monate)",
     grantYear: "Jahresabonnement zuweisen",
+    grantTherapistTitle: "Therapeuten-Abo zuweisen",
+    therapistPlan: "Abonnement",
+    monthlyPlan: "Monatlich",
+    yearlyPlan: "Jahrlich",
+    grantTherapist: "Therapeuten-Abo zuweisen",
     scopeAssignment: "Aufgaben",
     scopeBook: "Bucher",
     scopeGame: "Spiele",

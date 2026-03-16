@@ -113,7 +113,7 @@ export default function LockedViewClient({
   return (
     <section className="space-y-5">
       <div className="flex justify-center">
-        <Lock className="lockout-lock-icon h-10 w-10" />
+        <Lock className="lockout-lock-icon" />
       </div>
 
       <div className="space-y-2 text-center">

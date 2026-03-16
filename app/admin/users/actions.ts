@@ -11,6 +11,7 @@ import {
   normalizeTherapistProfileData,
   normalizeUserAccountType,
 } from "@/lib/users/accountTypes";
+import { THERAPIST_DIRECTORY_ENTITLEMENT_KEY } from "@/lib/users/entitlements";
 
 export type CreateUserInput = {
   email: string;
@@ -349,4 +350,42 @@ export async function deactivateYearAssignmentsEntitlement(input: {
 
   revalidatePath(`/admin/users/${input.userId}`);
   revalidatePath("/admin/administration");
+}
+
+export async function deactivateTherapistDirectoryEntitlement(input: {
+  entitlementId: string;
+  userId: string;
+}) {
+  const admin = await getAdminUser();
+  if (!admin) {
+    throw new Error("Niet geautoriseerd");
+  }
+
+  if (!input.entitlementId) {
+    throw new Error("entitlementId ontbreekt");
+  }
+  if (!input.userId) {
+    throw new Error("userId ontbreekt");
+  }
+
+  const supabase = createAdminClient();
+  const nowIso = new Date().toISOString();
+
+  const { error } = await supabase
+    .from("user_entitlements")
+    .update({
+      is_active: false,
+      ends_at: nowIso,
+    })
+    .eq("id", input.entitlementId)
+    .eq("user_id", input.userId)
+    .eq("entitlement_key", THERAPIST_DIRECTORY_ENTITLEMENT_KEY);
+
+  if (error) {
+    throw new Error("Therapeut-abonnement beëindigen mislukt");
+  }
+
+  revalidatePath(`/admin/users/${input.userId}`);
+  revalidatePath("/admin/administration");
+  revalidatePath("/therapeuten");
 }

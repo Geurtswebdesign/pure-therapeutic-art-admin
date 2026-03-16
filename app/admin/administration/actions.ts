@@ -10,6 +10,7 @@ import {
 import {
   getTherapistSubscriptionMonths,
   getTherapistSubscriptionPackSlug,
+  getTherapistSubscriptionPackSlugs,
   isTimedEntitlementActive,
   THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
   type TherapistSubscriptionPlan,
@@ -62,27 +63,81 @@ function addMonths(baseDate: Date, months: number) {
 
 async function getTherapistSubscriptionPack(plan: TherapistSubscriptionPlan) {
   const supabase = createAdminClient();
-  const slug = getTherapistSubscriptionPackSlug(plan);
-  const { data: pack, error } = await supabase
+  const slugs = getTherapistSubscriptionPackSlugs(plan);
+  const { data: packs, error } = await supabase
     .from("credit_packs")
     .select("id, name, price_cents, currency, is_active")
-    .eq("slug", slug)
-    .maybeSingle<{
+    .in("slug", slugs)
+    .returns<Array<{
       id: string;
       name: string;
       price_cents: number;
       currency: string;
       is_active: boolean;
-    }>();
+    }>>();
 
   if (error) throw new Error(error.message);
+  const pack = (packs ?? []).find((item) => item.is_active);
   if (!pack || !pack.is_active) {
     throw new Error(
-      `Geen actief therapeut-abonnement gevonden voor '${slug}'. Maak of activeer dit pack in Administratie > Credits.`
+      `Geen actief therapeut-abonnement gevonden voor '${slugs.join("' of '")}'. Maak of activeer dit pack in Administratie > Credits.`
     );
   }
 
   return pack;
+}
+
+async function upsertTherapistSubscriptionPack(input: {
+  adminId: string;
+  plan: TherapistSubscriptionPlan;
+  priceCents: number;
+  currency: string;
+}) {
+  const supabase = createAdminClient();
+  const slug = getTherapistSubscriptionPackSlug(input.plan);
+  const name =
+    input.plan === "monthly"
+      ? "Therapeut maandabonnement"
+      : "Therapeut jaarabonnement";
+  const sortOrder = input.plan === "monthly" ? 9000 : 9001;
+
+  const { data: existingPack, error: existingPackError } = await supabase
+    .from("credit_packs")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle<{ id: string }>();
+
+  if (existingPackError) throw new Error(existingPackError.message);
+
+  const payload = {
+    slug,
+    name,
+    credit_scope: "assignment" as const,
+    credits_base: 1,
+    bonus_credits: 0,
+    price_cents: input.priceCents,
+    currency: input.currency,
+    sort_order: sortOrder,
+    is_active: true,
+    updated_by: input.adminId,
+  };
+
+  if (existingPack?.id) {
+    const { error } = await supabase
+      .from("credit_packs")
+      .update(payload)
+      .eq("id", existingPack.id);
+
+    if (error) throw new Error(error.message);
+    return;
+  }
+
+  const { error } = await supabase.from("credit_packs").insert({
+    ...payload,
+    created_by: input.adminId,
+  });
+
+  if (error) throw new Error(error.message);
 }
 
 export async function createCreditPack(input: CreditPackInput) {
@@ -345,4 +400,36 @@ export async function grantTherapistDirectoryAccess(input: {
   revalidatePath("/admin/administration");
   revalidatePath(`/admin/users/${input.userId}`);
   revalidatePath("/therapeuten");
+}
+
+export async function saveTherapistSubscriptionPackPricing(input: {
+  monthlyPriceCents: number;
+  yearlyPriceCents: number;
+  currency?: string;
+}) {
+  const admin = await requireAdmin();
+
+  if (!Number.isInteger(input.monthlyPriceCents) || input.monthlyPriceCents < 0) {
+    throw new Error("monthlyPriceCents moet 0 of hoger zijn");
+  }
+  if (!Number.isInteger(input.yearlyPriceCents) || input.yearlyPriceCents < 0) {
+    throw new Error("yearlyPriceCents moet 0 of hoger zijn");
+  }
+
+  const currency = input.currency?.trim().toUpperCase() || "EUR";
+
+  await upsertTherapistSubscriptionPack({
+    adminId: admin.id,
+    plan: "monthly",
+    priceCents: input.monthlyPriceCents,
+    currency,
+  });
+  await upsertTherapistSubscriptionPack({
+    adminId: admin.id,
+    plan: "yearly",
+    priceCents: input.yearlyPriceCents,
+    currency,
+  });
+
+  revalidatePath("/admin/administration");
 }
