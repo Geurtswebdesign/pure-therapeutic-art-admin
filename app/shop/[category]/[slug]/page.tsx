@@ -7,6 +7,7 @@ import {
   ProductInfoHero,
   ProductPurchaseCard,
 } from "@/components/shop/ShopCatalog";
+import { normalizeImages } from "@/lib/content/normalizeHtml";
 import {
   getCatalogItem,
   getPublicShopCatalog,
@@ -68,6 +69,17 @@ export default async function ShopProductPage({
         </div>
 
         <ProductInfoHero item={item} />
+
+        {item.body ? (
+          <DetailList icon={config.icon} title="Beschrijving">
+            <div className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-5 shadow-sm">
+              <div
+                className="prose prose-sm max-w-none prose-headings:text-stone-900 prose-p:text-stone-800 prose-li:text-stone-800 prose-strong:text-stone-900 prose-a:text-stone-900"
+                dangerouslySetInnerHTML={{ __html: normalizeImages(item.body) }}
+              />
+            </div>
+          </DetailList>
+        ) : null}
 
         <DetailList icon={config.icon} title="Meer informatie">
           <div className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-4 shadow-sm">

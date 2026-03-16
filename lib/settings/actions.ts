@@ -13,9 +13,12 @@ import {
   type GeneralSettings,
 } from "@/lib/settings/types";
 import {
+  getCatalogItemById,
+  replaceCatalogItem,
   DEFAULT_SHOP_CATALOG_SETTINGS,
   normalizeShopCatalogSettings,
   SHOP_CATALOG_SETTINGS_KEY,
+  type CatalogItem,
   type ShopCatalogSettings,
 } from "@/lib/shop/catalog";
 import {
@@ -252,8 +255,37 @@ export async function saveShopCatalogSettings(
     },
   });
 
+  revalidatePath("/admin/shop");
   revalidatePath("/admin/settings/shop");
   revalidatePath("/shop", "layout");
+}
+
+export async function saveShopCatalogItem(
+  itemId: string,
+  item: CatalogItem,
+  adminId?: string
+) {
+  const current = await getShopCatalogSettings();
+  const currentItem = getCatalogItemById(current, itemId);
+
+  if (!currentItem) {
+    throw new Error("Shop-item niet gevonden.");
+  }
+
+  const normalizedItem: CatalogItem = {
+    ...currentItem,
+    ...item,
+    id: currentItem.id,
+    category: currentItem.category,
+    palette: currentItem.palette,
+  };
+
+  const nextSettings = replaceCatalogItem(current, itemId, normalizedItem);
+
+  await saveShopCatalogSettings(nextSettings, adminId);
+
+  revalidatePath(`/admin/shop/${itemId}`);
+  revalidatePath(`/shop/${normalizedItem.category}/${normalizedItem.id}`);
 }
 
 export async function getCustomizerSettings(): Promise<CustomizerSettings> {

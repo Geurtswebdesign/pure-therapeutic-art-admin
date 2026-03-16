@@ -15,9 +15,15 @@ export default function AdminSidebar({ language = "nl" }: { language?: string })
   const t = getAdminMessages(resolveUiLanguage(language));
   const adminNav = getAdminNav(language);
 
-  function hrefMatches(href: string) {
+  function hrefMatches(href: string, includeDescendants = false) {
     const [targetPath, queryString] = href.split("?");
-    if (pathname !== targetPath) return false;
+    const pathMatches =
+      pathname === targetPath ||
+      (includeDescendants &&
+        !queryString &&
+        pathname.startsWith(`${targetPath}/`));
+
+    if (!pathMatches) return false;
     if (!queryString) return true;
 
     const targetParams = new URLSearchParams(queryString);
@@ -51,7 +57,7 @@ export default function AdminSidebar({ language = "nl" }: { language?: string })
              Simpel menu-item
              ====================== */
           if (item.href) {
-            const active = hrefMatches(item.href);
+            const active = hrefMatches(item.href, true);
 
             return (
               <Link
@@ -73,8 +79,8 @@ export default function AdminSidebar({ language = "nl" }: { language?: string })
              Menu met submenu
              ====================== */
           const isOpen = openMenu === item.label;
-          const isActive = (item.children ?? []).some((c) =>
-            pathname.startsWith(c.href)
+          const isActive = (item.children ?? []).some((child) =>
+            hrefMatches(child.href, true)
           );
 
           return (

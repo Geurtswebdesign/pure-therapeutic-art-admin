@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight, Download, ExternalLink } from "lucide-react";
@@ -161,19 +162,14 @@ export function SectionHeader({
 }) {
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 text-[#6b5e50]">
-        <Icon size={18} strokeWidth={1.8} />
-        <span className="text-xs font-medium uppercase tracking-[0.24em]">
-          Shop
-        </span>
-      </div>
-      <div className="flex items-end justify-between gap-4">
+      <div className="flex items-end gap-4">
+        <Icon size={28} strokeWidth={1.8} />
         <h2 className="font-serif text-[2.05rem] leading-none text-stone-950">
           {title}
         </h2>
         <Link
           href={href}
-          className="hidden items-center gap-1 text-xs font-medium text-[#7f5b4a] sm:inline-flex"
+          className="ml-auto hidden items-center justify-end gap-1 text-right text-xs font-medium text-[#7f5b4a] sm:inline-flex"
         >
           Bekijk alle opties
           <ArrowRight size={14} strokeWidth={1.8} />
@@ -185,10 +181,10 @@ export function SectionHeader({
 
 export function SectionFooterLink({ href }: { href: string }) {
   return (
-    <div className="flex justify-end sm:hidden">
+    <div className="flex w-full justify-end sm:hidden">
       <Link
         href={href}
-        className="inline-flex items-center gap-1 text-sm text-[#7f5b4a]"
+        className="ml-auto inline-flex items-center justify-end gap-1 text-right text-sm text-[#7f5b4a]"
       >
         Bekijk alle opties
         <ArrowRight size={16} strokeWidth={1.8} />
@@ -198,6 +194,21 @@ export function SectionFooterLink({ href }: { href: string }) {
 }
 
 function Artwork({ item }: { item: CatalogItem }) {
+  if (item.imageUrl) {
+    return (
+      <div className="relative h-full overflow-hidden rounded-[1.2rem] bg-white">
+        <Image
+          src={item.imageUrl}
+          alt={item.imageAlt || item.title}
+          fill
+          unoptimized
+          className="object-cover"
+          sizes="(max-width: 768px) 45vw, 240px"
+        />
+      </div>
+    );
+  }
+
   if (item.palette === "rain") {
     const drops = [
       "#4db6d0",
@@ -392,11 +403,11 @@ export function ProductPreviewCard({ item }: { item: CatalogItem }) {
           </div>
         ) : null}
       </div>
+      <div className="min-h-[2.5rem] text-center text-[12px] font-semibold leading-5 text-stone-950">
+        {item.title}
+      </div>
       <div className="text-center text-sm font-medium text-stone-900">
         {isInDevelopment ? "Nog niet beschikbaar" : formatCatalogPrice(item)}
-      </div>
-      <div className="text-center text-[11px] font-medium text-[#8a5f49]">
-        Meer info
       </div>
     </article>
   );
