@@ -24,6 +24,16 @@ export type TherapistProfileData = {
   intake_note?: string | null;
 };
 
+export type TherapistSubscriptionPreference = {
+  plan?: "monthly" | "yearly" | null;
+  pack_id?: string | null;
+  pack_slug?: string | null;
+  pack_name?: string | null;
+  amount_cents?: number | null;
+  currency?: string | null;
+  selected_at?: string | null;
+};
+
 export type AppProfileData = {
   first_name?: string | null;
   last_name?: string | null;
@@ -34,6 +44,7 @@ export type AppProfileData = {
   profile_image?: string | null;
   account_type?: UserAccountType | null;
   therapist_profile?: TherapistProfileData | null;
+  therapist_subscription_preference?: TherapistSubscriptionPreference | null;
 };
 
 function asObject(value: unknown): Record<string, unknown> | null {

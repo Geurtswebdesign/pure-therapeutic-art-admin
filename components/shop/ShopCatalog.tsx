@@ -350,15 +350,29 @@ export function ProductInfoHero({ item }: { item: CatalogItem }) {
   );
 }
 
-export function ProductPurchaseCard({ item }: { item: CatalogItem }) {
+export function ProductPurchaseCard({
+  item,
+  showTitle = true,
+  className = "",
+}: {
+  item: CatalogItem;
+  showTitle?: boolean;
+  className?: string;
+}) {
   const isInDevelopment = isCatalogItemInDevelopment(item);
 
   return (
-    <article className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-4 shadow-sm">
-      <h3 className="font-serif text-[1.45rem] leading-none text-stone-950">
-        {item.purchaseTitle}
-      </h3>
-      <p className="mt-3 text-sm leading-6 text-[#6b5d50]">
+    <article
+      className={`rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-4 shadow-sm ${className}`.trim()}
+    >
+      {showTitle ? (
+        <h3 className="font-serif text-[1.45rem] leading-none text-stone-950">
+          {item.purchaseTitle}
+        </h3>
+      ) : null}
+      <p
+        className={`${showTitle ? "mt-3 " : ""}text-sm leading-6 text-[#6b5d50]`}
+      >
         {isInDevelopment
           ? item.developmentPurchaseText
           : item.purchaseDescription}

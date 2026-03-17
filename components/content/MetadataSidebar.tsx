@@ -161,7 +161,7 @@ export default function MetadataSidebar({
   }
 
   return (
-    <aside className="w-96 border-l bg-gray-50 p-4 space-y-4">
+    <aside className="min-w-0 space-y-4 border-t bg-gray-50 p-4 xl:border-l xl:border-t-0">
       {renderBox(
         "publish",
         t.publish,

@@ -5,9 +5,5 @@ export default function ContentLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="flex h-full">
-      {children}
-    </div>
-  );
+  return <div className="min-h-full w-full">{children}</div>;
 }

@@ -10,6 +10,10 @@ import { sendMail } from "@/lib/mail/sendMail";
 import { logServerEvent } from "@/lib/analytics/server";
 import { isAdminRole } from "@/lib/users/accountTypes";
 import type { UserAccountType } from "@/lib/users/accountTypes";
+import {
+  getActiveTherapistSubscriptionPack,
+} from "@/lib/users/therapistSubscriptionPacks";
+import type { TherapistSubscriptionPlan } from "@/lib/users/entitlements";
 
 async function maybeSendSecurityAlert(input: {
   email: string;
@@ -89,6 +93,12 @@ function resolveFrontendAccountType(value: string): UserAccountType {
   return value === "therapist" ? "therapist" : "client";
 }
 
+function resolveTherapistSubscriptionPlan(
+  value: string
+): TherapistSubscriptionPlan {
+  return value === "yearly" ? "yearly" : "monthly";
+}
+
 export async function registerAccount(formData: FormData) {
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim();
@@ -98,6 +108,9 @@ export async function registerAccount(formData: FormData) {
   const accountType = resolveFrontendAccountType(
     String(formData.get("account_type") ?? "client").trim()
   );
+  const therapistPlan = resolveTherapistSubscriptionPlan(
+    String(formData.get("therapist_plan") ?? "monthly").trim()
+  );
   const displayName = [firstName, lastName].filter(Boolean).join(" ").trim();
   const safeNext =
     requestedNext.startsWith("/") && !requestedNext.startsWith("//")
@@ -106,6 +119,15 @@ export async function registerAccount(formData: FormData) {
 
   if (!firstName || !lastName || !email || password.length < 8) {
     redirect("/login?mode=register&error=register");
+  }
+
+  const selectedTherapistPack =
+    accountType === "therapist"
+      ? await getActiveTherapistSubscriptionPack(therapistPlan)
+      : null;
+
+  if (accountType === "therapist" && !selectedTherapistPack) {
+    redirect("/login?mode=register&error=therapist-pack");
   }
 
   const cookieStore = await cookies();
@@ -130,7 +152,10 @@ export async function registerAccount(formData: FormData) {
   await logServerEvent({
     eventName: "register_submit",
     eventCategory: "auth",
-    eventLabel: accountType,
+    eventLabel:
+      accountType === "therapist"
+        ? `therapist:${therapistPlan}`
+        : accountType,
     path: "/login",
   });
 
@@ -164,6 +189,18 @@ export async function registerAccount(formData: FormData) {
         first_name: firstName,
         last_name: lastName,
         account_type: accountType,
+        therapist_subscription_preference:
+          accountType === "therapist" && selectedTherapistPack
+            ? {
+                plan: selectedTherapistPack.plan,
+                pack_id: selectedTherapistPack.id,
+                pack_slug: selectedTherapistPack.slug,
+                pack_name: selectedTherapistPack.name,
+                amount_cents: selectedTherapistPack.price_cents,
+                currency: selectedTherapistPack.currency,
+                selected_at: new Date().toISOString(),
+              }
+            : null,
       },
     },
     { onConflict: "user_id" }
@@ -191,7 +228,10 @@ export async function registerAccount(formData: FormData) {
   await logServerEvent({
     eventName: "register_success",
     eventCategory: "auth",
-    eventLabel: accountType,
+    eventLabel:
+      accountType === "therapist"
+        ? `therapist:${therapistPlan}`
+        : accountType,
     path: "/login",
   });
 

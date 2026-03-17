@@ -185,7 +185,7 @@ export default function ContentEditorClient({
   };
 
   return (
-    <div className="flex">
+    <div className="grid min-w-0 w-full xl:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
       <EditorCanvas
         contentItemId={item.id}
         title={draft.title}

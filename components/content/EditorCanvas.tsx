@@ -15,7 +15,7 @@ export default function EditorCanvas({
   onChange,
 }: Props) {
   return (
-    <main className="flex-1 p-10">
+    <main className="min-w-0 px-6 py-8 xl:px-10 xl:py-10">
       <TitleField value={title} onChange={(v) => onChange({ title: v })} />
 
       <ClassicTextEditor
