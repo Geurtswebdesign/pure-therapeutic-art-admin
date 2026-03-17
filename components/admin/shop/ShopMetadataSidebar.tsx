@@ -14,6 +14,18 @@ type ShopEditorDraft = {
   body: string;
   imageUrl: string;
   imageAlt: string;
+  introTitle: string;
+  introText: string;
+  descriptionTitle: string;
+  detailsTitle: string;
+  purchaseTitle: string;
+  purchaseDescription: string;
+  purchaseButtonLabel: string;
+  developmentStateLabel: string;
+  unavailablePriceLabel: string;
+  developmentCalloutLabel: string;
+  developmentPurchaseText: string;
+  developmentNotice: string;
   description: string;
   details: string[];
   format: string;
@@ -27,8 +39,7 @@ type BoxKey =
   | "publication"
   | "permalink"
   | "featured"
-  | "summary"
-  | "details"
+  | "labels"
   | "shop";
 
 type Props = {
@@ -41,17 +52,6 @@ type Props = {
   onDraftChange: (patch: Partial<ShopEditorDraft>) => void;
   onSaveAll: () => Promise<void>;
 };
-
-function detailsToText(details: string[]) {
-  return details.join("\n");
-}
-
-function detailsFromText(value: string) {
-  return value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
 
 function formatPrice(value: number) {
   return new Intl.NumberFormat("nl-NL", {
@@ -77,6 +77,8 @@ export default function ShopMetadataSidebar({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const canSave = dirty && !saving;
   const publicPath = getCatalogItemPath(item);
+  const isInDevelopment = draft.status === "in_development";
+  const isPubliclyVisible = draft.status !== "concept";
 
   async function handlePickFeatured(ids: string[]) {
     const pickedId = ids[0];
@@ -161,20 +163,26 @@ export default function ShopMetadataSidebar({
               {saving ? "Opslaan..." : "Wijzigingen opslaan"}
             </button>
 
-            <a
-              href={publicPath}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded border px-3 py-2 text-sm hover:bg-gray-100"
-            >
-              Bekijk live
-            </a>
+            {isPubliclyVisible ? (
+              <a
+                href={publicPath}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded border px-3 py-2 text-sm hover:bg-gray-100"
+              >
+                Bekijk live
+              </a>
+            ) : (
+              <div className="rounded border border-dashed px-3 py-2 text-sm text-gray-500">
+                Concept is niet zichtbaar in de shop
+              </div>
+            )}
           </div>
 
           <div className="space-y-1">
             <span className="block text-xs text-gray-600">Status</span>
             <select
-              value={draft.status ?? "live"}
+              value={draft.status ?? "concept"}
               onChange={(event) =>
                 onDraftChange({
                   status: event.target.value as CatalogItem["status"],
@@ -182,10 +190,18 @@ export default function ShopMetadataSidebar({
               }
               className="w-full rounded border px-2 py-1"
             >
+              <option value="concept">Concept</option>
               <option value="live">Live</option>
               <option value="in_development">In ontwikkeling</option>
             </select>
           </div>
+
+          {!isPubliclyVisible ? (
+            <p className="text-xs leading-5 text-gray-500">
+              Concept-items blijven alleen zichtbaar in de admin en worden niet
+              getoond in de shop.
+            </p>
+          ) : null}
 
           <div className="space-y-1 text-xs text-gray-600">
             <div>Categorie: {item.category}</div>
@@ -329,38 +345,103 @@ export default function ShopMetadataSidebar({
       )}
 
       {renderBox(
-        "summary",
-        "Samenvatting",
-        <label className="block space-y-1">
-          <span className="block text-xs text-gray-600">
-            Korte intro op overzicht en productpagina
-          </span>
-          <textarea
-            value={draft.description}
-            onChange={(event) =>
-              onDraftChange({ description: event.target.value })
-            }
-            className="min-h-[140px] w-full rounded border px-2 py-2"
-          />
-        </label>
-      )}
+        "labels",
+        "Extra labels",
+        <div className="space-y-3">
+          <label className="block space-y-1">
+            <span className="block text-xs text-gray-600">Label koopknop</span>
+            <input
+              value={draft.purchaseButtonLabel}
+              onChange={(event) =>
+                onDraftChange({ purchaseButtonLabel: event.target.value })
+              }
+              className="w-full rounded border px-2 py-1"
+            />
+          </label>
 
-      {renderBox(
-        "details",
-        "Informatiepunten",
-        <div className="space-y-2">
-          <textarea
-            value={detailsToText(draft.details)}
-            onChange={(event) =>
-              onDraftChange({
-                details: detailsFromText(event.target.value),
-              })
-            }
-            className="min-h-[180px] w-full rounded border px-2 py-2"
-          />
-          <p className="text-xs text-gray-600">
-            Zet ieder infopunt op een nieuwe regel.
-          </p>
+          {isInDevelopment ? (
+            <>
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="block space-y-1">
+                  <span className="block text-xs text-gray-600">
+                    Label status ontwikkeling
+                  </span>
+                  <input
+                    value={draft.developmentStateLabel}
+                    onChange={(event) =>
+                      onDraftChange({
+                        developmentStateLabel: event.target.value,
+                      })
+                    }
+                    className="w-full rounded border px-2 py-1"
+                  />
+                </label>
+
+                <label className="block space-y-1">
+                  <span className="block text-xs text-gray-600">
+                    Label niet beschikbaar
+                  </span>
+                  <input
+                    value={draft.unavailablePriceLabel}
+                    onChange={(event) =>
+                      onDraftChange({
+                        unavailablePriceLabel: event.target.value,
+                      })
+                    }
+                    className="w-full rounded border px-2 py-1"
+                  />
+                </label>
+              </div>
+
+              <label className="block space-y-1">
+                <span className="block text-xs text-gray-600">
+                  Label ontwikkeling callout
+                </span>
+                <input
+                  value={draft.developmentCalloutLabel}
+                  onChange={(event) =>
+                    onDraftChange({
+                      developmentCalloutLabel: event.target.value,
+                    })
+                  }
+                  className="w-full rounded border px-2 py-1"
+                />
+              </label>
+
+              <label className="block space-y-1">
+                <span className="block text-xs text-gray-600">
+                  Tekst ontwikkeling bestelblok
+                </span>
+                <textarea
+                  value={draft.developmentPurchaseText}
+                  onChange={(event) =>
+                    onDraftChange({
+                      developmentPurchaseText: event.target.value,
+                    })
+                  }
+                  className="min-h-[100px] w-full rounded border px-2 py-2"
+                />
+              </label>
+
+              <label className="block space-y-1">
+                <span className="block text-xs text-gray-600">
+                  Melding onderaan bij ontwikkeling
+                </span>
+                <textarea
+                  value={draft.developmentNotice}
+                  onChange={(event) =>
+                    onDraftChange({ developmentNotice: event.target.value })
+                  }
+                  className="min-h-[120px] w-full rounded border px-2 py-2"
+                />
+              </label>
+            </>
+          ) : (
+            <p className="text-xs leading-5 text-gray-500">
+              Ontwikkelteksten en meldingen worden pas gebruikt als de status op
+              In ontwikkeling staat.
+            </p>
+          )}
         </div>
       )}
 

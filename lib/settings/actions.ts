@@ -277,7 +277,6 @@ export async function saveShopCatalogItem(
     ...item,
     id: currentItem.id,
     category: currentItem.category,
-    palette: currentItem.palette,
   };
 
   const nextSettings = replaceCatalogItem(current, itemId, normalizedItem);

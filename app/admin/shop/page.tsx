@@ -1,7 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getShopCatalogSettings } from "@/lib/settings/actions";
-import { getAllCatalogItems, getCatalogItemPath } from "@/lib/shop/catalog";
+import {
+  getAllCatalogItems,
+  getCatalogItemPath,
+  getCatalogStatusLabel,
+  isCatalogItemPublic,
+} from "@/lib/shop/catalog";
 
 function formatPrice(value: number) {
   return new Intl.NumberFormat("nl-NL", {
@@ -74,7 +79,7 @@ export default async function AdminShopPage() {
                 </td>
                 <td className="px-4 py-4 text-stone-700">{item.category}</td>
                 <td className="px-4 py-4 text-stone-700">
-                  {item.status === "in_development" ? "In ontwikkeling" : "Live"}
+                  {getCatalogStatusLabel(item.status)}
                 </td>
                 <td className="px-4 py-4 text-stone-700">
                   {formatPrice(item.price)}
@@ -90,14 +95,18 @@ export default async function AdminShopPage() {
                     >
                       Bewerken
                     </Link>
-                    <Link
-                      href={getCatalogItemPath(item)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-stone-600 hover:underline"
-                    >
-                      Bekijk
-                    </Link>
+                    {isCatalogItemPublic(item) ? (
+                      <Link
+                        href={getCatalogItemPath(item)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-stone-600 hover:underline"
+                      >
+                        Bekijk
+                      </Link>
+                    ) : (
+                      <span className="text-stone-400">Niet zichtbaar</span>
+                    )}
                   </div>
                 </td>
               </tr>

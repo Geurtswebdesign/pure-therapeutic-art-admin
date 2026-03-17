@@ -9,7 +9,10 @@ import {
   SectionHeader,
   YearSubscriptionPreviewCard,
 } from "@/components/shop/ShopCatalog";
-import { getCatalogItemsByCategory, getPublicShopCatalog } from "@/lib/shop/catalog";
+import {
+  getPublicCatalogItemsByCategory,
+  getPublicShopCatalog,
+} from "@/lib/shop/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +20,8 @@ export default async function ShopPage() {
   const { creditPacks, yearSubscriptionPack } =
     await getAssignmentCreditShopData();
   const catalog = await getPublicShopCatalog();
-  const books = getCatalogItemsByCategory(catalog, "boeken");
-  const games = getCatalogItemsByCategory(catalog, "spellen");
+  const books = getPublicCatalogItemsByCategory(catalog, "boeken");
+  const games = getPublicCatalogItemsByCategory(catalog, "spellen");
   const previewCreditPacks = creditPacks.slice(0, 3);
 
   return (

@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { ArrowRight, Download, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink, Image as ImageIcon } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isTherapistSubscriptionPackSlug } from "@/lib/users/entitlements";
 import {
@@ -209,165 +209,16 @@ function Artwork({ item }: { item: CatalogItem }) {
     );
   }
 
-  if (item.palette === "rain") {
-    const drops = [
-      "#4db6d0",
-      "#f2b95f",
-      "#d9705d",
-      "#87a677",
-      "#6d87c9",
-      "#d483bc",
-      "#ebb24a",
-      "#50b4a6",
-    ];
-
-    return (
-      <div className="relative h-full overflow-hidden rounded-[1.2rem] bg-[linear-gradient(180deg,#bfe7f4_0%,#dff4ff_100%)] p-2">
-        <div className="rounded-full bg-[#5969a2] px-2 py-1 text-center text-[9px] font-semibold uppercase tracking-[0.14em] text-white">
-          {item.title}
-        </div>
-        <div className="mt-2 grid grid-cols-4 gap-x-1 gap-y-2">
-          {Array.from({ length: 12 }).map((_, index) => (
-            <span
-              key={`drop-${index}`}
-              className="mx-auto block h-7 w-4 rounded-full"
-              style={{
-                backgroundColor: drops[index % drops.length],
-                transform: `rotate(${index % 2 === 0 ? -18 : 16}deg)`,
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (item.palette === "hearts") {
-    const blocks = [
-      "#f4cc59",
-      "#f4cc59",
-      "#f0f1f5",
-      "#f0f1f5",
-      "#8ea2d8",
-      "#5d5464",
-      "#77ac97",
-      "#e4c56f",
-      "#f0f1f5",
-      "#5b5c71",
-      "#8ea2d8",
-      "#f0f1f5",
-    ];
-
-    return (
-      <div className="relative h-full overflow-hidden rounded-[1.2rem] bg-[linear-gradient(180deg,#d9dadc_0%,#f0efef_100%)] p-2">
-        <div className="rounded-full bg-white/90 px-2 py-1 text-center text-[9px] font-semibold uppercase tracking-[0.14em] text-stone-700">
-          {item.title}
-        </div>
-        <div className="mt-2 grid grid-cols-4 gap-1">
-          {blocks.map((color, index) => (
-            <span
-              key={`heart-${index}`}
-              className="block aspect-square rounded-[0.45rem] border border-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]"
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (item.palette === "moods") {
-    const blocks = [
-      "#7cb14e",
-      "#6e5db9",
-      "#f3d44d",
-      "#f39453",
-      "#4f90dd",
-      "#e45858",
-      "#8f7bd8",
-      "#72c59a",
-      "#f0d9a4",
-    ];
-
-    return (
-      <div className="relative h-full overflow-hidden rounded-[1.2rem] bg-[linear-gradient(180deg,#cfc4f4_0%,#efe9ff_100%)] p-2">
-        <div className="rounded-full bg-[#8d7fd2] px-2 py-1 text-center text-[9px] font-semibold uppercase tracking-[0.14em] text-white">
-          {item.title}
-        </div>
-        <div className="mt-2 grid grid-cols-3 gap-1">
-          {blocks.map((color, index) => (
-            <span
-              key={`mood-${index}`}
-              className="block aspect-square rounded-[0.5rem] border border-white/70"
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (item.palette === "cards") {
-    return (
-      <div className="relative h-full overflow-hidden rounded-[1.2rem] bg-[linear-gradient(180deg,#f6efe9_0%,#fff7f3_100%)] p-2">
-        <div className="mx-auto h-7 w-24 rounded-md border border-[#de5f54] bg-white shadow-sm" />
-        <div className="mt-3 flex items-end justify-center gap-1">
-          {[0, 1, 2, 3].map((index) => (
-            <span
-              key={`card-stack-${index}`}
-              className="block h-10 w-7 rounded-[0.45rem] border border-[#d9c7b4] bg-white"
-              style={{
-                transform: `rotate(${(index - 1.5) * 8}deg) translateY(${
-                  index % 2 === 0 ? 0 : 2
-                }px)`,
-              }}
-            />
-          ))}
-        </div>
-        <div className="mt-2 grid grid-cols-4 gap-1">
-          {["#f3b360", "#8dbd9a", "#7b93d9", "#e5858d"].map((color, index) => (
-            <span
-              key={`card-pill-${index}`}
-              className="block h-4 rounded-full"
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (item.palette === "board") {
-    return (
-      <div className="relative h-full overflow-hidden rounded-[1.2rem] bg-[linear-gradient(180deg,#d8e4fb_0%,#eef5ff_100%)] p-2">
-        <div className="rounded-[0.85rem] bg-[linear-gradient(180deg,#316fc8_0%,#1a4e99_100%)] px-2 py-3 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-white shadow-[0_12px_24px_rgba(49,111,200,0.28)]">
-          {item.title}
-        </div>
-        <div className="mt-2 flex justify-center gap-1">
-          {[0, 1, 2].map((index) => (
-            <span
-              key={`board-card-${index}`}
-              className="block h-8 w-6 rounded-[0.45rem] border border-[#bad0ef] bg-white"
-              style={{
-                transform: `rotate(${(index - 1) * 10}deg)`,
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="relative h-full overflow-hidden rounded-[1.2rem] bg-[linear-gradient(180deg,#f8f6f0_0%,#ffffff_100%)] p-2">
-      <div className="rounded-[1rem] border border-dashed border-[#d8ccbe] bg-white/90 px-2 py-3 text-center shadow-sm">
-        <Download
+      <div className="rounded-[1rem] border border-dashed border-[#d8ccbe] bg-white/90 px-2 py-4 text-center shadow-sm">
+        <ImageIcon
           className="mx-auto text-[#806250]"
           size={22}
           strokeWidth={1.8}
         />
         <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7a5c4d]">
-          Digitale exemplaar
+          Geen afbeelding gekoppeld
         </div>
       </div>
       <div className="mt-2 grid grid-cols-3 gap-1">
@@ -386,9 +237,6 @@ export function ProductPreviewCard({ item }: { item: CatalogItem }) {
   const isInDevelopment = isCatalogItemInDevelopment(item);
   const content = (
     <article className="space-y-2">
-      <div className="text-center text-[11px] font-semibold tracking-[0.02em] text-stone-800">
-        {item.tag}
-      </div>
       <div
         className={`relative aspect-[0.86] rounded-[1.35rem] border border-[#e4d7c8] bg-white p-2 shadow-[0_12px_24px_rgba(53,37,26,0.07)] transition ${
           isInDevelopment
@@ -399,7 +247,7 @@ export function ProductPreviewCard({ item }: { item: CatalogItem }) {
         <Artwork item={item} />
         {isInDevelopment ? (
           <div className="absolute inset-x-2 top-2 rounded-full border border-[#ead6c6] bg-white/95 px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a5f49]">
-            In ontwikkeling
+            {item.developmentStateLabel}
           </div>
         ) : null}
       </div>
@@ -407,7 +255,7 @@ export function ProductPreviewCard({ item }: { item: CatalogItem }) {
         {item.title}
       </div>
       <div className="text-center text-sm font-medium text-stone-900">
-        {isInDevelopment ? "Nog niet beschikbaar" : formatCatalogPrice(item)}
+        {isInDevelopment ? item.unavailablePriceLabel : formatCatalogPrice(item)}
       </div>
     </article>
   );
@@ -431,7 +279,7 @@ export function ProductDetailCard({ item }: { item: CatalogItem }) {
         <Artwork item={item} />
         {isInDevelopment ? (
           <div className="absolute inset-x-1.5 top-1.5 rounded-full border border-[#ead6c6] bg-white/95 px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a5f49]">
-            In ontwikkeling
+            {item.developmentStateLabel}
           </div>
         ) : null}
       </div>
@@ -447,7 +295,7 @@ export function ProductDetailCard({ item }: { item: CatalogItem }) {
             </h4>
           </div>
           <span className="shrink-0 rounded-full border border-[#ead6c6] bg-[#fcf6f1] px-2.5 py-1 text-xs font-medium text-[#8a5f49]">
-            {isInDevelopment ? "In ontwikkeling" : formatCatalogPrice(item)}
+            {isInDevelopment ? item.developmentStateLabel : formatCatalogPrice(item)}
           </span>
         </div>
         <p className="text-xs leading-5 text-[#6f6154]">{item.description}</p>
@@ -461,7 +309,7 @@ export function ProductDetailCard({ item }: { item: CatalogItem }) {
           </Link>
           {isInDevelopment ? (
             <div className="inline-flex rounded-full border border-[#decfbe] bg-[#fcf6f1] px-3 py-1.5 text-xs font-medium text-[#8a5f49]">
-              Digitale versie is in ontwikkeling
+              {item.developmentCalloutLabel}
             </div>
           ) : null}
         </div>
@@ -480,21 +328,12 @@ export function ProductInfoHero({ item }: { item: CatalogItem }) {
           <Artwork item={item} />
           {isInDevelopment ? (
             <div className="absolute inset-x-2 top-2 rounded-full border border-[#ead6c6] bg-white/95 px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a5f49]">
-              In ontwikkeling
+              {item.developmentStateLabel}
             </div>
           ) : null}
         </div>
 
         <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-[#ead6c6] bg-white/85 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8a5f49]">
-              {item.format}
-            </span>
-            <span className="rounded-full border border-[#ead6c6] bg-white/85 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8a5f49]">
-              {item.tag}
-            </span>
-          </div>
-
           <div className="space-y-2">
             <h2 className="font-serif text-[2rem] leading-none text-stone-950">
               {item.title}
@@ -503,7 +342,7 @@ export function ProductInfoHero({ item }: { item: CatalogItem }) {
           </div>
 
           <div className="inline-flex rounded-full border border-[#ead6c6] bg-[#fcf6f1] px-3 py-1.5 text-sm font-medium text-[#8a5f49]">
-            {isInDevelopment ? "In ontwikkeling" : formatCatalogPrice(item)}
+            {isInDevelopment ? item.developmentStateLabel : formatCatalogPrice(item)}
           </div>
         </div>
       </div>
@@ -517,12 +356,12 @@ export function ProductPurchaseCard({ item }: { item: CatalogItem }) {
   return (
     <article className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-4 shadow-sm">
       <h3 className="font-serif text-[1.45rem] leading-none text-stone-950">
-        Bestellen
+        {item.purchaseTitle}
       </h3>
       <p className="mt-3 text-sm leading-6 text-[#6b5d50]">
         {isInDevelopment
-          ? "Deze digitale optie is nog niet live. Je kunt hem nu nog niet bestellen."
-          : "Wanneer je doorgaat, open je de productpagina van De Troostboom om het product daar verder te bekijken en te kopen."}
+          ? item.developmentPurchaseText
+          : item.purchaseDescription}
       </p>
       <div className="mt-4">
         {item.href && !isInDevelopment ? (
@@ -532,12 +371,12 @@ export function ProductPurchaseCard({ item }: { item: CatalogItem }) {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-full border border-[#9e3a3a] bg-[#b64040] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#9e3a3a]"
           >
-            Kopen via De Troostboom
+            {item.purchaseButtonLabel}
             <ExternalLink size={16} strokeWidth={1.8} />
           </a>
         ) : (
           <div className="inline-flex rounded-full border border-[#decfbe] bg-[#fcf6f1] px-4 py-2 text-sm font-medium text-[#8a5f49]">
-            Deze optie is in ontwikkeling
+            {item.developmentCalloutLabel}
           </div>
         )}
       </div>

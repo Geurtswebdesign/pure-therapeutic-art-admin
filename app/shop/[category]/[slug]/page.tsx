@@ -9,7 +9,7 @@ import {
 } from "@/components/shop/ShopCatalog";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
 import {
-  getCatalogItem,
+  getPublicCatalogItem,
   getPublicShopCatalog,
   isCatalogItemInDevelopment,
   type CatalogCategory,
@@ -17,11 +17,9 @@ import {
 
 const PRODUCT_CATEGORY_CONFIG = {
   boeken: {
-    title: "Boekinformatie",
     icon: BookOpenText,
   },
   spellen: {
-    title: "Spelinformatie",
     icon: Puzzle,
   },
 } as const;
@@ -39,7 +37,7 @@ export default async function ShopProductPage({
   if (!isProductCategory(category)) notFound();
 
   const catalog = await getPublicShopCatalog();
-  const item = getCatalogItem(catalog, category, slug);
+  const item = getPublicCatalogItem(catalog, category, slug);
   if (!item) notFound();
 
   const config = PRODUCT_CATEGORY_CONFIG[category];
@@ -59,19 +57,18 @@ export default async function ShopProductPage({
           <div className="flex items-center gap-2 text-[#6f5949]">
             <config.icon size={18} strokeWidth={1.8} />
             <span className="text-xs font-medium uppercase tracking-[0.22em]">
-              {config.title}
+              {item.introTitle}
             </span>
           </div>
           <p className="mt-3 text-sm leading-6 text-[#6b5d50]">
-            Bekijk eerst de productinformatie in de app. Daarna kun je
-            desgewenst doorklikken om het product via De Troostboom te kopen.
+            {item.introText}
           </p>
         </div>
 
         <ProductInfoHero item={item} />
 
         {item.body ? (
-          <DetailList icon={config.icon} title="Beschrijving">
+          <DetailList icon={config.icon} title={item.descriptionTitle}>
             <div className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-5 shadow-sm">
               <div
                 className="prose prose-sm max-w-none prose-headings:text-stone-900 prose-p:text-stone-800 prose-li:text-stone-800 prose-strong:text-stone-900 prose-a:text-stone-900"
@@ -81,7 +78,7 @@ export default async function ShopProductPage({
           </DetailList>
         ) : null}
 
-        <DetailList icon={config.icon} title="Meer informatie">
+        <DetailList icon={config.icon} title={item.detailsTitle}>
           <div className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-4 shadow-sm">
             <ul className="space-y-3 text-sm leading-6 text-[#6b5d50]">
               {item.details.map((detail) => (
@@ -96,15 +93,13 @@ export default async function ShopProductPage({
           </div>
         </DetailList>
 
-        <DetailList icon={config.icon} title="Volgende stap">
+        <DetailList icon={config.icon} title={item.purchaseTitle}>
           <ProductPurchaseCard item={item} />
         </DetailList>
 
         {isInDevelopment ? (
           <div className="rounded-[1.4rem] border border-dashed border-[#dccdbf] bg-white/70 p-4 text-sm leading-6 text-stone-600">
-            Deze optie blijft alvast zichtbaar in de shop, maar is nog niet te
-            bestellen. Zodra de digitale versie klaar is, kan hier direct een
-            koopknop aan gekoppeld worden.
+            {item.developmentNotice}
           </div>
         ) : null}
       </section>

@@ -1,5 +1,5 @@
 export type CatalogCategory = "boeken" | "spellen";
-export type CatalogStatus = "live" | "in_development";
+export type CatalogStatus = "concept" | "live" | "in_development";
 
 export type CatalogItem = {
   id: string;
@@ -8,6 +8,18 @@ export type CatalogItem = {
   body: string;
   imageUrl?: string;
   imageAlt?: string;
+  introTitle: string;
+  introText: string;
+  descriptionTitle: string;
+  detailsTitle: string;
+  purchaseTitle: string;
+  purchaseDescription: string;
+  purchaseButtonLabel: string;
+  developmentStateLabel: string;
+  unavailablePriceLabel: string;
+  developmentCalloutLabel: string;
+  developmentPurchaseText: string;
+  developmentNotice: string;
   format: string;
   price: number;
   description: string;
@@ -15,7 +27,6 @@ export type CatalogItem = {
   tag: string;
   href?: string;
   status?: CatalogStatus;
-  palette: "rain" | "hearts" | "moods" | "cards" | "board" | "digital";
 };
 
 export type ShopCatalogSettings = {
@@ -24,6 +35,36 @@ export type ShopCatalogSettings = {
 };
 
 export const SHOP_CATALOG_SETTINGS_KEY = "shop_catalog";
+
+const COMMON_PRODUCT_TEXT_DEFAULTS = {
+  descriptionTitle: "Beschrijving",
+  detailsTitle: "Meer informatie",
+  purchaseTitle: "Bestellen",
+  purchaseDescription:
+    "Wanneer je doorgaat, open je de productpagina van De Troostboom om het product daar verder te bekijken en te kopen.",
+  purchaseButtonLabel: "Kopen via De Troostboom",
+  developmentStateLabel: "In ontwikkeling",
+  unavailablePriceLabel: "Nog niet beschikbaar",
+  developmentCalloutLabel: "Deze optie is in ontwikkeling",
+  developmentPurchaseText:
+    "Deze digitale optie is nog niet live. Je kunt hem nu nog niet bestellen.",
+  developmentNotice:
+    "Deze optie blijft alvast zichtbaar in de shop, maar is nog niet te bestellen. Zodra de digitale versie klaar is, kan hier direct een koopknop aan gekoppeld worden.",
+} as const;
+
+const BOOK_PRODUCT_TEXT_DEFAULTS = {
+  introTitle: "Boekinformatie",
+  introText:
+    "Bekijk eerst de productinformatie in de app. Daarna kun je desgewenst doorklikken om het product via De Troostboom te kopen.",
+  ...COMMON_PRODUCT_TEXT_DEFAULTS,
+} as const;
+
+const GAME_PRODUCT_TEXT_DEFAULTS = {
+  introTitle: "Spelinformatie",
+  introText:
+    "Bekijk eerst de productinformatie in de app. Daarna kun je desgewenst doorklikken om het product via De Troostboom te kopen.",
+  ...COMMON_PRODUCT_TEXT_DEFAULTS,
+} as const;
 
 export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
   books: [
@@ -35,6 +76,7 @@ export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
         "<p>Gekleurde tranen bundelt creatieve opdrachten en werkvormen die helpen om rouw en verlies zichtbaar en bespreekbaar te maken.</p><p>Het boek biedt een rustige ingang voor gesprekken, reflectie en beeldend werken, zowel individueel als in begeleiding.</p>",
       imageUrl: "",
       imageAlt: "Boekcover Gekleurde tranen",
+      ...BOOK_PRODUCT_TEXT_DEFAULTS,
       format: "Paperback",
       price: 29.95,
       description:
@@ -47,7 +89,6 @@ export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
       tag: "Paperback",
       href: "https://detroostboom.nl/product/gekleurde-tranen/",
       status: "live",
-      palette: "rain",
     },
     {
       id: "onzichtbaar-verdriet",
@@ -57,6 +98,7 @@ export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
         "<p>Onzichtbaar verdriet richt zich op vormen van verlies die vaak minder snel door de omgeving worden herkend.</p><p>Met toegankelijke werkvormen helpt het boek om taal en ruimte te geven aan verdriet dat moeilijk te benoemen is.</p>",
       imageUrl: "",
       imageAlt: "Boekcover Onzichtbaar verdriet",
+      ...BOOK_PRODUCT_TEXT_DEFAULTS,
       format: "Paperback",
       price: 29.95,
       description:
@@ -69,7 +111,6 @@ export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
       tag: "Paperback",
       href: "https://detroostboom.nl/product/onzichtbaar-verdriet/",
       status: "live",
-      palette: "hearts",
     },
     {
       id: "liefdevol-koesteren",
@@ -79,6 +120,7 @@ export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
         "<p>Liefdevol koesteren ondersteunt bij het bewaren van herinneringen en het vormgeven van wat waardevol blijft na verlies.</p><p>Het boek combineert creatieve oefeningen met troostrijke reflectie en praktische toepasbaarheid.</p>",
       imageUrl: "",
       imageAlt: "Boekcover Liefdevol koesteren",
+      ...BOOK_PRODUCT_TEXT_DEFAULTS,
       format: "Paperback",
       price: 29.95,
       description:
@@ -91,7 +133,6 @@ export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
       tag: "Paperback",
       href: "https://detroostboom.nl/product/liefdevol-koesteren-2/",
       status: "live",
-      palette: "moods",
     },
   ],
   games: [
@@ -103,6 +144,7 @@ export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
         "<p>Dit memospel maakt het makkelijker om spelenderwijs stil te staan bij emoties, herinneringen en contact rond verlies.</p><p>Door de laagdrempelige spelvorm ontstaat ruimte voor herkenning, gesprek en gezamenlijke aandacht.</p>",
       imageUrl: "",
       imageAlt: "Verpakking Vergeet-niet-me-verdrietjes",
+      ...GAME_PRODUCT_TEXT_DEFAULTS,
       format: "Memospel",
       price: 29.95,
       description:
@@ -115,7 +157,6 @@ export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
       tag: "Memospel",
       href: "https://detroostboom.nl/product/memospel-vergeet-niet-me-verdrietjes/",
       status: "live",
-      palette: "cards",
     },
     {
       id: "kwartetspel-niet-hier-wel-dichtbij",
@@ -125,6 +166,7 @@ export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
         "<p>Niet hier, wel dichtbij is een kwartetspel dat uitnodigt tot gesprek over gemis, verbondenheid en herinneren.</p><p>Het spel is geschikt voor thuis, in groepen of als werkvorm binnen begeleiding en therapie.</p>",
       imageUrl: "",
       imageAlt: "Verpakking Niet hier, wel dichtbij",
+      ...GAME_PRODUCT_TEXT_DEFAULTS,
       format: "Kwartetspel",
       price: 54.95,
       description:
@@ -137,7 +179,6 @@ export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
       tag: "Kwartetspel",
       href: "https://detroostboom.nl/product/kwartetspel-niet-hier-wel-dichtbij/",
       status: "live",
-      palette: "board",
     },
     {
       id: "digitale-werkset",
@@ -147,6 +188,7 @@ export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
         "<p>De digitale werkset is bedoeld als flexibele aanvulling voor online begeleiding en situaties waarin snel digitaal materiaal nodig is.</p><p>Deze optie wordt nog verder ontwikkeld en is daarom nog niet beschikbaar als product.</p>",
       imageUrl: "",
       imageAlt: "Preview Digitale werkset",
+      ...GAME_PRODUCT_TEXT_DEFAULTS,
       format: "Download",
       price: 24.95,
       description:
@@ -159,7 +201,6 @@ export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
       tag: "Download",
       href: "",
       status: "in_development",
-      palette: "digital",
     },
   ],
 };
@@ -187,7 +228,9 @@ function asStringArray(value: unknown, fallback: string[]) {
 }
 
 function normalizeCatalogStatus(value: unknown, fallback: CatalogStatus): CatalogStatus {
-  return value === "in_development" || value === "live" ? value : fallback;
+  return value === "concept" || value === "in_development" || value === "live"
+    ? value
+    : fallback;
 }
 
 function normalizeCatalogCategory(
@@ -210,22 +253,49 @@ function normalizeCatalogItem(
     body: typeof item?.body === "string" ? item.body : fallback.body,
     imageUrl: asString(item?.imageUrl, fallback.imageUrl || ""),
     imageAlt: asString(item?.imageAlt, fallback.imageAlt || ""),
+    introTitle: asString(item?.introTitle, fallback.introTitle),
+    introText: asString(item?.introText, fallback.introText),
+    descriptionTitle: asString(
+      item?.descriptionTitle,
+      fallback.descriptionTitle
+    ),
+    detailsTitle: asString(item?.detailsTitle, fallback.detailsTitle),
+    purchaseTitle: asString(item?.purchaseTitle, fallback.purchaseTitle),
+    purchaseDescription: asString(
+      item?.purchaseDescription,
+      fallback.purchaseDescription
+    ),
+    purchaseButtonLabel: asString(
+      item?.purchaseButtonLabel,
+      fallback.purchaseButtonLabel
+    ),
+    developmentStateLabel: asString(
+      item?.developmentStateLabel,
+      fallback.developmentStateLabel
+    ),
+    unavailablePriceLabel: asString(
+      item?.unavailablePriceLabel,
+      fallback.unavailablePriceLabel
+    ),
+    developmentCalloutLabel: asString(
+      item?.developmentCalloutLabel,
+      fallback.developmentCalloutLabel
+    ),
+    developmentPurchaseText: asString(
+      item?.developmentPurchaseText,
+      fallback.developmentPurchaseText
+    ),
+    developmentNotice: asString(
+      item?.developmentNotice,
+      fallback.developmentNotice
+    ),
     format: asString(item?.format, fallback.format),
     price: asNumber(item?.price, fallback.price),
     description: asString(item?.description, fallback.description),
     details: asStringArray(item?.details, fallback.details),
     tag: asString(item?.tag, fallback.tag),
     href: asString(item?.href, fallback.href || ""),
-    status: normalizeCatalogStatus(item?.status, fallback.status || "live"),
-    palette:
-      item?.palette === "rain" ||
-      item?.palette === "hearts" ||
-      item?.palette === "moods" ||
-      item?.palette === "cards" ||
-      item?.palette === "board" ||
-      item?.palette === "digital"
-        ? item.palette
-        : fallback.palette,
+    status: normalizeCatalogStatus(item?.status, fallback.status || "concept"),
   };
 }
 
@@ -260,12 +330,35 @@ export function getCatalogItemsByCategory(
   return category === "boeken" ? catalog.books : catalog.games;
 }
 
+export function isCatalogItemPublic(item: CatalogItem) {
+  return item.status !== "concept";
+}
+
+export function getPublicCatalogItemsByCategory(
+  catalog: ShopCatalogSettings,
+  category: CatalogCategory
+) {
+  return getCatalogItemsByCategory(catalog, category).filter(isCatalogItemPublic);
+}
+
 export function getCatalogItem(
   catalog: ShopCatalogSettings,
   category: CatalogCategory,
   slug: string
 ) {
   return getCatalogItemsByCategory(catalog, category).find((item) => item.id === slug) ?? null;
+}
+
+export function getPublicCatalogItem(
+  catalog: ShopCatalogSettings,
+  category: CatalogCategory,
+  slug: string
+) {
+  return (
+    getPublicCatalogItemsByCategory(catalog, category).find(
+      (item) => item.id === slug
+    ) ?? null
+  );
 }
 
 export function getAllCatalogItems(catalog: ShopCatalogSettings) {
@@ -296,4 +389,10 @@ export function getCatalogItemPath(item: CatalogItem) {
 
 export function isCatalogItemInDevelopment(item: CatalogItem) {
   return item.status === "in_development";
+}
+
+export function getCatalogStatusLabel(status?: CatalogStatus) {
+  if (status === "concept") return "Concept";
+  if (status === "in_development") return "In ontwikkeling";
+  return "Live";
 }

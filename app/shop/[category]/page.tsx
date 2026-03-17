@@ -11,7 +11,7 @@ import {
   YearSubscriptionDetailCard,
 } from "@/components/shop/ShopCatalog";
 import {
-  getCatalogItemsByCategory,
+  getPublicCatalogItemsByCategory,
   getPublicShopCatalog,
 } from "@/lib/shop/catalog";
 
@@ -62,7 +62,7 @@ export default async function ShopCategoryPage({
   const catalog = await getPublicShopCatalog();
   const categoryItems =
     category === "boeken" || category === "spellen"
-      ? getCatalogItemsByCategory(catalog, category)
+      ? getPublicCatalogItemsByCategory(catalog, category)
       : [];
 
   return (

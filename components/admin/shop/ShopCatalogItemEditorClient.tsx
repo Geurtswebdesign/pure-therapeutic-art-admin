@@ -15,6 +15,18 @@ type DraftState = {
   body: string;
   imageUrl: string;
   imageAlt: string;
+  introTitle: string;
+  introText: string;
+  descriptionTitle: string;
+  detailsTitle: string;
+  purchaseTitle: string;
+  purchaseDescription: string;
+  purchaseButtonLabel: string;
+  developmentStateLabel: string;
+  unavailablePriceLabel: string;
+  developmentCalloutLabel: string;
+  developmentPurchaseText: string;
+  developmentNotice: string;
   description: string;
   details: string[];
   format: string;
@@ -30,13 +42,25 @@ export default function ShopCatalogItemEditorClient({ item }: Props) {
     body: item.body,
     imageUrl: item.imageUrl ?? "",
     imageAlt: item.imageAlt ?? "",
+    introTitle: item.introTitle,
+    introText: item.introText,
+    descriptionTitle: item.descriptionTitle,
+    detailsTitle: item.detailsTitle,
+    purchaseTitle: item.purchaseTitle,
+    purchaseDescription: item.purchaseDescription,
+    purchaseButtonLabel: item.purchaseButtonLabel,
+    developmentStateLabel: item.developmentStateLabel,
+    unavailablePriceLabel: item.unavailablePriceLabel,
+    developmentCalloutLabel: item.developmentCalloutLabel,
+    developmentPurchaseText: item.developmentPurchaseText,
+    developmentNotice: item.developmentNotice,
     description: item.description,
     details: item.details,
     format: item.format,
     tag: item.tag,
     price: item.price,
     href: item.href ?? "",
-    status: item.status ?? "live",
+    status: item.status ?? "concept",
   });
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -79,6 +103,14 @@ export default function ShopCatalogItemEditorClient({ item }: Props) {
         itemId={item.id}
         title={draft.title}
         body={draft.body}
+        description={draft.description}
+        introTitle={draft.introTitle}
+        introText={draft.introText}
+        descriptionTitle={draft.descriptionTitle}
+        detailsTitle={draft.detailsTitle}
+        details={draft.details}
+        purchaseTitle={draft.purchaseTitle}
+        purchaseDescription={draft.purchaseDescription}
         onChange={onDraftChange}
       />
 
