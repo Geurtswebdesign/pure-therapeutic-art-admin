@@ -42,7 +42,7 @@ export function getAdminNav(language: string): AdminNavItem[] {
       label: t.administration,
       icon: <WalletCards size={18} />,
       children: [
-        { label: t.overview, href: "/admin/administration" },
+        { label: t.overview, href: "/admin/administration?tab=overview" },
         { label: t.credits, href: "/admin/administration?tab=credits" },
         { label: t.wallets, href: "/admin/administration?tab=wallets" },
         { label: t.transactions, href: "/admin/administration?tab=transactions" },

@@ -38,3 +38,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## QA
 
 - i18n regression checklist: `docs/i18n-qa-checklist.md`
+- admin subdomain setup: `docs/admin-subdomain-setup.md`
+- plesk deployment: `docs/plesk-nextjs-deploy.md`
+- production runbook: `docs/production-runbook.md`
+- GitHub auto deploy: `docs/github-auto-deploy.md`
+- secret rotation checklist: `docs/secret-rotation-checklist.md`

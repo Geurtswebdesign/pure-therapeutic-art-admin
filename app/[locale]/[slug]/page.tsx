@@ -17,6 +17,7 @@ import {
 } from "@/lib/content/public-queries";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { logServerEvent } from "@/lib/analytics/server";
+import { getSupabaseCookieOptions } from "@/lib/site/urls";
 
 type PageProps = {
   params: Promise<{
@@ -42,6 +43,7 @@ export default async function ContentPage({
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: getSupabaseCookieOptions(),
       cookies: {
         getAll() {
           return cookieStore.getAll();

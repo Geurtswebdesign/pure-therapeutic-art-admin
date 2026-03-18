@@ -97,6 +97,14 @@ export default function AccountProfileForm({
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isPending, startTransition] = useTransition();
 
+  function toNullableNumber(value: string) {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
   async function handleAvatarChange(file: File | null) {
     if (!file) return;
 
@@ -148,7 +156,7 @@ export default function AccountProfileForm({
                   target_groups: targetGroups,
                   languages,
                   methods,
-                  years_experience: yearsExperience,
+                  years_experience: toNullableNumber(yearsExperience),
                   intake_note: intakeNote,
                 }
               : null,

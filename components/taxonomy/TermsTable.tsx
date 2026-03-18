@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/browser";
 import { DndContext, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
@@ -10,6 +10,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 import type { Taxonomy, Term, TermNode } from "./types";
 import { buildTermTree, flattenTree } from "./types";
+import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
 type Props = {
   taxonomy: Taxonomy;
@@ -28,6 +29,7 @@ type FlatRow = { node: TermNode; depth: number };
  */
 export default function TermsTable({ taxonomy, terms }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const localTerms = terms;
 
   // selection
@@ -271,6 +273,7 @@ export default function TermsTable({ taxonomy, terms }: Props) {
                 {flat.map(({ node, depth }) => (
                   <SortableRow
                     key={node.id}
+                    pathname={pathname}
                     taxonomySlug={taxonomy.slug}
                     node={node}
                     depth={depth}
@@ -294,6 +297,7 @@ export default function TermsTable({ taxonomy, terms }: Props) {
 }
 
 function SortableRow(props: {
+  pathname: string;
   taxonomySlug: string;
   node: Term;
   depth: number;
@@ -334,7 +338,10 @@ function SortableRow(props: {
           <div>
             <Link
               className="font-medium text-blue-600 hover:underline"
-              href={`/admin/content/taxonomies/${props.taxonomySlug}/terms/${props.node.slug}`}
+              href={resolveAdminBrowserHref(
+                props.pathname,
+                `/admin/content/taxonomies/${props.taxonomySlug}/terms/${props.node.slug}`
+              )}
             >
               {props.node.name}
             </Link>

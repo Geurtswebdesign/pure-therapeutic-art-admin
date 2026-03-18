@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { InputHTMLAttributes, ReactNode } from "react";
+import { headers } from "next/headers";
 import { ArrowLeft, HeartHandshake, ShieldCheck, Stethoscope } from "lucide-react";
 import logo from "@/assets/branding/logo.png";
 import { login, registerAccount, verifyMfa } from "@/components/login/actions";
@@ -10,6 +11,12 @@ import { resolveUiLanguage, type UiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { getPublicBranding } from "@/lib/settings/public";
 import { getActiveTherapistSubscriptionPacks } from "@/lib/users/therapistSubscriptionPacks";
+import {
+  getAdminAreaUrl,
+  getPublicAreaUrl,
+  getRequestHost,
+  isAdminHost,
+} from "@/lib/site/urls";
 
 type LoginSearchParams = {
   step?: string | string[];
@@ -25,6 +32,7 @@ type AuthShellProps = {
   title: string;
   eyebrow: string;
   backLabel: string;
+  backHref: string;
   maxWidthClassName?: string;
   children: ReactNode;
 };
@@ -35,6 +43,7 @@ const AUTH_COPY: Record<
     eyebrow: string;
     backHome: string;
     loginIntro: string;
+    adminLoginIntro: string;
     registerIntro: string;
     setupIntro: string;
     clientDescription: string;
@@ -55,6 +64,8 @@ const AUTH_COPY: Record<
     backHome: "Terug naar home",
     loginIntro:
       "Log in om verder te gaan met je persoonlijke omgeving in de app.",
+    adminLoginIntro:
+      "Log in om verder te gaan naar de beheeromgeving van de app.",
     registerIntro:
       "Kies het account dat bij je past en maak een profiel aan in dezelfde stijl als de rest van de app.",
     setupIntro:
@@ -82,6 +93,7 @@ const AUTH_COPY: Record<
     eyebrow: "Secure access",
     backHome: "Back to home",
     loginIntro: "Log in to continue to your personal space in the app.",
+    adminLoginIntro: "Log in to continue to the admin area of the app.",
     registerIntro:
       "Choose the account that fits you and create a profile in the same style as the rest of the app.",
     setupIntro:
@@ -110,6 +122,8 @@ const AUTH_COPY: Record<
     backHome: "Zuruck zur Startseite",
     loginIntro:
       "Melde dich an, um mit deinem persoenlichen Bereich in der App fortzufahren.",
+    adminLoginIntro:
+      "Melde dich an, um mit dem Adminbereich der App fortzufahren.",
     registerIntro:
       "Wahle das passende Konto und erstelle ein Profil im gleichen Stil wie der Rest der App.",
     setupIntro:
@@ -151,6 +165,7 @@ function AuthShell({
   title,
   eyebrow,
   backLabel,
+  backHref,
   maxWidthClassName = "max-w-md",
   children,
 }: AuthShellProps) {
@@ -194,7 +209,7 @@ function AuthShell({
                 {title}
               </h1>
               <Link
-                href="/"
+                href={backHref}
                 className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#decfbe] bg-white/80 px-3 py-2 text-xs font-medium text-stone-700 shadow-sm"
               >
                 <ArrowLeft size={14} strokeWidth={1.8} />
@@ -245,6 +260,8 @@ export default async function LoginPage({
   const branding = await getPublicBranding();
   const therapistPacks = await getActiveTherapistSubscriptionPacks();
   const params = await searchParams;
+  const requestHeaders = await headers();
+  const adminRequestHost = isAdminHost(getRequestHost(requestHeaders));
   const step = Array.isArray(params?.step) ? params?.step[0] : params?.step;
   const error = Array.isArray(params?.error) ? params?.error[0] : params?.error;
   const next = Array.isArray(params?.next) ? params?.next[0] : params?.next;
@@ -255,7 +272,7 @@ export default async function LoginPage({
   const isMfaStep = step === "mfa";
   const isMfaSetup = step === "mfa-setup";
   const hasMfaError = error === "invalid";
-  const isRegisterMode = mode === "register";
+  const isRegisterMode = !adminRequestHost && mode === "register";
   const hasLoginError = error === "invalid";
   const hasRegisterError = error === "register";
   const hasTherapistPackError = error === "therapist-pack";
@@ -266,6 +283,7 @@ export default async function LoginPage({
     : "/login?mode=register";
   const therapistRegistrationAvailable = therapistPacks.length > 0;
   const defaultTherapistPlan = therapistPacks[0]?.plan ?? "monthly";
+  const backHref = getPublicAreaUrl("/");
 
   if (isMfaStep) {
     return (
@@ -275,6 +293,7 @@ export default async function LoginPage({
         title={t.mfaTitle}
         eyebrow={copy.eyebrow}
         backLabel={copy.backHome}
+        backHref={backHref}
       >
         <div className="space-y-4">
           <div className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/85 p-4 shadow-sm">
@@ -329,6 +348,7 @@ export default async function LoginPage({
         title={t.mfaTitle}
         eyebrow={copy.eyebrow}
         backLabel={copy.backHome}
+        backHref={backHref}
         maxWidthClassName="max-w-3xl"
       >
         <div className="space-y-4">
@@ -352,7 +372,7 @@ export default async function LoginPage({
 
           <div className="flex justify-end">
             <Link
-              href="/admin"
+              href={getAdminAreaUrl("/")}
               className="inline-flex items-center rounded-full bg-[#1d2327] px-4 py-2.5 text-sm font-medium text-white"
             >
               {t.mfaSetupContinue}
@@ -370,6 +390,7 @@ export default async function LoginPage({
       title={isRegisterMode ? t.registerTitle : t.title}
       eyebrow={copy.eyebrow}
       backLabel={copy.backHome}
+      backHref={backHref}
     >
       <section className="space-y-4">
         <div className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/85 p-4 shadow-sm">
@@ -380,34 +401,40 @@ export default async function LoginPage({
             </span>
           </div>
           <p className="mt-3 text-sm leading-6 text-[#6b5d50]">
-            {isRegisterMode ? copy.registerIntro : copy.loginIntro}
+            {adminRequestHost
+              ? copy.adminLoginIntro
+              : isRegisterMode
+                ? copy.registerIntro
+                : copy.loginIntro}
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 rounded-[1.4rem] border border-[#e2d7c9] bg-[#f6efe8] p-2 shadow-sm">
-          <Link
-            href={loginHref}
-            className={`rounded-full px-4 py-2.5 text-center text-sm font-medium transition ${
-              isRegisterMode
-                ? "text-stone-700"
-                : "bg-[#1d2327] text-white shadow-sm"
-            }`}
-          >
-            {t.modeLogin}
-          </Link>
-          <Link
-            href={registerHref}
-            className={`rounded-full px-4 py-2.5 text-center text-sm font-medium transition ${
-              isRegisterMode
-                ? "bg-[#1d2327] text-white shadow-sm"
-                : "text-stone-700"
-            }`}
-          >
-            {t.modeRegister}
-          </Link>
-        </div>
+        {adminRequestHost ? null : (
+          <div className="grid grid-cols-2 gap-2 rounded-[1.4rem] border border-[#e2d7c9] bg-[#f6efe8] p-2 shadow-sm">
+            <Link
+              href={loginHref}
+              className={`rounded-full px-4 py-2.5 text-center text-sm font-medium transition ${
+                isRegisterMode
+                  ? "text-stone-700"
+                  : "bg-[#1d2327] text-white shadow-sm"
+              }`}
+            >
+              {t.modeLogin}
+            </Link>
+            <Link
+              href={registerHref}
+              className={`rounded-full px-4 py-2.5 text-center text-sm font-medium transition ${
+                isRegisterMode
+                  ? "bg-[#1d2327] text-white shadow-sm"
+                  : "text-stone-700"
+              }`}
+            >
+              {t.modeRegister}
+            </Link>
+          </div>
+        )}
 
-        {registrationSucceeded ? (
+        {!adminRequestHost && registrationSucceeded ? (
           <p className="rounded-[1.25rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-sm">
             {t.registerSuccess}
           </p>

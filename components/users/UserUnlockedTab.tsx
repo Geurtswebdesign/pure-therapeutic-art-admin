@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
+import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
 type Unlock = {
   id: string;
@@ -25,6 +27,7 @@ export default function UserUnlockedTab({
   language: UiLanguage;
 }) {
   const t = getAppMessages(language).unlockedTable;
+  const pathname = usePathname();
   const locale = language === "en" ? "en-US" : language === "de" ? "de-DE" : "nl-NL";
   if (!items.length) {
     return (
@@ -52,7 +55,10 @@ export default function UserUnlockedTab({
               <td className="px-3 py-2">
                 {u.content_item ? (
                   <Link
-                    href={`/admin/content/${u.content_item.id}`}
+                    href={resolveAdminBrowserHref(
+                      pathname,
+                      `/admin/content/${u.content_item.id}`
+                    )}
                     className="text-blue-600 hover:underline"
                   >
                     {u.content_item.title}

@@ -2,10 +2,15 @@
   "name": "pure-therapeutic-art",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "build:standalone": "next build && node scripts/prepare_standalone_bundle.mjs",
+    "start:standalone": "node server.cjs",
     "lint": "eslint"
   },
   "dependencies": {
@@ -22,7 +27,8 @@
     "next": "^16.1.6",
     "nodemailer": "^6.10.1",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

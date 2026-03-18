@@ -4,6 +4,16 @@ import {
   normalizeSecuritySettings,
   type SecuritySettings,
 } from "@/lib/settings/security-types";
+import {
+  getAdminSiteOrigin,
+  getRequestHost,
+  getServerCookieOptions,
+  isAdminHost,
+  isAdminInternalPath,
+  shouldBypassAdminRewrite,
+  toAdminExternalPath,
+  toAdminInternalPath,
+} from "@/lib/site/urls";
 
 const FETCH_TIMEOUT_MS = 2500;
 const SECURITY_SETTINGS_TTL_MS = 30_000;
@@ -82,36 +92,70 @@ async function getSecuritySettingsFromDb(): Promise<SecuritySettings> {
 
 export async function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
+  const requestHost = getRequestHost(req.headers);
+  const adminOrigin = getAdminSiteOrigin();
+  const adminRequest = isAdminHost(requestHost);
 
-  const res = NextResponse.next({
-    request: {
-      headers: req.headers,
-    },
-  });
+  if (adminRequest && isAdminInternalPath(pathname)) {
+    const target = new URL(toAdminExternalPath(pathname), req.url);
+    target.search = req.nextUrl.search;
+    return NextResponse.redirect(target);
+  }
 
-  if (pathname.startsWith("/admin")) {
-    if (!req.cookies.get("admin_session_started_at")?.value) {
-      res.cookies.set("admin_session_started_at", new Date().toISOString(), {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
+  if (!adminRequest && adminOrigin && isAdminInternalPath(pathname)) {
+    const target = new URL(toAdminExternalPath(pathname), adminOrigin);
+    target.search = req.nextUrl.search;
+    return NextResponse.redirect(target);
+  }
+
+  const effectivePathname =
+    adminRequest && !shouldBypassAdminRewrite(pathname)
+      ? toAdminInternalPath(pathname)
+      : pathname;
+  const rewriteUrl =
+    effectivePathname !== pathname
+      ? (() => {
+          const url = new URL(req.url);
+          url.pathname = effectivePathname;
+          url.search = req.nextUrl.search;
+          return url;
+        })()
+      : null;
+
+  const res = rewriteUrl
+    ? NextResponse.rewrite(rewriteUrl, {
+        request: {
+          headers: req.headers,
+        },
+      })
+    : NextResponse.next({
+        request: {
+          headers: req.headers,
+        },
       });
+
+  if (effectivePathname.startsWith("/admin")) {
+    if (!req.cookies.get("admin_session_started_at")?.value) {
+      res.cookies.set(
+        "admin_session_started_at",
+        new Date().toISOString(),
+        getServerCookieOptions({ httpOnly: true })
+      );
     }
   }
 
   const security = await getSecuritySettingsFromDb();
   if (security.maintenanceMode) {
     const allowedDuringMaintenance =
-      pathname.startsWith("/maintenance") ||
-      pathname.startsWith("/admin") ||
-      pathname.startsWith("/login") ||
-      pathname.startsWith("/api");
+      effectivePathname.startsWith("/maintenance") ||
+      effectivePathname.startsWith("/admin") ||
+      effectivePathname.startsWith("/login") ||
+      effectivePathname.startsWith("/api");
 
     if (!allowedDuringMaintenance) {
       return NextResponse.redirect(new URL("/maintenance", req.url));
     }
-  } else if (pathname.startsWith("/maintenance")) {
+  } else if (effectivePathname.startsWith("/maintenance")) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 

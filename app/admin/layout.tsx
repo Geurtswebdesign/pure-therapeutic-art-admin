@@ -5,6 +5,10 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getRuntimeSecuritySettings } from "@/lib/security/runtime";
 import { isAdminRole } from "@/lib/users/accountTypes";
 import "@/styles/backend.css";
+import {
+  getSupabaseCookieOptions,
+  toAdminInternalPath,
+} from "@/lib/site/urls";
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminTopbar from "@/components/admin/AdminTopbar";
@@ -23,6 +27,7 @@ export default async function AdminLayout({
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: getSupabaseCookieOptions(),
       cookies: {
         get(name: string) {
           return cookieStore.get(name)?.value;
@@ -73,7 +78,11 @@ export default async function AdminLayout({
     const verified = factors?.totp?.find((factor) => factor.status === "verified");
     if (!verified?.id) {
       const currentPath = getRequestPath(requestHeaders);
-      if (currentPath && !currentPath.startsWith("/admin/settings/security")) {
+      const internalPath = currentPath ? toAdminInternalPath(currentPath) : null;
+      if (
+        internalPath &&
+        !internalPath.startsWith("/admin/settings/security")
+      ) {
         redirect("/login?step=mfa-setup");
       }
     }

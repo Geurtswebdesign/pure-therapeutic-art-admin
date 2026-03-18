@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createUser } from "../actions";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { trackEvent } from "@/lib/analytics/track";
 import type { UserAccountType } from "@/lib/users/accountTypes";
+import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
 type UserRole = "user" | "admin";
 
@@ -15,6 +16,7 @@ export default function CreateUserForm({ language }: { language: UiLanguage }) {
   const t = getAdminMessages(language).createUserForm;
   const profileT = getAppMessages(language).userGeneral;
   const router = useRouter();
+  const pathname = usePathname();
 
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -54,7 +56,9 @@ export default function CreateUserForm({ language }: { language: UiLanguage }) {
         eventCategory: "admin_users",
         eventLabel: role,
       });
-      router.push(`/admin/users/${res.userId}`);
+      router.push(
+        resolveAdminBrowserHref(pathname, `/admin/users/${res.userId}`)
+      );
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t.unknownError;
       setError(message);

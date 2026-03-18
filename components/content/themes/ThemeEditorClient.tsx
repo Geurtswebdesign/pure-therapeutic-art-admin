@@ -3,12 +3,13 @@
 import type { ReactNode } from "react";
 import { useState, useTransition } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   deleteThemePage,
   saveThemePage,
 } from "@/app/admin/content/themes/actions";
 import ThemeMediaPickerDialog from "@/components/content/themes/ThemeMediaPickerDialog";
+import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 import type {
   ThemeCategoryOption,
   ThemeContentOption,
@@ -221,6 +222,7 @@ export default function ThemeEditorClient({
   initialData: ThemeEditorData;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [draft, setDraft] = useState<ThemePageDraft>(initialData.draft);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -466,7 +468,12 @@ export default function ThemeEditorClient({
         .then((result) => {
           setFeedback("Thema opgeslagen.");
           if (!nextDraft.id) {
-            router.replace(`/admin/content/themes/${result.id}`);
+            router.replace(
+              resolveAdminBrowserHref(
+                pathname,
+                `/admin/content/themes/${result.id}`
+              )
+            );
           } else {
             router.refresh();
           }
@@ -490,7 +497,7 @@ export default function ThemeEditorClient({
     startTransition(() => {
       void deleteThemePage(draft.id!, draft.slug)
         .then(() => {
-          router.push("/admin/content/themes");
+          router.push(resolveAdminBrowserHref(pathname, "/admin/content/themes"));
           router.refresh();
         })
         .catch((deleteError) => {
@@ -1165,7 +1172,10 @@ export default function ThemeEditorClient({
                                   </span>
                                 </span>
                                 <a
-                                  href={`/admin/content/${item.contentItemId}`}
+                                  href={resolveAdminBrowserHref(
+                                    pathname,
+                                    `/admin/content/${item.contentItemId}`
+                                  )}
                                   className="font-medium text-[#2271b1] hover:underline"
                                 >
                                   Open content-item

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/browser";
 import type { CategoryNode } from "./CategoryTree";
 import Link from "next/link";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
+import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
 type Props = {
   node: CategoryNode;
@@ -27,6 +28,7 @@ export default function CategoryRow({ node, depth }: Props) {
   );
   const t = getAppMessages(uiLanguage).categoryRow;
   const router = useRouter();
+  const pathname = usePathname();
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(node.name);
@@ -87,10 +89,13 @@ export default function CategoryRow({ node, depth }: Props) {
             />
           ) : (
             <Link
-                href={`/admin/content/categories/${node.slug}`}
-                className="font-medium text-blue-600 hover:underline"
-                >
-                {node.name}
+              href={resolveAdminBrowserHref(
+                pathname,
+                `/admin/content/categories/${node.slug}`
+              )}
+              className="font-medium text-blue-600 hover:underline"
+            >
+              {node.name}
             </Link>
           )}
 

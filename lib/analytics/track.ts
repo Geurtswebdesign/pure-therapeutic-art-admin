@@ -8,6 +8,18 @@ type TrackEventInput = {
   metadata?: Record<string, string | number | boolean | null>;
 };
 
+function createFallbackId() {
+  return `pta_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function safeRandomId() {
+  try {
+    return globalThis.crypto?.randomUUID?.() ?? createFallbackId();
+  } catch {
+    return createFallbackId();
+  }
+}
+
 export async function trackEvent(input: TrackEventInput) {
   try {
     const anonId = getOrCreateId("pta_anon_id", localStorage);
@@ -109,7 +121,6 @@ export async function trackException(input: {
       body: JSON.stringify({
         event_type: "exception",
         event_name: "exception",
-        event_label: input.message,
         path: url.pathname,
         page_title: document.title || null,
         anon_id: anonId,
@@ -131,11 +142,15 @@ export async function trackException(input: {
 }
 
 function getOrCreateId(key: string, storage: Storage) {
-  const existing = storage.getItem(key);
-  if (existing) return existing;
-  const created = crypto.randomUUID();
-  storage.setItem(key, created);
-  return created;
+  try {
+    const existing = storage.getItem(key);
+    if (existing) return existing;
+    const created = safeRandomId();
+    storage.setItem(key, created);
+    return created;
+  } catch {
+    return safeRandomId();
+  }
 }
 
 function detectDeviceType(ua: string) {

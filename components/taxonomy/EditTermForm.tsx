@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/browser";
 import type { Taxonomy, Term } from "./types";
 import MediaPicker from "@/components/content/media/MediaPicker";
+import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
 function slugify(text: string) {
   return text
@@ -20,6 +21,7 @@ export default function EditTermForm(props: {
   allTerms: Array<{ id: string; name: string; parent_id: string | null }>;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
 
   const [name, setName] = useState(props.term.name);
   const [slug, setSlug] = useState(props.term.slug);
@@ -88,7 +90,12 @@ export default function EditTermForm(props: {
     }
 
     // WP-like: terug naar overzicht
-    router.push(`/admin/content/taxonomies/${props.taxonomy.slug}/terms`);
+    router.push(
+      resolveAdminBrowserHref(
+        pathname,
+        `/admin/content/taxonomies/${props.taxonomy.slug}/terms`
+      )
+    );
     router.refresh();
   }
 

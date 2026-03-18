@@ -11,6 +11,12 @@ import { logServerEvent } from "@/lib/analytics/server";
 import { isAdminRole } from "@/lib/users/accountTypes";
 import type { UserAccountType } from "@/lib/users/accountTypes";
 import {
+  getAdminAreaUrl,
+  getAdminLoginUrl,
+  getServerCookieOptions,
+  getSupabaseCookieOptions,
+} from "@/lib/site/urls";
+import {
   getActiveTherapistSubscriptionPack,
 } from "@/lib/users/therapistSubscriptionPacks";
 import type { TherapistSubscriptionPlan } from "@/lib/users/entitlements";
@@ -135,6 +141,7 @@ export async function registerAccount(formData: FormData) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: getSupabaseCookieOptions(),
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -414,6 +421,7 @@ export async function login(formData: FormData) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: getSupabaseCookieOptions(),
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -494,34 +502,36 @@ export async function login(formData: FormData) {
         eventLabel: "required_admin",
         path: "/login",
       });
-      redirect("/login?step=mfa-setup");
+      redirect(getAdminLoginUrl({ step: "mfa-setup" }));
     }
 
     if (verified?.id) {
       const { data: challenge, error: challengeError } =
         await supabase.auth.mfa.challenge({ factorId: verified.id });
       if (!challengeError && challenge?.id) {
-        cookieStore.set("mfa_factor_id", verified.id, {
-          httpOnly: true,
-          sameSite: "lax",
-          secure: process.env.NODE_ENV === "production",
-          path: "/",
-          maxAge: 5 * 60,
-        });
-        cookieStore.set("mfa_challenge_id", challenge.id, {
-          httpOnly: true,
-          sameSite: "lax",
-          secure: process.env.NODE_ENV === "production",
-          path: "/",
-          maxAge: 5 * 60,
-        });
+        cookieStore.set(
+          "mfa_factor_id",
+          verified.id,
+          getServerCookieOptions({
+            httpOnly: true,
+            maxAge: 5 * 60,
+          })
+        );
+        cookieStore.set(
+          "mfa_challenge_id",
+          challenge.id,
+          getServerCookieOptions({
+            httpOnly: true,
+            maxAge: 5 * 60,
+          })
+        );
         await logServerEvent({
           eventName: "mfa_challenge_started",
           eventCategory: "auth",
           eventLabel: "totp",
           path: "/login",
         });
-        redirect("/login?step=mfa");
+        redirect(getAdminLoginUrl({ step: "mfa" }));
       }
     }
   }
@@ -555,15 +565,14 @@ export async function login(formData: FormData) {
     path: "/login",
   });
 
-  cookieStore.set("admin_session_started_at", nowIso, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-  });
+  cookieStore.set(
+    "admin_session_started_at",
+    nowIso,
+    getServerCookieOptions({ httpOnly: true })
+  );
 
   if (isAdmin) {
-    redirect("/admin");
+    redirect(getAdminAreaUrl("/"));
   }
 
   redirect(safeNext || "/account");
@@ -589,6 +598,7 @@ export async function verifyMfa(formData: FormData) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: getSupabaseCookieOptions(),
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -615,11 +625,19 @@ export async function verifyMfa(formData: FormData) {
       eventLabel: verifyError.message,
       path: "/login",
     });
-    redirect("/login?step=mfa&error=invalid");
+    redirect(getAdminLoginUrl({ step: "mfa", error: "invalid" }));
   }
 
-  cookieStore.delete("mfa_factor_id");
-  cookieStore.delete("mfa_challenge_id");
+  cookieStore.set(
+    "mfa_factor_id",
+    "",
+    getServerCookieOptions({ httpOnly: true, maxAge: 0 })
+  );
+  cookieStore.set(
+    "mfa_challenge_id",
+    "",
+    getServerCookieOptions({ httpOnly: true, maxAge: 0 })
+  );
 
   await logServerEvent({
     eventName: "mfa_verify_success",
@@ -629,12 +647,11 @@ export async function verifyMfa(formData: FormData) {
   });
 
   const nowIso = new Date().toISOString();
-  cookieStore.set("admin_session_started_at", nowIso, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-  });
+  cookieStore.set(
+    "admin_session_started_at",
+    nowIso,
+    getServerCookieOptions({ httpOnly: true })
+  );
 
-  redirect("/admin");
+  redirect(getAdminAreaUrl("/"));
 }

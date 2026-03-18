@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import PreviewButton from "@/components/admin/PreviewButton";
 import StatusSelect from "./StatusSelect";
 import { deleteContentItem } from "@/lib/content/actions";
@@ -13,6 +13,7 @@ import { buildTermTree, flattenTree } from "@/components/taxonomy/types";
 import { LANGUAGE_OPTIONS } from "@/lib/i18n/languages";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
+import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
 export type ContentStatus = "all" | "draft" | "published" | "archived";
 
@@ -70,6 +71,7 @@ export default function MetadataSidebar({
 }: MetadataSidebarProps) {
   const t = getAppMessages(language).metadata;
   const router = useRouter();
+  const pathname = usePathname();
   const [openBox, setOpenBox] = useState<SecondaryBoxKey>("permalink");
   const [pickingFeatured, setPickingFeatured] = useState(false);
   const [isEditingStatus, setIsEditingStatus] = useState(false);
@@ -157,7 +159,7 @@ export default function MetadataSidebar({
     );
     if (!ok) return;
     await deleteContentItem(item.id);
-    router.push("/admin/content");
+    router.push(resolveAdminBrowserHref(pathname, "/admin/content"));
   }
 
   return (

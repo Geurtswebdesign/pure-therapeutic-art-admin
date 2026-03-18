@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
 export default function SettingsTabs({ language = "nl" }: { language?: string }) {
   const pathname = usePathname();
@@ -19,11 +20,12 @@ export default function SettingsTabs({ language = "nl" }: { language?: string })
   return (
     <div className="flex flex-wrap gap-2 border-b pb-2">
       {tabs.map((tab) => {
-        const active = pathname === tab.href;
+        const href = resolveAdminBrowserHref(pathname, tab.href);
+        const active = pathname === href;
         return (
           <Link
             key={tab.href}
-            href={tab.href}
+            href={href}
             className={[
               "rounded px-3 py-1.5 text-sm",
               active ? "bg-black text-white" : "hover:bg-gray-100",

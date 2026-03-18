@@ -91,8 +91,12 @@ function normalizeEvents(input: unknown[]): AppEvent[] {
               .filter((occ): occ is NonNullable<typeof occ> => Boolean(occ))
           : undefined,
         bookingUrl: String(item.bookingUrl ?? ""),
+        listUrl: typeof item.listUrl === "string" ? item.listUrl : undefined,
         updatedAt: typeof item.updatedAt === "string" ? item.updatedAt : null,
       } as AppEvent;
     })
-    .filter((event): event is AppEvent => Boolean(event && event.bookingUrl));
+    .filter(
+      (event): event is AppEvent =>
+        Boolean(event && (event.bookingUrl || event.listUrl))
+    );
 }

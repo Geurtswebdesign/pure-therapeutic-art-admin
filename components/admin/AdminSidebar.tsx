@@ -7,6 +7,7 @@ import { ChevronDown } from "lucide-react";
 import { getAdminNav } from "@/components/admin/nav";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
 export default function AdminSidebar({ language = "nl" }: { language?: string }) {
   const pathname = usePathname();
@@ -16,7 +17,8 @@ export default function AdminSidebar({ language = "nl" }: { language?: string })
   const adminNav = getAdminNav(language);
 
   function hrefMatches(href: string, includeDescendants = false) {
-    const [targetPath, queryString] = href.split("?");
+    const normalizedHref = resolveAdminBrowserHref(pathname, href);
+    const [targetPath, queryString] = normalizedHref.split("?");
     const pathMatches =
       pathname === targetPath ||
       (includeDescendants &&
@@ -28,7 +30,11 @@ export default function AdminSidebar({ language = "nl" }: { language?: string })
 
     const targetParams = new URLSearchParams(queryString);
     for (const [key, value] of targetParams.entries()) {
-      if (searchParams.get(key) !== value) return false;
+      const currentValue = searchParams.get(key);
+      if (value === "overview" && currentValue === null) {
+        continue;
+      }
+      if (currentValue !== value) return false;
     }
     return true;
   }
@@ -37,7 +43,10 @@ export default function AdminSidebar({ language = "nl" }: { language?: string })
     adminNav.find(
       (item) =>
         "children" in item &&
-        item.children?.some((c) => pathname === c.href.split("?")[0])
+        item.children?.some((child) => {
+          const [targetPath] = resolveAdminBrowserHref(pathname, child.href).split("?");
+          return pathname === targetPath;
+        })
     )?.label ?? null;
 
   const openMenu =
@@ -57,12 +66,13 @@ export default function AdminSidebar({ language = "nl" }: { language?: string })
              Simpel menu-item
              ====================== */
           if (item.href) {
+            const href = resolveAdminBrowserHref(pathname, item.href);
             const active = hrefMatches(item.href, true);
 
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={href}
                 className={`flex items-center gap-3 px-4 py-2 ${
                   active
                     ? "bg-[#2271b1] text-white"
@@ -112,12 +122,13 @@ export default function AdminSidebar({ language = "nl" }: { language?: string })
               {isOpen && (
                 <div className="ml-6 mt-1 space-y-1">
                   {(item.children ?? []).map((child) => {
+                    const href = resolveAdminBrowserHref(pathname, child.href);
                     const active = hrefMatches(child.href);
 
                     return (
                       <Link
                         key={child.href}
-                        href={child.href}
+                        href={href}
                         className={`block px-3 py-1.5 rounded text-sm ${
                           active
                             ? "bg-[#2271b1] text-white"

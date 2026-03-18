@@ -7,6 +7,7 @@ import {
   getThemeSourceManifest,
   type ThemeSourceEntry,
 } from "@/lib/content/theme-source-manifest";
+import { getAdminAreaUrl } from "@/lib/site/urls";
 
 function SourceRow({
   entry,
@@ -44,14 +45,14 @@ function SourceRow({
       <td className="px-3 py-3 align-top text-sm">
         {importedTheme ? (
           <Link
-            href={`/admin/content/themes/${importedTheme.id}`}
+            href={getAdminAreaUrl(`/content/themes/${importedTheme.id}`)}
             className="text-[#2271b1] hover:underline"
           >
             Bewerken
           </Link>
         ) : (
           <Link
-            href={`/admin/content/themes/new?source=${encodeURIComponent(entry.key)}`}
+            href={getAdminAreaUrl(`/content/themes/new?source=${encodeURIComponent(entry.key)}`)}
             className="text-[#2271b1] hover:underline"
           >
             Nieuw op basis van bron
@@ -85,7 +86,7 @@ export default async function AdminThemesPage() {
         </div>
 
         <Link
-          href="/admin/content/themes/new"
+          href={getAdminAreaUrl("/content/themes/new")}
           className="rounded bg-[#2271b1] px-4 py-2 text-sm font-medium text-white hover:bg-[#135e96]"
         >
           Nieuw thema
@@ -116,7 +117,7 @@ export default async function AdminThemesPage() {
                   <tr key={theme.id} className="border-t border-stone-200">
                     <td className="px-3 py-3 align-top">
                       <Link
-                        href={`/admin/content/themes/${theme.id}`}
+                        href={getAdminAreaUrl(`/content/themes/${theme.id}`)}
                         className="font-medium text-[#2271b1] hover:underline"
                       >
                         {theme.title}

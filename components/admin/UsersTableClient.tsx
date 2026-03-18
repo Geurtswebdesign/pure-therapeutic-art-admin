@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   bulkUpdateUserRole,
   bulkDeleteUsers,
@@ -8,6 +10,7 @@ import {
 } from "@/app/admin/users/actions";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
+import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
 type User = {
   id: string;
@@ -28,6 +31,7 @@ export default function UsersTableClient({
   language: UiLanguage;
 }) {
   const t = getAdminMessages(language).usersTable;
+  const pathname = usePathname();
   const [selected, setSelected] = useState<string[]>([]);
   type UserRole = "admin" | "user";
   type RoleFilter = "all" | UserRole;
@@ -192,12 +196,12 @@ export default function UsersTableClient({
                   />
                 </td>
                 <td className="px-2 py-2 font-medium">
-                    <a
-                        href={`/admin/users/${u.id}`}
-                        className="text-[#2271b1] hover:underline"
-                    >
-                        {u.display_name ?? "—"}
-                    </a>
+                  <Link
+                    href={resolveAdminBrowserHref(pathname, `/admin/users/${u.id}`)}
+                    className="text-[#2271b1] hover:underline"
+                  >
+                    {u.display_name ?? "—"}
+                  </Link>
                 </td>
                 <td className="px-2 py-2">{u.email}</td>
                 <td className="px-2 py-2">

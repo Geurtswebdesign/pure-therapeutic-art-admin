@@ -6,6 +6,7 @@ import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getDeletedCreditPackIds } from "@/lib/credits/deletedPacks";
+import { getAdminAreaUrl } from "@/lib/site/urls";
 import {
   THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
   YEAR_ASSIGNMENTS_ENTITLEMENT_KEY,
@@ -300,21 +301,21 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
           <article className="rounded border bg-white p-4">
             <h2 className="text-base font-semibold">{t.overviewCreditsTitle}</h2>
             <p className="mt-2 text-sm text-gray-600">{t.overviewCreditsDesc}</p>
-            <Link href="/admin/administration?tab=credits" className="mt-3 inline-block text-sm text-blue-700 hover:underline">
+            <Link href={getAdminAreaUrl("/administration?tab=credits")} className="mt-3 inline-block text-sm text-blue-700 hover:underline">
               {t.overviewCreditsLink}
             </Link>
           </article>
           <article className="rounded border bg-white p-4">
             <h2 className="text-base font-semibold">{t.overviewWalletsTitle}</h2>
             <p className="mt-2 text-sm text-gray-600">{t.overviewWalletsDesc}</p>
-            <Link href="/admin/administration?tab=wallets" className="mt-3 inline-block text-sm text-blue-700 hover:underline">
+            <Link href={getAdminAreaUrl("/administration?tab=wallets")} className="mt-3 inline-block text-sm text-blue-700 hover:underline">
               {t.overviewWalletsLink}
             </Link>
           </article>
           <article className="rounded border bg-white p-4">
             <h2 className="text-base font-semibold">{t.overviewTransactionsTitle}</h2>
             <p className="mt-2 text-sm text-gray-600">{t.overviewTransactionsDesc}</p>
-            <Link href="/admin/administration?tab=transactions" className="mt-3 inline-block text-sm text-blue-700 hover:underline">
+            <Link href={getAdminAreaUrl("/administration?tab=transactions")} className="mt-3 inline-block text-sm text-blue-700 hover:underline">
               {t.overviewTransactionsLink}
             </Link>
           </article>

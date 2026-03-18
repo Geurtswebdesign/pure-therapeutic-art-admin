@@ -11,5 +11,6 @@ export type AppEvent = {
   occurrenceCount: number;
   occurrences?: EventOccurrence[];
   bookingUrl: string;      // deep-link that auto-opens popup
+  listUrl?: string;
   updatedAt: string | null;
 };

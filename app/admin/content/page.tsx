@@ -4,6 +4,7 @@ import ContentTableClient from "@/components/content/admin/ContentTableClient";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getAdminAreaUrl } from "@/lib/site/urls";
 
 const PAGE_SIZE = 20;
 
@@ -378,7 +379,7 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
         <h1 className="text-2xl font-semibold">{t.title}</h1>
 
         <Link
-          href="/admin/content/new"
+          href={getAdminAreaUrl("/content/new")}
           className="rounded bg-[#2271b1] px-4 py-2 text-sm font-medium text-white hover:bg-[#135e96]"
         >
           {t.newPage}

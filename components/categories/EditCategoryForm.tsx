@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/browser";
 import type { Category } from "./CategoryTree";
 import { trackEvent } from "@/lib/analytics/track";
+import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
 type CategoryOption = {
   id: string;
@@ -27,6 +28,7 @@ export default function EditCategoryForm({
   category,
 }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
 
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [name, setName] = useState(category.name);
@@ -80,7 +82,7 @@ export default function EditCategoryForm({
       eventCategory: "admin_content",
       eventLabel: category.id,
     });
-    router.push("/admin/content/categories");
+    router.push(resolveAdminBrowserHref(pathname, "/admin/content/categories"));
     router.refresh();
   }
 

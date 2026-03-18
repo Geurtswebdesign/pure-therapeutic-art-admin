@@ -3,11 +3,13 @@
 import type { ChangeEvent } from "react";
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import MediaPicker from "@/components/content/media/MediaPicker";
 import { supabase } from "@/lib/supabase/browser";
 import { uploadMediaAssetClient } from "@/lib/content/uploadClient";
 import { getCatalogItemPath, type CatalogItem } from "@/lib/shop/catalog-shared";
+import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
 type ShopEditorDraft = {
   title: string;
@@ -70,6 +72,7 @@ export default function ShopMetadataSidebar({
   onDraftChange,
   onSaveAll,
 }: Props) {
+  const pathname = usePathname();
   const [openBox, setOpenBox] = useState<BoxKey>("permalink");
   const [pickingFeatured, setPickingFeatured] = useState(false);
   const [uploadingFeatured, setUploadingFeatured] = useState(false);
@@ -217,7 +220,7 @@ export default function ShopMetadataSidebar({
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
           <Link
-            href="/admin/shop"
+            href={resolveAdminBrowserHref(pathname, "/admin/shop")}
             className="inline-flex text-sm text-blue-700 hover:underline"
           >
             Terug naar shop-items

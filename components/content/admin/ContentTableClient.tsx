@@ -26,6 +26,7 @@ import {
 } from "@/lib/content/actions/quickEditContentItem";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
+import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
 type ContentStatus = "draft" | "published" | "trash";
 type StatusFilter = "all" | ContentStatus;
@@ -431,7 +432,10 @@ export default function ContentTableClient({
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-2">
                         <Link
-                          href={`/admin/content/${item.id}`}
+                          href={resolveAdminBrowserHref(
+                            pathname,
+                            `/admin/content/${item.id}`
+                          )}
                           className="font-medium text-blue-600 hover:underline"
                         >
                           {item.title || "—"}

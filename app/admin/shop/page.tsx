@@ -7,6 +7,7 @@ import {
   getCatalogStatusLabel,
   isCatalogItemPublic,
 } from "@/lib/shop/catalog";
+import { getAdminAreaUrl } from "@/lib/site/urls";
 
 function formatPrice(value: number) {
   return new Intl.NumberFormat("nl-NL", {
@@ -90,7 +91,7 @@ export default async function AdminShopPage() {
                 <td className="px-4 py-4">
                   <div className="flex flex-wrap items-center gap-3">
                     <Link
-                      href={`/admin/shop/${item.id}`}
+                      href={getAdminAreaUrl(`/shop/${item.id}`)}
                       className="text-[#2271b1] hover:underline"
                     >
                       Bewerken

@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   bulkTrashContent,
@@ -8,6 +9,7 @@ import {
 } from "@/components/content/admin/actions";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
+import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
 type Props = {
   id: string;
@@ -23,6 +25,7 @@ export default function ContentRowActions({
   onQuickEdit,
 }: Props) {
   const t = getAdminMessages(language).contentRowActions;
+  const pathname = usePathname();
   const [loading, setLoading] = useState(false);
 
   async function moveToTrash() {
@@ -64,7 +67,7 @@ export default function ContentRowActions({
       {status !== "trash" ? (
         <>
           <a
-            href={`/admin/content/${id}`}
+            href={resolveAdminBrowserHref(pathname, `/admin/content/${id}`)}
             className="text-blue-600 hover:underline"
           >
             {t.edit}

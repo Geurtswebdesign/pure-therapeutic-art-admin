@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
+import { getAdminAreaUrl } from "@/lib/site/urls";
 
 export default function SettingsIndexPage() {
-  redirect("/admin/settings/general");
+  redirect(getAdminAreaUrl("/settings/general"));
 }
