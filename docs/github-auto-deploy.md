@@ -1,6 +1,6 @@
 # GitHub Auto Deploy
 
-This repo can deploy automatically to the Plesk production server on every push to `main`.
+This repo can deploy automatically to the Plesk production server on every push to `production`.
 
 The model is:
 
@@ -24,7 +24,7 @@ Add your GitHub repo as `origin`:
 
 ```bash
 git remote add origin git@github.com:<owner>/<repo>.git
-git push -u origin main
+git push -u origin production
 ```
 
 If `origin` already exists, update it instead:
@@ -81,6 +81,9 @@ mv /var/www/vhosts/pure-therapeutic-art-therapy.com/pure-therapeutic-art/current
 
 git clone git@github.com:<owner>/<repo>.git \
   /var/www/vhosts/pure-therapeutic-art-therapy.com/pure-therapeutic-art/current
+
+cd /var/www/vhosts/pure-therapeutic-art-therapy.com/pure-therapeutic-art/current
+git checkout production
 ```
 
 Then restore the server-only env file:
@@ -126,7 +129,7 @@ Important:
 After the one-time setup:
 
 ```bash
-git push origin main
+git push origin production
 ```
 
 That push triggers the workflow and production updates automatically.
