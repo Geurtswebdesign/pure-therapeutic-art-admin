@@ -48,7 +48,7 @@ export default function AccountProfileForm({
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [website, setWebsite] = useState(initialWebsite);
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
-  const [bio, setBio] = useState(initialBio);
+  const bio = initialBio;
   const [publicDirectory, setPublicDirectory] = useState(
     therapist?.public_profile_enabled ?? false
   );
@@ -123,6 +123,35 @@ export default function AccountProfileForm({
     }
   }
 
+  function onCancel() {
+    setFirstName(initialFirstName);
+    setLastName(initialLastName);
+    setDisplayName(initialDisplayName);
+    setWebsite(initialWebsite);
+    setAvatarUrl(initialAvatarUrl);
+    setPublicDirectory(therapist?.public_profile_enabled ?? false);
+    setProfessionalTitle(therapist?.professional_title ?? "");
+    setShortIntro(therapist?.short_intro ?? "");
+    setPracticeName(therapist?.practice_name ?? "");
+    setRegistrationNumber(therapist?.registration_number ?? "");
+    setPublicEmail(therapist?.public_email ?? "");
+    setPhone(therapist?.phone ?? "");
+    setCity(therapist?.city ?? "");
+    setRegion(therapist?.region ?? "");
+    setLocation(therapist?.location ?? "");
+    setOnlineAvailable(therapist?.online_available ?? false);
+    setInPersonAvailable(therapist?.in_person_available ?? false);
+    setAcceptingNewClients(therapist?.accepting_new_clients ?? false);
+    setSpecializations(therapist?.specializations ?? []);
+    setTargetGroups(therapist?.target_groups ?? []);
+    setLanguages(therapist?.languages ?? []);
+    setMethods(therapist?.methods ?? []);
+    setYearsExperience(therapist?.years_experience?.toString() ?? "");
+    setIntakeNote(therapist?.intake_note ?? "");
+    setMessage(null);
+    setUploadError(null);
+  }
+
   function onSave() {
     setMessage(null);
     setUploadError(null);
@@ -173,59 +202,72 @@ export default function AccountProfileForm({
     <section className="space-y-4 rounded-2xl border border-[#e5dbcf] bg-[#f7f0e9] p-4">
       <h2 className="text-lg font-semibold text-stone-900">{t.title}</h2>
 
-      <label className="block space-y-1">
-        <span className="text-sm text-stone-600">{t.email}</span>
-        <input
-          value={email}
-          disabled
-          className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2 text-sm text-stone-700"
-        />
-      </label>
-
-      <label className="block space-y-1">
-        <span className="text-sm text-stone-600">{t.avatar}</span>
-      </label>
       <div className="rounded-2xl border border-dashed border-stone-300 bg-white px-4 py-4">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={avatarUrl}
               alt={displayName || email}
-              className="h-20 w-20 rounded-full object-cover"
+              className="h-20 w-20 shrink-0 rounded-full object-cover"
             />
           ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-stone-100 text-sm text-stone-500">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-stone-100 text-sm text-stone-500">
               {t.avatarEmpty}
             </div>
           )}
-          <div className="space-y-2">
-            <label className="inline-flex cursor-pointer rounded-full bg-[#b64040] px-4 py-2 text-sm text-white">
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                disabled={isUploadingAvatar}
-                onChange={(event) => {
-                  void handleAvatarChange(event.target.files?.[0] ?? null);
-                  event.currentTarget.value = "";
-                }}
-              />
-              {isUploadingAvatar ? t.avatarUploading : t.avatarUpload}
-            </label>
-            {avatarUrl ? (
-              <button
-                type="button"
-                onClick={() => setAvatarUrl("")}
-                className="block rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700"
-              >
-                {t.avatarRemove}
-              </button>
-            ) : null}
-            <p className="text-xs leading-5 text-stone-500">{t.avatarHint}</p>
-            {uploadError ? (
-              <p className="text-sm text-red-600">{uploadError}</p>
-            ) : null}
+
+          <div className="min-w-0 flex-1 space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block space-y-1">
+                <span className="text-sm text-stone-600">{t.displayName}</span>
+                <input
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+                />
+              </label>
+
+              <label className="block space-y-1">
+                <span className="text-sm text-stone-600">{t.email}</span>
+                <input
+                  value={email}
+                  disabled
+                  className="w-full rounded-xl border border-stone-200 bg-white/70 px-3 py-2 text-sm text-stone-700"
+                />
+              </label>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <label className="inline-flex cursor-pointer rounded-full bg-[#b64040] px-4 py-2 text-sm text-white">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    disabled={isUploadingAvatar}
+                    onChange={(event) => {
+                      void handleAvatarChange(event.target.files?.[0] ?? null);
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                  {isUploadingAvatar ? t.avatarUploading : t.avatarUpload}
+                </label>
+                {avatarUrl ? (
+                  <button
+                    type="button"
+                    onClick={() => setAvatarUrl("")}
+                    className="rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700"
+                  >
+                    {t.avatarRemove}
+                  </button>
+                ) : null}
+              </div>
+              <p className="text-xs leading-5 text-stone-500">{t.avatarHint}</p>
+              {uploadError ? (
+                <p className="text-sm text-red-600">{uploadError}</p>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
@@ -251,31 +293,12 @@ export default function AccountProfileForm({
       </div>
 
       <label className="block space-y-1">
-        <span className="text-sm text-stone-600">{t.displayName}</span>
-        <input
-          value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
-          className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
-        />
-      </label>
-
-      <label className="block space-y-1">
         <span className="text-sm text-stone-600">{general.website}</span>
         <input
           type="url"
           value={website}
           onChange={(e) => setWebsite(e.target.value)}
           placeholder="https://"
-          className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
-        />
-      </label>
-
-      <label className="block space-y-1">
-        <span className="text-sm text-stone-600">{general.aboutYou}</span>
-        <textarea
-          rows={4}
-          value={bio}
-          onChange={(e) => setBio(e.target.value)}
           className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
         />
       </label>
@@ -497,6 +520,15 @@ export default function AccountProfileForm({
           className="rounded-full bg-[#b64040] px-4 py-2 text-sm text-white disabled:opacity-60"
         >
           {isPending ? t.saving : t.save}
+        </button>
+
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isPending || isUploadingAvatar}
+          className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 disabled:opacity-60"
+        >
+          {t.cancel}
         </button>
 
         {message ? <p className="text-sm text-stone-600">{message}</p> : null}
