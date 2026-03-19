@@ -19,24 +19,25 @@ jobs:
       PROD_USER: ${{ secrets.PROD_USER }}
       PROD_PORT: ${{ secrets.PROD_PORT }}
       PROD_APP_DIR: ${{ secrets.PROD_APP_DIR }}
+      PROD_SSH_PRIVATE_KEY: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
     steps:
       - name: Validate deploy secrets
         run: |
           test -n "$PROD_HOST"
           test -n "$PROD_USER"
+          test -n "$PROD_SSH_PRIVATE_KEY"
 
-      - name: Start SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
-
-      - name: Add server host key
+      - name: Prepare SSH
         run: |
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$PROD_SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p "${PROD_PORT:-22}" -H "$PROD_HOST" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
       - name: Run production deploy
         run: |
           APP_DIR="${PROD_APP_DIR:-/var/www/vhosts/pure-therapeutic-art-therapy.com/pure-therapeutic-art/current}"
-          ssh -p "${PROD_PORT:-22}" "${PROD_USER}@${PROD_HOST}" \
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -p "${PROD_PORT:-22}" "${PROD_USER}@${PROD_HOST}" \
             "export APP_DIR='${APP_DIR}'; export DEPLOY_BRANCH='production'; export REPO_REMOTE='origin'; bash '${APP_DIR}/deploy/update-server-from-git.sh'"

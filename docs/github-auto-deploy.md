@@ -123,6 +123,7 @@ Important:
 
 - this is a server access key, not the GitHub deploy key
 - keep the GitHub deploy key and the GitHub Actions SSH key separate
+- the deploy user should also own the app checkout and PM2 process
 
 ## How deploys work after setup
 

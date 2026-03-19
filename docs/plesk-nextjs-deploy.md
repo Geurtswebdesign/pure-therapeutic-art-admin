@@ -22,7 +22,6 @@ Use Node.js `20.9.0` or newer.
 This repo includes:
 
 - `.node-version` set to `24`
-- `.npmrc` with `scripts-prepend-node-path=true`
 - `postcss.config.mjs` for the Tailwind/PostCSS production build
 
 These files are part of the production build setup for Plesk.
@@ -60,7 +59,7 @@ Then run:
 
 ```bash
 npm -v
-npm ci
+npm ci --include=dev
 npm run build:standalone
 node server.cjs
 ```
@@ -85,17 +84,23 @@ It starts `.next/standalone/server.js` after the standalone build exists.
 
 This is a Plesk/nodenv PATH issue. The usual fix is:
 
-1. Make sure the repo files `.node-version` and `.npmrc` are present in the application root.
+1. Make sure `.node-version` is present in the application root.
 2. If needed, run in the application root:
 
 ```bash
 nodenv local 24
 ```
 
-3. Retry:
+3. Or use the explicit Plesk Node binary on PATH:
 
 ```bash
-npm ci
+export PATH=/opt/plesk/node/24/bin:$PATH
+```
+
+4. Retry:
+
+```bash
+npm ci --include=dev
 npm run build:standalone
 ```
 

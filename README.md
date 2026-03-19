@@ -43,3 +43,9 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 - production runbook: `docs/production-runbook.md`
 - GitHub auto deploy: `docs/github-auto-deploy.md`
 - secret rotation checklist: `docs/secret-rotation-checklist.md`
+
+## Release Flow
+
+- `main`: development branch
+- `production`: live deployment branch
+- pushing to `production` triggers the GitHub Actions production deploy

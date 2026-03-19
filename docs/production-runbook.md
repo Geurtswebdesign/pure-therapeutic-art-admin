@@ -22,7 +22,6 @@ These files must be present in the server app root:
 - `proxy.ts`
 - `tsconfig.json`
 - `server.cjs`
-- `.npmrc`
 - `.node-version`
 - `.env.production`
 - `app/`
@@ -60,7 +59,7 @@ The script:
 
 - uses the Plesk Node 24 binary
 - loads `.env.production`
-- runs `npm ci`
+- runs `npm ci --include=dev`
 - rebuilds the standalone bundle
 - restarts or starts the PM2 app
 - saves the PM2 process list
@@ -97,6 +96,9 @@ pm2 logs pure-therapeutic-art --lines 100
 ss -ltnp | grep :3000
 curl -I http://127.0.0.1:3000
 ```
+
+Run PM2 as the Plesk system user for this subscription, not as `root`.
+That keeps GitHub-driven deploys, the git checkout, and the process owner aligned.
 
 ## Troubleshooting
 
