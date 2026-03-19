@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { updateMyProfile } from "@/app/account/actions";
 import MultiSelectDropdown from "@/components/forms/MultiSelectDropdown";
@@ -39,6 +40,7 @@ export default function AccountProfileForm({
   email,
   language,
 }: Props) {
+  const router = useRouter();
   const messages = getAppMessages(language);
   const t = messages.accountProfile;
   const general = messages.userGeneral;
@@ -150,6 +152,7 @@ export default function AccountProfileForm({
     setIntakeNote(therapist?.intake_note ?? "");
     setMessage(null);
     setUploadError(null);
+    router.push("/account");
   }
 
   function onSave() {
