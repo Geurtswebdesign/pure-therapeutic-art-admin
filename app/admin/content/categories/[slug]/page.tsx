@@ -1,6 +1,5 @@
-import { createAdminClient } from "@/lib/supabase/admin";
-import EditCategoryForm from "@/components/categories/EditCategoryForm";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
+import { getAdminAreaUrl } from "@/lib/site/urls";
 
 type Props = {
   params: Promise<{
@@ -8,40 +7,7 @@ type Props = {
   }>;
 };
 
-export default async function EditCategoryPage(
-  props: Props
-) {
+export default async function EditCategoryPage(props: Props) {
   const { slug } = await props.params;
-
-  const supabase = createAdminClient();
-  const { data: categoryTaxonomy, error: taxonomyError } = await supabase
-    .from("content_taxonomies")
-    .select("id")
-    .eq("slug", "category")
-    .maybeSingle();
-
-  if (taxonomyError || !categoryTaxonomy) {
-    return notFound();
-  }
-
-  const { data, error } = await supabase
-    .from("content_terms")
-    .select("*")
-    .eq("taxonomy_id", categoryTaxonomy.id)
-    .eq("slug", slug)
-    .single();
-
-  if (error || !data) {
-    return notFound();
-  }
-
-  return (
-    <div className="max-w-3xl space-y-6">
-      <h1 className="text-2xl font-semibold">
-        Categorie bewerken
-      </h1>
-
-      <EditCategoryForm category={data} taxonomyId={categoryTaxonomy.id} />
-    </div>
-  );
+  redirect(getAdminAreaUrl(`/content/taxonomies/category/terms/${slug}`));
 }
