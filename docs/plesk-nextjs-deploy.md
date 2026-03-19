@@ -58,11 +58,15 @@ Deploy the project into a server directory, for example:
 Then run:
 
 ```bash
+whoami
 npm -v
 npm ci --include=dev
 npm run build:standalone
 node server.cjs
 ```
+
+`whoami` must be the Plesk system user for this subscription, not `root`.
+The git checkout owner, the deploy user, and the PM2 owner must be the same user.
 
 Do not run `npm audit fix` on the production server as part of deployment.
 That can mutate `package-lock.json` and change the dependency tree away from the tested repo state.
@@ -76,6 +80,7 @@ pm2 save
 ```
 
 Update the `cwd` value in `deploy/pm2/ecosystem.config.cjs` before starting PM2.
+Run these commands as the same Plesk system user that owns the app directory.
 
 `server.cjs` is checked into the repo, so Plesk can use it as a stable startup file.
 It starts `.next/standalone/server.js` after the standalone build exists.

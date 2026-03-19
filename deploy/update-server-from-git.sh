@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="${APP_DIR:-/var/www/vhosts/pure-therapeutic-art-therapy.com/pure-therapeutic-art/current}"
 REPO_REMOTE="${REPO_REMOTE:-origin}"
 DEPLOY_BRANCH="${DEPLOY_BRANCH:-production}"
+
+. "${SCRIPT_DIR}/require-app-user.sh"
+require_app_user "${APP_DIR}"
 
 cd "${APP_DIR}"
 

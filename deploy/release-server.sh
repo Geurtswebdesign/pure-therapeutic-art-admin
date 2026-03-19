@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="${APP_DIR:-/var/www/vhosts/pure-therapeutic-art-therapy.com/pure-therapeutic-art/current}"
 ENV_FILE="${ENV_FILE:-.env.production}"
 PLESK_NODE_BIN="${PLESK_NODE_BIN:-/opt/plesk/node/24/bin}"
 PM2_APP_NAME="${PM2_APP_NAME:-pure-therapeutic-art}"
+
+. "${SCRIPT_DIR}/require-app-user.sh"
+require_app_user "${APP_DIR}"
 
 if [[ ! -x "${PLESK_NODE_BIN}/node" ]]; then
   echo "Node binary niet gevonden op ${PLESK_NODE_BIN}/node"

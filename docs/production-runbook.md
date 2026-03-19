@@ -49,7 +49,18 @@ curl -I http://127.0.0.1:3000
 
 ## Release
 
-Run this on the server:
+Run this on the server as the Plesk system user for this subscription.
+Do not run the release as `root`.
+
+If you are currently logged in as `root`, determine the app owner first and switch to that user:
+
+```bash
+APP_DIR=/var/www/vhosts/pure-therapeutic-art-therapy.com/pure-therapeutic-art/current
+stat -c '%U %G' "${APP_DIR}"
+sudo -u "$(stat -c '%U' "${APP_DIR}")" -H bash -lc "cd '${APP_DIR}' && bash deploy/release-server.sh"
+```
+
+If you are already logged in as the subscription user, run:
 
 ```bash
 bash deploy/release-server.sh
@@ -91,6 +102,7 @@ This checks:
 Quick health commands:
 
 ```bash
+whoami
 pm2 status
 pm2 logs pure-therapeutic-art --lines 100
 ss -ltnp | grep :3000
@@ -99,6 +111,8 @@ curl -I http://127.0.0.1:3000
 
 Run PM2 as the Plesk system user for this subscription, not as `root`.
 That keeps GitHub-driven deploys, the git checkout, and the process owner aligned.
+
+If `whoami` returns `root`, stop and switch to the subscription user first.
 
 ## Troubleshooting
 

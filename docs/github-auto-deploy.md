@@ -111,7 +111,8 @@ Add these repo secrets in GitHub:
 - `PROD_HOST`
   Example: `your.server.ip.or.hostname`
 - `PROD_USER`
-  The SSH user that may deploy on the server
+  The SSH user that may deploy on the server.
+  This must be the Plesk system user that owns the app checkout and PM2 process, never `root`.
 - `PROD_PORT`
   Usually `22`
 - `PROD_APP_DIR`
@@ -124,6 +125,7 @@ Important:
 - this is a server access key, not the GitHub deploy key
 - keep the GitHub deploy key and the GitHub Actions SSH key separate
 - the deploy user should also own the app checkout and PM2 process
+- do not point `PROD_USER` at `root`; the deploy scripts now reject that on purpose
 
 ## How deploys work after setup
 
