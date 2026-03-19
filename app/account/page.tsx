@@ -64,12 +64,6 @@ function accountCardClassName() {
   return "rounded-2xl border border-[#e5dbcf] bg-[#f7f0e9] p-3";
 }
 
-function tabButtonClassName(isActive: boolean) {
-  return isActive
-    ? "rounded-full bg-[#b64040] px-4 py-2 text-sm font-medium text-white"
-    : "rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700";
-}
-
 function labelForAccountType(
   accountType: "admin" | "user" | "client" | "therapist",
   t: ReturnType<typeof getAppMessages>["accountTabs"]
@@ -360,12 +354,6 @@ export default async function AccountPage({
               </span>
             </div>
           </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Link href="/account" className={tabButtonClassName(activeTab === "overview")}>
-            {tabsT.overview}
-          </Link>
         </div>
 
         {activeTab === "profile" ? (
