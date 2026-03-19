@@ -325,33 +325,39 @@ export default async function AccountPage({
       <section className="space-y-4">
         <div className="overflow-hidden rounded-[1.5rem] border border-[#d8c6b8] bg-[#d8e0d3]">
           <div className="px-4 py-4">
-            <div className="flex items-center justify-center">
-              {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={avatarUrl}
-                  alt={displayName}
-                  className="h-16 w-16 rounded-full border border-white/80 object-cover"
-                />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#b64040] text-xl font-semibold text-white">
-                  {getInitials(displayName)}
+            <div className="flex items-center gap-4">
+              <div className="shrink-0">
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    className="h-16 w-16 rounded-full border border-white/80 object-cover"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#b64040] text-xl font-semibold text-white">
+                    {getInitials(displayName)}
+                  </div>
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xl text-stone-900">
+                  {displayName}
+                </p>
+                <p className="mt-1 truncate text-sm text-stone-600">
+                  {user.email ?? ""}
+                </p>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-white/80 px-3 py-1 text-xs uppercase tracking-[0.18em] text-stone-700">
+                    {labelForAccountType(accountType, tabsT)}
+                  </span>
+                  <span className="rounded-full bg-white/60 px-3 py-1 text-xs text-stone-700">
+                    {headerT.createdAt}: {memberSince}
+                  </span>
                 </div>
-              )}
-            </div>
-            <p className="mt-2 text-center text-xl text-stone-900">
-              {displayName}
-            </p>
-            <p className="mt-1 text-center text-sm text-stone-600">
-              {user.email ?? ""}
-            </p>
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-              <span className="rounded-full bg-white/80 px-3 py-1 text-xs uppercase tracking-[0.18em] text-stone-700">
-                {labelForAccountType(accountType, tabsT)}
-              </span>
-              <span className="rounded-full bg-white/60 px-3 py-1 text-xs text-stone-700">
-                {headerT.createdAt}: {memberSince}
-              </span>
+              </div>
             </div>
           </div>
         </div>
