@@ -1,6 +1,3 @@
-"use client";
-
-import Link from "next/link";
 import {
   CalendarDays,
   Home,
@@ -48,8 +45,9 @@ export default function AppBottomNav({ active }: Props) {
 
           return (
             <li key={tab.key}>
-              <Link
+              <a
                 href={tab.href}
+                aria-current={isActive ? "page" : undefined}
                 className={`flex flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] transition ${
                   isActive
                     ? "bg-stone-100 text-stone-950"
@@ -58,7 +56,7 @@ export default function AppBottomNav({ active }: Props) {
               >
                 <Icon size={18} strokeWidth={1.8} />
                 <span>{tab.label}</span>
-              </Link>
+              </a>
             </li>
           );
         })}
