@@ -500,18 +500,6 @@ export default async function AccountPage({
               </div>
             </div>
 
-            <div className={accountCardClassName()}>
-              <h3 className="mb-2 font-medium text-stone-900">Over mij</h3>
-              {bio ? (
-                <p className="rounded-xl bg-white px-3 py-3 text-sm leading-6 text-stone-700">
-                  {bio}
-                </p>
-              ) : (
-                <p className="rounded-xl bg-white px-3 py-3 text-sm leading-6 text-stone-500">
-                  Voeg via je profiel een korte introductie toe.
-                </p>
-              )}
-            </div>
           </>
         )}
 
