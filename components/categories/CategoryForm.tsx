@@ -4,9 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/browser";
 import { trackEvent } from "@/lib/analytics/track";
+
 type CategoryOption = {
   id: string;
   name: string;
+};
+
+type Props = {
+  taxonomyId: string | null;
 };
 
 function slugify(text: string) {
@@ -17,7 +22,7 @@ function slugify(text: string) {
     .replace(/\s+/g, "-");
 }
 
-export default function CategoryForm() {
+export default function CategoryForm({ taxonomyId }: Props) {
   const router = useRouter();
 
   const [categories, setCategories] = useState<CategoryOption[]>([]);
@@ -29,16 +34,22 @@ export default function CategoryForm() {
 
   useEffect(() => {
     async function loadCategories() {
+      if (!taxonomyId) {
+        setCategories([]);
+        return;
+      }
+
       const { data } = await supabase
-        .from("content_categories")
+        .from("content_terms")
         .select("id, name")
+        .eq("taxonomy_id", taxonomyId)
         .order("name");
 
       setCategories(data || []);
     }
 
     loadCategories();
-  }, []);
+  }, [taxonomyId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,10 +61,22 @@ export default function CategoryForm() {
       eventCategory: "admin_content",
     });
 
-    const { error } = await supabase.from("content_categories").insert({
+    if (!taxonomyId) {
+      setLoading(false);
+      trackEvent({
+        eventName: "admin_category_create_failed",
+        eventCategory: "admin_content",
+        eventLabel: "Category taxonomy ontbreekt",
+      });
+      return;
+    }
+
+    const { error } = await supabase.from("content_terms").insert({
+      taxonomy_id: taxonomyId,
       name,
       slug: slug || slugify(name),
       description,
+      sort_order: categories.length,
       parent_id: parentId || null,
     });
 

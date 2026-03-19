@@ -14,10 +14,20 @@ export default async function EditCategoryPage(
   const { slug } = await props.params;
 
   const supabase = createAdminClient();
+  const { data: categoryTaxonomy, error: taxonomyError } = await supabase
+    .from("content_taxonomies")
+    .select("id")
+    .eq("slug", "category")
+    .maybeSingle();
+
+  if (taxonomyError || !categoryTaxonomy) {
+    return notFound();
+  }
 
   const { data, error } = await supabase
-    .from("content_categories")
+    .from("content_terms")
     .select("*")
+    .eq("taxonomy_id", categoryTaxonomy.id)
     .eq("slug", slug)
     .single();
 
@@ -31,7 +41,7 @@ export default async function EditCategoryPage(
         Categorie bewerken
       </h1>
 
-      <EditCategoryForm category={data} />
+      <EditCategoryForm category={data} taxonomyId={categoryTaxonomy.id} />
     </div>
   );
 }

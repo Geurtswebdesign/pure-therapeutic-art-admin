@@ -45,7 +45,7 @@ export default function CategoryRow({ node, depth }: Props) {
     if (!confirmed) return;
 
     await supabase
-      .from("content_categories")
+      .from("content_terms")
       .delete()
       .eq("id", node.id);
 
@@ -56,7 +56,7 @@ export default function CategoryRow({ node, depth }: Props) {
     setLoading(true);
 
     await supabase
-      .from("content_categories")
+      .from("content_terms")
       .update({
         name,
         slug,

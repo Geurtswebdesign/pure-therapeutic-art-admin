@@ -14,6 +14,7 @@ type CategoryOption = {
 
 type Props = {
   category: Category;
+  taxonomyId: string;
 };
 
 function slugify(text: string) {
@@ -26,6 +27,7 @@ function slugify(text: string) {
 
 export default function EditCategoryForm({
   category,
+  taxonomyId,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -41,15 +43,16 @@ export default function EditCategoryForm({
   useEffect(() => {
     async function loadCategories() {
       const { data } = await supabase
-        .from("content_categories")
+        .from("content_terms")
         .select("id, name")
+        .eq("taxonomy_id", taxonomyId)
         .order("name");
 
       setCategories(data || []);
     }
 
     loadCategories();
-  }, []);
+  }, [taxonomyId]);
 
   async function handleSave() {
     trackEvent({
@@ -59,7 +62,7 @@ export default function EditCategoryForm({
     });
 
     const { error } = await supabase
-      .from("content_categories")
+      .from("content_terms")
       .update({
         name,
         slug,

@@ -123,25 +123,72 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
     title: string;
     slug: string;
     credit_cost: number;
-    content_categories?: { name: string }[] | null;
+    categories: { name: string }[];
   };
 
   let unlockedItems: UnlockedItem[] = [];
 
   if (contentIds.length) {
-    const { data: withCategories, error: withCategoriesError } = await supabase
+    const { data: baseItems } = await supabase
       .from("content_items")
-      .select("id, title, slug, credit_cost, content_categories(name)")
+      .select("id, title, slug, credit_cost")
       .in("id", contentIds);
 
-    if (withCategoriesError) {
-      const { data: baseItems } = await supabase
-        .from("content_items")
-        .select("id, title, slug, credit_cost")
-        .in("id", contentIds);
-      unlockedItems = (baseItems ?? []) as UnlockedItem[];
-    } else {
-      unlockedItems = (withCategories ?? []) as UnlockedItem[];
+    unlockedItems = ((baseItems ?? []) as Array<{
+      id: string;
+      title: string;
+      slug: string;
+      credit_cost?: number | null;
+    }>).map((item) => ({
+      id: item.id,
+      title: item.title,
+      slug: item.slug,
+      credit_cost: item.credit_cost ?? 0,
+      categories: [],
+    }));
+
+    const { data: categoryTaxonomy } = await supabase
+      .from("content_taxonomies")
+      .select("id")
+      .eq("slug", "category")
+      .maybeSingle();
+
+    if (categoryTaxonomy) {
+      const { data: relationships } = await supabase
+        .from("content_term_relationships")
+        .select("content_item_id, term_id")
+        .in("content_item_id", contentIds);
+
+      const categoryTermIds = Array.from(
+        new Set(
+          (relationships ?? [])
+            .map((relationship) => relationship.term_id)
+            .filter((value): value is string => Boolean(value))
+        )
+      );
+
+      if (categoryTermIds.length) {
+        const { data: terms } = await supabase
+          .from("content_terms")
+          .select("id, name, taxonomy_id")
+          .in("id", categoryTermIds)
+          .eq("taxonomy_id", categoryTaxonomy.id);
+
+        const termById = new Map(
+          (terms ?? []).map((term) => [term.id, term])
+        );
+        const itemById = new Map(
+          unlockedItems.map((item) => [item.id, item])
+        );
+
+        for (const relationship of relationships ?? []) {
+          const item = itemById.get(relationship.content_item_id);
+          const term = termById.get(relationship.term_id);
+
+          if (!item || !term) continue;
+          item.categories.push({ name: term.name });
+        }
+      }
     }
   }
 
@@ -160,7 +207,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
             title: item.title,
             slug: item.slug,
             credit_cost: item.credit_cost,
-            categories: item.content_categories?.map((c) => c.name) ?? [],
+            categories: item.categories.map((c) => c.name),
           };
         })()
       : null,
