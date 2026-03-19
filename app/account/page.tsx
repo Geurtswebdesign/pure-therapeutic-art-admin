@@ -359,26 +359,12 @@ export default async function AccountPage({
                 {headerT.createdAt}: {memberSince}
               </span>
             </div>
-            <div className="mt-3 flex justify-center">
-              <Link
-                href="/account?tab=profile"
-                className="inline-flex rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-800"
-              >
-                {tabsT.profile}
-              </Link>
-            </div>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
           <Link href="/account" className={tabButtonClassName(activeTab === "overview")}>
             {tabsT.overview}
-          </Link>
-          <Link
-            href="/account?tab=profile"
-            className={tabButtonClassName(activeTab === "profile")}
-          >
-            {tabsT.profile}
           </Link>
         </div>
 
