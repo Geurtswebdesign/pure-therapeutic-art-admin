@@ -82,6 +82,17 @@ select {
   font-family: Corbel, sans-serif;
 }
 
+:where(
+  a[href],
+  button,
+  [role="button"],
+  summary,
+  label[for],
+  label:has(input[type="file"])
+) {
+  cursor: pointer;
+}
+
 .lockout-container {
   margin-inline: auto;
   width: 100%;
