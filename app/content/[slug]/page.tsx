@@ -6,6 +6,7 @@ import {
   getThemeNavigationForContentItem,
 } from "@/lib/content/public-queries";
 import PublicContentArticle from "@/components/content/PublicContentArticle";
+import ContentProgressCard from "@/components/content/ContentProgressCard";
 import { hasAccess } from "@/lib/unlock/hasAccess";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import ContentLockout from "@/components/content/ContentLockout";
@@ -13,6 +14,11 @@ import { getBalanceByScope } from "@/lib/users/getBalanceByScope";
 import { getContentAccessScope } from "@/lib/content/access";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import {
+  getUserContentProgress,
+  isContentProgressStorageReady,
+} from "@/lib/content/progress";
+import { toContentProgressSnapshot } from "@/lib/content/progress-types";
 
 export default async function ContentDetailPage({
   params,
@@ -50,6 +56,14 @@ export default async function ContentDetailPage({
     );
   }
 
+  const progressStorageReady = user
+    ? await isContentProgressStorageReady()
+    : false;
+  const userProgress =
+    user && progressStorageReady
+      ? await getUserContentProgress(user.id, item.id)
+      : null;
+
   const [blocks, category, themeNavigation] = await Promise.all([
     getPublishedBlocks(item.id),
     getPrimaryCategoryForContentItem(item.id),
@@ -63,6 +77,15 @@ export default async function ContentDetailPage({
       blocks={blocks}
       isSeedCategory={isSeedCategory}
       themeNavigation={themeNavigation}
+      progressCard={
+        user && progressStorageReady ? (
+          <ContentProgressCard
+            contentItemId={item.id}
+            initialProgress={toContentProgressSnapshot(userProgress)}
+            language={language}
+          />
+        ) : null
+      }
       languageLabel={language}
     />
   );

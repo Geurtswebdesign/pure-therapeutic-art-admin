@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { ContentBlock } from "@/lib/content/types";
@@ -19,11 +20,13 @@ export default function PublicContentArticle({
   blocks,
   isSeedCategory,
   themeNavigation,
+  progressCard,
 }: {
   item: Item;
   blocks: ContentBlock[];
   isSeedCategory: boolean;
   themeNavigation?: ThemeItemNavigation | null;
+  progressCard?: ReactNode;
   languageLabel: string;
   statusLabel?: string | null;
 }) {
@@ -58,6 +61,8 @@ export default function PublicContentArticle({
           </p>
         ) : null}
       </header>
+
+      {progressCard ? <div className="mb-8">{progressCard}</div> : null}
 
       {item.featured_image_url ? (
         <Image
