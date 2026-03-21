@@ -80,6 +80,7 @@ function getTrajectoryMessages(language: UiLanguage) {
       noCategory: "No category",
       chapterSingular: "chapter",
       chapterPlural: "chapters",
+      chaptersLabel: "Chapters",
       continueWith: "Continue with",
       openTheme: "Open theme",
       themeStatusActive: "Active",
@@ -114,6 +115,7 @@ function getTrajectoryMessages(language: UiLanguage) {
       noCategory: "Keine Kategorie",
       chapterSingular: "Kapitel",
       chapterPlural: "Kapitel",
+      chaptersLabel: "Kapitel",
       continueWith: "Weiter mit",
       openTheme: "Thema ansehen",
       themeStatusActive: "Aktiv",
@@ -147,6 +149,7 @@ function getTrajectoryMessages(language: UiLanguage) {
     noCategory: "Geen categorie",
     chapterSingular: "hoofdstuk",
     chapterPlural: "hoofdstukken",
+    chaptersLabel: "Hoofdstukken",
     continueWith: "Verder met",
     openTheme: "Bekijk thema",
     themeStatusActive: "Actief",
@@ -462,6 +465,37 @@ export default async function AccountPage({
         : theme.inProgressChapterCount > 0
           ? trajectoryT.themeStatusActive
           : trajectoryT.themeStatusUnlocked;
+    const themeChapters = progressCollections.unlocked
+      .filter((item) => item.themeId === theme.id)
+      .sort((left, right) => {
+        const leftSectionOrder = left.themeSectionSortOrder ?? Number.MAX_SAFE_INTEGER;
+        const rightSectionOrder = right.themeSectionSortOrder ?? Number.MAX_SAFE_INTEGER;
+
+        if (leftSectionOrder !== rightSectionOrder) {
+          return leftSectionOrder - rightSectionOrder;
+        }
+
+        const leftItemOrder = left.themeItemSortOrder ?? Number.MAX_SAFE_INTEGER;
+        const rightItemOrder = right.themeItemSortOrder ?? Number.MAX_SAFE_INTEGER;
+
+        if (leftItemOrder !== rightItemOrder) {
+          return leftItemOrder - rightItemOrder;
+        }
+
+        return left.title.localeCompare(right.title, "nl");
+      })
+      .map((item) => ({
+        id: item.contentItemId,
+        title: item.title,
+        href: buildContentHref(item.slug),
+        statusText: labelForProgressStatus(item.progressStatus, trajectoryT),
+        metaText:
+          item.progressStatus === "completed"
+            ? `${trajectoryT.completedAt}: ${formatDate(item.completedAt, locale)}`
+            : item.lastViewedAt
+              ? `${trajectoryT.lastViewed}: ${formatDate(item.lastViewedAt, locale)}`
+              : `${trajectoryT.unlockedAt}: ${formatDate(item.unlockedAt, locale)}`,
+      }));
 
     return {
       id: theme.id,
@@ -476,6 +510,14 @@ export default async function AccountPage({
         : trajectoryT.openTheme,
       themeHref: theme.themeHref,
       themeLabel: trajectoryT.openTheme,
+      chaptersLabel: trajectoryT.chaptersLabel,
+      chapterCountLabel: `${themeChapters.length} ${
+        themeChapters.length === 1
+          ? trajectoryT.chapterSingular
+          : trajectoryT.chapterPlural
+      }`,
+      openByDefault: theme.inProgressChapterCount > 0,
+      chapters: themeChapters,
     };
   });
 
