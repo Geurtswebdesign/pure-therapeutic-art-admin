@@ -394,6 +394,7 @@ export default async function AccountPage({
     id: `unlocked-${item.contentItemId}`,
     title: item.title,
     href: buildContentHref(item.slug),
+    categoryGroup: item.categories[0] || trajectoryT.noCategory,
     categoriesText: item.categories.join(", ") || trajectoryT.noCategory,
     statusText: labelForProgressStatus(item.progressStatus, trajectoryT),
     metaText: `${trajectoryT.unlockedAt}: ${formatDate(item.unlockedAt, locale)}`,
@@ -591,6 +592,7 @@ export default async function AccountPage({
                   title={trajectoryT.unlocked}
                   emptyText={trajectoryT.noUnlocked}
                   items={unlockedItems}
+                  groupByCategory
                 />
                 <ProgressList
                   title={trajectoryT.completed}
