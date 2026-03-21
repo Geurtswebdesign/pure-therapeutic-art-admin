@@ -3,6 +3,7 @@ import PublicAppShell from "@/components/public/PublicAppShell";
 import AppLogoutButton from "@/components/account/AppLogoutButton";
 import AccountProfileForm from "@/components/account/AccountProfileForm";
 import ProgressList from "@/components/account/ProgressList";
+import ThemeProgressGrid from "@/components/account/ThemeProgressGrid";
 import { login } from "@/components/login/actions";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { getAppMessages } from "@/lib/i18n/appMessages";
@@ -65,10 +66,12 @@ function getTrajectoryMessages(language: UiLanguage) {
     return {
       title: "My journey",
       subtitle: "See which unlocked chapters are waiting, which ones you can continue, and what you already completed.",
+      themes: "Themes",
       inProgress: "Continue",
       unlocked: "My chapters",
       completed: "Completed",
       recent: "Recently viewed",
+      noThemes: "You have no unlocked themes yet.",
       unavailable: "Progress tracking is not available yet. Your unlocked chapters are shown below.",
       noInProgress: "You have no unlocked chapters to continue yet.",
       noUnlocked: "You have not unlocked any chapters yet.",
@@ -77,6 +80,13 @@ function getTrajectoryMessages(language: UiLanguage) {
       noCategory: "No category",
       chapterSingular: "chapter",
       chapterPlural: "chapters",
+      continueWith: "Continue with",
+      openTheme: "Open theme",
+      themeStatusActive: "Active",
+      themeStatusCompleted: "Completed",
+      themeStatusUnlocked: "Unlocked",
+      progressSuffix: "completed",
+      unlockedSuffix: "unlocked",
       lastViewed: "Last viewed",
       unlockedAt: "Unlocked on",
       completedAt: "Completed on",
@@ -90,10 +100,12 @@ function getTrajectoryMessages(language: UiLanguage) {
     return {
       title: "Mein Weg",
       subtitle: "Sieh, welche freigeschalteten Kapitel bereitstehen, welche du fortsetzen kannst und was du bereits abgeschlossen hast.",
+      themes: "Themen",
       inProgress: "Weiter",
       unlocked: "Meine Kapitel",
       completed: "Abgeschlossen",
       recent: "Zuletzt angesehen",
+      noThemes: "Du hast noch keine freigeschalteten Themen.",
       unavailable: "Fortschritt ist noch nicht verfugbar. Deine freigeschalteten Kapitel stehen unten.",
       noInProgress: "Du hast noch keine freigeschalteten Kapitel zum Fortsetzen.",
       noUnlocked: "Du hast noch keine Kapitel freigeschaltet.",
@@ -102,6 +114,13 @@ function getTrajectoryMessages(language: UiLanguage) {
       noCategory: "Keine Kategorie",
       chapterSingular: "Kapitel",
       chapterPlural: "Kapitel",
+      continueWith: "Weiter mit",
+      openTheme: "Thema ansehen",
+      themeStatusActive: "Aktiv",
+      themeStatusCompleted: "Abgeschlossen",
+      themeStatusUnlocked: "Freigeschaltet",
+      progressSuffix: "abgeschlossen",
+      unlockedSuffix: "freigeschaltet",
       lastViewed: "Zuletzt angesehen",
       unlockedAt: "Freigeschaltet am",
       completedAt: "Abgeschlossen am",
@@ -114,10 +133,12 @@ function getTrajectoryMessages(language: UiLanguage) {
   return {
     title: "Mijn traject",
     subtitle: "Bekijk welke ontgrendelde hoofdstukken klaarstaan, welke je kunt oppakken en wat je al hebt afgerond.",
+    themes: "Thema's",
     inProgress: "Verdergaan",
     unlocked: "Mijn hoofdstukken",
     completed: "Afgerond",
     recent: "Recent bekeken",
+    noThemes: "Je hebt nog geen ontgrendelde thema's.",
     unavailable: "Voortgang is nog niet beschikbaar. Je ontgrendelde hoofdstukken staan hieronder.",
     noInProgress: "Je hebt nog geen ontgrendelde hoofdstukken om verder mee te gaan.",
     noUnlocked: "Je hebt nog geen hoofdstukken ontgrendeld.",
@@ -126,6 +147,13 @@ function getTrajectoryMessages(language: UiLanguage) {
     noCategory: "Geen categorie",
     chapterSingular: "hoofdstuk",
     chapterPlural: "hoofdstukken",
+    continueWith: "Verder met",
+    openTheme: "Bekijk thema",
+    themeStatusActive: "Actief",
+    themeStatusCompleted: "Voltooid",
+    themeStatusUnlocked: "Ontgrendeld",
+    progressSuffix: "afgerond",
+    unlockedSuffix: "ontgrendeld",
     lastViewed: "Laatst bekeken",
     unlockedAt: "Ontgrendeld op",
     completedAt: "Afgerond op",
@@ -432,6 +460,38 @@ export default async function AccountPage({
     noteText: item.noteText || null,
   }));
 
+  const themeItems = progressCollections.themes.map((theme) => {
+    const progressPercent = theme.totalChapterCount
+      ? Math.round((theme.completedChapterCount / theme.totalChapterCount) * 100)
+      : 0;
+    const chapterLabel =
+      theme.unlockedChapterCount === 1
+        ? trajectoryT.chapterSingular
+        : trajectoryT.chapterPlural;
+    const statusText =
+      theme.totalChapterCount > 0 &&
+      theme.completedChapterCount >= theme.totalChapterCount
+        ? trajectoryT.themeStatusCompleted
+        : theme.inProgressChapterCount > 0
+          ? trajectoryT.themeStatusActive
+          : trajectoryT.themeStatusUnlocked;
+
+    return {
+      id: theme.id,
+      title: theme.title,
+      progressPercent,
+      progressText: `${theme.completedChapterCount} / ${theme.totalChapterCount} ${trajectoryT.progressSuffix}`,
+      metaText: `${theme.unlockedChapterCount} ${chapterLabel} ${trajectoryT.unlockedSuffix}`,
+      statusText,
+      continueHref: theme.continueHref,
+      continueLabel: theme.continueTitle
+        ? `${trajectoryT.continueWith} ${theme.continueTitle}`
+        : trajectoryT.openTheme,
+      themeHref: theme.themeHref,
+      themeLabel: trajectoryT.openTheme,
+    };
+  });
+
   return (
     <PublicAppShell activeTab="profiel">
       <section className="space-y-4">
@@ -590,7 +650,14 @@ export default async function AccountPage({
                 </div>
               ) : null}
 
-              <div className="grid gap-3 xl:grid-cols-2">
+              <div className="space-y-3">
+                <ThemeProgressGrid
+                  title={trajectoryT.themes}
+                  emptyText={trajectoryT.noThemes}
+                  items={themeItems}
+                />
+
+                <div className="grid gap-3 xl:grid-cols-2">
                 <ProgressList
                   title={trajectoryT.inProgress}
                   emptyText={trajectoryT.noInProgress}
@@ -620,6 +687,7 @@ export default async function AccountPage({
                   groupItemLabelSingular={trajectoryT.chapterSingular}
                   groupItemLabelPlural={trajectoryT.chapterPlural}
                 />
+                </div>
               </div>
             </div>
 

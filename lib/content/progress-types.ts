@@ -33,6 +33,12 @@ export type UserProgressListItem = {
   title: string;
   slug: string | null;
   categories: string[];
+  themeId: string | null;
+  themeTitle: string | null;
+  themeSlug: string | null;
+  themeSortOrder: number | null;
+  themeSectionSortOrder: number | null;
+  themeItemSortOrder: number | null;
   unlockedAt: string | null;
   isSaved: boolean;
   progressStatus: ContentProgressStatus;
@@ -41,6 +47,20 @@ export type UserProgressListItem = {
   startedAt: string | null;
   completedAt: string | null;
   lastViewedAt: string | null;
+};
+
+export type UserThemeProgressSummary = {
+  id: string;
+  title: string;
+  slug: string | null;
+  themeHref: string | null;
+  continueHref: string | null;
+  continueTitle: string | null;
+  totalChapterCount: number;
+  unlockedChapterCount: number;
+  completedChapterCount: number;
+  inProgressChapterCount: number;
+  latestActivityAt: string | null;
 };
 
 export function toContentProgressSnapshot(
