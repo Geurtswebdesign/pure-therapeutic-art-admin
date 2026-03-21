@@ -411,19 +411,6 @@ export default async function AccountPage({
     !therapistProfile.public_profile_enabled &&
     therapistSubscription.status !== "ended";
 
-  const inProgressItems = progressCollections.inProgress.map((item) => ({
-    id: `in-progress-${item.contentItemId}`,
-    title: item.title,
-    href: buildContentHref(item.slug),
-    categoriesText: item.categories.join(", ") || trajectoryT.noCategory,
-    statusText: labelForProgressStatus(item.progressStatus, trajectoryT),
-    metaText: `${trajectoryT.lastViewed}: ${formatDate(
-      item.lastViewedAt ?? item.startedAt ?? item.unlockedAt,
-      locale
-    )}`,
-    noteText: item.noteText || null,
-  }));
-
   const unlockedItems = progressCollections.unlocked.map((item) => ({
     id: `unlocked-${item.contentItemId}`,
     title: item.title,
@@ -658,11 +645,6 @@ export default async function AccountPage({
                 />
 
                 <div className="grid gap-3 xl:grid-cols-2">
-                <ProgressList
-                  title={trajectoryT.inProgress}
-                  emptyText={trajectoryT.noInProgress}
-                  items={inProgressItems}
-                />
                 <ProgressList
                   title={trajectoryT.unlocked}
                   emptyText={trajectoryT.noUnlocked}
