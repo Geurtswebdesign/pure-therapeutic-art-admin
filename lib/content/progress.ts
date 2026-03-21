@@ -7,6 +7,37 @@ import type {
   UserContentProgressRow,
 } from "@/lib/content/progress-types";
 
+type ProgressCollectionResult = {
+  storageReady: boolean;
+  unlocked: UserProgressListItem[];
+  inProgress: UserProgressListItem[];
+  completed: UserProgressListItem[];
+  recent: UserProgressListItem[];
+};
+
+type ProgressContentRow = {
+  id: string;
+  title: string | null;
+  slug: string | null;
+  status: string | null;
+};
+
+type ProgressRelationshipRow = {
+  content_item_id: string;
+  term_id: string;
+};
+
+type ProgressTermRow = {
+  id: string;
+  name: string;
+  taxonomy_id: string;
+};
+
+type UnlockRow = {
+  content_item_id: string | null;
+  unlocked_at: string;
+};
+
 function isMissingProgressTableError(error: {
   code?: string;
   message?: string;
@@ -35,32 +66,6 @@ function compareByDateDesc(
 ) {
   return toTimestamp(right) - toTimestamp(left);
 }
-
-type ProgressCollectionResult = {
-  storageReady: boolean;
-  inProgress: UserProgressListItem[];
-  saved: UserProgressListItem[];
-  completed: UserProgressListItem[];
-  recent: UserProgressListItem[];
-};
-
-type ProgressContentRow = {
-  id: string;
-  title: string | null;
-  slug: string | null;
-  status: string | null;
-};
-
-type ProgressRelationshipRow = {
-  content_item_id: string;
-  term_id: string;
-};
-
-type ProgressTermRow = {
-  id: string;
-  name: string;
-  taxonomy_id: string;
-};
 
 export async function isContentProgressStorageReady() {
   const supabase = createAdminClient();
@@ -170,47 +175,28 @@ export async function upsertUserContentProgress(
   return data;
 }
 
-async function buildUserProgressItems(
-  userId: string
-): Promise<UserProgressListItem[]> {
+async function getUnlockedContentBase(userId: string) {
   const supabase = createAdminClient();
-  const { data: rows, error } = await supabase
-    .from("user_content_progress")
-    .select(
-      "content_item_id, is_saved, progress_status, note_text, saved_at, started_at, completed_at, last_viewed_at"
-    )
-    .eq("user_id", userId);
+  const { data: unlockRows, error: unlockError } = await supabase
+    .from("content_unlocks")
+    .select("content_item_id, unlocked_at")
+    .eq("user_id", userId)
+    .order("unlocked_at", { ascending: false });
 
-  if (error) {
-    if (isMissingProgressTableError(error)) {
-      return [];
-    }
-
-    throw error;
+  if (unlockError) {
+    throw unlockError;
   }
 
-  const progressRows = (rows ?? []) as Array<
-    Pick<
-      UserContentProgressRow,
-      | "content_item_id"
-      | "is_saved"
-      | "progress_status"
-      | "note_text"
-      | "saved_at"
-      | "started_at"
-      | "completed_at"
-      | "last_viewed_at"
-    >
-  >;
+  const latestUnlockByContentId = new Map<string, string>();
+  for (const row of (unlockRows ?? []) as UnlockRow[]) {
+    if (!row.content_item_id || latestUnlockByContentId.has(row.content_item_id)) {
+      continue;
+    }
 
-  const contentIds = Array.from(
-    new Set(
-      progressRows
-        .map((row) => row.content_item_id)
-        .filter((value): value is string => Boolean(value))
-    )
-  );
+    latestUnlockByContentId.set(row.content_item_id, row.unlocked_at);
+  }
 
+  const contentIds = Array.from(latestUnlockByContentId.keys());
   if (!contentIds.length) {
     return [];
   }
@@ -285,9 +271,9 @@ async function buildUserProgressItems(
     }
   }
 
-  return progressRows
-    .map((row) => {
-      const item = contentById.get(row.content_item_id);
+  return contentIds
+    .map((contentItemId) => {
+      const item = contentById.get(contentItemId);
       if (!item) return null;
 
       return {
@@ -295,47 +281,113 @@ async function buildUserProgressItems(
         title: item.title?.trim() || "Onbekende content",
         slug: item.slug,
         categories: categoriesByContentId.get(item.id) ?? [],
-        isSaved: row.is_saved,
-        progressStatus: row.progress_status,
-        noteText: row.note_text ?? "",
-        savedAt: row.saved_at,
-        startedAt: row.started_at,
-        completedAt: row.completed_at,
-        lastViewedAt: row.last_viewed_at,
+        unlockedAt: latestUnlockByContentId.get(contentItemId) ?? null,
       };
     })
-    .filter((item): item is UserProgressListItem => Boolean(item));
+    .filter(
+      (
+        item
+      ): item is Pick<
+        UserProgressListItem,
+        "contentItemId" | "title" | "slug" | "categories" | "unlockedAt"
+      > => Boolean(item)
+    );
+}
+
+async function buildUserProgressItems(
+  userId: string
+): Promise<UserProgressListItem[]> {
+  const baseItems = await getUnlockedContentBase(userId);
+  if (!baseItems.length) {
+    return [];
+  }
+
+  const storageReady = await isContentProgressStorageReady();
+  let progressByContentId = new Map<
+    string,
+    Pick<
+      UserContentProgressRow,
+      | "content_item_id"
+      | "is_saved"
+      | "progress_status"
+      | "note_text"
+      | "saved_at"
+      | "started_at"
+      | "completed_at"
+      | "last_viewed_at"
+    >
+  >();
+
+  if (storageReady) {
+    const supabase = createAdminClient();
+    const { data: rows, error } = await supabase
+      .from("user_content_progress")
+      .select(
+        "content_item_id, is_saved, progress_status, note_text, saved_at, started_at, completed_at, last_viewed_at"
+      )
+      .eq("user_id", userId);
+
+    if (error) {
+      if (!isMissingProgressTableError(error)) {
+        throw error;
+      }
+    } else {
+      progressByContentId = new Map(
+        ((rows ?? []) as Array<
+          Pick<
+            UserContentProgressRow,
+            | "content_item_id"
+            | "is_saved"
+            | "progress_status"
+            | "note_text"
+            | "saved_at"
+            | "started_at"
+            | "completed_at"
+            | "last_viewed_at"
+          >
+        >).map((row) => [row.content_item_id, row])
+      );
+    }
+  }
+
+  return baseItems.map((item) => {
+    const progress = progressByContentId.get(item.contentItemId);
+
+    return {
+      ...item,
+      isSaved: progress?.is_saved ?? false,
+      progressStatus: progress?.progress_status ?? "not_started",
+      noteText: progress?.note_text ?? "",
+      savedAt: progress?.saved_at ?? null,
+      startedAt: progress?.started_at ?? null,
+      completedAt: progress?.completed_at ?? null,
+      lastViewedAt: progress?.last_viewed_at ?? null,
+    };
+  });
 }
 
 export async function getUserProgressCollections(
   userId: string
 ): Promise<ProgressCollectionResult> {
   const storageReady = await isContentProgressStorageReady();
-  if (!storageReady) {
-    return {
-      storageReady: false,
-      inProgress: [],
-      saved: [],
-      completed: [],
-      recent: [],
-    };
-  }
-
   const items = await buildUserProgressItems(userId);
 
-  const inProgress = items
-    .filter((item) => item.progressStatus === "in_progress")
-    .sort((left, right) =>
-      compareByDateDesc(
-        left.lastViewedAt ?? left.startedAt ?? left.savedAt,
-        right.lastViewedAt ?? right.startedAt ?? right.savedAt
-      )
-    )
+  const unlocked = [...items]
+    .sort((left, right) => compareByDateDesc(left.unlockedAt, right.unlockedAt))
     .slice(0, 6);
 
-  const saved = items
-    .filter((item) => item.isSaved)
-    .sort((left, right) => compareByDateDesc(left.savedAt, right.savedAt))
+  const inProgress = items
+    .filter(
+      (item) =>
+        item.progressStatus !== "completed" &&
+        (item.progressStatus === "in_progress" || Boolean(item.lastViewedAt))
+    )
+    .sort((left, right) =>
+      compareByDateDesc(
+        left.lastViewedAt ?? left.startedAt ?? left.unlockedAt,
+        right.lastViewedAt ?? right.startedAt ?? right.unlockedAt
+      )
+    )
     .slice(0, 6);
 
   const completed = items
@@ -349,16 +401,16 @@ export async function getUserProgressCollections(
     .slice(0, 6);
 
   return {
-    storageReady: true,
+    storageReady,
+    unlocked,
     inProgress,
-    saved,
     completed,
     recent,
   };
 }
 
-export async function listUserSavedContent(userId: string) {
-  return (await getUserProgressCollections(userId)).saved;
+export async function listUserUnlockedContent(userId: string) {
+  return (await getUserProgressCollections(userId)).unlocked;
 }
 
 export async function listUserInProgressContent(userId: string) {

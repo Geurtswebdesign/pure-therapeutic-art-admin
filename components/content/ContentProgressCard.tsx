@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   saveContentNote,
   setContentProgressStatus,
-  toggleSavedContent,
   touchContentLastViewed,
 } from "@/app/content/progress-actions";
 import type {
@@ -18,9 +17,7 @@ const messagesByLanguage = {
   nl: {
     title: "Mijn voortgang",
     subtitle:
-      "Bewaar dit item, markeer waar je staat en noteer kort wat je wilt onthouden.",
-    saveForLater: "Bewaar voor later",
-    removeSaved: "Verwijder uit bewaard",
+      "Markeer waar je staat in dit hoofdstuk en noteer kort wat je wilt onthouden.",
     statusLabel: "Status",
     notStarted: "Nog niet gestart",
     inProgress: "Bezig",
@@ -36,9 +33,7 @@ const messagesByLanguage = {
   en: {
     title: "My progress",
     subtitle:
-      "Save this item, mark your status, and keep a short note for yourself.",
-    saveForLater: "Save for later",
-    removeSaved: "Remove from saved",
+      "Mark where you are in this chapter and keep a short note for yourself.",
     statusLabel: "Status",
     notStarted: "Not started",
     inProgress: "In progress",
@@ -54,9 +49,7 @@ const messagesByLanguage = {
   de: {
     title: "Mein Fortschritt",
     subtitle:
-      "Speichere diesen Inhalt, markiere deinen Status und notiere kurz, was du festhalten willst.",
-    saveForLater: "Fur spater speichern",
-    removeSaved: "Aus gespeichert entfernen",
+      "Markiere deinen Stand in diesem Kapitel und notiere kurz, was du festhalten willst.",
     statusLabel: "Status",
     notStarted: "Noch nicht begonnen",
     inProgress: "In Bearbeitung",
@@ -111,21 +104,6 @@ export default function ContentProgressCard({
     });
   }, [contentItemId]);
 
-  function handleSavedToggle() {
-    setMessage(null);
-    startTransition(async () => {
-      try {
-        const next = await toggleSavedContent(contentItemId);
-        setProgress(next);
-        setNoteText(next.noteText);
-        setMessage(t.progressSaved);
-        router.refresh();
-      } catch {
-        setMessage(t.saveFailed);
-      }
-    });
-  }
-
   function handleStatusChange(status: ContentProgressStatus) {
     if (status === progress.progressStatus) return;
 
@@ -164,21 +142,6 @@ export default function ContentProgressCard({
         {t.title}
       </div>
       <p className="mt-2 text-sm leading-6 text-stone-600">{t.subtitle}</p>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={handleSavedToggle}
-          disabled={isPending}
-          className={
-            progress.isSaved
-              ? "rounded-full border border-[#b64040] bg-[#b64040] px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-              : "rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-800 disabled:opacity-60"
-          }
-        >
-          {progress.isSaved ? t.removeSaved : t.saveForLater}
-        </button>
-      </div>
 
       <div className="mt-4">
         <div className="mb-2 text-sm text-stone-600">{t.statusLabel}</div>

@@ -33,6 +33,7 @@ export type UserProgressListItem = {
   title: string;
   slug: string | null;
   categories: string[];
+  unlockedAt: string | null;
   isSaved: boolean;
   progressStatus: ContentProgressStatus;
   noteText: string;

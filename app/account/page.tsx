@@ -64,21 +64,20 @@ function getTrajectoryMessages(language: UiLanguage) {
   if (language === "en") {
     return {
       title: "My journey",
-      subtitle: "Pick up where you left off, revisit saved content, and review what you completed.",
+      subtitle: "See which unlocked chapters are waiting, which ones you can continue, and what you already completed.",
       inProgress: "Continue",
-      saved: "Saved",
+      unlocked: "My chapters",
       completed: "Completed",
       recent: "Recently viewed",
-      unavailable: "Progress will appear here once it becomes available.",
-      noInProgress: "You have not marked any content as in progress yet.",
-      noSaved: "You have not saved any content yet.",
-      noCompleted: "You have not completed any content yet.",
+      unavailable: "Progress tracking is not available yet. Your unlocked chapters are shown below.",
+      noInProgress: "You have no unlocked chapters to continue yet.",
+      noUnlocked: "You have not unlocked any chapters yet.",
+      noCompleted: "You have not completed any chapters yet.",
       noRecent: "No recently viewed content yet.",
       noCategory: "No category",
       lastViewed: "Last viewed",
-      savedAt: "Saved on",
+      unlockedAt: "Unlocked on",
       completedAt: "Completed on",
-      noteFallback: "No personal note yet.",
       statusNotStarted: "Not started",
       statusInProgress: "In progress",
       statusCompleted: "Completed",
@@ -88,21 +87,20 @@ function getTrajectoryMessages(language: UiLanguage) {
   if (language === "de") {
     return {
       title: "Mein Weg",
-      subtitle: "Mach dort weiter, wo du aufgehort hast, finde gespeicherte Inhalte wieder und sieh, was du abgeschlossen hast.",
+      subtitle: "Sieh, welche freigeschalteten Kapitel bereitstehen, welche du fortsetzen kannst und was du bereits abgeschlossen hast.",
       inProgress: "Weiter",
-      saved: "Gespeichert",
+      unlocked: "Meine Kapitel",
       completed: "Abgeschlossen",
       recent: "Zuletzt angesehen",
-      unavailable: "Der Fortschritt wird hier sichtbar, sobald er verfugbar ist.",
-      noInProgress: "Du hast noch keine Inhalte als in Bearbeitung markiert.",
-      noSaved: "Du hast noch keine Inhalte gespeichert.",
-      noCompleted: "Du hast noch keine Inhalte abgeschlossen.",
+      unavailable: "Fortschritt ist noch nicht verfugbar. Deine freigeschalteten Kapitel stehen unten.",
+      noInProgress: "Du hast noch keine freigeschalteten Kapitel zum Fortsetzen.",
+      noUnlocked: "Du hast noch keine Kapitel freigeschaltet.",
+      noCompleted: "Du hast noch keine Kapitel abgeschlossen.",
       noRecent: "Noch keine zuletzt angesehenen Inhalte.",
       noCategory: "Keine Kategorie",
       lastViewed: "Zuletzt angesehen",
-      savedAt: "Gespeichert am",
+      unlockedAt: "Freigeschaltet am",
       completedAt: "Abgeschlossen am",
-      noteFallback: "Noch keine personliche Notiz.",
       statusNotStarted: "Noch nicht begonnen",
       statusInProgress: "In Bearbeitung",
       statusCompleted: "Abgeschlossen",
@@ -111,21 +109,20 @@ function getTrajectoryMessages(language: UiLanguage) {
 
   return {
     title: "Mijn traject",
-    subtitle: "Pak verder op waar je gebleven was, vind bewaarde content terug en bekijk wat je al hebt afgerond.",
+    subtitle: "Bekijk welke ontgrendelde hoofdstukken klaarstaan, welke je kunt oppakken en wat je al hebt afgerond.",
     inProgress: "Verdergaan",
-    saved: "Bewaard",
+    unlocked: "Mijn hoofdstukken",
     completed: "Afgerond",
     recent: "Recent bekeken",
-    unavailable: "Voortgang verschijnt hier zodra die beschikbaar is.",
-    noInProgress: "Je hebt nog geen content als bezig gemarkeerd.",
-    noSaved: "Je hebt nog geen content bewaard.",
-    noCompleted: "Je hebt nog geen content afgerond.",
+    unavailable: "Voortgang is nog niet beschikbaar. Je ontgrendelde hoofdstukken staan hieronder.",
+    noInProgress: "Je hebt nog geen ontgrendelde hoofdstukken om verder mee te gaan.",
+    noUnlocked: "Je hebt nog geen hoofdstukken ontgrendeld.",
+    noCompleted: "Je hebt nog geen hoofdstukken afgerond.",
     noRecent: "Nog geen recent bekeken content.",
     noCategory: "Geen categorie",
     lastViewed: "Laatst bekeken",
-    savedAt: "Bewaard op",
+    unlockedAt: "Ontgrendeld op",
     completedAt: "Afgerond op",
-    noteFallback: "Nog geen persoonlijke notitie.",
     statusNotStarted: "Nog niet gestart",
     statusInProgress: "Bezig",
     statusCompleted: "Afgerond",
@@ -387,19 +384,19 @@ export default async function AccountPage({
     categoriesText: item.categories.join(", ") || trajectoryT.noCategory,
     statusText: labelForProgressStatus(item.progressStatus, trajectoryT),
     metaText: `${trajectoryT.lastViewed}: ${formatDate(
-      item.lastViewedAt ?? item.startedAt ?? item.savedAt,
+      item.lastViewedAt ?? item.startedAt ?? item.unlockedAt,
       locale
     )}`,
     noteText: item.noteText || null,
   }));
 
-  const savedItems = progressCollections.saved.map((item) => ({
-    id: `saved-${item.contentItemId}`,
+  const unlockedItems = progressCollections.unlocked.map((item) => ({
+    id: `unlocked-${item.contentItemId}`,
     title: item.title,
     href: buildContentHref(item.slug),
     categoriesText: item.categories.join(", ") || trajectoryT.noCategory,
     statusText: labelForProgressStatus(item.progressStatus, trajectoryT),
-    metaText: `${trajectoryT.savedAt}: ${formatDate(item.savedAt, locale)}`,
+    metaText: `${trajectoryT.unlockedAt}: ${formatDate(item.unlockedAt, locale)}`,
     noteText: item.noteText || null,
   }));
 
@@ -578,34 +575,34 @@ export default async function AccountPage({
                 </p>
               </div>
 
-              {progressCollections.storageReady ? (
-                <div className="grid gap-3 xl:grid-cols-2">
-                  <ProgressList
-                    title={trajectoryT.inProgress}
-                    emptyText={trajectoryT.noInProgress}
-                    items={inProgressItems}
-                  />
-                  <ProgressList
-                    title={trajectoryT.saved}
-                    emptyText={trajectoryT.noSaved}
-                    items={savedItems}
-                  />
-                  <ProgressList
-                    title={trajectoryT.completed}
-                    emptyText={trajectoryT.noCompleted}
-                    items={completedItems}
-                  />
-                  <ProgressList
-                    title={trajectoryT.recent}
-                    emptyText={trajectoryT.noRecent}
-                    items={recentItems}
-                  />
-                </div>
-              ) : (
-                <div className="rounded-xl bg-white px-4 py-4 text-sm text-stone-600">
+              {!progressCollections.storageReady ? (
+                <div className="mb-3 rounded-xl bg-white px-4 py-4 text-sm text-stone-600">
                   {trajectoryT.unavailable}
                 </div>
-              )}
+              ) : null}
+
+              <div className="grid gap-3 xl:grid-cols-2">
+                <ProgressList
+                  title={trajectoryT.inProgress}
+                  emptyText={trajectoryT.noInProgress}
+                  items={inProgressItems}
+                />
+                <ProgressList
+                  title={trajectoryT.unlocked}
+                  emptyText={trajectoryT.noUnlocked}
+                  items={unlockedItems}
+                />
+                <ProgressList
+                  title={trajectoryT.completed}
+                  emptyText={trajectoryT.noCompleted}
+                  items={completedItems}
+                />
+                <ProgressList
+                  title={trajectoryT.recent}
+                  emptyText={trajectoryT.noRecent}
+                  items={recentItems}
+                />
+              </div>
             </div>
 
             <div className={accountCardClassName()}>
