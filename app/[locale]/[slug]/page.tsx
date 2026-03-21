@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import ContentLayout from "@/components/content/ContentLayout";
 import PublicContentArticle from "@/components/content/PublicContentArticle";
+import ContentProgressCard from "@/components/content/ContentProgressCard";
 import ContentLockout from "@/components/content/ContentLockout";
 import { parseContentBlocks } from "@/lib/content/renderer";
 import { hasAccess } from "@/lib/unlock/hasAccess";
@@ -18,6 +19,11 @@ import {
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { logServerEvent } from "@/lib/analytics/server";
 import { getSupabaseCookieOptions } from "@/lib/site/urls";
+import {
+  getUserContentProgress,
+  isContentProgressStorageReady,
+} from "@/lib/content/progress";
+import { toContentProgressSnapshot } from "@/lib/content/progress-types";
 
 type PageProps = {
   params: Promise<{
@@ -119,6 +125,13 @@ export default async function ContentPage({
     );
   }
 
+  const progressStorageReady =
+    user && !isPreview ? await isContentProgressStorageReady() : false;
+  const userProgress =
+    user && progressStorageReady
+      ? await getUserContentProgress(user.id, item.id)
+      : null;
+
   /* -------------------------------------------------
    * 4️⃣ Blocks ophalen
    * ------------------------------------------------- */
@@ -152,6 +165,15 @@ export default async function ContentPage({
         blocks={blocks}
         isSeedCategory={isSeedCategory}
         themeNavigation={themeNavigation}
+        progressCard={
+          user && progressStorageReady ? (
+            <ContentProgressCard
+              contentItemId={item.id}
+              initialProgress={toContentProgressSnapshot(userProgress)}
+              language={language}
+            />
+          ) : null
+        }
         languageLabel={locale}
         statusLabel={isPreview ? item.status : null}
       />
