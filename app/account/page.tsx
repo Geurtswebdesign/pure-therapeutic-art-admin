@@ -2,7 +2,6 @@ import Link from "next/link";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import AppLogoutButton from "@/components/account/AppLogoutButton";
 import AccountProfileForm from "@/components/account/AccountProfileForm";
-import ProgressList from "@/components/account/ProgressList";
 import ThemeProgressGrid from "@/components/account/ThemeProgressGrid";
 import { login } from "@/components/login/actions";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
@@ -414,42 +413,6 @@ export default async function AccountPage({
     !therapistProfile.public_profile_enabled &&
     therapistSubscription.status !== "ended";
 
-  const unlockedItems = progressCollections.unlocked.map((item) => ({
-    id: `unlocked-${item.contentItemId}`,
-    title: item.title,
-    href: buildContentHref(item.slug),
-    categoryGroup: item.categories[0] || trajectoryT.noCategory,
-    categoriesText: item.categories.join(", ") || trajectoryT.noCategory,
-    statusText: labelForProgressStatus(item.progressStatus, trajectoryT),
-    metaText: `${trajectoryT.unlockedAt}: ${formatDate(item.unlockedAt, locale)}`,
-    noteText: item.noteText || null,
-  }));
-
-  const completedItems = progressCollections.completed.map((item) => ({
-    id: `completed-${item.contentItemId}`,
-    title: item.title,
-    href: buildContentHref(item.slug),
-    categoryGroup: item.categories[0] || trajectoryT.noCategory,
-    categoriesText: item.categories.join(", ") || trajectoryT.noCategory,
-    statusText: labelForProgressStatus(item.progressStatus, trajectoryT),
-    metaText: `${trajectoryT.completedAt}: ${formatDate(
-      item.completedAt,
-      locale
-    )}`,
-    noteText: item.noteText || null,
-  }));
-
-  const recentItems = progressCollections.recent.map((item) => ({
-    id: `recent-${item.contentItemId}`,
-    title: item.title,
-    href: buildContentHref(item.slug),
-    categoryGroup: item.categories[0] || trajectoryT.noCategory,
-    categoriesText: item.categories.join(", ") || trajectoryT.noCategory,
-    statusText: labelForProgressStatus(item.progressStatus, trajectoryT),
-    metaText: `${trajectoryT.lastViewed}: ${formatDate(item.lastViewedAt, locale)}`,
-    noteText: item.noteText || null,
-  }));
-
   const themeItems = progressCollections.themes.map((theme) => {
     const progressPercent = theme.totalChapterCount
       ? Math.round((theme.completedChapterCount / theme.totalChapterCount) * 100)
@@ -685,33 +648,6 @@ export default async function AccountPage({
                   emptyText={trajectoryT.noThemes}
                   items={themeItems}
                 />
-
-                <div className="grid gap-3 xl:grid-cols-2">
-                <ProgressList
-                  title={trajectoryT.unlocked}
-                  emptyText={trajectoryT.noUnlocked}
-                  items={unlockedItems}
-                  groupByCategory
-                  groupItemLabelSingular={trajectoryT.chapterSingular}
-                  groupItemLabelPlural={trajectoryT.chapterPlural}
-                />
-                <ProgressList
-                  title={trajectoryT.completed}
-                  emptyText={trajectoryT.noCompleted}
-                  items={completedItems}
-                  groupByCategory
-                  groupItemLabelSingular={trajectoryT.chapterSingular}
-                  groupItemLabelPlural={trajectoryT.chapterPlural}
-                />
-                <ProgressList
-                  title={trajectoryT.recent}
-                  emptyText={trajectoryT.noRecent}
-                  items={recentItems}
-                  groupByCategory
-                  groupItemLabelSingular={trajectoryT.chapterSingular}
-                  groupItemLabelPlural={trajectoryT.chapterPlural}
-                />
-                </div>
               </div>
             </div>
 
