@@ -75,6 +75,8 @@ function getTrajectoryMessages(language: UiLanguage) {
       noCompleted: "You have not completed any chapters yet.",
       noRecent: "No recently viewed content yet.",
       noCategory: "No category",
+      chapterSingular: "chapter",
+      chapterPlural: "chapters",
       lastViewed: "Last viewed",
       unlockedAt: "Unlocked on",
       completedAt: "Completed on",
@@ -98,6 +100,8 @@ function getTrajectoryMessages(language: UiLanguage) {
       noCompleted: "Du hast noch keine Kapitel abgeschlossen.",
       noRecent: "Noch keine zuletzt angesehenen Inhalte.",
       noCategory: "Keine Kategorie",
+      chapterSingular: "Kapitel",
+      chapterPlural: "Kapitel",
       lastViewed: "Zuletzt angesehen",
       unlockedAt: "Freigeschaltet am",
       completedAt: "Abgeschlossen am",
@@ -120,6 +124,8 @@ function getTrajectoryMessages(language: UiLanguage) {
     noCompleted: "Je hebt nog geen hoofdstukken afgerond.",
     noRecent: "Nog geen recent bekeken content.",
     noCategory: "Geen categorie",
+    chapterSingular: "hoofdstuk",
+    chapterPlural: "hoofdstukken",
     lastViewed: "Laatst bekeken",
     unlockedAt: "Ontgrendeld op",
     completedAt: "Afgerond op",
@@ -405,6 +411,7 @@ export default async function AccountPage({
     id: `completed-${item.contentItemId}`,
     title: item.title,
     href: buildContentHref(item.slug),
+    categoryGroup: item.categories[0] || trajectoryT.noCategory,
     categoriesText: item.categories.join(", ") || trajectoryT.noCategory,
     statusText: labelForProgressStatus(item.progressStatus, trajectoryT),
     metaText: `${trajectoryT.completedAt}: ${formatDate(
@@ -418,6 +425,7 @@ export default async function AccountPage({
     id: `recent-${item.contentItemId}`,
     title: item.title,
     href: buildContentHref(item.slug),
+    categoryGroup: item.categories[0] || trajectoryT.noCategory,
     categoriesText: item.categories.join(", ") || trajectoryT.noCategory,
     statusText: labelForProgressStatus(item.progressStatus, trajectoryT),
     metaText: `${trajectoryT.lastViewed}: ${formatDate(item.lastViewedAt, locale)}`,
@@ -593,16 +601,24 @@ export default async function AccountPage({
                   emptyText={trajectoryT.noUnlocked}
                   items={unlockedItems}
                   groupByCategory
+                  groupItemLabelSingular={trajectoryT.chapterSingular}
+                  groupItemLabelPlural={trajectoryT.chapterPlural}
                 />
                 <ProgressList
                   title={trajectoryT.completed}
                   emptyText={trajectoryT.noCompleted}
                   items={completedItems}
+                  groupByCategory
+                  groupItemLabelSingular={trajectoryT.chapterSingular}
+                  groupItemLabelPlural={trajectoryT.chapterPlural}
                 />
                 <ProgressList
                   title={trajectoryT.recent}
                   emptyText={trajectoryT.noRecent}
                   items={recentItems}
+                  groupByCategory
+                  groupItemLabelSingular={trajectoryT.chapterSingular}
+                  groupItemLabelPlural={trajectoryT.chapterPlural}
                 />
               </div>
             </div>

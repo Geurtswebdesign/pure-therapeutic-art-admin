@@ -16,11 +16,15 @@ export default function ProgressList({
   emptyText,
   items,
   groupByCategory = false,
+  groupItemLabelSingular = "item",
+  groupItemLabelPlural = "items",
 }: {
   title: string;
   emptyText: string;
   items: ProgressListItemView[];
   groupByCategory?: boolean;
+  groupItemLabelSingular?: string;
+  groupItemLabelPlural?: string;
 }) {
   const groupedItems = groupByCategory
     ? Array.from(
@@ -91,8 +95,10 @@ export default function ProgressList({
                   <div className="min-w-0">
                     <div className="font-medium text-stone-900">{category}</div>
                     <div className="mt-1 text-xs text-stone-500">
-                      {categoryItems.length} hoofdstuk
-                      {categoryItems.length === 1 ? "" : "ken"}
+                      {categoryItems.length}{" "}
+                      {categoryItems.length === 1
+                        ? groupItemLabelSingular
+                        : groupItemLabelPlural}
                     </div>
                   </div>
                   <span className="text-lg leading-none text-stone-400 transition group-open:rotate-45">
