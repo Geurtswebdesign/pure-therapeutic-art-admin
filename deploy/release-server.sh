@@ -6,6 +6,8 @@ APP_DIR="${APP_DIR:-/var/www/vhosts/pure-therapeutic-art-therapy.com/pure-therap
 ENV_FILE="${ENV_FILE:-.env.production}"
 PLESK_NODE_BIN="${PLESK_NODE_BIN:-/opt/plesk/node/24/bin}"
 PM2_APP_NAME="${PM2_APP_NAME:-pure-therapeutic-art}"
+HEALTHCHECK_ATTEMPTS="${HEALTHCHECK_ATTEMPTS:-20}"
+HEALTHCHECK_DELAY_SECONDS="${HEALTHCHECK_DELAY_SECONDS:-1}"
 
 . "${SCRIPT_DIR}/require-app-user.sh"
 require_app_user "${APP_DIR}"
@@ -44,4 +46,19 @@ fi
 
 pm2 save
 pm2 status
-curl -fsSI "http://127.0.0.1:${PORT:-3000}" | sed -n '1,10p'
+
+HEALTHCHECK_URL="http://127.0.0.1:${PORT:-3000}"
+for ((attempt = 1; attempt <= HEALTHCHECK_ATTEMPTS; attempt++)); do
+  if curl -fsSI "${HEALTHCHECK_URL}" >/tmp/pure-therapeutic-art-healthcheck.txt 2>/dev/null; then
+    sed -n '1,10p' /tmp/pure-therapeutic-art-healthcheck.txt
+    exit 0
+  fi
+
+  if (( attempt < HEALTHCHECK_ATTEMPTS )); then
+    sleep "${HEALTHCHECK_DELAY_SECONDS}"
+  fi
+done
+
+echo "Health check mislukt voor ${HEALTHCHECK_URL}"
+pm2 logs "${PM2_APP_NAME}" --lines 50 --nostream || true
+exit 1
