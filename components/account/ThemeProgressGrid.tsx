@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 type ThemeProgressCardView = {
@@ -32,6 +35,43 @@ export default function ThemeProgressGrid({
   emptyText: string;
   items: ThemeProgressCardView[];
 }) {
+  const itemsStateKey = useMemo(
+    () =>
+      items
+        .map((item) => `${item.id}:${item.openByDefault ? "1" : "0"}`)
+        .join("|"),
+    [items]
+  );
+  const [openMap, setOpenMap] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(items.map((item) => [item.id, Boolean(item.openByDefault)]))
+  );
+
+  useEffect(() => {
+    setOpenMap((current) => {
+      const next = Object.fromEntries(
+        items.map((item) => [item.id, current[item.id] ?? Boolean(item.openByDefault)])
+      );
+
+      const currentKeys = Object.keys(current);
+      const nextKeys = Object.keys(next);
+      const hasSameKeys =
+        currentKeys.length === nextKeys.length &&
+        currentKeys.every((key) => key in next);
+      const hasSameValues = hasSameKeys
+        ? nextKeys.every((key) => current[key] === next[key])
+        : false;
+
+      return hasSameValues ? current : next;
+    });
+  }, [items, itemsStateKey]);
+
+  function toggleItem(itemId: string) {
+    setOpenMap((current) => ({
+      ...current,
+      [itemId]: !current[itemId],
+    }));
+  }
+
   return (
     <div className="rounded-xl bg-white px-4 py-4">
       <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-stone-500">
@@ -41,12 +81,15 @@ export default function ThemeProgressGrid({
       {items.length ? (
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
           {items.map((item) => (
-            <details
+            <div
               key={item.id}
-              className="group overflow-hidden rounded-xl border border-[#eadfd4] bg-[#fcf8f4]"
-              open={item.openByDefault}
+              className="overflow-hidden rounded-xl border border-[#eadfd4] bg-[#fcf8f4]"
             >
-              <summary className="list-none px-4 py-4 marker:hidden">
+              <button
+                type="button"
+                onClick={() => toggleItem(item.id)}
+                className="block w-full px-4 py-4 text-left"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="font-medium text-stone-900">{item.title}</div>
@@ -56,7 +99,11 @@ export default function ThemeProgressGrid({
                     <span className="shrink-0 rounded-full bg-[#f7f0e9] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-stone-700">
                       {item.statusText}
                     </span>
-                    <span className="text-lg leading-none text-stone-400 transition group-open:rotate-45">
+                    <span
+                      className={`text-lg leading-none text-stone-400 transition ${
+                        openMap[item.id] ? "rotate-45" : ""
+                      }`}
+                    >
                       +
                     </span>
                   </div>
@@ -71,10 +118,10 @@ export default function ThemeProgressGrid({
                   </div>
                   <div className="mt-2 text-sm text-stone-600">{item.progressText}</div>
                 </div>
+              </button>
 
-              </summary>
-
-              <div className="border-t border-[#eadfd4] bg-white/60 px-4 py-4">
+              {openMap[item.id] ? (
+                <div className="border-t border-[#eadfd4] bg-white/60 px-4 py-4">
                 <div className="mb-4 flex flex-wrap gap-2">
                   {item.continueHref ? (
                     <Link
@@ -146,8 +193,9 @@ export default function ThemeProgressGrid({
                     )
                   )}
                 </div>
-              </div>
-            </details>
+                </div>
+              ) : null}
+            </div>
           ))}
         </div>
       ) : (
