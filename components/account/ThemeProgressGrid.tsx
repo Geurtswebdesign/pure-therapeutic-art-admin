@@ -99,12 +99,11 @@ export default function ThemeProgressGrid({
                     <span className="shrink-0 rounded-full bg-[#f7f0e9] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-stone-700">
                       {item.statusText}
                     </span>
-                    <span
-                      className={`text-lg leading-none text-stone-400 transition ${
-                        openMap[item.id] ? "rotate-45" : ""
-                      }`}
-                    >
-                      +
+                    <span className="relative block h-4 w-4 shrink-0">
+                      <span className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-stone-400" />
+                      {!openMap[item.id] ? (
+                        <span className="absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-stone-400" />
+                      ) : null}
                     </span>
                   </div>
                 </div>

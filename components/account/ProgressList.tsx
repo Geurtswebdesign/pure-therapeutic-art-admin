@@ -101,8 +101,9 @@ export default function ProgressList({
                         : groupItemLabelPlural}
                     </div>
                   </div>
-                  <span className="text-lg leading-none text-stone-400 transition group-open:rotate-45">
-                    +
+                  <span className="relative block h-4 w-4 shrink-0">
+                    <span className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-stone-400" />
+                    <span className="absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-stone-400 transition group-open:opacity-0" />
                   </span>
                 </summary>
 
