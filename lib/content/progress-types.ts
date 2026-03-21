@@ -28,6 +28,20 @@ export type ContentProgressSnapshot = {
   lastViewedAt: string | null;
 };
 
+export type UserProgressListItem = {
+  contentItemId: string;
+  title: string;
+  slug: string | null;
+  categories: string[];
+  isSaved: boolean;
+  progressStatus: ContentProgressStatus;
+  noteText: string;
+  savedAt: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  lastViewedAt: string | null;
+};
+
 export function toContentProgressSnapshot(
   row: UserContentProgressRow | null
 ): ContentProgressSnapshot {
