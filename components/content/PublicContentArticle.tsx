@@ -62,8 +62,6 @@ export default function PublicContentArticle({
         ) : null}
       </header>
 
-      {progressCard ? <div className="mb-8">{progressCard}</div> : null}
-
       {item.featured_image_url ? (
         <Image
           src={item.featured_image_url}
@@ -149,6 +147,8 @@ export default function PublicContentArticle({
           </div>
         </section>
       ) : null}
+
+      {progressCard ? <div className="mt-8">{progressCard}</div> : null}
     </article>
   );
 }

@@ -17,7 +17,7 @@ const messagesByLanguage = {
   nl: {
     title: "Mijn voortgang",
     subtitle:
-      "Markeer waar je staat in dit hoofdstuk en noteer kort wat je wilt onthouden.",
+      "Je voortgang wordt automatisch bijgehouden zodra je begint met lezen. Je kunt dit hieronder altijd zelf aanpassen.",
     statusLabel: "Status",
     notStarted: "Nog niet gestart",
     inProgress: "Bezig",
@@ -33,7 +33,7 @@ const messagesByLanguage = {
   en: {
     title: "My progress",
     subtitle:
-      "Mark where you are in this chapter and keep a short note for yourself.",
+      "Your progress is tracked automatically once you start reading. You can always adjust it below.",
     statusLabel: "Status",
     notStarted: "Not started",
     inProgress: "In progress",
@@ -49,7 +49,7 @@ const messagesByLanguage = {
   de: {
     title: "Mein Fortschritt",
     subtitle:
-      "Markiere deinen Stand in diesem Kapitel und notiere kurz, was du festhalten willst.",
+      "Dein Fortschritt wird automatisch erfasst, sobald du mit dem Lesen beginnst. Unten kannst du ihn jederzeit selbst anpassen.",
     statusLabel: "Status",
     notStarted: "Noch nicht begonnen",
     inProgress: "In Bearbeitung",
@@ -83,7 +83,10 @@ export default function ContentProgressCard({
   language: UiLanguage;
 }) {
   const router = useRouter();
+  const cardRef = useRef<HTMLElement | null>(null);
+  const openedAtRef = useRef(Date.now());
   const touchedRef = useRef(false);
+  const autoStartedRef = useRef(false);
   const [progress, setProgress] = useState(initialProgress);
   const [noteText, setNoteText] = useState(initialProgress.noteText);
   const [message, setMessage] = useState<string | null>(null);
@@ -103,6 +106,55 @@ export default function ContentProgressCard({
       touchedRef.current = true;
     });
   }, [contentItemId]);
+
+  useEffect(() => {
+    if (progress.progressStatus !== "not_started") return;
+
+    let cancelled = false;
+
+    const markInProgress = async () => {
+      if (cancelled || autoStartedRef.current) return;
+
+      autoStartedRef.current = true;
+
+      try {
+        const next = await setContentProgressStatus(contentItemId, "in_progress");
+        if (cancelled) return;
+        setProgress(next);
+        setNoteText(next.noteText);
+      } catch {
+        autoStartedRef.current = false;
+      }
+    };
+
+    const maybeAutoStart = () => {
+      const elapsed = Date.now() - openedAtRef.current;
+      if (elapsed >= 8000) {
+        void markInProgress();
+        return;
+      }
+
+      const doc = document.documentElement;
+      const scrollable = doc.scrollHeight - window.innerHeight;
+      const ratio = scrollable > 0 ? window.scrollY / scrollable : 0;
+
+      if (ratio >= 0.2) {
+        void markInProgress();
+      }
+    };
+
+    const timer = window.setTimeout(() => {
+      void markInProgress();
+    }, 8000);
+
+    window.addEventListener("scroll", maybeAutoStart, { passive: true });
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", maybeAutoStart);
+    };
+  }, [contentItemId, progress.progressStatus]);
 
   function handleStatusChange(status: ContentProgressStatus) {
     if (status === progress.progressStatus) return;
@@ -137,7 +189,10 @@ export default function ContentProgressCard({
   }
 
   return (
-    <section className="rounded-[1.25rem] border border-[#ddcfbf] bg-white/80 p-4 sm:p-5">
+    <section
+      ref={cardRef}
+      className="rounded-[1.25rem] border border-[#ddcfbf] bg-white/80 p-4 sm:p-5"
+    >
       <div className="text-[11px] uppercase tracking-[0.24em] text-stone-500">
         {t.title}
       </div>
