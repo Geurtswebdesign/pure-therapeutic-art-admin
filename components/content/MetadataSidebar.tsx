@@ -33,7 +33,7 @@ type DraftState = {
 type MetadataSidebarProps = {
   language: UiLanguage;
   item: {
-    id: string;
+    id: string | null;
     status: ContentStatus;
     slug: string | null;
     language: string;
@@ -82,6 +82,7 @@ export default function MetadataSidebar({
   const canSaveDraft = dirty && !saving;
   const canPublishOrUpdate = !saving && (dirty || draft.status === "draft");
   const isPublished = draft.status === "published";
+  const hasPersistedItem = Boolean(item.id);
   const liveSlug = draft.slug.trim();
 
   function renderBox(
@@ -152,6 +153,7 @@ export default function MetadataSidebar({
   }
 
   async function handleDelete() {
+    if (!item.id) return;
     const ok = confirm(
       dirty
         ? t.unsavedDeleteConfirm
@@ -180,11 +182,11 @@ export default function MetadataSidebar({
               </button>
             ) : null}
 
-            {liveSlug && draft.status === "draft" ? (
+            {hasPersistedItem && liveSlug && draft.status === "draft" ? (
               <PreviewButton slug={liveSlug} locale={item.language} />
             ) : null}
 
-            {liveSlug && draft.status === "published" ? (
+            {hasPersistedItem && liveSlug && draft.status === "published" ? (
               <a
                 href={`/${item.language}/${liveSlug}`}
                 target="_blank"
@@ -267,13 +269,15 @@ export default function MetadataSidebar({
             {saving ? t.saving : isPublished ? t.update : t.publishAction}
           </button>
 
-          <button
-            type="button"
-            onClick={handleDelete}
-            className="w-full rounded px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-          >
-            {t.moveToTrash}
-          </button>
+          {hasPersistedItem ? (
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="w-full rounded px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+            >
+              {t.moveToTrash}
+            </button>
+          ) : null}
         </div>
       )}
 
