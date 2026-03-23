@@ -9,7 +9,7 @@ import {
   ProductPurchaseCard,
 } from "@/components/shop/ShopCatalog";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
-import { getPublishedContentBySlug } from "@/lib/content/public-queries";
+import { getPublishedContentByReference } from "@/lib/content/public-queries";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
@@ -78,7 +78,7 @@ export default async function ShopProductPage({
   const user = category === "ebooks" ? await getCurrentUser() : null;
   const linkedContentItem =
     category === "ebooks" && item.contentSlug?.trim()
-      ? await getPublishedContentBySlug(item.contentSlug.trim())
+      ? await getPublishedContentByReference(item.contentSlug.trim())
       : null;
   const ebookRequiresUnlock =
     category === "ebooks" ? (linkedContentItem?.credit_cost ?? 0) > 0 : false;

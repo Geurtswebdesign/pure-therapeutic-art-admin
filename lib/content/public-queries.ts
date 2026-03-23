@@ -489,6 +489,80 @@ export async function getPublishedContentBySlug(slug: string) {
   return data;
 }
 
+function normalizeLookupValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function slugifyLookupValue(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export async function getPublishedContentByReference(reference: string) {
+  const trimmed = reference.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const slugified = slugifyLookupValue(trimmed);
+  const slugCandidates = Array.from(
+    new Set([trimmed, slugified].map((value) => value.trim()).filter(Boolean))
+  );
+
+  const supabase = createAdminClient();
+  const { data: slugMatches, error: slugError } = await supabase
+    .from("content_items")
+    .select("*")
+    .eq("status", "published")
+    .in("slug", slugCandidates);
+
+  if (slugError) {
+    console.error("getPublishedContentByReference:slug", slugError);
+  }
+
+  const normalizedReference = normalizeLookupValue(trimmed);
+  const normalizedSlugified = normalizeLookupValue(slugified);
+  const bestSlugMatch =
+    (slugMatches ?? [])
+      .map((row) => {
+        const normalizedRowSlug = normalizeLookupValue(row.slug ?? "");
+        const score =
+          normalizedRowSlug === normalizedReference
+            ? 3
+            : normalizedRowSlug === normalizedSlugified
+              ? 2
+              : 0;
+        return { row, score };
+      })
+      .filter((entry) => entry.score > 0)
+      .sort((left, right) => right.score - left.score)[0]?.row ?? null;
+
+  if (bestSlugMatch) {
+    return bestSlugMatch;
+  }
+
+  const { data: titleMatch, error: titleError } = await supabase
+    .from("content_items")
+    .select("*")
+    .eq("status", "published")
+    .eq("title", trimmed)
+    .maybeSingle();
+
+  if (titleError) {
+    console.error("getPublishedContentByReference:title", titleError);
+    return null;
+  }
+
+  return titleMatch;
+}
+
 export async function getPublishedBlocks(contentItemId: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
