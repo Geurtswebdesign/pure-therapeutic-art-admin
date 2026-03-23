@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { ExternalLink, ShoppingCart, Unlock } from "lucide-react";
-import { unlockContentItem } from "@/app/content/actions";
+import { unlockEbookProduct } from "@/app/shop/ebook-actions";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 
 type Props = {
-  contentId: string | null;
-  contentSlug: string | null;
+  productSlug: string;
+  readerHref: string | null;
+  isReady: boolean;
   cost: number;
   balance: number;
   isLoggedIn: boolean;
@@ -19,7 +20,7 @@ type Props = {
 
 const COPY = {
   nl: {
-    missing: "Dit e-book is nog niet gekoppeld aan een leesbare app-publicatie.",
+    missing: "Dit e-book is nog niet helemaal klaar voor de app-reader.",
     open: "Open e-book in app",
     unlock: "Speel e-book vrij in app",
     unlocking: "Bezig met vrijspelen...",
@@ -29,9 +30,11 @@ const COPY = {
       "Je hebt niet genoeg boekcredits om dit e-book vrij te spelen.",
     bodyWhenReady:
       "Dit e-book wordt in de app vrijgespeeld. Na aankoop of vrijspelen lees je het direct veilig in de app-reader.",
+    bodyWhenPreparing:
+      "Dit e-book wordt als app-product ingericht. Zodra de readerkoppeling volledig klaar staat, kun je het hier direct openen.",
   },
   en: {
-    missing: "This ebook is not linked to a readable in-app publication yet.",
+    missing: "This ebook is not fully ready for the in-app reader yet.",
     open: "Open ebook in app",
     unlock: "Unlock ebook in app",
     unlocking: "Unlocking...",
@@ -40,9 +43,11 @@ const COPY = {
     insufficient: "You do not have enough book credits to unlock this ebook.",
     bodyWhenReady:
       "This ebook is unlocked inside the app. After purchase or unlock, you can read it directly in the protected app reader.",
+    bodyWhenPreparing:
+      "This ebook is being prepared as an in-app product. Once the reader link is fully ready, you can open it here directly.",
   },
   de: {
-    missing: "Dieses E-Book ist noch nicht mit einer lesbaren App-Publikation verknupft.",
+    missing: "Dieses E-Book ist noch nicht vollstandig fur den App-Reader bereit.",
     open: "E-Book in der App offnen",
     unlock: "E-Book in der App freischalten",
     unlocking: "Wird freigeschaltet...",
@@ -52,12 +57,15 @@ const COPY = {
       "Du hast nicht genug Buchcredits, um dieses E-Book freizuschalten.",
     bodyWhenReady:
       "Dieses E-Book wird direkt in der App freigeschaltet. Danach liest du es sicher im geschutzten App-Reader.",
+    bodyWhenPreparing:
+      "Dieses E-Book wird als App-Produkt vorbereitet. Sobald die Reader-Verknupfung fertig ist, kannst du es hier direkt offnen.",
   },
 } as const;
 
 export default function InAppEbookPurchaseCard({
-  contentId,
-  contentSlug,
+  productSlug,
+  readerHref,
+  isReady,
   cost,
   balance,
   isLoggedIn,
@@ -69,28 +77,27 @@ export default function InAppEbookPurchaseCard({
   const [isPending, startTransition] = useTransition();
   const t = COPY[language] ?? COPY.nl;
 
-  if (!contentId || !contentSlug) {
+  if (!isReady || !readerHref) {
     return (
       <article className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-4 shadow-sm">
-        <p className="text-sm leading-6 text-[#6b5d50]">{t.missing}</p>
+        <p className="text-sm leading-6 text-[#6b5d50]">{t.bodyWhenPreparing}</p>
+        <div className="mt-4 inline-flex rounded-full border border-[#decfbe] bg-[#fcf6f1] px-4 py-2 text-sm font-medium text-[#8a5f49]">
+          {t.missing}
+        </div>
       </article>
     );
   }
 
-  const readerHref = `/account/ebooks/${contentSlug}`;
+  const resolvedReaderHref = readerHref;
   const loginHref = `/login?next=${encodeURIComponent(pathname || readerHref)}`;
   const creditsHref = "/shop/credits?scope=book";
   const requiresUnlock = cost > 0;
   const insufficient = requiresUnlock && balance < cost;
 
   function handleUnlock() {
-    if (!contentId) {
-      return;
-    }
-
     startTransition(async () => {
-      await unlockContentItem(contentId);
-      router.push(readerHref);
+      await unlockEbookProduct(productSlug);
+      router.push(resolvedReaderHref);
       router.refresh();
     });
   }

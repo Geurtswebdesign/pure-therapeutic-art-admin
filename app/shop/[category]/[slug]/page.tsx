@@ -9,7 +9,6 @@ import {
   ProductPurchaseCard,
 } from "@/components/shop/ShopCatalog";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
-import { getPublishedContentByReference } from "@/lib/content/public-queries";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
@@ -19,7 +18,7 @@ import {
   isCatalogItemInDevelopment,
   type CatalogCategory,
 } from "@/lib/shop/catalog";
-import { hasAccess } from "@/lib/unlock/hasAccess";
+import { resolveEbookProductState } from "@/lib/shop/ebook-products";
 import { getBalanceByScope } from "@/lib/users/getBalanceByScope";
 
 const PRODUCT_CATEGORY_CONFIG = {
@@ -76,20 +75,18 @@ export default async function ShopProductPage({
   const config = PRODUCT_CATEGORY_CONFIG[category];
   const isInDevelopment = isCatalogItemInDevelopment(item);
   const user = category === "ebooks" ? await getCurrentUser() : null;
-  const linkedContentItem =
-    category === "ebooks" && item.contentSlug?.trim()
-      ? await getPublishedContentByReference(item.contentSlug.trim())
+  const ebookState =
+    category === "ebooks"
+      ? await resolveEbookProductState({
+          item,
+          userId: user?.id ?? null,
+        })
       : null;
   const ebookRequiresUnlock =
-    category === "ebooks" ? (linkedContentItem?.credit_cost ?? 0) > 0 : false;
-  const ebookHasAccess =
-    category === "ebooks" && linkedContentItem && user
-      ? ebookRequiresUnlock
-        ? await hasAccess(user.id, linkedContentItem.id)
-        : true
-      : false;
+    category === "ebooks" ? (ebookState?.unlockCost ?? 0) > 0 : false;
+  const ebookHasAccess = ebookState?.hasAccess ?? false;
   const ebookBalance =
-    category === "ebooks" && linkedContentItem && user && ebookRequiresUnlock && !ebookHasAccess
+    category === "ebooks" && user && ebookRequiresUnlock && !ebookHasAccess
       ? await getBalanceByScope(user.id, "book")
       : 0;
 
@@ -145,9 +142,10 @@ export default async function ShopProductPage({
         <ProductContentBlock icon={config.icon} title={item.purchaseTitle}>
           {category === "ebooks" ? (
             <InAppEbookPurchaseCard
-              contentId={linkedContentItem?.id ?? null}
-              contentSlug={linkedContentItem?.slug ?? null}
-              cost={linkedContentItem?.credit_cost ?? 0}
+              productSlug={item.id}
+              readerHref={ebookState?.readerHref ?? null}
+              isReady={ebookState?.isReady ?? false}
+              cost={ebookState?.unlockCost ?? 0}
               balance={ebookBalance}
               isLoggedIn={!!user}
               hasAccess={ebookHasAccess}

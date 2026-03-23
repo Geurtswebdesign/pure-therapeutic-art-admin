@@ -215,6 +215,21 @@ function getAccountEbookHref(slug: string | null) {
   return slug ? `/account/ebooks/${slug}` : null;
 }
 
+function getAccountProductEbookHref(
+  productSlug: string | null,
+  epubUrl: string | null
+) {
+  return productSlug && epubUrl ? `/account/ebooks/product/${productSlug}` : null;
+}
+
+function getWebsiteEbookMetadata(metadata: unknown) {
+  const record = asRecord(metadata);
+  return {
+    productSlug: asString(record?.product_slug ?? record?.productSlug) || null,
+    epubUrl: asUrl(record?.epub_url ?? record?.epubUrl),
+  };
+}
+
 function getSourceLabel(source: string | null | undefined) {
   const normalized = source?.trim().toLowerCase() ?? "";
   if (!normalized) return "App";
@@ -660,13 +675,21 @@ export async function getAccountContentProductsData(
               orderStatus: null,
               quantity: null,
             };
+        const ebookMetadata = websiteRow
+          ? getWebsiteEbookMetadata(websiteRow.metadata)
+          : { productSlug: null, epubUrl: null };
 
         return {
           id: row.id,
           contentItemId,
           title: row.content_item?.title || "E-book",
           excerpt: row.content_item?.excerpt ?? null,
-          href: getAccountEbookHref(row.content_item?.slug ?? null),
+          href:
+            getAccountProductEbookHref(
+              ebookMetadata.productSlug,
+              ebookMetadata.epubUrl
+            ) ??
+            getAccountEbookHref(row.content_item?.slug ?? null),
           unlockedAt: row.unlocked_at,
           themeTitle: contentItemId
             ? themeByContentId.get(contentItemId) ?? null
@@ -685,12 +708,17 @@ export async function getAccountContentProductsData(
       .filter((row) => !row.content_item_id || !ebookContentIds.has(row.content_item_id))
       .map((row) => {
         const details = getWebsiteOrderDetails(row);
+        const ebookMetadata = getWebsiteEbookMetadata(row.metadata);
+        const href = getAccountProductEbookHref(
+          ebookMetadata.productSlug,
+          ebookMetadata.epubUrl
+        );
         return {
           id: `pending-ebook:${row.id}`,
           contentItemId: row.content_item_id ?? null,
           title: row.title,
           excerpt: row.subtitle ?? null,
-          href: null,
+          href,
           unlockedAt: row.occurred_at,
           themeTitle: row.content_item_id
             ? themeByContentId.get(row.content_item_id) ?? null
@@ -702,7 +730,7 @@ export async function getAccountContentProductsData(
           orderNumber: details.orderNumber,
           orderStatus: details.orderStatus,
           quantity: details.quantity,
-          syncState: "pending_link" as const,
+          syncState: href ? ("ready" as const) : ("pending_link" as const),
         };
       }),
   ].sort(
