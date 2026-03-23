@@ -38,6 +38,7 @@ export type AppProfileData = {
   first_name?: string | null;
   last_name?: string | null;
   nickname?: string | null;
+  preferred_language?: string | null;
   website?: string | null;
   bio?: string | null;
   avatar_url?: string | null;

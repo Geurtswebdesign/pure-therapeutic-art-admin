@@ -8,7 +8,7 @@ import {
   getPublishedThemePageBySlug,
   getPublishedThemePages,
 } from "@/lib/content/theme-queries";
-import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 
@@ -92,7 +92,7 @@ export default async function ContentIndexPage({
 }: {
   searchParams?: Promise<SearchParams>;
 }) {
-  const language = resolveUiLanguage(await getPrimaryLanguage());
+  const language = resolveUiLanguage(await getAppLanguage());
   const app = getAppMessages(language);
   const params = await searchParams;
   const categorySlug = Array.isArray(params?.category)

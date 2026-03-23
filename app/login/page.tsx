@@ -6,7 +6,7 @@ import { ArrowLeft, HeartHandshake, ShieldCheck, Stethoscope } from "lucide-reac
 import logo from "@/assets/branding/logo.png";
 import { login, registerAccount, verifyMfa } from "@/components/login/actions";
 import AdminTwoFactorCard from "@/components/admin/settings/AdminTwoFactorCard";
-import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage, type UiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { getPublicBranding } from "@/lib/settings/public";
@@ -254,7 +254,7 @@ export default async function LoginPage({
 }: {
   searchParams?: Promise<LoginSearchParams>;
 }) {
-  const language = resolveUiLanguage(await getPrimaryLanguage());
+  const language = resolveUiLanguage(await getAppLanguage());
   const t = getAppMessages(language).login;
   const copy = AUTH_COPY[language];
   const branding = await getPublicBranding();

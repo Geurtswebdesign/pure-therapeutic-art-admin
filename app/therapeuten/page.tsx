@@ -1,7 +1,7 @@
 import Link from "next/link";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import TherapistDirectoryCard from "@/components/public/TherapistDirectoryCard";
-import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { getPublicTherapistDirectoryData } from "@/lib/users/therapists";
@@ -29,7 +29,7 @@ export default async function TherapeutenPage({
 }: {
   searchParams?: Promise<SearchParams>;
 }) {
-  const language = resolveUiLanguage(await getPrimaryLanguage());
+  const language = resolveUiLanguage(await getAppLanguage());
   const generalT = getAppMessages(language).userGeneral;
   const cardLabels =
     language === "en"

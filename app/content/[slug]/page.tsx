@@ -7,12 +7,13 @@ import {
 } from "@/lib/content/public-queries";
 import PublicContentArticle from "@/components/content/PublicContentArticle";
 import ContentProgressCard from "@/components/content/ContentProgressCard";
+import ProtectedReaderShell from "@/components/content/ProtectedReaderShell";
 import { hasAccess } from "@/lib/unlock/hasAccess";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import ContentLockout from "@/components/content/ContentLockout";
 import { getBalanceByScope } from "@/lib/users/getBalanceByScope";
 import { getContentAccessScope } from "@/lib/content/access";
-import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import {
   getUserContentProgress,
@@ -25,7 +26,7 @@ export default async function ContentDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const language = resolveUiLanguage(await getPrimaryLanguage());
+  const language = resolveUiLanguage(await getAppLanguage());
   const { slug } = await params;
 
   const item = await getPublishedContentBySlug(slug);
@@ -71,7 +72,7 @@ export default async function ContentDetailPage({
   ]);
   const isSeedCategory = Boolean(category?.is_homepage_seed);
 
-  return (
+  const article = (
     <PublicContentArticle
       item={item}
       blocks={blocks}
@@ -89,6 +90,16 @@ export default async function ContentDetailPage({
       languageLabel={language}
     />
   );
+
+  if (scope === "book" && user) {
+    return (
+      <ProtectedReaderShell watermarkText={user.email ?? user.id}>
+        {article}
+      </ProtectedReaderShell>
+    );
+  }
+
+  return article;
 }
 
 export async function generateMetadata({

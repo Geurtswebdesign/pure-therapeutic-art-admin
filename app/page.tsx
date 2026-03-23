@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { getHomepageCategories } from "@/lib/content/public-queries";
@@ -86,7 +86,7 @@ function getInitials(name: string) {
 }
 
 export default async function Home() {
-  const language = resolveUiLanguage(await getPrimaryLanguage());
+  const language = resolveUiLanguage(await getAppLanguage());
   const t = getAppMessages(language).home;
   const user = await getCurrentUser();
   const supabaseAdmin = createAdminClient();

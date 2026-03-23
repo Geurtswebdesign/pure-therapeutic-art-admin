@@ -7,6 +7,7 @@ import { createServerClient } from "@supabase/ssr";
 import ContentLayout from "@/components/content/ContentLayout";
 import PublicContentArticle from "@/components/content/PublicContentArticle";
 import ContentProgressCard from "@/components/content/ContentProgressCard";
+import ProtectedReaderShell from "@/components/content/ProtectedReaderShell";
 import ContentLockout from "@/components/content/ContentLockout";
 import { parseContentBlocks } from "@/lib/content/renderer";
 import { hasAccess } from "@/lib/unlock/hasAccess";
@@ -158,7 +159,7 @@ export default async function ContentPage({
     path: `/${locale}/${slug}`,
   });
 
-  return (
+  const article = (
     <ContentLayout isPreview={isPreview}>
       <PublicContentArticle
         item={item}
@@ -179,4 +180,14 @@ export default async function ContentPage({
       />
     </ContentLayout>
   );
+
+  if (!isPreview && scope === "book" && user) {
+    return (
+      <ProtectedReaderShell watermarkText={user.email ?? user.id}>
+        {article}
+      </ProtectedReaderShell>
+    );
+  }
+
+  return article;
 }

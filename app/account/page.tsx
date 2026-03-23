@@ -1,19 +1,21 @@
 import Link from "next/link";
-import { Download, Globe, NotebookText, type LucideIcon } from "lucide-react";
+import { Download, NotebookText, type LucideIcon } from "lucide-react";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import AppLogoutButton from "@/components/account/AppLogoutButton";
 import AccountProfileForm from "@/components/account/AccountProfileForm";
+import LanguagePreferenceDialog from "@/components/account/LanguagePreferenceDialog";
 import ThemeProgressGrid from "@/components/account/ThemeProgressGrid";
 import { login } from "@/components/login/actions";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { getAppMessages } from "@/lib/i18n/appMessages";
-import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage, type UiLanguage } from "@/lib/i18n/runtime";
 import { getUserProgressCollections } from "@/lib/content/progress";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAccountContentProductsData } from "@/lib/account/content-products";
 import {
-  getTimedEntitlementSummary,
   THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
+  getTimedEntitlementSummary,
 } from "@/lib/users/entitlements";
 import {
   type AppProfileData,
@@ -21,10 +23,12 @@ import {
   getProfileAccountType,
   getTherapistProfileData,
 } from "@/lib/users/accountTypes";
+import { setMySubscriptionCancellationPreference } from "@/app/account/actions";
 
 type AccountSearchParams = {
   error?: string | string[];
   tab?: string | string[];
+  panel?: string | string[];
 };
 
 type ProfileRow = {
@@ -60,11 +64,38 @@ function accountCardClassName() {
 type ContentProductsMessages = {
   title: string;
   purchases: string;
-  downloads: string;
+  ebooks: string;
   subscriptions: string;
   language: string;
   security: string;
   logbook: string;
+  purchasesTitle: string;
+  purchasesSubtitle: string;
+  purchasesEmpty: string;
+  websiteSyncNotice: string;
+  ebooksTitle: string;
+  ebooksSubtitle: string;
+  ebooksEmpty: string;
+  ebooksRead: string;
+  ebooksSecurity: string;
+  subscriptionsTitle: string;
+  subscriptionsSubtitle: string;
+  subscriptionsEmpty: string;
+  subscriptionsExtend: string;
+  subscriptionsCancel: string;
+  subscriptionsResume: string;
+  subscriptionsCancelled: string;
+  subscriptionsActiveUntil: string;
+  subscriptionsStartsAt: string;
+  subscriptionsAmount: string;
+  statusActive: string;
+  statusPlanned: string;
+  statusEnded: string;
+  dialogTitle: string;
+  dialogSubtitle: string;
+  dialogSave: string;
+  dialogSaving: string;
+  openedAt: string;
 };
 
 type ContentProductsRow = {
@@ -72,6 +103,8 @@ type ContentProductsRow = {
   href?: string;
   icon?: LucideIcon;
 };
+
+type ActiveAccountPanel = "purchases" | "ebooks" | "subscriptions" | null;
 
 function buildContentHref(slug: string | null) {
   return slug ? `/content/${slug}` : null;
@@ -187,11 +220,40 @@ function getContentProductsMessages(language: UiLanguage): ContentProductsMessag
     return {
       title: "Content & products",
       purchases: "My purchases",
-      downloads: "My downloads",
+      ebooks: "EBooks",
       subscriptions: "My subscriptions",
       language: "Change language",
       security: "Security & privacy",
       logbook: "Logbook",
+      purchasesTitle: "My purchases",
+      purchasesSubtitle: "Everything currently recorded in the app for your account.",
+      purchasesEmpty: "No purchases have been recorded in the app for your account yet.",
+      websiteSyncNotice:
+        "Orders from the website will appear here as soon as the external order sync is connected.",
+      ebooksTitle: "EBooks",
+      ebooksSubtitle: "Read your unlocked e-books in the app.",
+      ebooksEmpty: "No e-books are available for your account yet.",
+      ebooksRead: "Open e-book",
+      ebooksSecurity:
+        "E-books stay inside the app reader. Downloading, printing and easy copying are limited there.",
+      subscriptionsTitle: "My subscriptions",
+      subscriptionsSubtitle: "See your active subscriptions and manage renewal preferences.",
+      subscriptionsEmpty: "No subscriptions were found for your account.",
+      subscriptionsExtend: "Extend",
+      subscriptionsCancel: "Cancel renewal",
+      subscriptionsResume: "Resume renewal",
+      subscriptionsCancelled: "Will not renew automatically",
+      subscriptionsActiveUntil: "Active until",
+      subscriptionsStartsAt: "Starts on",
+      subscriptionsAmount: "Amount",
+      statusActive: "Active",
+      statusPlanned: "Planned",
+      statusEnded: "Ended",
+      dialogTitle: "Choose app language",
+      dialogSubtitle: "Select one of the languages that is available in the app.",
+      dialogSave: "Save language",
+      dialogSaving: "Saving...",
+      openedAt: "Opened on",
     };
   }
 
@@ -199,22 +261,80 @@ function getContentProductsMessages(language: UiLanguage): ContentProductsMessag
     return {
       title: "Inhalte & Produkte",
       purchases: "Meine Einkaufe",
-      downloads: "Meine Downloads",
+      ebooks: "EBooks",
       subscriptions: "Meine Abonnements",
       language: "Sprache andern",
       security: "Sicherheit & Datenschutz",
       logbook: "Logbuch",
+      purchasesTitle: "Meine Einkaufe",
+      purchasesSubtitle: "Alles, was derzeit in der App fur dein Konto registriert ist.",
+      purchasesEmpty: "Fur dein Konto wurden noch keine Einkaufe in der App erfasst.",
+      websiteSyncNotice:
+        "Bestellungen uber die Website erscheinen hier, sobald die externe Bestellsynchronisierung verbunden ist.",
+      ebooksTitle: "EBooks",
+      ebooksSubtitle: "Lies deine freigeschalteten E-Books in der App.",
+      ebooksEmpty: "Fur dein Konto sind noch keine E-Books verfugbar.",
+      ebooksRead: "E-Book offnen",
+      ebooksSecurity:
+        "E-Books bleiben im App-Reader. Download, Drucken und einfaches Kopieren werden dort eingeschrankt.",
+      subscriptionsTitle: "Meine Abonnements",
+      subscriptionsSubtitle: "Sieh deine aktiven Abonnements ein und verwalte die Verlangerung.",
+      subscriptionsEmpty: "Fur dein Konto wurden keine Abonnements gefunden.",
+      subscriptionsExtend: "Verlangern",
+      subscriptionsCancel: "Verlangerung stoppen",
+      subscriptionsResume: "Verlangerung wieder aktivieren",
+      subscriptionsCancelled: "Wird nicht automatisch verlangert",
+      subscriptionsActiveUntil: "Aktiv bis",
+      subscriptionsStartsAt: "Startet am",
+      subscriptionsAmount: "Betrag",
+      statusActive: "Aktiv",
+      statusPlanned: "Geplant",
+      statusEnded: "Beendet",
+      dialogTitle: "App-Sprache auswahlen",
+      dialogSubtitle: "Wahle eine Sprache, die in der App verfugbar ist.",
+      dialogSave: "Sprache speichern",
+      dialogSaving: "Speichern...",
+      openedAt: "Geoffnet am",
     };
   }
 
   return {
     title: "Content & producten",
     purchases: "Mijn aankopen",
-    downloads: "Mijn downloads",
+    ebooks: "EBooks",
     subscriptions: "Mijn abonnementen",
     language: "Taal wijzigen",
     security: "Veiligheid & privacy",
     logbook: "Logboek",
+    purchasesTitle: "Mijn aankopen",
+    purchasesSubtitle: "Alles wat nu al in de app aan jouw account gekoppeld is.",
+    purchasesEmpty: "Er zijn nog geen aankopen in de app aan jouw account gekoppeld.",
+    websiteSyncNotice:
+      "Bestellingen via de website verschijnen hier zodra de externe orderkoppeling ze doorzet.",
+    ebooksTitle: "EBooks",
+    ebooksSubtitle: "Lees je vrijgespeelde e-books veilig in de app.",
+    ebooksEmpty: "Er zijn nog geen e-books beschikbaar voor jouw account.",
+    ebooksRead: "Open e-book",
+    ebooksSecurity:
+      "E-books blijven in de app-reader. Downloaden, printen en makkelijk kopieren worden daar beperkt.",
+    subscriptionsTitle: "Mijn abonnementen",
+    subscriptionsSubtitle: "Bekijk je lopende abonnementen en beheer verlenging.",
+    subscriptionsEmpty: "Er zijn nog geen abonnementen gevonden voor jouw account.",
+    subscriptionsExtend: "Verlengen",
+    subscriptionsCancel: "Verlenging stopzetten",
+    subscriptionsResume: "Verlenging hervatten",
+    subscriptionsCancelled: "Wordt niet automatisch verlengd",
+    subscriptionsActiveUntil: "Actief tot",
+    subscriptionsStartsAt: "Start op",
+    subscriptionsAmount: "Bedrag",
+    statusActive: "Actief",
+    statusPlanned: "Gepland",
+    statusEnded: "Beindigd",
+    dialogTitle: "Kies app-taal",
+    dialogSubtitle: "Selecteer een taal die in de app beschikbaar is.",
+    dialogSave: "Taal opslaan",
+    dialogSaving: "Opslaan...",
+    openedAt: "Geopend op",
   };
 }
 
@@ -307,12 +427,35 @@ function ContentProductsRowItem({
   );
 }
 
+function normalizeActivePanel(value?: string | string[]): ActiveAccountPanel {
+  const panel = Array.isArray(value) ? value[0] ?? "" : value ?? "";
+  if (panel === "purchases" || panel === "ebooks" || panel === "subscriptions") {
+    return panel;
+  }
+  return null;
+}
+
+function formatMoney(amountCents: number | null, currency: string | null) {
+  if (amountCents === null) return "-";
+
+  try {
+    return new Intl.NumberFormat("nl-NL", {
+      style: "currency",
+      currency: currency || "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amountCents / 100);
+  } catch {
+    return `${(amountCents / 100).toFixed(2)} ${currency || "EUR"}`;
+  }
+}
+
 export default async function AccountPage({
   searchParams,
 }: {
   searchParams?: Promise<AccountSearchParams>;
 }) {
-  const language = resolveUiLanguage(await getPrimaryLanguage());
+  const language = resolveUiLanguage(await getAppLanguage());
   const messages = getAppMessages(language);
   const tabsT = messages.accountTabs;
   const generalT = messages.userGeneral;
@@ -325,6 +468,7 @@ export default async function AccountPage({
   const params = await searchParams;
   const error = Array.isArray(params?.error) ? params?.error[0] : params?.error;
   const tab = Array.isArray(params?.tab) ? params?.tab[0] : params?.tab;
+  const activePanel = normalizeActivePanel(params?.panel);
   const hasInvalidError = error === "invalid";
   const activeTab = tab === "profile" ? "profile" : "overview";
 
@@ -403,6 +547,7 @@ export default async function AccountPage({
     { count: unlockedCount },
     { data: therapistEntitlements },
     progressCollections,
+    contentProductsData,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -426,6 +571,7 @@ export default async function AccountPage({
       .order("created_at", { ascending: false })
       .returns<TherapistEntitlementRow[]>(),
     getUserProgressCollections(user.id),
+    getAccountContentProductsData(user.id),
   ]);
 
   const firstName = profile?.profile_data?.first_name?.trim() ?? "";
@@ -565,10 +711,12 @@ export default async function AccountPage({
     };
   });
   const contentProductsRows: ContentProductsRow[] = [
-    { label: contentProductsT.purchases, href: "/shop" },
-    { label: contentProductsT.downloads, href: "/content", icon: Download },
-    { label: contentProductsT.subscriptions },
-    { label: contentProductsT.language, icon: Globe },
+    { label: contentProductsT.purchases, href: "/account?panel=purchases" },
+    { label: contentProductsT.ebooks, href: "/account?panel=ebooks", icon: Download },
+    {
+      label: contentProductsT.subscriptions,
+      href: "/account?panel=subscriptions",
+    },
     { label: contentProductsT.security },
     {
       label: contentProductsT.logbook,
@@ -749,11 +897,30 @@ export default async function AccountPage({
                 {contentProductsT.title}
               </h3>
               <div className="overflow-hidden rounded-2xl border border-[#e5dbcf] bg-white">
-                {contentProductsRows.map((row, index) => (
+                {contentProductsRows.slice(0, 3).map((row) => (
+                  <div
+                    key={row.label}
+                    className="border-b border-[#ead8cb]"
+                  >
+                    <ContentProductsRowItem {...row} />
+                  </div>
+                ))}
+                <div className="border-b border-[#ead8cb]">
+                  <LanguagePreferenceDialog
+                    triggerLabel={contentProductsT.language}
+                    currentLanguage={language}
+                    title={contentProductsT.dialogTitle}
+                    subtitle={contentProductsT.dialogSubtitle}
+                    saveLabel={contentProductsT.dialogSave}
+                    savingLabel={contentProductsT.dialogSaving}
+                    cancelLabel={messages.accountProfile.cancel}
+                  />
+                </div>
+                {contentProductsRows.slice(3).map((row, index) => (
                   <div
                     key={row.label}
                     className={
-                      index === contentProductsRows.length - 1
+                      index === contentProductsRows.slice(3).length - 1
                         ? ""
                         : "border-b border-[#ead8cb]"
                     }
@@ -763,6 +930,198 @@ export default async function AccountPage({
                 ))}
               </div>
             </div>
+
+            {activePanel === "purchases" ? (
+              <div className={accountCardClassName()}>
+                <h3 className="font-serif text-2xl text-stone-950">
+                  {contentProductsT.purchasesTitle}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-stone-600">
+                  {contentProductsT.purchasesSubtitle}
+                </p>
+                <p className="mt-3 rounded-2xl border border-dashed border-[#decfbe] bg-white/80 px-4 py-3 text-sm text-stone-600">
+                  {contentProductsT.websiteSyncNotice}
+                </p>
+
+                {contentProductsData.purchases.length ? (
+                  <div className="mt-4 space-y-3">
+                    {contentProductsData.purchases.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-2xl border border-[#e5dbcf] bg-white px-4 py-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <h4 className="font-medium text-stone-900">{item.title}</h4>
+                            <p className="mt-1 text-sm text-stone-600">{item.subtitle}</p>
+                          </div>
+                          <div className="text-right text-sm text-stone-500">
+                            <div>{formatDate(item.occurredAt, locale)}</div>
+                            <div className="mt-1 text-stone-700">
+                              {formatMoney(item.amountCents, item.currency)}
+                            </div>
+                          </div>
+                        </div>
+                        {item.href ? (
+                          <div className="mt-3">
+                            <Link
+                              href={item.href}
+                              className="inline-flex rounded-full border border-stone-300 bg-[#f8f3ed] px-3 py-1.5 text-sm text-stone-800"
+                            >
+                              Open
+                            </Link>
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-4 rounded-2xl border border-[#e5dbcf] bg-white px-4 py-4 text-sm text-stone-600">
+                    {contentProductsT.purchasesEmpty}
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            {activePanel === "ebooks" ? (
+              <div className={accountCardClassName()}>
+                <h3 className="font-serif text-2xl text-stone-950">
+                  {contentProductsT.ebooksTitle}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-stone-600">
+                  {contentProductsT.ebooksSubtitle}
+                </p>
+                <p className="mt-3 rounded-2xl border border-dashed border-[#decfbe] bg-white/80 px-4 py-3 text-sm text-stone-600">
+                  {contentProductsT.ebooksSecurity}
+                </p>
+
+                {contentProductsData.ebooks.length ? (
+                  <div className="mt-4 space-y-3">
+                    {contentProductsData.ebooks.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-2xl border border-[#e5dbcf] bg-white px-4 py-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-medium text-stone-900">{item.title}</h4>
+                            {item.excerpt ? (
+                              <p className="mt-1 text-sm leading-6 text-stone-600">
+                                {item.excerpt}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="text-sm text-stone-500">
+                            {contentProductsT.openedAt}: {formatDate(item.unlockedAt, locale)}
+                          </div>
+                        </div>
+                        {item.href ? (
+                          <div className="mt-3">
+                            <Link
+                              href={item.href}
+                              className="inline-flex rounded-full bg-[#b64040] px-4 py-2 text-sm text-white"
+                            >
+                              {contentProductsT.ebooksRead}
+                            </Link>
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-4 rounded-2xl border border-[#e5dbcf] bg-white px-4 py-4 text-sm text-stone-600">
+                    {contentProductsT.ebooksEmpty}
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            {activePanel === "subscriptions" ? (
+              <div className={accountCardClassName()}>
+                <h3 className="font-serif text-2xl text-stone-950">
+                  {contentProductsT.subscriptionsTitle}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-stone-600">
+                  {contentProductsT.subscriptionsSubtitle}
+                </p>
+
+                {contentProductsData.subscriptions.length ? (
+                  <div className="mt-4 space-y-3">
+                    {contentProductsData.subscriptions.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-2xl border border-[#e5dbcf] bg-white px-4 py-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <h4 className="font-medium text-stone-900">{item.title}</h4>
+                            <p className="mt-1 text-sm text-stone-600">
+                              {item.status === "active"
+                                ? contentProductsT.statusActive
+                                : item.status === "planned"
+                                  ? contentProductsT.statusPlanned
+                                  : contentProductsT.statusEnded}
+                            </p>
+                            <div className="mt-2 space-y-1 text-sm text-stone-500">
+                              <div>
+                                {contentProductsT.subscriptionsStartsAt}:{" "}
+                                {formatDate(item.startsAt, locale)}
+                              </div>
+                              <div>
+                                {contentProductsT.subscriptionsActiveUntil}:{" "}
+                                {formatDate(item.endsAt, locale)}
+                              </div>
+                              <div>
+                                {contentProductsT.subscriptionsAmount}:{" "}
+                                {formatMoney(item.amountCents, item.currency)}
+                              </div>
+                              {item.cancelAtPeriodEnd ? (
+                                <div className="text-[#b64040]">
+                                  {contentProductsT.subscriptionsCancelled}
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <Link
+                              href="/shop"
+                              className="rounded-full bg-[#b64040] px-4 py-2 text-sm text-white"
+                            >
+                              {contentProductsT.subscriptionsExtend}
+                            </Link>
+                            {item.status !== "ended" ? (
+                              <form
+                                action={async () => {
+                                  "use server";
+                                  await setMySubscriptionCancellationPreference({
+                                    entitlementKey: item.entitlementKey,
+                                    cancelAtPeriodEnd: !item.cancelAtPeriodEnd,
+                                  });
+                                }}
+                              >
+                                <button
+                                  type="submit"
+                                  className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700"
+                                >
+                                  {item.cancelAtPeriodEnd
+                                    ? contentProductsT.subscriptionsResume
+                                    : contentProductsT.subscriptionsCancel}
+                                </button>
+                              </form>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-4 rounded-2xl border border-[#e5dbcf] bg-white px-4 py-4 text-sm text-stone-600">
+                    {contentProductsT.subscriptionsEmpty}
+                  </div>
+                )}
+              </div>
+            ) : null}
           </>
         )}
 

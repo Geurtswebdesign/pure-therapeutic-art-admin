@@ -5,7 +5,7 @@ import "@/styles/frontend.css";
 import { WalletProvider } from "@/components/providers/WalletProvider";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { getWallet } from "@/lib/credits/getWallet";
-import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import TrackPageView from "@/components/analytics/TrackPageView";
 import { SplashGate } from "@/app/features/splash";
 import { getPublicSplashSettings } from "@/lib/settings/public";
@@ -30,9 +30,9 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [user, primaryLanguage, splashSettings] = await Promise.all([
+  const [user, appLanguage, splashSettings] = await Promise.all([
     getCurrentUser(),
-    getPrimaryLanguage(),
+    getAppLanguage(),
     getPublicSplashSettings(),
   ]);
 
@@ -44,7 +44,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang={primaryLanguage}>
+    <html lang={appLanguage}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
