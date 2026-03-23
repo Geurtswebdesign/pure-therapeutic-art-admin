@@ -15,16 +15,18 @@ OUTPUT_DIR = Path("output/doc/legal")
 
 COMPANY = {
     "app_name": "Pure Grief and Therapeutic ART",
-    "operator": "De Troostboom",
+    "operator": "De Troostboom®",
     "website": "https://pure-therapeutic-art-therapy.com",
     "email": "info@pure-therapeutic-art-therapy.com",
     "kvk": "17251011",
-    "address_line_1": "[IN TE VULLEN: vestigingsadres De Troostboom]",
-    "address_line_2": "[IN TE VULLEN: postcode en vestigingsplaats]",
+    "address_line_1": "Maarten Trompstraat 53",
+    "address_line_2": "5262 VL Vught",
     "country": "Nederland",
     "vat": "[IN TE VULLEN: btw-nummer indien van toepassing]",
-    "phone": "[OPTIONEEL IN TE VULLEN: telefoonnummer]",
+    "phone": "06-51189728",
     "privacy_email": "info@pure-therapeutic-art-therapy.com",
+    "iban": "NL50RABO0130780278",
+    "bic": "RABONL2U",
 }
 
 
@@ -155,9 +157,7 @@ def definitions() -> list[dict[str, Any]]:
                 {
                     "heading": "Nog handmatig te bevestigen gegevens",
                     "bullets": [
-                        f"Vestigingsadres: {COMPANY['address_line_1']}, {COMPANY['address_line_2']}.",
                         f"BTW-nummer: {COMPANY['vat']}.",
-                        f"Telefoonnummer of extra contactkanaal: {COMPANY['phone']}.",
                         "Definitieve lijst van verwerkers en subverwerkers in de privacyverklaring, voor zover je die expliciet wilt benoemen.",
                         "Eventuele specifieke retour- of klachtenprocedure voor aankopen via de externe website van De Troostboom.",
                     ],
@@ -508,6 +508,13 @@ def definitions() -> list[dict[str, Any]]:
                         f"KvK-nummer: {COMPANY['kvk']}",
                         f"BTW-nummer: {COMPANY['vat']}",
                         f"Website: {COMPANY['website']}",
+                    ],
+                },
+                {
+                    "heading": "Aanvullende bedrijfsgegevens",
+                    "bullets": [
+                        f"IBAN: {COMPANY['iban']}",
+                        f"BIC: {COMPANY['bic']}",
                     ],
                 },
                 {
