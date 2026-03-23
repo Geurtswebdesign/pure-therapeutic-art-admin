@@ -958,28 +958,30 @@ export default async function AccountPage({
                         key={item.id}
                         className="rounded-2xl border border-[#e5dbcf] bg-white px-4 py-4"
                       >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <div className="min-w-0 flex-1">
                             <h4 className="font-medium text-stone-900">{item.title}</h4>
-                            <p className="mt-1 text-sm text-stone-600">{item.subtitle}</p>
+                            {item.subtitle ? (
+                              <p className="mt-1 text-sm text-stone-600">
+                                {item.subtitle}
+                              </p>
+                            ) : null}
                           </div>
-                          <div className="text-right text-sm text-stone-500">
-                            <div>{formatDate(item.occurredAt, locale)}</div>
-                            <div className="mt-1 text-stone-700">
-                              {formatMoney(item.amountCents, item.currency)}
-                            </div>
+                          <div className="shrink-0 text-sm text-stone-500">
+                            {formatDate(item.occurredAt, locale)}
                           </div>
-                        </div>
-                        {item.href ? (
-                          <div className="mt-3">
+                          <div className="shrink-0 text-sm text-stone-700">
+                            {formatMoney(item.amountCents, item.currency)}
+                          </div>
+                          {item.href ? (
                             <Link
                               href={item.href}
                               className="inline-flex rounded-full border border-stone-300 bg-[#f8f3ed] px-3 py-1.5 text-sm text-stone-800"
                             >
                               Open
                             </Link>
-                          </div>
-                        ) : null}
+                          ) : null}
+                        </div>
                       </div>
                     ))}
                   </div>

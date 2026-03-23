@@ -211,10 +211,7 @@ export async function getAccountContentProductsData(
         id: `unlock:${row.id}`,
         kind: "content_unlock" as const,
         title: row.content_item?.title || "Ontgrendeld hoofdstuk",
-        subtitle:
-          row.content_item?.access_scope === "book"
-            ? "E-book ontgrendeld in de app"
-            : "Hoofdstuk ontgrendeld in de app",
+        subtitle: "",
         occurredAt: row.unlocked_at,
         amountCents: null,
         currency: null,
