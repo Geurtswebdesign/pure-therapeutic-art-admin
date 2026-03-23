@@ -28,3 +28,7 @@ uploads/
 .next/
 node_modules/
 node_modules/
+
+# temporary legal doc review files
+tmp/
+output/doc/legal/~$*.docx
