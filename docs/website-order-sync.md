@@ -31,7 +31,11 @@ Gebruik `POST /api/orders/sync` om websitebestellingen naar de app te synchronis
       "occurredAt": "2026-03-23T10:15:00.000Z",
       "contentSlug": "rouwverwerking-werkboek",
       "metadata": {
-        "provider": "woocommerce"
+        "provider": "woocommerce",
+        "order_number": "1001",
+        "order_status": "completed",
+        "quantity": 1,
+        "product_url": "https://detroostbook.nl/product/rouwverwerking-werkboek"
       }
     }
   ]
@@ -50,6 +54,12 @@ Gebruik `POST /api/orders/sync` om websitebestellingen naar de app te synchronis
 - Voor beveiligde app-toegang van e-books of hoofdstukken moet de payload een `userId` meesturen.
 - Als alleen `customerEmail` wordt meegestuurd, verschijnt de bestelling wel in `Mijn aankopen`, en wordt die later aan een account gekoppeld zodra dat account dezelfde e-mail gebruikt.
 - Voor leesbare content in de app moet ook `contentItemId` of `contentSlug` meegestuurd worden.
+- Voor rijkere orderdetails in `Mijn aankopen` kun je in `metadata` extra velden meesturen zoals:
+  - `order_number`
+  - `order_status`
+  - `quantity`
+  - `product_url`
+  - `invoice_url`
 
 ## WooCommerce
 

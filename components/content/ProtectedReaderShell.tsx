@@ -24,6 +24,10 @@ export default function ProtectedReaderShell({
       event.preventDefault();
     }
 
+    function preventSelection(event: Event) {
+      event.preventDefault();
+    }
+
     function preventShortcuts(event: KeyboardEvent) {
       const key = event.key.toLowerCase();
       const hasModifier = event.metaKey || event.ctrlKey;
@@ -40,19 +44,23 @@ export default function ProtectedReaderShell({
     document.addEventListener("cut", preventCopy);
     document.addEventListener("contextmenu", preventContext);
     document.addEventListener("dragstart", preventDrag);
+    document.addEventListener("selectstart", preventSelection);
     document.addEventListener("keydown", preventShortcuts);
+    window.addEventListener("beforeprint", preventSelection);
 
     return () => {
       document.removeEventListener("copy", preventCopy);
       document.removeEventListener("cut", preventCopy);
       document.removeEventListener("contextmenu", preventContext);
       document.removeEventListener("dragstart", preventDrag);
+      document.removeEventListener("selectstart", preventSelection);
       document.removeEventListener("keydown", preventShortcuts);
+      window.removeEventListener("beforeprint", preventSelection);
     };
   }, []);
 
   return (
-    <div className="relative">
+    <div className="relative select-none" onContextMenu={(event) => event.preventDefault()}>
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="grid h-full grid-cols-2 opacity-[0.06] sm:grid-cols-3">
           {Array.from({ length: 18 }).map((_, index) => (

@@ -115,6 +115,19 @@ type ContentProductsMessages = {
   purchaseGroupOther: string;
   purchaseSingular: string;
   purchasePlural: string;
+  ebookSingular: string;
+  ebookPlural: string;
+  detailSource: string;
+  detailOrder: string;
+  detailQuantity: string;
+  detailStatus: string;
+  detailAvailability: string;
+  detailInvoice: string;
+  detailProduct: string;
+  ebooksReady: string;
+  ebooksPending: string;
+  ebooksPendingHint: string;
+  ebookGroupOther: string;
 };
 
 type ContentProductsRow = {
@@ -295,6 +308,20 @@ function getContentProductsMessages(language: UiLanguage): ContentProductsMessag
       purchaseGroupOther: "Purchases via De troostbook",
       purchaseSingular: "purchase",
       purchasePlural: "purchases",
+      ebookSingular: "e-book",
+      ebookPlural: "e-books",
+      detailSource: "Source",
+      detailOrder: "Order",
+      detailQuantity: "Qty",
+      detailStatus: "Status",
+      detailAvailability: "Availability",
+      detailInvoice: "Invoice",
+      detailProduct: "Product",
+      ebooksReady: "Available in app",
+      ebooksPending: "Syncing",
+      ebooksPendingHint:
+        "This e-book purchase has been received, but it is not linked to an in-app reader yet.",
+      ebookGroupOther: "Other e-books",
     };
   }
 
@@ -358,6 +385,20 @@ function getContentProductsMessages(language: UiLanguage): ContentProductsMessag
       purchaseGroupOther: "Einkaufe uber De troostbook",
       purchaseSingular: "Einkauf",
       purchasePlural: "Einkaufe",
+      ebookSingular: "E-Book",
+      ebookPlural: "E-Books",
+      detailSource: "Quelle",
+      detailOrder: "Bestellung",
+      detailQuantity: "Menge",
+      detailStatus: "Status",
+      detailAvailability: "Verfugbarkeit",
+      detailInvoice: "Rechnung",
+      detailProduct: "Produkt",
+      ebooksReady: "In der App verfugbar",
+      ebooksPending: "Synchronisiert",
+      ebooksPendingHint:
+        "Dieser E-Book-Kauf wurde empfangen, ist aber noch nicht mit einem App-Reader verknupft.",
+      ebookGroupOther: "Weitere E-Books",
     };
   }
 
@@ -420,6 +461,20 @@ function getContentProductsMessages(language: UiLanguage): ContentProductsMessag
     purchaseGroupOther: "Aankopen via De troostbook",
     purchaseSingular: "aankoop",
     purchasePlural: "aankopen",
+    ebookSingular: "e-book",
+    ebookPlural: "e-books",
+    detailSource: "Bron",
+    detailOrder: "Bestelling",
+    detailQuantity: "Aantal",
+    detailStatus: "Status",
+    detailAvailability: "Beschikbaarheid",
+    detailInvoice: "Factuur",
+    detailProduct: "Product",
+    ebooksReady: "Beschikbaar in de app",
+    ebooksPending: "Nog in koppeling",
+    ebooksPendingHint:
+      "Deze e-bookaankoop is al ontvangen, maar is nog niet gekoppeld aan een leesbare app-publicatie.",
+    ebookGroupOther: "Overige e-books",
   };
 }
 
@@ -545,6 +600,64 @@ function formatMoney(amountCents: number | null, currency: string | null) {
   }
 }
 
+function formatOrderStatus(value: string | null) {
+  if (!value) return null;
+
+  return value
+    .trim()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/^./, (character) => character.toUpperCase());
+}
+
+function isExternalHref(href: string) {
+  return href.startsWith("https://") || href.startsWith("http://");
+}
+
+function ActionLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className: string;
+  children: React.ReactNode;
+}) {
+  if (isExternalHref(href)) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className={className}
+      >
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
+function MetaChip({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-[#e5dbcf] bg-[#f8f3ed] px-2.5 py-1 text-xs text-stone-700">
+      <span className="text-stone-500">{label}:</span>
+      <span>{value}</span>
+    </span>
+  );
+}
+
 function buildPurchaseGroups(
   items: Awaited<ReturnType<typeof getAccountContentProductsData>>["purchases"],
   t: ContentProductsMessages
@@ -601,6 +714,73 @@ function buildPurchaseGroups(
       title,
       order,
       latestAt: item.occurredAt,
+      items: [item],
+    });
+  }
+
+  return Array.from(groups.values()).sort((left, right) => {
+    if (left.order !== right.order) {
+      return left.order - right.order;
+    }
+
+    const rightTime = new Date(right.latestAt).getTime();
+    const leftTime = new Date(left.latestAt).getTime();
+    if (rightTime !== leftTime) {
+      return rightTime - leftTime;
+    }
+
+    return left.title.localeCompare(right.title, "nl");
+  });
+}
+
+function buildEbookGroups(
+  items: Awaited<ReturnType<typeof getAccountContentProductsData>>["ebooks"],
+  t: ContentProductsMessages
+) {
+  const groups = new Map<
+    string,
+    {
+      key: string;
+      title: string;
+      order: number;
+      latestAt: string;
+      items: typeof items;
+    }
+  >();
+
+  for (const item of items) {
+    let key = "";
+    let title = "";
+    let order = 0;
+
+    if (item.themeTitle) {
+      key = `theme:${item.themeTitle}`;
+      title = item.themeTitle;
+      order = 0;
+    } else if (item.categoryTitle) {
+      key = `category:${item.categoryTitle}`;
+      title = item.categoryTitle;
+      order = 1;
+    } else {
+      key = "kind:other";
+      title = t.ebookGroupOther;
+      order = 2;
+    }
+
+    const currentGroup = groups.get(key);
+    if (currentGroup) {
+      currentGroup.items.push(item);
+      if (new Date(item.unlockedAt).getTime() > new Date(currentGroup.latestAt).getTime()) {
+        currentGroup.latestAt = item.unlockedAt;
+      }
+      continue;
+    }
+
+    groups.set(key, {
+      key,
+      title,
+      order,
+      latestAt: item.unlockedAt,
       items: [item],
     });
   }
@@ -893,6 +1073,7 @@ export default async function AccountPage({
     { label: contentProductsT.security, href: "/account?panel=security" },
   ];
   const purchaseGroups = buildPurchaseGroups(contentProductsData.purchases, contentProductsT);
+  const ebookGroups = buildEbookGroups(contentProductsData.ebooks, contentProductsT);
   const currentYear = new Date().getFullYear();
   const legalDocuments = await getLegalDocuments(language, currentYear);
 
@@ -1129,8 +1310,8 @@ export default async function AccountPage({
                             <div className="mt-1 text-xs text-stone-500">
                               {group.items.length}{" "}
                               {group.items.length === 1
-                                ? contentProductsT.purchaseSingular
-                                : contentProductsT.purchasePlural}
+                                ? contentProductsT.ebookSingular
+                                : contentProductsT.ebookPlural}
                             </div>
                           </div>
                           <span className="relative block h-4 w-4 shrink-0">
@@ -1161,14 +1342,60 @@ export default async function AccountPage({
                                   {formatMoney(item.amountCents, item.currency)}
                                 </div>
                                 {item.href ? (
-                                  <Link
+                                  <ActionLink
                                     href={item.href}
                                     className="inline-flex rounded-full border border-stone-300 bg-[#f8f3ed] px-3 py-1.5 text-sm text-stone-800"
                                   >
                                     Open
-                                  </Link>
+                                  </ActionLink>
                                 ) : null}
                               </div>
+
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                <MetaChip
+                                  label={contentProductsT.detailSource}
+                                  value={item.sourceLabel}
+                                />
+                                {item.orderNumber ? (
+                                  <MetaChip
+                                    label={contentProductsT.detailOrder}
+                                    value={item.orderNumber}
+                                  />
+                                ) : null}
+                                {item.quantity ? (
+                                  <MetaChip
+                                    label={contentProductsT.detailQuantity}
+                                    value={String(item.quantity)}
+                                  />
+                                ) : null}
+                                {item.orderStatus ? (
+                                  <MetaChip
+                                    label={contentProductsT.detailStatus}
+                                    value={formatOrderStatus(item.orderStatus) ?? item.orderStatus}
+                                  />
+                                ) : null}
+                              </div>
+
+                              {item.invoiceHref || item.productHref ? (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  {item.invoiceHref ? (
+                                    <ActionLink
+                                      href={item.invoiceHref}
+                                      className="inline-flex rounded-full border border-stone-300 bg-white px-3 py-1.5 text-sm text-stone-700"
+                                    >
+                                      {contentProductsT.detailInvoice}
+                                    </ActionLink>
+                                  ) : null}
+                                  {item.productHref ? (
+                                    <ActionLink
+                                      href={item.productHref}
+                                      className="inline-flex rounded-full border border-stone-300 bg-white px-3 py-1.5 text-sm text-stone-700"
+                                    >
+                                      {contentProductsT.detailProduct}
+                                    </ActionLink>
+                                  ) : null}
+                                </div>
+                              ) : null}
                             </div>
                           ))}
                         </div>
@@ -1197,35 +1424,101 @@ export default async function AccountPage({
 
                 {contentProductsData.ebooks.length ? (
                   <div className="mt-4 space-y-3">
-                    {contentProductsData.ebooks.map((item) => (
-                      <div
-                        key={item.id}
-                        className="rounded-2xl border border-[#e5dbcf] bg-white px-4 py-4"
+                    {ebookGroups.map((group) => (
+                      <details
+                        key={group.key}
+                        className="group overflow-hidden rounded-2xl border border-[#e5dbcf] bg-white"
                       >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-medium text-stone-900">{item.title}</h4>
-                            {item.excerpt ? (
-                              <p className="mt-1 text-sm leading-6 text-stone-600">
-                                {item.excerpt}
-                              </p>
-                            ) : null}
+                        <summary className="flex list-none items-center justify-between gap-3 px-4 py-3 text-left marker:hidden">
+                          <div className="min-w-0">
+                            <div className="font-medium text-stone-900">{group.title}</div>
+                            <div className="mt-1 text-xs text-stone-500">
+                              {group.items.length}{" "}
+                              {group.items.length === 1
+                                ? contentProductsT.ebookSingular
+                                : contentProductsT.ebookPlural}
+                            </div>
                           </div>
-                          <div className="text-sm text-stone-500">
-                            {contentProductsT.openedAt}: {formatDate(item.unlockedAt, locale)}
-                          </div>
-                        </div>
-                        {item.href ? (
-                          <div className="mt-3">
-                            <Link
-                              href={item.href}
-                              className="inline-flex rounded-full bg-[#b64040] px-4 py-2 text-sm text-white"
+                          <span className="relative block h-4 w-4 shrink-0">
+                            <span className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-stone-400" />
+                            <span className="absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-stone-400 transition group-open:opacity-0" />
+                          </span>
+                        </summary>
+
+                        <div className="space-y-3 border-t border-[#eadfd4] bg-[#fcf8f4] px-3 py-3">
+                          {group.items.map((item) => (
+                            <div
+                              key={item.id}
+                              className="rounded-2xl border border-[#e5dbcf] bg-white px-4 py-4"
                             >
-                              {contentProductsT.ebooksRead}
-                            </Link>
-                          </div>
-                        ) : null}
-                      </div>
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="font-medium text-stone-900">{item.title}</h4>
+                                  {item.excerpt ? (
+                                    <p className="mt-1 text-sm leading-6 text-stone-600">
+                                      {item.excerpt}
+                                    </p>
+                                  ) : null}
+                                </div>
+                                <div className="text-sm text-stone-500">
+                                  {contentProductsT.openedAt}:{" "}
+                                  {formatDate(item.unlockedAt, locale)}
+                                </div>
+                              </div>
+
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                <MetaChip
+                                  label={contentProductsT.detailSource}
+                                  value={item.sourceLabel}
+                                />
+                                <MetaChip
+                                  label={contentProductsT.detailAvailability}
+                                  value={
+                                    item.syncState === "ready"
+                                      ? contentProductsT.ebooksReady
+                                      : contentProductsT.ebooksPending
+                                  }
+                                />
+                                {item.orderNumber ? (
+                                  <MetaChip
+                                    label={contentProductsT.detailOrder}
+                                    value={item.orderNumber}
+                                  />
+                                ) : null}
+                                {item.quantity ? (
+                                  <MetaChip
+                                    label={contentProductsT.detailQuantity}
+                                    value={String(item.quantity)}
+                                  />
+                                ) : null}
+                                {item.orderStatus ? (
+                                  <MetaChip
+                                    label={contentProductsT.detailStatus}
+                                    value={formatOrderStatus(item.orderStatus) ?? item.orderStatus}
+                                  />
+                                ) : null}
+                              </div>
+
+                              {item.syncState === "pending_link" ? (
+                                <p className="mt-3 rounded-2xl border border-dashed border-[#decfbe] bg-[#f8f3ed] px-4 py-3 text-sm text-stone-600">
+                                  {contentProductsT.ebooksPendingHint}
+                                </p>
+                              ) : null}
+
+                              {item.href ? (
+                                <div className="mt-3">
+                                  <ActionLink
+                                    href={item.href}
+                                    className="inline-flex rounded-full bg-[#b64040] px-4 py-2 text-sm text-white"
+                                  >
+                                    {contentProductsT.ebooksRead}
+                                  </ActionLink>
+                                </div>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
                     ))}
                   </div>
                 ) : (

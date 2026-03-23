@@ -105,15 +105,28 @@ export type AccountPurchaseItem = {
   source: string | null;
   themeTitle: string | null;
   categoryTitle: string | null;
+  sourceLabel: string;
+  orderNumber: string | null;
+  orderStatus: string | null;
+  quantity: number | null;
+  invoiceHref: string | null;
+  productHref: string | null;
 };
 
 export type AccountEbookItem = {
   id: string;
-  contentItemId: string;
+  contentItemId: string | null;
   title: string;
   excerpt: string | null;
   href: string | null;
   unlockedAt: string;
+  themeTitle: string | null;
+  categoryTitle: string | null;
+  sourceLabel: string;
+  orderNumber: string | null;
+  orderStatus: string | null;
+  quantity: number | null;
+  syncState: "ready" | "pending_link";
 };
 
 export type AccountSubscriptionItem = {
@@ -153,8 +166,26 @@ function asNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function asInteger(value: unknown) {
+  return typeof value === "number" && Number.isInteger(value) ? value : null;
+}
+
 function asString(value: unknown) {
   return typeof value === "string" ? value : "";
+}
+
+function asUrl(value: unknown) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  if (!normalized) return null;
+  if (
+    normalized.startsWith("/") ||
+    normalized.startsWith("https://") ||
+    normalized.startsWith("http://")
+  ) {
+    return normalized;
+  }
+  return null;
 }
 
 function getPackScopeLabel(scope: ContentAccessScope) {
@@ -178,6 +209,49 @@ function getEntitlementTitle(entitlementKey: string) {
 
 function getContentHref(slug: string | null) {
   return slug ? `/content/${slug}` : null;
+}
+
+function getSourceLabel(source: string | null | undefined) {
+  const normalized = source?.trim().toLowerCase() ?? "";
+  if (!normalized) return "App";
+  if (normalized === "woocommerce" || normalized === "website") {
+    return "De troostbook";
+  }
+  if (normalized === "app") {
+    return "App";
+  }
+
+  return normalized
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getWebsiteOrderDetails(row: WebsiteOrderItemRow) {
+  const metadata = asRecord(row.metadata);
+  const explicitOrderNumber = asString(
+    metadata?.order_number ?? metadata?.orderNumber
+  );
+  const explicitStatus = asString(
+    metadata?.order_status ?? metadata?.status ?? metadata?.orderStatus
+  );
+
+  return {
+    sourceLabel: getSourceLabel(row.source),
+    orderNumber: explicitOrderNumber || row.external_order_id || null,
+    orderStatus: explicitStatus || null,
+    quantity:
+      asInteger(metadata?.quantity) ??
+      asInteger(metadata?.qty) ??
+      asInteger(metadata?.line_quantity),
+    invoiceHref: asUrl(
+      metadata?.invoice_url ?? metadata?.invoiceUrl ?? metadata?.invoice_link
+    ),
+    productHref: asUrl(
+      metadata?.product_url ?? metadata?.productUrl ?? metadata?.product_link
+    ),
+  };
 }
 
 function compareThemeLinkCandidates(
@@ -445,6 +519,12 @@ export async function getAccountContentProductsData(
         source: row.source ?? null,
         themeTitle: null,
         categoryTitle: null,
+        sourceLabel: getSourceLabel(row.source),
+        orderNumber: null,
+        orderStatus: null,
+        quantity: row.quantity,
+        invoiceHref: null,
+        productHref: null,
       };
     })),
     ...((unlockedRows ?? [])
@@ -465,6 +545,12 @@ export async function getAccountContentProductsData(
         categoryTitle: row.content_item?.id
           ? categoryByContentId.get(row.content_item.id) ?? null
           : null,
+        sourceLabel: "App",
+        orderNumber: null,
+        orderStatus: null,
+        quantity: null,
+        invoiceHref: null,
+        productHref: null,
       }))),
     ...((entitlementRows ?? []).map((row) => {
       const metadata = asRecord(row.metadata);
@@ -484,45 +570,141 @@ export async function getAccountContentProductsData(
         source: row.source ?? null,
         themeTitle: null,
         categoryTitle: null,
+        sourceLabel: getSourceLabel(row.source),
+        orderNumber:
+          asString(metadata?.order_number ?? metadata?.orderNumber) || null,
+        orderStatus: null,
+        quantity: null,
+        invoiceHref: asUrl(
+          metadata?.invoice_url ?? metadata?.invoiceUrl ?? metadata?.invoice_link
+        ),
+        productHref: asUrl(
+          metadata?.product_url ?? metadata?.productUrl ?? metadata?.product_link
+        ),
       };
     })),
-    ...(websiteRows.map((row: WebsiteOrderItemRow) => ({
-      id: `website:${row.id}`,
-      kind:
-        row.item_kind === "credit_pack"
-          ? ("credit_pack" as const)
-          : row.item_kind === "subscription"
-            ? ("subscription" as const)
-            : ("content_unlock" as const),
-      title: row.title,
-      subtitle: row.subtitle ?? "",
-      occurredAt: row.occurred_at,
-      amountCents: row.amount_cents,
-      currency: row.currency,
-      href: row.href,
-      source: row.source,
-      themeTitle: row.content_item_id
-        ? themeByContentId.get(row.content_item_id) ?? null
-        : null,
-      categoryTitle: row.content_item_id
-        ? categoryByContentId.get(row.content_item_id) ?? null
-        : null,
-    }))),
+    ...(websiteRows.map((row: WebsiteOrderItemRow) => {
+      const details = getWebsiteOrderDetails(row);
+      return {
+        id: `website:${row.id}`,
+        kind:
+          row.item_kind === "credit_pack"
+            ? ("credit_pack" as const)
+            : row.item_kind === "subscription"
+              ? ("subscription" as const)
+              : ("content_unlock" as const),
+        title: row.title,
+        subtitle: row.subtitle ?? "",
+        occurredAt: row.occurred_at,
+        amountCents: row.amount_cents,
+        currency: row.currency,
+        href: row.href,
+        source: row.source,
+        themeTitle: row.content_item_id
+          ? themeByContentId.get(row.content_item_id) ?? null
+          : null,
+        categoryTitle: row.content_item_id
+          ? categoryByContentId.get(row.content_item_id) ?? null
+          : null,
+        sourceLabel: details.sourceLabel,
+        orderNumber: details.orderNumber,
+        orderStatus: details.orderStatus,
+        quantity: details.quantity,
+        invoiceHref: details.invoiceHref,
+        productHref: details.productHref,
+      };
+    })),
   ].sort(
     (left, right) =>
       new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime()
   );
 
-  const ebooks: AccountEbookItem[] = (unlockedRows ?? [])
-    .filter((row) => row.content_item?.access_scope === "book")
-    .map((row) => ({
-      id: row.id,
-      contentItemId: row.content_item?.id ?? row.id,
-      title: row.content_item?.title || "E-book",
-      excerpt: row.content_item?.excerpt ?? null,
-      href: getContentHref(row.content_item?.slug ?? null),
-      unlockedAt: row.unlocked_at,
-    }));
+  const websiteEbookRows = websiteRows.filter((row) => row.item_kind === "ebook");
+  const latestWebsiteEbookByContentId = new Map<string, WebsiteOrderItemRow>();
+
+  for (const row of websiteEbookRows) {
+    if (!row.content_item_id) {
+      continue;
+    }
+
+    const current = latestWebsiteEbookByContentId.get(row.content_item_id);
+    if (
+      !current ||
+      new Date(row.occurred_at).getTime() > new Date(current.occurred_at).getTime()
+    ) {
+      latestWebsiteEbookByContentId.set(row.content_item_id, row);
+    }
+  }
+
+  const ebookContentIds = new Set<string>();
+  const ebooks: AccountEbookItem[] = [
+    ...((unlockedRows ?? [])
+      .filter((row) => row.content_item?.access_scope === "book")
+      .map((row) => {
+        const contentItemId = row.content_item?.id ?? null;
+        if (contentItemId) {
+          ebookContentIds.add(contentItemId);
+        }
+        const websiteRow = contentItemId
+          ? latestWebsiteEbookByContentId.get(contentItemId) ?? null
+          : null;
+        const details = websiteRow
+          ? getWebsiteOrderDetails(websiteRow)
+          : {
+              sourceLabel: "App",
+              orderNumber: null,
+              orderStatus: null,
+              quantity: null,
+            };
+
+        return {
+          id: row.id,
+          contentItemId,
+          title: row.content_item?.title || "E-book",
+          excerpt: row.content_item?.excerpt ?? null,
+          href: getContentHref(row.content_item?.slug ?? null),
+          unlockedAt: row.unlocked_at,
+          themeTitle: contentItemId
+            ? themeByContentId.get(contentItemId) ?? null
+            : null,
+          categoryTitle: contentItemId
+            ? categoryByContentId.get(contentItemId) ?? null
+            : null,
+          sourceLabel: details.sourceLabel,
+          orderNumber: details.orderNumber,
+          orderStatus: details.orderStatus,
+          quantity: details.quantity,
+          syncState: "ready" as const,
+        };
+      })),
+    ...websiteEbookRows
+      .filter((row) => !row.content_item_id || !ebookContentIds.has(row.content_item_id))
+      .map((row) => {
+        const details = getWebsiteOrderDetails(row);
+        return {
+          id: `pending-ebook:${row.id}`,
+          contentItemId: row.content_item_id ?? null,
+          title: row.title,
+          excerpt: row.subtitle ?? null,
+          href: null,
+          unlockedAt: row.occurred_at,
+          themeTitle: row.content_item_id
+            ? themeByContentId.get(row.content_item_id) ?? null
+            : null,
+          categoryTitle: row.content_item_id
+            ? categoryByContentId.get(row.content_item_id) ?? null
+            : null,
+          sourceLabel: details.sourceLabel,
+          orderNumber: details.orderNumber,
+          orderStatus: details.orderStatus,
+          quantity: details.quantity,
+          syncState: "pending_link" as const,
+        };
+      }),
+  ].sort(
+    (left, right) =>
+      new Date(right.unlockedAt).getTime() - new Date(left.unlockedAt).getTime()
+  );
 
   const subscriptions: AccountSubscriptionItem[] = (entitlementRows ?? []).map((row) => {
     const metadata = asRecord(row.metadata);
@@ -546,6 +728,6 @@ export async function getAccountContentProductsData(
     purchases,
     ebooks,
     subscriptions,
-    websiteSyncReady: false,
+    websiteSyncReady: true,
   };
 }

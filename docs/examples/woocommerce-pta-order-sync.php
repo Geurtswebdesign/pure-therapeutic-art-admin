@@ -60,7 +60,9 @@ function pta_wc_sync_paid_order( $order_id ) {
 				'product_id'    => $product->get_id(),
 				'product_sku'   => $product->get_sku(),
 				'order_number'  => $order->get_order_number(),
+				'order_status'  => $order->get_status(),
 				'quantity'      => $item->get_quantity(),
+				'product_url'   => get_permalink( $product->get_id() ),
 			),
 		);
 	}
