@@ -16,7 +16,7 @@ export default async function SecurityDocumentPage({
 }: SecurityDocumentPageProps) {
   const language = resolveUiLanguage(await getAppLanguage());
   const { slug } = await params;
-  const documents = getLegalDocuments(language);
+  const documents = await getLegalDocuments(language);
   const document = documents.find((item) => item.slug === slug);
 
   if (!document) {

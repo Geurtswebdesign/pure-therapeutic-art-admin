@@ -894,7 +894,7 @@ export default async function AccountPage({
   ];
   const purchaseGroups = buildPurchaseGroups(contentProductsData.purchases, contentProductsT);
   const currentYear = new Date().getFullYear();
-  const legalDocuments = getLegalDocuments(language, currentYear);
+  const legalDocuments = await getLegalDocuments(language, currentYear);
 
   return (
     <PublicAppShell activeTab="profiel">
@@ -1344,7 +1344,7 @@ export default async function AccountPage({
                     >
                       <ContentProductsRowItem
                         label={document.title}
-                        href={`/account/security/${document.slug}`}
+                        href={document.href ?? `/account/security/${document.slug}`}
                       />
                     </div>
                   ))}
