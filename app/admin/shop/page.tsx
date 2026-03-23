@@ -1,10 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { redirect } from "next/navigation";
-import {
-  createShopCatalogItem,
-  getShopCatalogSettings,
-} from "@/lib/settings/actions";
+import { getShopCatalogSettings } from "@/lib/settings/actions";
 import {
   getAllCatalogItems,
   getCatalogItemPath,
@@ -24,13 +20,6 @@ export default async function AdminShopPage() {
   const settings = await getShopCatalogSettings();
   const items = getAllCatalogItems(settings);
 
-  async function createEbookAction() {
-    "use server";
-
-    const itemId = await createShopCatalogItem("ebooks");
-    redirect(getAdminAreaUrl(`/shop/${itemId}`));
-  }
-
   return (
     <div className="w-full space-y-4">
       <div className="flex items-center justify-between">
@@ -41,14 +30,12 @@ export default async function AdminShopPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <form action={createEbookAction}>
-            <button
-              type="submit"
-              className="rounded border border-[#2271b1] px-4 py-2 text-sm font-medium text-[#2271b1] hover:bg-[#eef6fb]"
-            >
-              Nieuw e-book
-            </button>
-          </form>
+          <Link
+            href={getAdminAreaUrl("/shop/new")}
+            className="rounded border border-[#2271b1] px-4 py-2 text-sm font-medium text-[#2271b1] hover:bg-[#eef6fb]"
+          >
+            Nieuw product
+          </Link>
           <Link
             href="/shop"
             className="rounded bg-[#2271b1] px-4 py-2 text-sm font-medium text-white hover:bg-[#135e96]"
