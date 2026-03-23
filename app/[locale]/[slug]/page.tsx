@@ -19,6 +19,7 @@ import {
 } from "@/lib/content/public-queries";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { logServerEvent } from "@/lib/analytics/server";
+import { isLegalContentMetadata } from "@/lib/content/legal-content";
 import { getSupabaseCookieOptions } from "@/lib/site/urls";
 import {
   getUserContentProgress,
@@ -77,7 +78,7 @@ export default async function ContentPage({
    * ------------------------------------------------- */
   const { data: item, error: itemError } = await supabase
     .from("content_items")
-    .select("id, title, body, status, language, credit_cost, excerpt, featured_image_url, featured_image_alt")
+    .select("id, slug, title, body, status, language, credit_cost, excerpt, featured_image_url, featured_image_alt")
     .eq("slug", slug)
     .eq("language", locale)
     .single();
@@ -148,6 +149,11 @@ export default async function ContentPage({
     getThemeNavigationForContentItem(item.id),
   ]);
   const isSeedCategory = Boolean(category?.is_homepage_seed);
+  const isLegalContent = isLegalContentMetadata({
+    slug: item.slug,
+    title: item.title,
+    categories: category?.name ? [category.name] : [],
+  });
 
   /* -------------------------------------------------
    * 5️⃣ Render (IDENTIEK aan live)
@@ -167,7 +173,7 @@ export default async function ContentPage({
         isSeedCategory={isSeedCategory}
         themeNavigation={themeNavigation}
         progressCard={
-          user && progressStorageReady ? (
+          user && progressStorageReady && !isLegalContent ? (
             <ContentProgressCard
               contentItemId={item.id}
               initialProgress={toContentProgressSnapshot(userProgress)}

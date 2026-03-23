@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
+import { isLegalContentItem } from "@/lib/content/legal-content";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasAccess } from "@/lib/unlock/hasAccess";
 import {
@@ -30,6 +31,10 @@ async function requireUser() {
 }
 
 async function assertUserCanTrackContent(userId: string, contentItemId: string) {
+  if (await isLegalContentItem(contentItemId)) {
+    throw new Error("Deze pagina wordt niet bijgehouden in je traject.");
+  }
+
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("content_items")

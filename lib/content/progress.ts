@@ -1,5 +1,6 @@
 "use server";
 
+import { isLegalContentMetadata } from "@/lib/content/legal-content";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type {
   ContentProgressStatus,
@@ -420,12 +421,23 @@ async function getUnlockedContentBase(userId: string) {
       const item = contentById.get(contentItemId);
       if (!item) return null;
       const theme = themeByContentId.get(item.id);
+      const categories = categoriesByContentId.get(item.id) ?? [];
+
+      if (
+        isLegalContentMetadata({
+          slug: item.slug,
+          title: item.title,
+          categories,
+        })
+      ) {
+        return null;
+      }
 
       return {
         contentItemId: item.id,
         title: item.title?.trim() || "Onbekende content",
         slug: item.slug,
-        categories: categoriesByContentId.get(item.id) ?? [],
+        categories,
         themeId: theme?.themeId ?? null,
         themeTitle: theme?.themeTitle ?? null,
         themeSlug: theme?.themeSlug ?? null,
