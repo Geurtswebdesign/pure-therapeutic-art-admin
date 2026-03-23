@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Download, NotebookText, type LucideIcon } from "lucide-react";
+import { Download, type LucideIcon } from "lucide-react";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import AppLogoutButton from "@/components/account/AppLogoutButton";
 import AccountPanelAutoScroll from "@/components/account/AccountPanelAutoScroll";
@@ -92,6 +92,18 @@ type ContentProductsMessages = {
   statusActive: string;
   statusPlanned: string;
   statusEnded: string;
+  securityTitle: string;
+  securitySubtitle: string;
+  disclaimerTitle: string;
+  disclaimerBody: string;
+  termsTitle: string;
+  termsBody: string;
+  privacyTitle: string;
+  privacyBody: string;
+  impressumTitle: string;
+  impressumBody: string;
+  copyrightTitle: string;
+  copyrightBody: string;
   dialogTitle: string;
   dialogSubtitle: string;
   dialogSave: string;
@@ -110,7 +122,7 @@ type ContentProductsRow = {
   icon?: LucideIcon;
 };
 
-type ActiveAccountPanel = "purchases" | "ebooks" | "subscriptions" | null;
+type ActiveAccountPanel = "purchases" | "ebooks" | "subscriptions" | "security" | null;
 
 function buildContentHref(slug: string | null) {
   return slug ? `/content/${slug}` : null;
@@ -255,6 +267,23 @@ function getContentProductsMessages(language: UiLanguage): ContentProductsMessag
       statusActive: "Active",
       statusPlanned: "Planned",
       statusEnded: "Ended",
+      securityTitle: "Security & privacy",
+      securitySubtitle: "The legal and privacy information that belongs to the app experience.",
+      disclaimerTitle: "Disclaimer",
+      disclaimerBody:
+        "Explain that the app supports reflection and therapeutic work, but does not replace medical or emergency care.",
+      termsTitle: "Terms & conditions",
+      termsBody:
+        "Describe the rules for purchases, account use, subscriptions, access to content and limits of liability.",
+      privacyTitle: "Privacy statement (GDPR)",
+      privacyBody:
+        "Explain which personal data is processed, why, how long it is kept, who receives it and which user rights apply.",
+      impressumTitle: "Impressum",
+      impressumBody:
+        "State the legal identity of the organisation, contact details, registration details and responsible publisher information.",
+      copyrightTitle: "Copyright",
+      copyrightBody:
+        "Show the copyright notice for the app, texts, assignments, downloads and visual assets.",
       dialogTitle: "Choose app language",
       dialogSubtitle: "Select one of the languages that is available in the app.",
       dialogSave: "Save language",
@@ -301,6 +330,23 @@ function getContentProductsMessages(language: UiLanguage): ContentProductsMessag
       statusActive: "Aktiv",
       statusPlanned: "Geplant",
       statusEnded: "Beendet",
+      securityTitle: "Sicherheit & Datenschutz",
+      securitySubtitle: "Die rechtlichen und datenschutzbezogenen Informationen zur App.",
+      disclaimerTitle: "Haftungsausschluss",
+      disclaimerBody:
+        "Erklare, dass die App therapeutische Prozesse unterstutzt, aber keine medizinische oder akute Hilfe ersetzt.",
+      termsTitle: "Allgemeine Geschaftsbedingungen",
+      termsBody:
+        "Beschreibe die Regeln fur Kaufe, Kontonutzung, Abonnements, Inhaltszugang und Haftungsgrenzen.",
+      privacyTitle: "Datenschutzerklarung (DSGVO)",
+      privacyBody:
+        "Erklare, welche personenbezogenen Daten verarbeitet werden, warum, wie lange und welche Rechte Nutzer haben.",
+      impressumTitle: "Impressum",
+      impressumBody:
+        "Nenne die rechtliche Identitat, Kontaktdaten, Registrierungsangaben und die verantwortliche Stelle.",
+      copyrightTitle: "Urheberrecht",
+      copyrightBody:
+        "Zeige den Copyright-Hinweis fur die App, Texte, Aufgaben, Downloads und visuelle Inhalte.",
       dialogTitle: "App-Sprache auswahlen",
       dialogSubtitle: "Wahle eine Sprache, die in der App verfugbar ist.",
       dialogSave: "Sprache speichern",
@@ -346,6 +392,23 @@ function getContentProductsMessages(language: UiLanguage): ContentProductsMessag
     statusActive: "Actief",
     statusPlanned: "Gepland",
     statusEnded: "Beindigd",
+    securityTitle: "Veiligheid & privacy",
+    securitySubtitle: "De juridische en privacy-informatie die bij de app hoort.",
+    disclaimerTitle: "Disclaimer",
+    disclaimerBody:
+      "Leg uit dat de app ondersteuning biedt bij reflectie en therapeutisch werken, maar geen medische of acute hulp vervangt.",
+    termsTitle: "Algemene voorwaarden en condities",
+    termsBody:
+      "Beschrijf de regels voor aankopen, accountgebruik, abonnementen, toegang tot content en aansprakelijkheidsgrenzen.",
+    privacyTitle: "Privacyverklaring AVG",
+    privacyBody:
+      "Leg uit welke persoonsgegevens worden verwerkt, waarom, hoe lang, met wie ze worden gedeeld en welke rechten gebruikers hebben.",
+    impressumTitle: "Impressum",
+    impressumBody:
+      "Vermeld de juridische identiteit van de organisatie, contactgegevens, registratiegegevens en verantwoordelijke uitgever.",
+    copyrightTitle: "Copyright",
+    copyrightBody:
+      "Toon het copyright voor de app, teksten, opdrachten, downloads en visuele assets.",
     dialogTitle: "Kies app-taal",
     dialogSubtitle: "Selecteer een taal die in de app beschikbaar is.",
     dialogSave: "Taal opslaan",
@@ -455,7 +518,12 @@ function ContentProductsRowItem({
 
 function normalizeActivePanel(value?: string | string[]): ActiveAccountPanel {
   const panel = Array.isArray(value) ? value[0] ?? "" : value ?? "";
-  if (panel === "purchases" || panel === "ebooks" || panel === "subscriptions") {
+  if (
+    panel === "purchases" ||
+    panel === "ebooks" ||
+    panel === "subscriptions" ||
+    panel === "security"
+  ) {
     return panel;
   }
   return null;
@@ -549,6 +617,21 @@ function buildPurchaseGroups(
 
     return left.title.localeCompare(right.title, "nl");
   });
+}
+
+function LegalInfoCard({
+  title,
+  body,
+}: {
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-[#e5dbcf] bg-white px-4 py-4">
+      <h4 className="font-medium text-stone-900">{title}</h4>
+      <p className="mt-2 text-sm leading-6 text-stone-600">{body}</p>
+    </div>
+  );
 }
 
 export default async function AccountPage({
@@ -821,14 +904,10 @@ export default async function AccountPage({
       label: contentProductsT.subscriptions,
       href: "/account?panel=subscriptions",
     },
-    { label: contentProductsT.security },
-    {
-      label: contentProductsT.logbook,
-      href: "/account#mijn-traject",
-      icon: NotebookText,
-    },
+    { label: contentProductsT.security, href: "/account?panel=security" },
   ];
   const purchaseGroups = buildPurchaseGroups(contentProductsData.purchases, contentProductsT);
+  const currentYear = new Date().getFullYear();
 
   return (
     <PublicAppShell activeTab="profiel">
@@ -1254,6 +1333,40 @@ export default async function AccountPage({
                     {contentProductsT.subscriptionsEmpty}
                   </div>
                 )}
+              </div>
+            ) : null}
+
+            {activePanel === "security" ? (
+              <div id="account-content-panel" className={accountCardClassName()}>
+                <h3 className="font-serif text-2xl text-stone-950">
+                  {contentProductsT.securityTitle}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-stone-600">
+                  {contentProductsT.securitySubtitle}
+                </p>
+
+                <div className="mt-4 space-y-3">
+                  <LegalInfoCard
+                    title={contentProductsT.disclaimerTitle}
+                    body={contentProductsT.disclaimerBody}
+                  />
+                  <LegalInfoCard
+                    title={contentProductsT.termsTitle}
+                    body={contentProductsT.termsBody}
+                  />
+                  <LegalInfoCard
+                    title={contentProductsT.privacyTitle}
+                    body={contentProductsT.privacyBody}
+                  />
+                  <LegalInfoCard
+                    title={contentProductsT.impressumTitle}
+                    body={contentProductsT.impressumBody}
+                  />
+                  <LegalInfoCard
+                    title={`${contentProductsT.copyrightTitle} © 2025 - ${currentYear}`}
+                    body={contentProductsT.copyrightBody}
+                  />
+                </div>
               </div>
             ) : null}
           </>
