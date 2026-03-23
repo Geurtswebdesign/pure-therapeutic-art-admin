@@ -12,6 +12,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 const PTA_APP_ORDER_SYNC_URL    = 'https://pure-therapeutic-art-therapy.com/api/orders/sync';
 const PTA_APP_ORDER_SYNC_SECRET = 'Pf#T3tPK8J9fzv6$mL#xgA5G3hHFotx3vEsbIDVn';
 
+function pta_wc_get_invoice_url( WC_Order $order ) {
+	$meta_keys = array(
+		'_pta_invoice_url',
+		'_wcpdf_invoice_pdf_url',
+		'_bewpi_invoice_pdf_url',
+		'_ywpi_invoice_pdf_url',
+	);
+
+	foreach ( $meta_keys as $meta_key ) {
+		$value = $order->get_meta( $meta_key, true );
+		if ( is_string( $value ) && filter_var( $value, FILTER_VALIDATE_URL ) ) {
+			return $value;
+		}
+	}
+
+	$filtered = apply_filters( 'pta_wc_order_invoice_url', null, $order );
+	if ( is_string( $filtered ) && filter_var( $filtered, FILTER_VALIDATE_URL ) ) {
+		return $filtered;
+	}
+
+	return null;
+}
+
 function pta_wc_sync_paid_order( $order_id ) {
 	if ( ! function_exists( 'wc_get_order' ) ) {
 		return;
@@ -39,6 +62,7 @@ function pta_wc_sync_paid_order( $order_id ) {
 
 		$line_total = (float) $item->get_total();
 		$amount_cents = (int) round( $line_total * 100 );
+		$invoice_url = pta_wc_get_invoice_url( $order );
 
 		$items[] = array(
 			'externalOrderId' => (string) $order->get_id(),
@@ -63,6 +87,7 @@ function pta_wc_sync_paid_order( $order_id ) {
 				'order_status'  => $order->get_status(),
 				'quantity'      => $item->get_quantity(),
 				'product_url'   => get_permalink( $product->get_id() ),
+				'invoice_url'   => $invoice_url,
 			),
 		);
 	}

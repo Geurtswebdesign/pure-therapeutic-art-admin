@@ -67,6 +67,24 @@ Gebruik als basis:
 
 - voorbeeldplugin: [examples/woocommerce-pta-order-sync.php](./examples/woocommerce-pta-order-sync.php)
 
+De voorbeeldplugin stuurt nu ook `invoice_url` mee als die op de Woo-site beschikbaar is.
+Ondersteund in het voorbeeld:
+
+- order-meta `_pta_invoice_url`
+- order-meta `_wcpdf_invoice_pdf_url`
+- order-meta `_bewpi_invoice_pdf_url`
+- order-meta `_ywpi_invoice_pdf_url`
+- filter `pta_wc_order_invoice_url`
+
+Als jouw factuurplugin een andere bron gebruikt, koppel die dan via:
+
+```php
+add_filter( 'pta_wc_order_invoice_url', function ( $invoice_url, $order ) {
+	// Geef hier de echte publieke factuur-URL terug.
+	return $invoice_url;
+}, 10, 2 );
+```
+
 ### Product-meta in WooCommerce
 
 Zet per relevant product:
