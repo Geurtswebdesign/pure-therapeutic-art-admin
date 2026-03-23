@@ -35,6 +35,7 @@ type ShopEditorDraft = {
   price: number;
   href: string;
   contentSlug: string;
+  epubUrl: string;
   status: CatalogItem["status"];
 };
 
@@ -43,7 +44,8 @@ type BoxKey =
   | "permalink"
   | "featured"
   | "labels"
-  | "shop";
+  | "shop"
+  | "ebook";
 
 type Props = {
   item: CatalogItem;
@@ -77,8 +79,11 @@ export default function ShopMetadataSidebar({
   const [openBox, setOpenBox] = useState<BoxKey>("permalink");
   const [pickingFeatured, setPickingFeatured] = useState(false);
   const [uploadingFeatured, setUploadingFeatured] = useState(false);
+  const [uploadingEpub, setUploadingEpub] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [epubUploadError, setEpubUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const epubInputRef = useRef<HTMLInputElement | null>(null);
   const canSave = dirty && !saving;
   const publicPath = getCatalogItemPath(item);
   const isInDevelopment = draft.status === "in_development";
@@ -127,6 +132,33 @@ export default function ShopMetadataSidebar({
       setUploadError("Afbeelding uploaden mislukt. Probeer opnieuw.");
     } finally {
       setUploadingFeatured(false);
+    }
+  }
+
+  async function handleUploadEpub(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const isEpub =
+      file.name.toLowerCase().endsWith(".epub") ||
+      file.type === "application/epub+zip";
+
+    if (!isEpub) {
+      setEpubUploadError("Upload hier alleen een EPUB-bestand.");
+      return;
+    }
+
+    setEpubUploadError(null);
+    setUploadingEpub(true);
+
+    try {
+      const url = await uploadMediaAssetClient(file, `shop/${item.id}/epub`);
+      onDraftChange({ epubUrl: url });
+    } catch {
+      setEpubUploadError("EPUB uploaden mislukt. Probeer opnieuw.");
+    } finally {
+      setUploadingEpub(false);
     }
   }
 
@@ -211,7 +243,12 @@ export default function ShopMetadataSidebar({
             <div>Categorie: {item.category}</div>
             <div>Slug: {item.id}</div>
             {item.category === "ebooks" ? (
-              <div>Gekoppelde app-content: {draft.contentSlug || "nog niet gekoppeld"}</div>
+              <>
+                <div>
+                  Gekoppelde app-content: {draft.contentSlug || "nog niet gekoppeld"}
+                </div>
+                <div>EPUB-bestand: {draft.epubUrl ? "toegevoegd" : "nog niet toegevoegd"}</div>
+              </>
             ) : null}
           </div>
 
@@ -255,20 +292,37 @@ export default function ShopMetadataSidebar({
           </label>
 
           {item.category === "ebooks" ? (
-            <label className="block space-y-1">
-              <span className="block text-xs text-gray-600">App e-book slug</span>
-              <input
-                value={draft.contentSlug}
-                onChange={(event) =>
-                  onDraftChange({ contentSlug: event.target.value })
-                }
-                className="w-full rounded border px-2 py-1"
-                placeholder="bijv. rouwverwerking-werkboek"
-              />
-              <span className="block text-xs text-gray-500">
-                Gebruik hier dezelfde slug als het gepubliceerde e-book content-item in de app.
-              </span>
-            </label>
+            <div className="space-y-3">
+              <label className="block space-y-1">
+                <span className="block text-xs text-gray-600">App e-book slug</span>
+                <input
+                  value={draft.contentSlug}
+                  onChange={(event) =>
+                    onDraftChange({ contentSlug: event.target.value })
+                  }
+                  className="w-full rounded border px-2 py-1"
+                  placeholder="bijv. rouwverwerking-werkboek"
+                />
+                <span className="block text-xs text-gray-500">
+                  Gebruik hier dezelfde slug als het gepubliceerde e-book content-item in de app.
+                </span>
+              </label>
+
+              <label className="block space-y-1">
+                <span className="block text-xs text-gray-600">EPUB URL</span>
+                <input
+                  value={draft.epubUrl}
+                  onChange={(event) =>
+                    onDraftChange({ epubUrl: event.target.value })
+                  }
+                  className="w-full rounded border px-2 py-1"
+                  placeholder="https://..."
+                />
+                <span className="block text-xs text-gray-500">
+                  Deze URL wordt automatisch ingevuld zodra je hieronder een EPUB uploadt.
+                </span>
+              </label>
+            </div>
           ) : null}
         </div>
       )}
@@ -515,6 +569,70 @@ export default function ShopMetadataSidebar({
           </label>
         </div>
       )}
+
+      {item.category === "ebooks"
+        ? renderBox(
+            "ebook",
+            "EPUB-bestand",
+            <div className="space-y-3">
+              <input
+                ref={epubInputRef}
+                type="file"
+                accept=".epub,application/epub+zip"
+                className="hidden"
+                onChange={handleUploadEpub}
+              />
+
+              {draft.epubUrl ? (
+                <div className="space-y-2 rounded border bg-gray-50 p-3">
+                  <div className="text-xs font-medium text-gray-700">
+                    EPUB gekoppeld
+                  </div>
+                  <a
+                    href={draft.epubUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block break-all text-sm text-blue-700 hover:underline"
+                  >
+                    {draft.epubUrl}
+                  </a>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500">
+                  Nog geen EPUB gekoppeld aan dit e-book.
+                </p>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={uploadingEpub}
+                  className="rounded border px-3 py-1 hover:bg-gray-100 disabled:opacity-50"
+                  onClick={() => epubInputRef.current?.click()}
+                >
+                  {uploadingEpub ? "Uploaden..." : "EPUB uploaden"}
+                </button>
+                {draft.epubUrl ? (
+                  <button
+                    type="button"
+                    className="rounded border px-3 py-1 text-red-600 hover:bg-red-50"
+                    onClick={() => onDraftChange({ epubUrl: "" })}
+                  >
+                    EPUB verwijderen
+                  </button>
+                ) : null}
+              </div>
+
+              <p className="text-xs leading-5 text-gray-500">
+                Upload hier het definitieve `.epub` bestand dat bij dit e-bookproduct hoort.
+              </p>
+
+              {epubUploadError ? (
+                <p className="text-xs text-red-600">{epubUploadError}</p>
+              ) : null}
+            </div>
+          )
+        : null}
     </aside>
   );
 }

@@ -27,6 +27,7 @@ export type CatalogItem = {
   tag: string;
   href?: string;
   contentSlug?: string;
+  epubUrl?: string;
   status?: CatalogStatus;
 };
 
@@ -320,6 +321,7 @@ function normalizeCatalogItem(
     tag: asString(item?.tag, fallback.tag),
     href: asString(item?.href, fallback.href || ""),
     contentSlug: asString(item?.contentSlug, fallback.contentSlug || ""),
+    epubUrl: asString(item?.epubUrl, fallback.epubUrl || ""),
     status: normalizeCatalogStatus(item?.status, fallback.status || "concept"),
   };
 }
@@ -347,6 +349,7 @@ function createEmptyCatalogItem(
       tag: "Boek",
       href: "",
       contentSlug: "",
+      epubUrl: "",
       status: "concept",
     };
   }
@@ -370,6 +373,7 @@ function createEmptyCatalogItem(
       tag: "E-book",
       href: "",
       contentSlug: "",
+      epubUrl: "",
       status: "concept",
     };
   }
@@ -392,6 +396,7 @@ function createEmptyCatalogItem(
     tag: "Spel",
     href: "",
     contentSlug: "",
+    epubUrl: "",
     status: "concept",
   };
 }
