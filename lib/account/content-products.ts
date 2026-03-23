@@ -8,6 +8,10 @@ import {
   isTimedEntitlementActive,
 } from "@/lib/users/entitlements";
 import type { ContentAccessScope } from "@/lib/content/access";
+import {
+  listWebsiteOrderItemsForAccount,
+  type WebsiteOrderItemRow,
+} from "@/lib/account/website-orders";
 
 type CreditPackPurchaseRow = {
   id: string;
@@ -353,9 +357,16 @@ async function getContentGroupingDetails(
 }
 
 export async function getAccountContentProductsData(
-  userId: string
+  input: {
+    userId: string;
+    email?: string | null;
+  }
 ): Promise<AccountContentProductsData> {
   const supabase = createAdminClient();
+  const websiteRows = await listWebsiteOrderItemsForAccount({
+    userId: input.userId,
+    email: input.email ?? null,
+  });
 
   const [{ data: purchaseRows }, { data: unlockedRows }, { data: entitlementRows }] =
     await Promise.all([
@@ -364,7 +375,7 @@ export async function getAccountContentProductsData(
         .select(
           "id, pack_id, quantity, credits_total, amount_cents, currency, created_at, source, note"
         )
-        .eq("user_id", userId)
+        .eq("user_id", input.userId)
         .order("created_at", { ascending: false })
         .returns<CreditPackPurchaseRow[]>(),
       supabase
@@ -372,13 +383,13 @@ export async function getAccountContentProductsData(
         .select(
           "id, credits_spent, unlocked_at, content_item:content_items(id, title, slug, excerpt, access_scope)"
         )
-        .eq("user_id", userId)
+        .eq("user_id", input.userId)
         .order("unlocked_at", { ascending: false })
         .returns<UnlockedContentRow[]>(),
       supabase
         .from("user_entitlements")
         .select("id, entitlement_key, starts_at, ends_at, is_active, created_at, source, metadata")
-        .eq("user_id", userId)
+        .eq("user_id", input.userId)
         .in("entitlement_key", [
           YEAR_ASSIGNMENTS_ENTITLEMENT_KEY,
           THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
@@ -389,8 +400,10 @@ export async function getAccountContentProductsData(
 
   const contentIds = Array.from(
     new Set(
-      (unlockedRows ?? [])
-        .map((row) => row.content_item?.id)
+      [...(unlockedRows ?? []), ...websiteRows]
+        .map((row) =>
+          "content_item" in row ? row.content_item?.id : row.content_item_id
+        )
         .filter((value): value is string => Boolean(value))
     )
   );
@@ -473,6 +486,28 @@ export async function getAccountContentProductsData(
         categoryTitle: null,
       };
     })),
+    ...(websiteRows.map((row: WebsiteOrderItemRow) => ({
+      id: `website:${row.id}`,
+      kind:
+        row.item_kind === "credit_pack"
+          ? ("credit_pack" as const)
+          : row.item_kind === "subscription"
+            ? ("subscription" as const)
+            : ("content_unlock" as const),
+      title: row.title,
+      subtitle: row.subtitle ?? "",
+      occurredAt: row.occurred_at,
+      amountCents: row.amount_cents,
+      currency: row.currency,
+      href: row.href,
+      source: row.source,
+      themeTitle: row.content_item_id
+        ? themeByContentId.get(row.content_item_id) ?? null
+        : null,
+      categoryTitle: row.content_item_id
+        ? categoryByContentId.get(row.content_item_id) ?? null
+        : null,
+    }))),
   ].sort(
     (left, right) =>
       new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime()

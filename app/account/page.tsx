@@ -672,7 +672,10 @@ export default async function AccountPage({
       .order("created_at", { ascending: false })
       .returns<TherapistEntitlementRow[]>(),
     getUserProgressCollections(user.id),
-    getAccountContentProductsData(user.id),
+    getAccountContentProductsData({
+      userId: user.id,
+      email: user.email ?? null,
+    }),
   ]);
 
   const firstName = profile?.profile_data?.first_name?.trim() ?? "";
