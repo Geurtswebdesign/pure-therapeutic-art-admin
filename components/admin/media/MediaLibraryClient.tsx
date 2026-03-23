@@ -188,7 +188,8 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
 
     try {
       const list = Array.from(files);
-      let failed = 0;
+      let uploadFailed = 0;
+      let insertFailed = 0;
       const queue: UploadItem[] = list.map((file) => ({
         id: crypto.randomUUID(),
         name: file.name,
@@ -211,7 +212,7 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
         const uploadItemId = queue[i].id;
         try {
           if (file.size > MAX_UPLOAD_BYTES) {
-            failed += 1;
+            uploadFailed += 1;
             setUploadError(`1 of meer bestanden zijn te groot. Maximaal ${MAX_UPLOAD_MB} MB.`);
             setItem(uploadItemId, {
               status: "failed",
@@ -235,7 +236,7 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
             });
 
           if (uploadError) {
-            failed += 1;
+            uploadFailed += 1;
             setUploadError(friendlyUploadError(uploadError));
             setItem(uploadItemId, {
               status: "failed",
@@ -262,7 +263,7 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
             });
 
           if (insertError) {
-            failed += 1;
+            insertFailed += 1;
             setItem(uploadItemId, {
               status: "failed",
               progress: 100,
@@ -273,7 +274,7 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
           }
           setItem(uploadItemId, { status: "done", progress: 100 });
         } catch (error) {
-          failed += 1;
+          uploadFailed += 1;
           setUploadError(friendlyUploadError(error));
           setItem(uploadItemId, {
             status: "failed",
@@ -287,10 +288,12 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
 
       await loadAssets();
       setTab("library");
-      if (failed > 0) {
+      if (insertFailed > 0) {
         setUploadError(
-          t.uploadPartialFailed.replace("{count}", String(failed))
+          t.uploadPartialFailed.replace("{count}", String(insertFailed))
         );
+      } else if (uploadFailed > 0) {
+        setUploadError(t.uploadFailed.replace("{count}", String(uploadFailed)));
       }
     } finally {
       setUploading(false);
