@@ -19,7 +19,6 @@ import {
   type CatalogCategory,
 } from "@/lib/shop/catalog";
 import { resolveEbookProductState } from "@/lib/shop/ebook-products";
-import { getBalanceByScope } from "@/lib/users/getBalanceByScope";
 
 const PRODUCT_CATEGORY_CONFIG = {
   boeken: {
@@ -82,13 +81,7 @@ export default async function ShopProductPage({
           userId: user?.id ?? null,
         })
       : null;
-  const ebookRequiresUnlock =
-    category === "ebooks" ? (ebookState?.unlockCost ?? 0) > 0 : false;
   const ebookHasAccess = ebookState?.hasAccess ?? false;
-  const ebookBalance =
-    category === "ebooks" && user && ebookRequiresUnlock && !ebookHasAccess
-      ? await getBalanceByScope(user.id, "book")
-      : 0;
 
   return (
     <PublicAppShell activeTab="shop" title={item.title}>
@@ -142,13 +135,14 @@ export default async function ShopProductPage({
         <ProductContentBlock icon={config.icon} title={item.purchaseTitle}>
           {category === "ebooks" ? (
             <InAppEbookPurchaseCard
-              productSlug={item.id}
               readerHref={ebookState?.readerHref ?? null}
-              isReady={ebookState?.isReady ?? false}
-              cost={ebookState?.unlockCost ?? 0}
-              balance={ebookBalance}
-              isLoggedIn={!!user}
               hasAccess={ebookHasAccess}
+              purchaseHref={item.href ?? null}
+              purchaseDescription={item.purchaseDescription}
+              purchaseButtonLabel={item.purchaseButtonLabel}
+              isInDevelopment={isInDevelopment}
+              developmentPurchaseText={item.developmentPurchaseText}
+              developmentCalloutLabel={item.developmentCalloutLabel}
               language={language}
             />
           ) : (

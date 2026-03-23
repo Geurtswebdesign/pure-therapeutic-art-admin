@@ -1,149 +1,113 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useTransition } from "react";
-import { ExternalLink, ShoppingCart, Unlock } from "lucide-react";
-import { unlockEbookProduct } from "@/app/shop/ebook-actions";
+import { ExternalLink } from "lucide-react";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 
 type Props = {
-  productSlug: string;
   readerHref: string | null;
-  isReady: boolean;
-  cost: number;
-  balance: number;
-  isLoggedIn: boolean;
   hasAccess: boolean;
+  purchaseHref: string | null;
+  purchaseDescription: string;
+  purchaseButtonLabel: string;
+  isInDevelopment: boolean;
+  developmentPurchaseText: string;
+  developmentCalloutLabel: string;
   language: UiLanguage;
 };
 
 const COPY = {
   nl: {
-    missing: "Dit e-book is nog niet helemaal klaar voor de app-reader.",
+    missing: "Dit e-book is aangekocht, maar nog niet gekoppeld aan de app-reader.",
     open: "Open e-book in app",
-    unlock: "Speel e-book vrij in app",
-    unlocking: "Bezig met vrijspelen...",
-    buyCredits: "Koop boekcredits",
-    login: "Log in om dit e-book vrij te spelen",
-    insufficient:
-      "Je hebt niet genoeg boekcredits om dit e-book vrij te spelen.",
+    bodyBeforePurchase:
+      "Koop dit e-book via De Troostboom. Na succesvolle bestelling verschijnt het in je account onder EBooks en lees je het veilig in de app-reader.",
     bodyWhenReady:
-      "Dit e-book wordt in de app vrijgespeeld. Na aankoop of vrijspelen lees je het direct veilig in de app-reader.",
-    bodyWhenPreparing:
-      "Dit e-book wordt als app-product ingericht. Zodra de readerkoppeling volledig klaar staat, kun je het hier direct openen.",
+      "Dit e-book is al aan jouw account gekoppeld. Je kunt het nu direct veilig lezen in de app-reader.",
   },
   en: {
-    missing: "This ebook is not fully ready for the in-app reader yet.",
+    missing: "This ebook has been purchased, but it is not linked to the app reader yet.",
     open: "Open ebook in app",
-    unlock: "Unlock ebook in app",
-    unlocking: "Unlocking...",
-    buyCredits: "Buy book credits",
-    login: "Log in to unlock this ebook",
-    insufficient: "You do not have enough book credits to unlock this ebook.",
+    bodyBeforePurchase:
+      "Buy this ebook via De Troostboom. After a successful order it appears in your account under EBooks and can be read inside the protected app reader.",
     bodyWhenReady:
-      "This ebook is unlocked inside the app. After purchase or unlock, you can read it directly in the protected app reader.",
-    bodyWhenPreparing:
-      "This ebook is being prepared as an in-app product. Once the reader link is fully ready, you can open it here directly.",
+      "This ebook is already linked to your account. You can now read it directly in the protected app reader.",
   },
   de: {
-    missing: "Dieses E-Book ist noch nicht vollstandig fur den App-Reader bereit.",
+    missing: "Dieses E-Book wurde gekauft, ist aber noch nicht mit dem App-Reader verknupft.",
     open: "E-Book in der App offnen",
-    unlock: "E-Book in der App freischalten",
-    unlocking: "Wird freigeschaltet...",
-    buyCredits: "Buchcredits kaufen",
-    login: "Melde dich an, um dieses E-Book freizuschalten",
-    insufficient:
-      "Du hast nicht genug Buchcredits, um dieses E-Book freizuschalten.",
+    bodyBeforePurchase:
+      "Kaufe dieses E-Book uber De Troostboom. Nach erfolgreicher Bestellung erscheint es in deinem Konto unter EBooks und kann sicher im App-Reader gelesen werden.",
     bodyWhenReady:
-      "Dieses E-Book wird direkt in der App freigeschaltet. Danach liest du es sicher im geschutzten App-Reader.",
-    bodyWhenPreparing:
-      "Dieses E-Book wird als App-Produkt vorbereitet. Sobald die Reader-Verknupfung fertig ist, kannst du es hier direkt offnen.",
+      "Dieses E-Book ist bereits mit deinem Konto verknupft. Du kannst es jetzt direkt im geschutzten App-Reader lesen.",
   },
 } as const;
 
 export default function InAppEbookPurchaseCard({
-  productSlug,
   readerHref,
-  isReady,
-  cost,
-  balance,
-  isLoggedIn,
   hasAccess,
+  purchaseHref,
+  purchaseDescription,
+  purchaseButtonLabel,
+  isInDevelopment,
+  developmentPurchaseText,
+  developmentCalloutLabel,
   language,
 }: Props) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
   const t = COPY[language] ?? COPY.nl;
 
-  if (!isReady || !readerHref) {
+  if (hasAccess && readerHref) {
     return (
       <article className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-4 shadow-sm">
-        <p className="text-sm leading-6 text-[#6b5d50]">{t.bodyWhenPreparing}</p>
-        <div className="mt-4 inline-flex rounded-full border border-[#decfbe] bg-[#fcf6f1] px-4 py-2 text-sm font-medium text-[#8a5f49]">
-          {t.missing}
+        <p className="text-sm leading-6 text-[#6b5d50]">{t.bodyWhenReady}</p>
+        <div className="mt-4">
+          <Link
+            href={readerHref}
+            className="inline-flex items-center gap-2 rounded-full border border-[#9e3a3a] bg-[#b64040] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#9e3a3a]"
+          >
+            {t.open}
+            <ExternalLink size={16} strokeWidth={1.8} />
+          </Link>
         </div>
       </article>
     );
   }
 
-  const resolvedReaderHref = readerHref;
-  const loginHref = `/login?next=${encodeURIComponent(pathname || readerHref)}`;
-  const creditsHref = "/shop/credits?scope=book";
-  const requiresUnlock = cost > 0;
-  const insufficient = requiresUnlock && balance < cost;
-
-  function handleUnlock() {
-    startTransition(async () => {
-      await unlockEbookProduct(productSlug);
-      router.push(resolvedReaderHref);
-      router.refresh();
-    });
+  if (hasAccess && !readerHref) {
+    return (
+      <article className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-4 shadow-sm">
+        <p className="text-sm leading-6 text-[#6b5d50]">{t.missing}</p>
+      </article>
+    );
   }
 
   return (
     <article className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-4 shadow-sm">
-      <p className="text-sm leading-6 text-[#6b5d50]">{t.bodyWhenReady}</p>
+      <p className="text-sm leading-6 text-[#6b5d50]">{t.bodyBeforePurchase}</p>
 
       <div className="mt-4">
-        {hasAccess || !requiresUnlock ? (
-          <Link
-            href={isLoggedIn ? readerHref : loginHref}
-            className="inline-flex items-center gap-2 rounded-full border border-[#9e3a3a] bg-[#b64040] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#9e3a3a]"
-          >
-            {isLoggedIn ? t.open : t.login}
-            <ExternalLink size={16} strokeWidth={1.8} />
-          </Link>
-        ) : !isLoggedIn ? (
-          <Link
-            href={loginHref}
-            className="inline-flex items-center gap-2 rounded-full border border-[#9e3a3a] bg-[#b64040] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#9e3a3a]"
-          >
-            {t.login}
-            <ExternalLink size={16} strokeWidth={1.8} />
-          </Link>
-        ) : insufficient ? (
-          <div className="space-y-3">
-            <p className="text-sm text-[#8a5f49]">{t.insufficient}</p>
-            <Link
-              href={creditsHref}
+        {!isInDevelopment && purchaseHref ? (
+          <div className="space-y-4">
+            <p className="text-sm leading-6 text-[#6b5d50]">{purchaseDescription}</p>
+            <a
+              href={purchaseHref}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full border border-[#9e3a3a] bg-[#b64040] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#9e3a3a]"
             >
-              {t.buyCredits}
-              <ShoppingCart size={16} strokeWidth={1.8} />
-            </Link>
+              {purchaseButtonLabel}
+              <ExternalLink size={16} strokeWidth={1.8} />
+            </a>
           </div>
         ) : (
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={handleUnlock}
-            className="inline-flex items-center gap-2 rounded-full border border-[#9e3a3a] bg-[#b64040] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#9e3a3a] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isPending ? t.unlocking : t.unlock}
-            <Unlock size={16} strokeWidth={1.8} />
-          </button>
+          <div className="space-y-4">
+            <p className="text-sm leading-6 text-[#6b5d50]">
+              {isInDevelopment ? developmentPurchaseText : t.missing}
+            </p>
+            <div className="inline-flex rounded-full border border-[#decfbe] bg-[#fcf6f1] px-4 py-2 text-sm font-medium text-[#8a5f49]">
+              {developmentCalloutLabel}
+            </div>
+          </div>
         )}
       </div>
     </article>

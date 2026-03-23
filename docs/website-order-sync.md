@@ -60,6 +60,9 @@ Gebruik `POST /api/orders/sync` om websitebestellingen naar de app te synchronis
   - `quantity`
   - `product_url`
   - `invoice_url`
+- Voor product-gebaseerde e-books die via de app-reader geopend moeten worden, stuur ook mee:
+  - `product_slug`
+    Dit is de slug van het e-bookproduct in de app-shop, bijvoorbeeld `ebooks-mn3nosfd`.
 
 ## WooCommerce
 
@@ -98,6 +101,8 @@ Zet per relevant product:
   - voor hoofdstukken of e-books die in de app gelezen moeten worden
 - `_pta_content_item_id`
   - optioneel als je liever UUID's gebruikt dan slugs
+- `_pta_app_product_slug`
+  - voor e-books die in de app-shop als zelfstandig EPUB-product gelezen moeten worden
 
 ### Order-meta
 

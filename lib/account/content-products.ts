@@ -215,11 +215,8 @@ function getAccountEbookHref(slug: string | null) {
   return slug ? `/account/ebooks/${slug}` : null;
 }
 
-function getAccountProductEbookHref(
-  productSlug: string | null,
-  epubUrl: string | null
-) {
-  return productSlug && epubUrl ? `/account/ebooks/product/${productSlug}` : null;
+function getAccountProductEbookHref(productSlug: string | null) {
+  return productSlug ? `/account/ebooks/product/${productSlug}` : null;
 }
 
 function getWebsiteEbookMetadata(metadata: unknown) {
@@ -685,10 +682,7 @@ export async function getAccountContentProductsData(
           title: row.content_item?.title || "E-book",
           excerpt: row.content_item?.excerpt ?? null,
           href:
-            getAccountProductEbookHref(
-              ebookMetadata.productSlug,
-              ebookMetadata.epubUrl
-            ) ??
+            getAccountProductEbookHref(ebookMetadata.productSlug) ??
             getAccountEbookHref(row.content_item?.slug ?? null),
           unlockedAt: row.unlocked_at,
           themeTitle: contentItemId
@@ -709,10 +703,7 @@ export async function getAccountContentProductsData(
       .map((row) => {
         const details = getWebsiteOrderDetails(row);
         const ebookMetadata = getWebsiteEbookMetadata(row.metadata);
-        const href = getAccountProductEbookHref(
-          ebookMetadata.productSlug,
-          ebookMetadata.epubUrl
-        );
+        const href = getAccountProductEbookHref(ebookMetadata.productSlug);
         return {
           id: `pending-ebook:${row.id}`,
           contentItemId: row.content_item_id ?? null,

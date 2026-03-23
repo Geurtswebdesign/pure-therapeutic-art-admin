@@ -280,23 +280,22 @@ export default function ShopMetadataSidebar({
             </div>
           </div>
 
-          {item.category !== "ebooks" ? (
-            <label className="block space-y-1">
-              <span className="block text-xs text-gray-600">Productlink</span>
-              <input
-                value={draft.href}
-                onChange={(event) =>
-                  onDraftChange({ href: event.target.value })
-                }
-                className="w-full rounded border px-2 py-1"
-              />
-            </label>
-          ) : (
-            <div className="rounded border bg-gray-50 px-3 py-2 text-xs leading-5 text-gray-600">
-              E-books worden in de app vrijgespeeld met boekcredits. Een externe
-              productlink is hiervoor niet nodig.
-            </div>
-          )}
+          <label className="block space-y-1">
+            <span className="block text-xs text-gray-600">Productlink</span>
+            <input
+              value={draft.href}
+              onChange={(event) =>
+                onDraftChange({ href: event.target.value })
+              }
+              className="w-full rounded border px-2 py-1"
+            />
+            {item.category === "ebooks" ? (
+              <span className="block text-xs text-gray-500">
+                Gebruik hier de WooCommerce product-URL. Na aankoop wordt het
+                e-book via de order-sync aan het account gekoppeld.
+              </span>
+            ) : null}
+          </label>
 
           {item.category === "ebooks" ? (
             <div className="space-y-3">

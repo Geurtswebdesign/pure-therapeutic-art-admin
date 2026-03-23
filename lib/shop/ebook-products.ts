@@ -33,7 +33,6 @@ export type ResolvedEbookProductState = {
   item: CatalogItem;
   linkedContent: LinkedContentSummary | null;
   readerHref: string | null;
-  unlockCost: number;
   isReady: boolean;
   hasAccess: boolean;
 };
@@ -110,14 +109,6 @@ export async function getLinkedContentForEbookProduct(item: CatalogItem) {
   } satisfies LinkedContentSummary;
 }
 
-export function getEbookUnlockCost(linkedContent: LinkedContentSummary | null) {
-  if (linkedContent && linkedContent.creditCost > 0) {
-    return linkedContent.creditCost;
-  }
-
-  return 1;
-}
-
 export function getEbookReaderHref(
   item: CatalogItem,
   linkedContent: LinkedContentSummary | null
@@ -160,10 +151,6 @@ export async function userOwnsEbookProduct(input: {
       ? await getLinkedContentForEbookProduct(input.item)
       : input.linkedContent;
 
-  if (linkedContent && (linkedContent.creditCost ?? 0) <= 0) {
-    return true;
-  }
-
   if (linkedContent && (await hasAccess(input.userId, linkedContent.id))) {
     return true;
   }
@@ -178,7 +165,6 @@ export async function resolveEbookProductState(input: {
 }) {
   const linkedContent = await getLinkedContentForEbookProduct(input.item);
   const readerHref = getEbookReaderHref(input.item, linkedContent);
-  const unlockCost = getEbookUnlockCost(linkedContent);
   const ready = Boolean(readerHref) && !isCatalogItemInDevelopment(input.item);
   const hasUserAccess =
     input.userId && ready
@@ -193,7 +179,6 @@ export async function resolveEbookProductState(input: {
     item: input.item,
     linkedContent,
     readerHref,
-    unlockCost,
     isReady: ready,
     hasAccess: hasUserAccess,
   } satisfies ResolvedEbookProductState;

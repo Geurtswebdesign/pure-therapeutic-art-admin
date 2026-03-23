@@ -59,6 +59,7 @@ function pta_wc_sync_paid_order( $order_id ) {
 
 		$content_slug    = get_post_meta( $product->get_id(), '_pta_content_slug', true );
 		$content_item_id = get_post_meta( $product->get_id(), '_pta_content_item_id', true );
+		$app_product_slug = get_post_meta( $product->get_id(), '_pta_app_product_slug', true );
 
 		$line_total = (float) $item->get_total();
 		$amount_cents = (int) round( $line_total * 100 );
@@ -83,6 +84,7 @@ function pta_wc_sync_paid_order( $order_id ) {
 				'provider'      => 'woocommerce',
 				'product_id'    => $product->get_id(),
 				'product_sku'   => $product->get_sku(),
+				'product_slug'  => $app_product_slug ? $app_product_slug : null,
 				'order_number'  => $order->get_order_number(),
 				'order_status'  => $order->get_status(),
 				'quantity'      => $item->get_quantity(),
