@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import DeleteShopItemButton from "@/components/admin/shop/DeleteShopItemButton";
 import { getShopCatalogSettings } from "@/lib/settings/actions";
 import {
   getAllCatalogItems,
@@ -115,6 +116,7 @@ export default async function AdminShopPage() {
                     ) : (
                       <span className="text-stone-400">Niet zichtbaar</span>
                     )}
+                    <DeleteShopItemButton itemId={item.id} title={item.title} />
                   </div>
                 </td>
               </tr>
