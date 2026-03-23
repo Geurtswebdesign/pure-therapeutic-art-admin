@@ -3,17 +3,24 @@ import { BookOpenText, Download, Puzzle, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import HistoryBackButton from "@/components/public/HistoryBackButton";
 import PublicAppShell from "@/components/public/PublicAppShell";
+import InAppEbookPurchaseCard from "@/components/shop/InAppEbookPurchaseCard";
 import {
   ProductInfoHero,
   ProductPurchaseCard,
 } from "@/components/shop/ShopCatalog";
+import { getCurrentUser } from "@/lib/auth/getCurrentUser";
+import { getPublishedContentBySlug } from "@/lib/content/public-queries";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import {
   getPublicCatalogItem,
   getPublicShopCatalog,
   isCatalogItemInDevelopment,
   type CatalogCategory,
 } from "@/lib/shop/catalog";
+import { hasAccess } from "@/lib/unlock/hasAccess";
+import { getBalanceByScope } from "@/lib/users/getBalanceByScope";
 
 const PRODUCT_CATEGORY_CONFIG = {
   boeken: {
@@ -65,8 +72,26 @@ export default async function ShopProductPage({
   const item = getPublicCatalogItem(catalog, category, slug);
   if (!item) notFound();
 
+  const language = resolveUiLanguage(await getAppLanguage());
   const config = PRODUCT_CATEGORY_CONFIG[category];
   const isInDevelopment = isCatalogItemInDevelopment(item);
+  const user = category === "ebooks" ? await getCurrentUser() : null;
+  const linkedContentItem =
+    category === "ebooks" && item.contentSlug?.trim()
+      ? await getPublishedContentBySlug(item.contentSlug.trim())
+      : null;
+  const ebookRequiresUnlock =
+    category === "ebooks" ? (linkedContentItem?.credit_cost ?? 0) > 0 : false;
+  const ebookHasAccess =
+    category === "ebooks" && linkedContentItem && user
+      ? ebookRequiresUnlock
+        ? await hasAccess(user.id, linkedContentItem.id)
+        : true
+      : false;
+  const ebookBalance =
+    category === "ebooks" && linkedContentItem && user && ebookRequiresUnlock && !ebookHasAccess
+      ? await getBalanceByScope(user.id, "book")
+      : 0;
 
   return (
     <PublicAppShell activeTab="shop" title={item.title}>
@@ -118,11 +143,23 @@ export default async function ShopProductPage({
         </ProductContentBlock>
 
         <ProductContentBlock icon={config.icon} title={item.purchaseTitle}>
-          <ProductPurchaseCard
-            item={item}
-            showTitle={false}
-            className="border-0 bg-transparent p-0 shadow-none"
-          />
+          {category === "ebooks" ? (
+            <InAppEbookPurchaseCard
+              contentId={linkedContentItem?.id ?? null}
+              contentSlug={linkedContentItem?.slug ?? null}
+              cost={linkedContentItem?.credit_cost ?? 0}
+              balance={ebookBalance}
+              isLoggedIn={!!user}
+              hasAccess={ebookHasAccess}
+              language={language}
+            />
+          ) : (
+            <ProductPurchaseCard
+              item={item}
+              showTitle={false}
+              className="border-0 bg-transparent p-0 shadow-none"
+            />
+          )}
         </ProductContentBlock>
 
         {isInDevelopment ? (

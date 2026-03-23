@@ -65,20 +65,20 @@ const BOOK_PRODUCT_TEXT_DEFAULTS = {
 const EBOOK_PRODUCT_TEXT_DEFAULTS = {
   introTitle: "E-bookinformatie",
   introText:
-    "Bekijk eerst de productinformatie in de app. Na aankoop wordt het e-book gekoppeld aan je account en lees je het veilig binnen de app.",
+    "Bekijk eerst de productinformatie in de app. Daarna speel je het e-book vrij met boekcredits en lees je het veilig binnen de app.",
   descriptionTitle: "Inhoud",
   detailsTitle: "Leeservaring",
-  purchaseTitle: "Kopen",
+  purchaseTitle: "Vrijspelen in de app",
   purchaseDescription:
-    "Wanneer je doorgaat, open je de productpagina van De Troostboom om dit e-book te kopen. Na aankoop verschijnt het in je account onder EBooks.",
-  purchaseButtonLabel: "Koop e-book via De Troostboom",
+    "Dit e-book speel je direct in de app vrij met boekcredits. Daarna verschijnt het in je account onder EBooks.",
+  purchaseButtonLabel: "Speel e-book vrij in app",
   developmentStateLabel: "In ontwikkeling",
   unavailablePriceLabel: "Nog niet beschikbaar",
-  developmentCalloutLabel: "Dit e-book is nog niet live",
+  developmentCalloutLabel: "E-book nog niet gekoppeld",
   developmentPurchaseText:
-    "Dit e-book is nog niet beschikbaar. Zodra de verkoop live staat, komt hier direct de koopknop.",
+    "Dit e-book is nog niet beschikbaar in de app. Zodra de koppeling live staat, kun je het hier direct vrijspelen.",
   developmentNotice:
-    "Dit e-book staat alvast in de shop, maar kan nog niet besteld worden. Zodra de verkoop live is, wordt het meteen gekoppeld aan de app-reader.",
+    "Dit e-book staat alvast in de shop, maar is nog niet volledig gekoppeld aan de app-reader. Zodra de koppeling live is, kun je het direct in de app vrijspelen.",
 } as const;
 
 const GAME_PRODUCT_TEXT_DEFAULTS = {

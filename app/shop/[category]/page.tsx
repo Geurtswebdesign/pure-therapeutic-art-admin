@@ -1,3 +1,4 @@
+import type { CreditScope } from "@/components/shop/ShopCatalog";
 import { notFound } from "next/navigation";
 import { BookOpenText, Coins, Download, Puzzle } from "lucide-react";
 import HistoryBackButton from "@/components/public/HistoryBackButton";
@@ -6,7 +7,7 @@ import {
   AssignmentCreditsEmptyState,
   CreditPackDetailCard,
   DetailList,
-  getAssignmentCreditShopData,
+  getCreditShopData,
   ProductDetailCard,
   YearSubscriptionDetailCard,
 } from "@/components/shop/ShopCatalog";
@@ -48,22 +49,99 @@ const CATEGORY_CONFIG = {
 
 type ShopCategory = keyof typeof CATEGORY_CONFIG;
 
+type CreditScopeConfig = {
+  title: string;
+  intro: string;
+  listTitle: string;
+  emptyTitle: string;
+  emptyDescription: string;
+};
+
 function isShopCategory(value: string): value is ShopCategory {
   return value in CATEGORY_CONFIG;
 }
 
+function normalizeCreditScope(value: string | undefined): CreditScope {
+  if (value === "book" || value === "game" || value === "referral") {
+    return value;
+  }
+  return "assignment";
+}
+
+function getCreditScopeConfig(scope: CreditScope): CreditScopeConfig {
+  switch (scope) {
+    case "book":
+      return {
+        title: "Boekcredits",
+        intro:
+          "Koop boekcredits om e-books direct in de app vrij te spelen en veilig te lezen in de reader.",
+        listTitle: "Beschikbare boekcredits",
+        emptyTitle: "Nog geen boekcredits actief",
+        emptyDescription:
+          "Activeer eerst een of meer boekcredit-pakketten in de administratie. Dan verschijnen ze automatisch hier.",
+      };
+    case "game":
+      return {
+        title: "Spelcredits",
+        intro:
+          "Koop spelcredits om digitale spellen of spelcontent binnen de app vrij te spelen.",
+        listTitle: "Beschikbare spelcredits",
+        emptyTitle: "Nog geen spelcredits actief",
+        emptyDescription:
+          "Activeer eerst een of meer spelcredit-pakketten in de administratie. Dan verschijnen ze automatisch hier.",
+      };
+    case "referral":
+      return {
+        title: "Verwijscredits",
+        intro:
+          "Koop verwijscredits om beschermde verwijscontent binnen de app vrij te spelen.",
+        listTitle: "Beschikbare verwijscredits",
+        emptyTitle: "Nog geen verwijscredits actief",
+        emptyDescription:
+          "Activeer eerst een of meer verwijscredit-pakketten in de administratie. Dan verschijnen ze automatisch hier.",
+      };
+    case "assignment":
+    default:
+      return {
+        title: "Opdrachtcredits",
+        intro:
+          "Alle actieve opdrachtpakketten en het jaarabonnement voor opdrachten. Hiermee speel je opdrachten vrij of krijg je twaalf maanden volledige toegang.",
+        listTitle: "Opdrachtopties",
+        emptyTitle: "Nog geen opdrachtpakketten actief",
+        emptyDescription:
+          "Activeer eerst een of meer assignment credit packs of het jaarabonnement in de administratie. Dan verschijnen ze automatisch hier.",
+      };
+  }
+}
+
 export default async function ShopCategoryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ category: string }>;
+  searchParams: Promise<{ scope?: string | string[] | undefined }>;
 }) {
   const { category } = await params;
   if (!isShopCategory(category)) notFound();
 
-  const config = CATEGORY_CONFIG[category];
+  const rawSearchParams = await searchParams;
+  const requestedScope = Array.isArray(rawSearchParams.scope)
+    ? rawSearchParams.scope[0]
+    : rawSearchParams.scope;
+  const creditScope = normalizeCreditScope(requestedScope);
+  const creditScopeConfig = getCreditScopeConfig(creditScope);
+  const config =
+    category === "credits"
+      ? {
+          ...CATEGORY_CONFIG.credits,
+          title: creditScopeConfig.title,
+          intro: creditScopeConfig.intro,
+          listTitle: creditScopeConfig.listTitle,
+        }
+      : CATEGORY_CONFIG[category];
   const creditShopData =
     category === "credits"
-      ? await getAssignmentCreditShopData()
+      ? await getCreditShopData(creditScope)
       : { creditPacks: [], yearSubscriptionPack: null };
   const { creditPacks, yearSubscriptionPack } = creditShopData;
   const catalog = await getPublicShopCatalog();
@@ -110,7 +188,10 @@ export default async function ShopCategoryPage({
                 ) : null}
               </div>
             ) : (
-              <AssignmentCreditsEmptyState />
+              <AssignmentCreditsEmptyState
+                title={creditScopeConfig.emptyTitle}
+                description={creditScopeConfig.emptyDescription}
+              />
             )
           ) : category === "boeken" || category === "ebooks" ? (
             <div className="grid gap-3">

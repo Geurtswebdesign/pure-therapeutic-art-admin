@@ -31,7 +31,9 @@ type AssignmentCreditShopData = {
   yearSubscriptionPack: CreditPack | null;
 };
 
-export async function getAssignmentCreditShopData(): Promise<AssignmentCreditShopData> {
+export async function getCreditShopData(
+  scope: CreditScope
+): Promise<AssignmentCreditShopData> {
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase
@@ -50,15 +52,22 @@ export async function getAssignmentCreditShopData(): Promise<AssignmentCreditSho
 
     const rows = (data ?? []).filter((pack) => {
       if (!pack.is_active) return false;
-      if (pack.credit_scope !== "assignment") return false;
-      if (isTherapistSubscriptionPackSlug(pack.slug)) return false;
+      if (pack.credit_scope !== scope) return false;
+      if (scope === "assignment" && isTherapistSubscriptionPackSlug(pack.slug)) {
+        return false;
+      }
       return true;
     });
 
     return {
-      creditPacks: rows.filter((pack) => pack.slug !== "jaarabonnement"),
+      creditPacks:
+        scope === "assignment"
+          ? rows.filter((pack) => pack.slug !== "jaarabonnement")
+          : rows,
       yearSubscriptionPack:
-        rows.find((pack) => pack.slug === "jaarabonnement") ?? null,
+        scope === "assignment"
+          ? rows.find((pack) => pack.slug === "jaarabonnement") ?? null
+          : null,
     };
   } catch {
     return {
@@ -66,6 +75,10 @@ export async function getAssignmentCreditShopData(): Promise<AssignmentCreditSho
       yearSubscriptionPack: null,
     };
   }
+}
+
+export async function getAssignmentCreditShopData(): Promise<AssignmentCreditShopData> {
+  return getCreditShopData("assignment");
 }
 
 export async function getAssignmentCreditPacks() {
@@ -556,8 +569,12 @@ export function DetailList({
 
 export function AssignmentCreditsEmptyState({
   compact = false,
+  title = "Nog geen opdrachtpakketten actief",
+  description = "Activeer eerst een of meer assignment credit packs of het jaarabonnement in de administratie. Dan verschijnen ze automatisch hier.",
 }: {
   compact?: boolean;
+  title?: string;
+  description?: string;
 }) {
   return (
     <article
@@ -566,11 +583,10 @@ export function AssignmentCreditsEmptyState({
       }`}
     >
       <h3 className="text-base font-semibold text-stone-900">
-        Nog geen opdrachtpakketten actief
+        {title}
       </h3>
       <p className="mt-2 text-sm leading-6 text-stone-600">
-        Activeer eerst een of meer assignment credit packs of het
-        jaarabonnement in de administratie. Dan verschijnen ze automatisch hier.
+        {description}
       </p>
     </article>
   );

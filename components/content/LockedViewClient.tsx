@@ -35,7 +35,8 @@ export default function LockedViewClient({
 
   const insufficient = balance < cost;
   const loginHref = `/login?next=${encodeURIComponent(pathname || "/")}`;
-  const buyCreditsHref = "/credits";
+  const buyCreditsHref =
+    scope === "assignment" ? "/shop/credits" : `/shop/credits?scope=${scope}`;
   const scopeLabel =
     scope === "book"
       ? t.scopeBook
