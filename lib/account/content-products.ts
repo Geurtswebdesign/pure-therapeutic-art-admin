@@ -211,6 +211,10 @@ function getContentHref(slug: string | null) {
   return slug ? `/content/${slug}` : null;
 }
 
+function getAccountEbookHref(slug: string | null) {
+  return slug ? `/account/ebooks/${slug}` : null;
+}
+
 function getSourceLabel(source: string | null | undefined) {
   const normalized = source?.trim().toLowerCase() ?? "";
   if (!normalized) return "App";
@@ -662,7 +666,7 @@ export async function getAccountContentProductsData(
           contentItemId,
           title: row.content_item?.title || "E-book",
           excerpt: row.content_item?.excerpt ?? null,
-          href: getContentHref(row.content_item?.slug ?? null),
+          href: getAccountEbookHref(row.content_item?.slug ?? null),
           unlockedAt: row.unlocked_at,
           themeTitle: contentItemId
             ? themeByContentId.get(contentItemId) ?? null
