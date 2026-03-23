@@ -27,7 +27,7 @@ type Props = {
   initialTab?: Tab;
 };
 
-const MAX_UPLOAD_MB = Number(process.env.NEXT_PUBLIC_MEDIA_MAX_FILE_SIZE_MB ?? "20");
+const MAX_UPLOAD_MB = Number(process.env.NEXT_PUBLIC_MEDIA_MAX_FILE_SIZE_MB ?? "100");
 const MAX_UPLOAD_BYTES = Math.max(1, MAX_UPLOAD_MB) * 1024 * 1024;
 
 function friendlyUploadError(error: unknown) {
