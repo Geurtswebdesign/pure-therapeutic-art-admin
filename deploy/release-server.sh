@@ -12,6 +12,42 @@ HEALTHCHECK_DELAY_SECONDS="${HEALTHCHECK_DELAY_SECONDS:-1}"
 . "${SCRIPT_DIR}/require-app-user.sh"
 require_app_user "${APP_DIR}"
 
+load_env_file() {
+  local env_path="$1"
+  local line key value
+
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+    line="${line%$'\r'}"
+
+    if [[ -z "${line}" || "${line}" =~ ^[[:space:]]*# ]]; then
+      continue
+    fi
+
+    key="${line%%=*}"
+    value="${line#*=}"
+
+    key="${key#"${key%%[![:space:]]*}"}"
+    key="${key%"${key##*[![:space:]]}"}"
+
+    if [[ ! "${key}" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+      echo "Ongeldige env key in ${env_path}: ${key}"
+      exit 1
+    fi
+
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+
+    if [[ "${value}" == \"*\" && "${value}" == *\" ]]; then
+      value="${value:1:${#value}-2}"
+    elif [[ "${value}" == \'*\' && "${value}" == *\' ]]; then
+      value="${value:1:${#value}-2}"
+    fi
+
+    printf -v "${key}" '%s' "${value}"
+    export "${key}"
+  done < "${env_path}"
+}
+
 if [[ ! -x "${PLESK_NODE_BIN}/node" ]]; then
   echo "Node binary niet gevonden op ${PLESK_NODE_BIN}/node"
   exit 1
@@ -31,9 +67,7 @@ if [[ ! -f "${ENV_FILE}" ]]; then
   exit 1
 fi
 
-set -a
-. "./${ENV_FILE}"
-set +a
+load_env_file "./${ENV_FILE}"
 
 npm ci --include=dev
 npm run build:standalone
