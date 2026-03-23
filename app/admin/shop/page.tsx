@@ -1,25 +1,143 @@
 import Link from "next/link";
-import Image from "next/image";
-import DeleteShopItemButton from "@/components/admin/shop/DeleteShopItemButton";
+import ShopTableClient from "@/components/admin/shop/ShopTableClient";
 import { getShopCatalogSettings } from "@/lib/settings/actions";
-import {
-  getAllCatalogItems,
-  getCatalogItemPath,
-  getCatalogStatusLabel,
-  isCatalogItemPublic,
-} from "@/lib/shop/catalog";
+import { type CatalogItem, type CatalogStatus, getAllCatalogItems } from "@/lib/shop/catalog";
 import { getAdminAreaUrl } from "@/lib/site/urls";
 
-function formatPrice(value: number) {
-  return new Intl.NumberFormat("nl-NL", {
-    style: "currency",
-    currency: "EUR",
-  }).format(value);
+const PAGE_SIZE = 20;
+
+type StatusFilter = "all" | CatalogStatus;
+type SortOption =
+  | "title_asc"
+  | "title_desc"
+  | "price_asc"
+  | "price_desc"
+  | "category_asc"
+  | "category_desc";
+
+type SearchParamValue = string | string[] | undefined;
+
+type PageProps = {
+  searchParams: Promise<{
+    s?: SearchParamValue;
+    status?: SearchParamValue;
+    category?: SearchParamValue;
+    sort?: SearchParamValue;
+    page?: SearchParamValue;
+  }>;
+};
+
+function takeFirst(value: SearchParamValue) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
-export default async function AdminShopPage() {
+function normalizeStatusFilter(value: string | undefined): StatusFilter {
+  if (value === "concept" || value === "live" || value === "in_development") {
+    return value;
+  }
+
+  return "all";
+}
+
+function normalizeSortOption(value: string | undefined): SortOption {
+  switch (value) {
+    case "title_desc":
+    case "price_asc":
+    case "price_desc":
+    case "category_asc":
+    case "category_desc":
+      return value;
+    default:
+      return "title_asc";
+  }
+}
+
+function parsePageNumber(value: string | undefined) {
+  const page = Number.parseInt(value ?? "1", 10);
+  return Number.isFinite(page) && page > 0 ? page : 1;
+}
+
+function compareItems(a: CatalogItem, b: CatalogItem, sort: SortOption) {
+  switch (sort) {
+    case "title_desc":
+      return b.title.localeCompare(a.title, "nl");
+    case "price_asc":
+      return a.price - b.price;
+    case "price_desc":
+      return b.price - a.price;
+    case "category_asc":
+      return a.category.localeCompare(b.category, "nl") || a.title.localeCompare(b.title, "nl");
+    case "category_desc":
+      return b.category.localeCompare(a.category, "nl") || a.title.localeCompare(b.title, "nl");
+    case "title_asc":
+    default:
+      return a.title.localeCompare(b.title, "nl");
+  }
+}
+
+export default async function AdminShopPage({ searchParams }: PageProps) {
   const settings = await getShopCatalogSettings();
-  const items = getAllCatalogItems(settings);
+  const allItems = getAllCatalogItems(settings);
+  const params = await searchParams;
+  const search = takeFirst(params.s)?.trim() ?? "";
+  const statusFilter = normalizeStatusFilter(takeFirst(params.status));
+  const requestedCategory = takeFirst(params.category)?.trim() ?? "";
+  const sort = normalizeSortOption(takeFirst(params.sort));
+  const requestedPage = parsePageNumber(takeFirst(params.page));
+  const allCategories = [
+    { value: "boeken", label: "Boeken" },
+    { value: "ebooks", label: "E-books" },
+    { value: "spellen", label: "Spellen" },
+  ] as const;
+  const activeCategory = allCategories.some(
+    (category) => category.value === requestedCategory
+  )
+    ? requestedCategory
+    : "";
+
+  const normalizedSearch = search.toLowerCase();
+
+  const statusCounts = {
+    all: allItems.length,
+    concept: allItems.filter((item) => item.status === "concept").length,
+    live: allItems.filter((item) => item.status === "live").length,
+    in_development: allItems.filter((item) => item.status === "in_development").length,
+  } satisfies Record<StatusFilter, number>;
+
+  const filteredItems = allItems
+    .filter((item) => {
+      if (statusFilter !== "all" && item.status !== statusFilter) {
+        return false;
+      }
+
+      if (activeCategory && item.category !== activeCategory) {
+        return false;
+      }
+
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      const haystack = [
+        item.title,
+        item.id,
+        item.description,
+        item.format,
+        item.tag,
+        item.body,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(normalizedSearch);
+    })
+    .sort((a, b) => compareItems(a, b, sort));
+
+  const totalItems = filteredItems.length;
+  const totalPages = totalItems > 0 ? Math.ceil(totalItems / PAGE_SIZE) : 1;
+  const currentPage = Math.min(requestedPage, totalPages);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const items = filteredItems.slice(startIndex, startIndex + PAGE_SIZE);
 
   return (
     <div className="w-full space-y-4">
@@ -46,84 +164,24 @@ export default async function AdminShopPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded border bg-white">
-        <table className="min-w-full divide-y divide-stone-200 text-sm">
-          <thead className="bg-stone-50 text-left text-xs uppercase tracking-[0.16em] text-stone-500">
-            <tr>
-              <th className="px-4 py-3 font-medium">Afbeelding</th>
-              <th className="px-4 py-3 font-medium">Titel</th>
-              <th className="px-4 py-3 font-medium">Categorie</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Prijs</th>
-              <th className="px-4 py-3 font-medium">Link</th>
-              <th className="px-4 py-3 font-medium">Acties</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-stone-200">
-            {items.map((item) => (
-              <tr key={item.id} className="align-top">
-                <td className="px-4 py-4">
-                  <div className="relative h-16 w-16 overflow-hidden rounded border bg-stone-100">
-                    {item.imageUrl ? (
-                      <Image
-                        src={item.imageUrl}
-                        alt={item.imageAlt || item.title}
-                        fill
-                        unoptimized
-                        className="object-cover"
-                        sizes="64px"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-[10px] text-stone-500">
-                        Geen afbeelding
-                      </div>
-                    )}
-                  </div>
-                </td>
-                <td className="px-4 py-4">
-                  <div className="font-medium text-stone-900">{item.title}</div>
-                  <div className="mt-1 text-xs text-stone-500">
-                    {item.id} • {item.format}
-                  </div>
-                </td>
-                <td className="px-4 py-4 text-stone-700">{item.category}</td>
-                <td className="px-4 py-4 text-stone-700">
-                  {getCatalogStatusLabel(item.status)}
-                </td>
-                <td className="px-4 py-4 text-stone-700">
-                  {formatPrice(item.price)}
-                </td>
-                <td className="px-4 py-4 text-stone-700">
-                  {item.href ? "Externe productlink" : "Nog geen productlink"}
-                </td>
-                <td className="px-4 py-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Link
-                      href={getAdminAreaUrl(`/shop/${item.id}`)}
-                      className="text-[#2271b1] hover:underline"
-                    >
-                      Bewerken
-                    </Link>
-                    {isCatalogItemPublic(item) ? (
-                      <Link
-                        href={getCatalogItemPath(item)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-stone-600 hover:underline"
-                      >
-                        Bekijk
-                      </Link>
-                    ) : (
-                      <span className="text-stone-400">Niet zichtbaar</span>
-                    )}
-                    <DeleteShopItemButton itemId={item.id} title={item.title} />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ShopTableClient
+        items={items}
+        filters={{
+          search,
+          status: statusFilter,
+          category: activeCategory,
+          sort,
+          currentPage,
+        }}
+        allCategories={allCategories.map((category) => ({
+          value: category.value,
+          label: category.label,
+        }))}
+        totalItems={totalItems}
+        totalPages={totalPages}
+        pageSize={PAGE_SIZE}
+        statusCounts={statusCounts}
+      />
     </div>
   );
 }
