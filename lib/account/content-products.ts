@@ -41,6 +41,43 @@ type UnlockedContentRow = {
   } | null;
 };
 
+type ContentRelationshipRow = {
+  content_item_id: string;
+  term_id: string;
+};
+
+type ContentTermRow = {
+  id: string;
+  name: string;
+  taxonomy_id: string;
+};
+
+type ThemePageRow = {
+  id: string;
+  slug: string | null;
+  title: string | null;
+  sort_order: number | null;
+};
+
+type ThemeSectionRow = {
+  id: string;
+  theme_page_id: string | null;
+  sort_order: number | null;
+};
+
+type ThemeSectionItemRow = {
+  theme_section_id: string | null;
+  content_item_id: string | null;
+  sort_order: number | null;
+};
+
+type ThemeLinkCandidate = {
+  themeTitle: string;
+  themeSortOrder: number;
+  themeSectionSortOrder: number;
+  themeItemSortOrder: number;
+};
+
 type UserEntitlementRow = {
   id: string;
   entitlement_key: string;
@@ -62,6 +99,8 @@ export type AccountPurchaseItem = {
   currency: string | null;
   href: string | null;
   source: string | null;
+  themeTitle: string | null;
+  categoryTitle: string | null;
 };
 
 export type AccountEbookItem = {
@@ -137,6 +176,182 @@ function getContentHref(slug: string | null) {
   return slug ? `/content/${slug}` : null;
 }
 
+function compareThemeLinkCandidates(
+  left: ThemeLinkCandidate,
+  right: ThemeLinkCandidate
+) {
+  if (left.themeSortOrder !== right.themeSortOrder) {
+    return left.themeSortOrder - right.themeSortOrder;
+  }
+
+  if (left.themeSectionSortOrder !== right.themeSectionSortOrder) {
+    return left.themeSectionSortOrder - right.themeSectionSortOrder;
+  }
+
+  if (left.themeItemSortOrder !== right.themeItemSortOrder) {
+    return left.themeItemSortOrder - right.themeItemSortOrder;
+  }
+
+  return left.themeTitle.localeCompare(right.themeTitle, "nl");
+}
+
+async function getContentGroupingDetails(
+  supabase: ReturnType<typeof createAdminClient>,
+  contentIds: string[]
+) {
+  const categoryByContentId = new Map<string, string>();
+  const themeByContentId = new Map<string, string>();
+
+  if (!contentIds.length) {
+    return { categoryByContentId, themeByContentId };
+  }
+
+  const { data: categoryTaxonomy, error: categoryTaxonomyError } = await supabase
+    .from("content_taxonomies")
+    .select("id")
+    .eq("slug", "category")
+    .maybeSingle<{ id: string }>();
+
+  if (categoryTaxonomyError) {
+    throw categoryTaxonomyError;
+  }
+
+  if (categoryTaxonomy?.id) {
+    const { data: relationships, error: relationshipsError } = await supabase
+      .from("content_term_relationships")
+      .select("content_item_id, term_id")
+      .in("content_item_id", contentIds)
+      .returns<ContentRelationshipRow[]>();
+
+    if (relationshipsError) {
+      throw relationshipsError;
+    }
+
+    const categoryTermIds = Array.from(
+      new Set(
+        (relationships ?? [])
+          .map((relationship) => relationship.term_id)
+          .filter((value): value is string => Boolean(value))
+      )
+    );
+
+    if (categoryTermIds.length) {
+      const { data: terms, error: termsError } = await supabase
+        .from("content_terms")
+        .select("id, name, taxonomy_id")
+        .in("id", categoryTermIds)
+        .eq("taxonomy_id", categoryTaxonomy.id)
+        .returns<ContentTermRow[]>();
+
+      if (termsError) {
+        throw termsError;
+      }
+
+      const termById = new Map((terms ?? []).map((term) => [term.id, term]));
+
+      for (const relationship of relationships ?? []) {
+        if (categoryByContentId.has(relationship.content_item_id)) {
+          continue;
+        }
+
+        const term = termById.get(relationship.term_id);
+        if (term?.name) {
+          categoryByContentId.set(relationship.content_item_id, term.name);
+        }
+      }
+    }
+  }
+
+  const { data: themeSectionLinks, error: themeSectionLinksError } = await supabase
+    .from("content_theme_section_items")
+    .select("theme_section_id, content_item_id, sort_order")
+    .in("content_item_id", contentIds)
+    .returns<ThemeSectionItemRow[]>();
+
+  if (themeSectionLinksError) {
+    throw themeSectionLinksError;
+  }
+
+  const themeSectionIds = Array.from(
+    new Set(
+      (themeSectionLinks ?? [])
+        .map((row) => row.theme_section_id)
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+
+  if (!themeSectionIds.length) {
+    return { categoryByContentId, themeByContentId };
+  }
+
+  const { data: themeSections, error: themeSectionsError } = await supabase
+    .from("content_theme_sections")
+    .select("id, theme_page_id, sort_order")
+    .in("id", themeSectionIds)
+    .returns<ThemeSectionRow[]>();
+
+  if (themeSectionsError) {
+    throw themeSectionsError;
+  }
+
+  const themePageIds = Array.from(
+    new Set(
+      (themeSections ?? [])
+        .map((row) => row.theme_page_id)
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+
+  if (!themePageIds.length) {
+    return { categoryByContentId, themeByContentId };
+  }
+
+  const { data: themePages, error: themePagesError } = await supabase
+    .from("content_theme_pages")
+    .select("id, slug, title, sort_order")
+    .in("id", themePageIds)
+    .eq("is_published", true)
+    .returns<ThemePageRow[]>();
+
+  if (themePagesError) {
+    throw themePagesError;
+  }
+
+  const sectionById = new Map((themeSections ?? []).map((section) => [section.id, section]));
+  const pageById = new Map((themePages ?? []).map((page) => [page.id, page]));
+  const candidatesByContentId = new Map<string, ThemeLinkCandidate[]>();
+
+  for (const link of themeSectionLinks ?? []) {
+    if (!link.content_item_id || !link.theme_section_id) continue;
+
+    const section = sectionById.get(link.theme_section_id);
+    const page = section?.theme_page_id
+      ? pageById.get(section.theme_page_id) ?? null
+      : null;
+
+    if (!section || !page) continue;
+
+    const candidates = candidatesByContentId.get(link.content_item_id) ?? [];
+    candidates.push({
+      themeTitle: page.title?.trim() || "Ongetiteld thema",
+      themeSortOrder: page.sort_order ?? 0,
+      themeSectionSortOrder: section.sort_order ?? 0,
+      themeItemSortOrder: link.sort_order ?? 0,
+    });
+    candidatesByContentId.set(link.content_item_id, candidates);
+  }
+
+  for (const [contentItemId, candidates] of candidatesByContentId.entries()) {
+    candidates.sort(compareThemeLinkCandidates);
+    const primaryTheme = candidates[0];
+    if (primaryTheme) {
+      themeByContentId.set(contentItemId, primaryTheme.themeTitle);
+    }
+  }
+
+  return { categoryByContentId, themeByContentId };
+}
+
 export async function getAccountContentProductsData(
   userId: string
 ): Promise<AccountContentProductsData> {
@@ -172,6 +387,18 @@ export async function getAccountContentProductsData(
         .returns<UserEntitlementRow[]>(),
     ]);
 
+  const contentIds = Array.from(
+    new Set(
+      (unlockedRows ?? [])
+        .map((row) => row.content_item?.id)
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+  const { categoryByContentId, themeByContentId } = await getContentGroupingDetails(
+    supabase,
+    contentIds
+  );
+
   const packIds = Array.from(
     new Set((purchaseRows ?? []).map((row) => row.pack_id).filter(Boolean))
   ) as string[];
@@ -203,6 +430,8 @@ export async function getAccountContentProductsData(
         currency: row.currency,
         href: "/shop",
         source: row.source ?? null,
+        themeTitle: null,
+        categoryTitle: null,
       };
     })),
     ...((unlockedRows ?? [])
@@ -217,6 +446,12 @@ export async function getAccountContentProductsData(
         currency: null,
         href: getContentHref(row.content_item?.slug ?? null),
         source: "app",
+        themeTitle: row.content_item?.id
+          ? themeByContentId.get(row.content_item.id) ?? null
+          : null,
+        categoryTitle: row.content_item?.id
+          ? categoryByContentId.get(row.content_item.id) ?? null
+          : null,
       }))),
     ...((entitlementRows ?? []).map((row) => {
       const metadata = asRecord(row.metadata);
@@ -234,6 +469,8 @@ export async function getAccountContentProductsData(
         currency: asString(metadata?.currency) || "EUR",
         href: "/shop",
         source: row.source ?? null,
+        themeTitle: null,
+        categoryTitle: null,
       };
     })),
   ].sort(

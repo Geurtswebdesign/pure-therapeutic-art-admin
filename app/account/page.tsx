@@ -97,6 +97,11 @@ type ContentProductsMessages = {
   dialogSave: string;
   dialogSaving: string;
   openedAt: string;
+  purchaseGroupCredits: string;
+  purchaseGroupSubscriptions: string;
+  purchaseGroupOther: string;
+  purchaseSingular: string;
+  purchasePlural: string;
 };
 
 type ContentProductsRow = {
@@ -255,6 +260,11 @@ function getContentProductsMessages(language: UiLanguage): ContentProductsMessag
       dialogSave: "Save language",
       dialogSaving: "Saving...",
       openedAt: "Opened on",
+      purchaseGroupCredits: "Credits",
+      purchaseGroupSubscriptions: "Subscriptions",
+      purchaseGroupOther: "Other purchases",
+      purchaseSingular: "purchase",
+      purchasePlural: "purchases",
     };
   }
 
@@ -296,6 +306,11 @@ function getContentProductsMessages(language: UiLanguage): ContentProductsMessag
       dialogSave: "Sprache speichern",
       dialogSaving: "Speichern...",
       openedAt: "Geoffnet am",
+      purchaseGroupCredits: "Credits",
+      purchaseGroupSubscriptions: "Abonnements",
+      purchaseGroupOther: "Weitere Einkaufe",
+      purchaseSingular: "Einkauf",
+      purchasePlural: "Einkaufe",
     };
   }
 
@@ -336,6 +351,11 @@ function getContentProductsMessages(language: UiLanguage): ContentProductsMessag
     dialogSave: "Taal opslaan",
     dialogSaving: "Opslaan...",
     openedAt: "Geopend op",
+    purchaseGroupCredits: "Credits",
+    purchaseGroupSubscriptions: "Abonnementen",
+    purchaseGroupOther: "Overige aankopen",
+    purchaseSingular: "aankoop",
+    purchasePlural: "aankopen",
   };
 }
 
@@ -454,6 +474,81 @@ function formatMoney(amountCents: number | null, currency: string | null) {
   } catch {
     return `${(amountCents / 100).toFixed(2)} ${currency || "EUR"}`;
   }
+}
+
+function buildPurchaseGroups(
+  items: Awaited<ReturnType<typeof getAccountContentProductsData>>["purchases"],
+  t: ContentProductsMessages
+) {
+  const groups = new Map<
+    string,
+    {
+      key: string;
+      title: string;
+      order: number;
+      latestAt: string;
+      items: typeof items;
+    }
+  >();
+
+  for (const item of items) {
+    let key = "";
+    let title = "";
+    let order = 0;
+
+    if (item.themeTitle) {
+      key = `theme:${item.themeTitle}`;
+      title = item.themeTitle;
+      order = 0;
+    } else if (item.categoryTitle) {
+      key = `category:${item.categoryTitle}`;
+      title = item.categoryTitle;
+      order = 1;
+    } else if (item.kind === "credit_pack") {
+      key = "kind:credit_pack";
+      title = t.purchaseGroupCredits;
+      order = 2;
+    } else if (item.kind === "subscription") {
+      key = "kind:subscription";
+      title = t.purchaseGroupSubscriptions;
+      order = 3;
+    } else {
+      key = "kind:other";
+      title = t.purchaseGroupOther;
+      order = 4;
+    }
+
+    const currentGroup = groups.get(key);
+    if (currentGroup) {
+      currentGroup.items.push(item);
+      if (new Date(item.occurredAt).getTime() > new Date(currentGroup.latestAt).getTime()) {
+        currentGroup.latestAt = item.occurredAt;
+      }
+      continue;
+    }
+
+    groups.set(key, {
+      key,
+      title,
+      order,
+      latestAt: item.occurredAt,
+      items: [item],
+    });
+  }
+
+  return Array.from(groups.values()).sort((left, right) => {
+    if (left.order !== right.order) {
+      return left.order - right.order;
+    }
+
+    const rightTime = new Date(right.latestAt).getTime();
+    const leftTime = new Date(left.latestAt).getTime();
+    if (rightTime !== leftTime) {
+      return rightTime - leftTime;
+    }
+
+    return left.title.localeCompare(right.title, "nl");
+  });
 }
 
 export default async function AccountPage({
@@ -730,6 +825,7 @@ export default async function AccountPage({
       icon: NotebookText,
     },
   ];
+  const purchaseGroups = buildPurchaseGroups(contentProductsData.purchases, contentProductsT);
 
   return (
     <PublicAppShell activeTab="profiel">
@@ -953,36 +1049,61 @@ export default async function AccountPage({
 
                 {contentProductsData.purchases.length ? (
                   <div className="mt-4 space-y-3">
-                    {contentProductsData.purchases.map((item) => (
-                      <div
-                        key={item.id}
-                        className="rounded-2xl border border-[#e5dbcf] bg-white px-4 py-4"
+                    {purchaseGroups.map((group) => (
+                      <details
+                        key={group.key}
+                        className="group overflow-hidden rounded-2xl border border-[#e5dbcf] bg-white"
                       >
-                        <div className="flex flex-wrap items-center gap-3">
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-medium text-stone-900">{item.title}</h4>
-                            {item.subtitle ? (
-                              <p className="mt-1 text-sm text-stone-600">
-                                {item.subtitle}
-                              </p>
-                            ) : null}
+                        <summary className="flex list-none items-center justify-between gap-3 px-4 py-3 text-left marker:hidden">
+                          <div className="min-w-0">
+                            <div className="font-medium text-stone-900">{group.title}</div>
+                            <div className="mt-1 text-xs text-stone-500">
+                              {group.items.length}{" "}
+                              {group.items.length === 1
+                                ? contentProductsT.purchaseSingular
+                                : contentProductsT.purchasePlural}
+                            </div>
                           </div>
-                          <div className="shrink-0 text-sm text-stone-500">
-                            {formatDate(item.occurredAt, locale)}
-                          </div>
-                          <div className="shrink-0 text-sm text-stone-700">
-                            {formatMoney(item.amountCents, item.currency)}
-                          </div>
-                          {item.href ? (
-                            <Link
-                              href={item.href}
-                              className="inline-flex rounded-full border border-stone-300 bg-[#f8f3ed] px-3 py-1.5 text-sm text-stone-800"
+                          <span className="relative block h-4 w-4 shrink-0">
+                            <span className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-stone-400" />
+                            <span className="absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-stone-400 transition group-open:opacity-0" />
+                          </span>
+                        </summary>
+
+                        <div className="space-y-3 border-t border-[#eadfd4] bg-[#fcf8f4] px-3 py-3">
+                          {group.items.map((item) => (
+                            <div
+                              key={item.id}
+                              className="rounded-2xl border border-[#e5dbcf] bg-white px-4 py-4"
                             >
-                              Open
-                            </Link>
-                          ) : null}
+                              <div className="flex flex-wrap items-center gap-3">
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="font-medium text-stone-900">{item.title}</h4>
+                                  {item.subtitle ? (
+                                    <p className="mt-1 text-sm text-stone-600">
+                                      {item.subtitle}
+                                    </p>
+                                  ) : null}
+                                </div>
+                                <div className="shrink-0 text-sm text-stone-500">
+                                  {formatDate(item.occurredAt, locale)}
+                                </div>
+                                <div className="shrink-0 text-sm text-stone-700">
+                                  {formatMoney(item.amountCents, item.currency)}
+                                </div>
+                                {item.href ? (
+                                  <Link
+                                    href={item.href}
+                                    className="inline-flex rounded-full border border-stone-300 bg-[#f8f3ed] px-3 py-1.5 text-sm text-stone-800"
+                                  >
+                                    Open
+                                  </Link>
+                                ) : null}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
+                      </details>
                     ))}
                   </div>
                 ) : (
