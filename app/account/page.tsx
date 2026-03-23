@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Download, NotebookText, type LucideIcon } from "lucide-react";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import AppLogoutButton from "@/components/account/AppLogoutButton";
+import AccountPanelAutoScroll from "@/components/account/AccountPanelAutoScroll";
 import AccountProfileForm from "@/components/account/AccountProfileForm";
 import LanguagePreferenceDialog from "@/components/account/LanguagePreferenceDialog";
 import ThemeProgressGrid from "@/components/account/ThemeProgressGrid";
@@ -405,6 +406,7 @@ function ContentProductsRowItem({
   href,
   icon: Icon,
 }: ContentProductsRow) {
+  const isPanelLink = Boolean(href && href.includes("?panel="));
   const classes =
     "flex items-center gap-3 px-4 py-3 text-stone-900 transition";
   const content = (
@@ -421,7 +423,11 @@ function ContentProductsRowItem({
   }
 
   return (
-    <Link href={href} className={`${classes} hover:bg-[#fcf8f4]`}>
+    <Link
+      href={href}
+      scroll={!isPanelLink}
+      className={`${classes} hover:bg-[#fcf8f4]`}
+    >
       {content}
     </Link>
   );
@@ -728,6 +734,8 @@ export default async function AccountPage({
   return (
     <PublicAppShell activeTab="profiel">
       <section className="space-y-4">
+        <AccountPanelAutoScroll targetId="account-content-panel" />
+
         <div className="overflow-hidden rounded-[1.5rem] border border-[#d8c6b8] bg-[#d8e0d3]">
           <div className="px-4 py-4">
             <div className="flex items-center gap-4">
@@ -932,7 +940,7 @@ export default async function AccountPage({
             </div>
 
             {activePanel === "purchases" ? (
-              <div className={accountCardClassName()}>
+              <div id="account-content-panel" className={accountCardClassName()}>
                 <h3 className="font-serif text-2xl text-stone-950">
                   {contentProductsT.purchasesTitle}
                 </h3>
@@ -984,7 +992,7 @@ export default async function AccountPage({
             ) : null}
 
             {activePanel === "ebooks" ? (
-              <div className={accountCardClassName()}>
+              <div id="account-content-panel" className={accountCardClassName()}>
                 <h3 className="font-serif text-2xl text-stone-950">
                   {contentProductsT.ebooksTitle}
                 </h3>
@@ -1037,7 +1045,7 @@ export default async function AccountPage({
             ) : null}
 
             {activePanel === "subscriptions" ? (
-              <div className={accountCardClassName()}>
+              <div id="account-content-panel" className={accountCardClassName()}>
                 <h3 className="font-serif text-2xl text-stone-950">
                   {contentProductsT.subscriptionsTitle}
                 </h3>
