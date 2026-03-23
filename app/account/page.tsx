@@ -7,6 +7,7 @@ import AccountProfileForm from "@/components/account/AccountProfileForm";
 import LanguagePreferenceDialog from "@/components/account/LanguagePreferenceDialog";
 import ThemeProgressGrid from "@/components/account/ThemeProgressGrid";
 import { login } from "@/components/login/actions";
+import { getLegalDocuments } from "@/lib/account/legal-documents";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
@@ -619,21 +620,6 @@ function buildPurchaseGroups(
   });
 }
 
-function LegalInfoCard({
-  title,
-  body,
-}: {
-  title: string;
-  body: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-[#e5dbcf] bg-white px-4 py-4">
-      <h4 className="font-medium text-stone-900">{title}</h4>
-      <p className="mt-2 text-sm leading-6 text-stone-600">{body}</p>
-    </div>
-  );
-}
-
 export default async function AccountPage({
   searchParams,
 }: {
@@ -908,6 +894,7 @@ export default async function AccountPage({
   ];
   const purchaseGroups = buildPurchaseGroups(contentProductsData.purchases, contentProductsT);
   const currentYear = new Date().getFullYear();
+  const legalDocuments = getLegalDocuments(language, currentYear);
 
   return (
     <PublicAppShell activeTab="profiel">
@@ -1345,27 +1332,22 @@ export default async function AccountPage({
                   {contentProductsT.securitySubtitle}
                 </p>
 
-                <div className="mt-4 space-y-3">
-                  <LegalInfoCard
-                    title={contentProductsT.disclaimerTitle}
-                    body={contentProductsT.disclaimerBody}
-                  />
-                  <LegalInfoCard
-                    title={contentProductsT.termsTitle}
-                    body={contentProductsT.termsBody}
-                  />
-                  <LegalInfoCard
-                    title={contentProductsT.privacyTitle}
-                    body={contentProductsT.privacyBody}
-                  />
-                  <LegalInfoCard
-                    title={contentProductsT.impressumTitle}
-                    body={contentProductsT.impressumBody}
-                  />
-                  <LegalInfoCard
-                    title={`${contentProductsT.copyrightTitle} © 2025 - ${currentYear}`}
-                    body={contentProductsT.copyrightBody}
-                  />
+                <div className="mt-4 overflow-hidden rounded-2xl border border-[#e5dbcf] bg-white">
+                  {legalDocuments.map((document, index) => (
+                    <div
+                      key={document.slug}
+                      className={
+                        index === legalDocuments.length - 1
+                          ? ""
+                          : "border-b border-[#ead8cb]"
+                      }
+                    >
+                      <ContentProductsRowItem
+                        label={document.title}
+                        href={`/account/security/${document.slug}`}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : null}
