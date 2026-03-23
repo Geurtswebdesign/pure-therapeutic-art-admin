@@ -10,12 +10,6 @@ const PRODUCT_TYPES: Array<{
   description: string;
 }> = [
   {
-    category: "ebooks",
-    label: "E-book",
-    description:
-      "Voor digitale boeken die na aankoop veilig in de app gelezen worden.",
-  },
-  {
     category: "boeken",
     label: "Boek",
     description:

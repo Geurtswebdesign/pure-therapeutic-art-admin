@@ -1,4 +1,4 @@
-import { BookOpenText, Coins, Download, Puzzle } from "lucide-react";
+import { BookOpenText, Coins, Puzzle } from "lucide-react";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import {
   AssignmentCreditsEmptyState,
@@ -21,7 +21,6 @@ export default async function ShopPage() {
     await getAssignmentCreditShopData();
   const catalog = await getPublicShopCatalog();
   const books = getPublicCatalogItemsByCategory(catalog, "boeken");
-  const ebooks = getPublicCatalogItemsByCategory(catalog, "ebooks");
   const games = getPublicCatalogItemsByCategory(catalog, "spellen");
   const previewCreditPacks = creditPacks.slice(0, 3);
 
@@ -66,16 +65,6 @@ export default async function ShopPage() {
             ))}
           </div>
           <SectionFooterLink href="/shop/boeken" />
-        </section>
-
-        <section className="space-y-4">
-          <SectionHeader icon={Download} title="EBooks" href="/shop/ebooks" />
-          <div className="grid grid-cols-3 gap-3">
-            {ebooks.map((item) => (
-              <ProductPreviewCard key={item.id} item={item} />
-            ))}
-          </div>
-          <SectionFooterLink href="/shop/ebooks" />
         </section>
 
         <section className="space-y-4">

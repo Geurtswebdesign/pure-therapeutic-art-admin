@@ -1,39 +1,32 @@
 import { notFound } from "next/navigation";
-import { BookOpenText, Download, Puzzle, type LucideIcon } from "lucide-react";
+import { BookOpenText, Puzzle, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import HistoryBackButton from "@/components/public/HistoryBackButton";
 import PublicAppShell from "@/components/public/PublicAppShell";
-import InAppEbookPurchaseCard from "@/components/shop/InAppEbookPurchaseCard";
 import {
   ProductInfoHero,
   ProductPurchaseCard,
 } from "@/components/shop/ShopCatalog";
-import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
-import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
-import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import {
   getPublicCatalogItem,
   getPublicShopCatalog,
   isCatalogItemInDevelopment,
-  type CatalogCategory,
 } from "@/lib/shop/catalog";
-import { resolveEbookProductState } from "@/lib/shop/ebook-products";
 
 const PRODUCT_CATEGORY_CONFIG = {
   boeken: {
     icon: BookOpenText,
-  },
-  ebooks: {
-    icon: Download,
   },
   spellen: {
     icon: Puzzle,
   },
 } as const;
 
-function isProductCategory(value: string): value is CatalogCategory {
-  return value === "boeken" || value === "ebooks" || value === "spellen";
+type ProductCategory = keyof typeof PRODUCT_CATEGORY_CONFIG;
+
+function isProductCategory(value: string): value is ProductCategory {
+  return value === "boeken" || value === "spellen";
 }
 
 function ProductContentBlock({
@@ -70,18 +63,8 @@ export default async function ShopProductPage({
   const item = getPublicCatalogItem(catalog, category, slug);
   if (!item) notFound();
 
-  const language = resolveUiLanguage(await getAppLanguage());
   const config = PRODUCT_CATEGORY_CONFIG[category];
   const isInDevelopment = isCatalogItemInDevelopment(item);
-  const user = category === "ebooks" ? await getCurrentUser() : null;
-  const ebookState =
-    category === "ebooks"
-      ? await resolveEbookProductState({
-          item,
-          userId: user?.id ?? null,
-        })
-      : null;
-  const ebookHasAccess = ebookState?.hasAccess ?? false;
 
   return (
     <PublicAppShell activeTab="shop" title={item.title}>
@@ -133,25 +116,11 @@ export default async function ShopProductPage({
         </ProductContentBlock>
 
         <ProductContentBlock icon={config.icon} title={item.purchaseTitle}>
-          {category === "ebooks" ? (
-            <InAppEbookPurchaseCard
-              readerHref={ebookState?.readerHref ?? null}
-              hasAccess={ebookHasAccess}
-              purchaseHref={item.href ?? null}
-              purchaseDescription={item.purchaseDescription}
-              purchaseButtonLabel={item.purchaseButtonLabel}
-              isInDevelopment={isInDevelopment}
-              developmentPurchaseText={item.developmentPurchaseText}
-              developmentCalloutLabel={item.developmentCalloutLabel}
-              language={language}
-            />
-          ) : (
-            <ProductPurchaseCard
-              item={item}
-              showTitle={false}
-              className="border-0 bg-transparent p-0 shadow-none"
-            />
-          )}
+          <ProductPurchaseCard
+            item={item}
+            showTitle={false}
+            className="border-0 bg-transparent p-0 shadow-none"
+          />
         </ProductContentBlock>
 
         {isInDevelopment ? (
