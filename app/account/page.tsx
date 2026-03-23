@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Download, Globe, NotebookText, type LucideIcon } from "lucide-react";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import AppLogoutButton from "@/components/account/AppLogoutButton";
 import AccountProfileForm from "@/components/account/AccountProfileForm";
@@ -55,6 +56,22 @@ function getInitials(name: string) {
 function accountCardClassName() {
   return "rounded-2xl border border-[#e5dbcf] bg-[#f7f0e9] p-3";
 }
+
+type ContentProductsMessages = {
+  title: string;
+  purchases: string;
+  downloads: string;
+  subscriptions: string;
+  language: string;
+  security: string;
+  logbook: string;
+};
+
+type ContentProductsRow = {
+  label: string;
+  href?: string;
+  icon?: LucideIcon;
+};
 
 function buildContentHref(slug: string | null) {
   return slug ? `/content/${slug}` : null;
@@ -165,6 +182,42 @@ function getTrajectoryMessages(language: UiLanguage) {
   };
 }
 
+function getContentProductsMessages(language: UiLanguage): ContentProductsMessages {
+  if (language === "en") {
+    return {
+      title: "Content & products",
+      purchases: "My purchases",
+      downloads: "My downloads",
+      subscriptions: "My subscriptions",
+      language: "Change language",
+      security: "Security & privacy",
+      logbook: "Logbook",
+    };
+  }
+
+  if (language === "de") {
+    return {
+      title: "Inhalte & Produkte",
+      purchases: "Meine Einkaufe",
+      downloads: "Meine Downloads",
+      subscriptions: "Meine Abonnements",
+      language: "Sprache andern",
+      security: "Sicherheit & Datenschutz",
+      logbook: "Logbuch",
+    };
+  }
+
+  return {
+    title: "Content & producten",
+    purchases: "Mijn aankopen",
+    downloads: "Mijn downloads",
+    subscriptions: "Mijn abonnementen",
+    language: "Taal wijzigen",
+    security: "Veiligheid & privacy",
+    logbook: "Logboek",
+  };
+}
+
 function labelForProgressStatus(
   status: "not_started" | "in_progress" | "completed",
   messages: ReturnType<typeof getTrajectoryMessages>
@@ -227,6 +280,33 @@ function StatCard({
   );
 }
 
+function ContentProductsRowItem({
+  label,
+  href,
+  icon: Icon,
+}: ContentProductsRow) {
+  const classes =
+    "flex items-center gap-3 px-4 py-3 text-stone-900 transition";
+  const content = (
+    <>
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center text-stone-700">
+        {Icon ? <Icon size={18} strokeWidth={1.8} /> : null}
+      </span>
+      <span className="font-serif text-[1.15rem] leading-none">{label}</span>
+    </>
+  );
+
+  if (!href) {
+    return <div className={`${classes} cursor-default`}>{content}</div>;
+  }
+
+  return (
+    <Link href={href} className={`${classes} hover:bg-[#fcf8f4]`}>
+      {content}
+    </Link>
+  );
+}
+
 export default async function AccountPage({
   searchParams,
 }: {
@@ -239,6 +319,7 @@ export default async function AccountPage({
   const headerT = messages.userHeader;
   const creditsT = messages.userCredits;
   const trajectoryT = getTrajectoryMessages(language);
+  const contentProductsT = getContentProductsMessages(language);
   const locale =
     language === "en" ? "en-US" : language === "de" ? "de-DE" : "nl-NL";
   const params = await searchParams;
@@ -483,6 +564,18 @@ export default async function AccountPage({
       chapters: themeChapters,
     };
   });
+  const contentProductsRows: ContentProductsRow[] = [
+    { label: contentProductsT.purchases, href: "/shop" },
+    { label: contentProductsT.downloads, href: "/content", icon: Download },
+    { label: contentProductsT.subscriptions },
+    { label: contentProductsT.language, icon: Globe },
+    { label: contentProductsT.security },
+    {
+      label: contentProductsT.logbook,
+      href: "/account#mijn-traject",
+      icon: NotebookText,
+    },
+  ];
 
   return (
     <PublicAppShell activeTab="profiel">
@@ -628,7 +721,7 @@ export default async function AccountPage({
               </div>
             ) : null}
 
-            <div className={accountCardClassName()}>
+            <div id="mijn-traject" className={accountCardClassName()}>
               <div className="mb-4">
                 <h3 className="font-medium text-stone-900">{trajectoryT.title}</h3>
                 <p className="mt-1 text-sm leading-6 text-stone-600">
@@ -652,23 +745,24 @@ export default async function AccountPage({
             </div>
 
             <div className={accountCardClassName()}>
-              <h3 className="mb-2 font-medium text-stone-900">Verder in de app</h3>
-              <div className="space-y-2 text-sm">
-                <Link href="/content" className="block rounded-xl bg-white px-3 py-2">
-                  Bekijk content
-                </Link>
-                <Link href="/trainingen" className="block rounded-xl bg-white px-3 py-2">
-                  Trainingen
-                </Link>
-                <Link href="/therapeuten" className="block rounded-xl bg-white px-3 py-2">
-                  Therapeuten
-                </Link>
-                <Link href="/shop" className="block rounded-xl bg-white px-3 py-2">
-                  Shop en aankopen
-                </Link>
+              <h3 className="mb-3 font-serif text-2xl text-stone-950">
+                {contentProductsT.title}
+              </h3>
+              <div className="overflow-hidden rounded-2xl border border-[#e5dbcf] bg-white">
+                {contentProductsRows.map((row, index) => (
+                  <div
+                    key={row.label}
+                    className={
+                      index === contentProductsRows.length - 1
+                        ? ""
+                        : "border-b border-[#ead8cb]"
+                    }
+                  >
+                    <ContentProductsRowItem {...row} />
+                  </div>
+                ))}
               </div>
             </div>
-
           </>
         )}
 
