@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies, headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/frontend.css";
 
@@ -8,7 +9,9 @@ import { getWallet } from "@/lib/credits/getWallet";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import TrackPageView from "@/components/analytics/TrackPageView";
 import { SplashGate } from "@/app/features/splash";
+import { SPLASH_SEEN_COOKIE_NAME } from "@/app/features/splash/constants";
 import { getPublicSplashSettings } from "@/lib/settings/public";
+import { getRequestHost, isAdminHost } from "@/lib/site/urls";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,11 +33,18 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [user, appLanguage, splashSettings] = await Promise.all([
+  const [user, appLanguage, splashSettings, requestHeaders, cookieStore] =
+    await Promise.all([
     getCurrentUser(),
     getAppLanguage(),
     getPublicSplashSettings(),
+    headers(),
+    cookies(),
   ]);
+
+  const requestHost = getRequestHost(requestHeaders);
+  const splashSeen = cookieStore.get(SPLASH_SEEN_COOKIE_NAME)?.value === "1";
+  const disableSplash = isAdminHost(requestHost);
 
   let balance = 0;
 
@@ -50,7 +60,9 @@ export default async function RootLayout({
       >
         <WalletProvider initialBalance={balance}>
           <SplashGate
+            disableSplash={disableSplash}
             imageUrl={splashSettings.imageUrl}
+            initiallySeen={splashSeen}
             slogan={splashSettings.slogan}
           >
             <TrackPageView />
