@@ -262,7 +262,7 @@ function getContentProductsMessages(language: UiLanguage): ContentProductsMessag
       openedAt: "Opened on",
       purchaseGroupCredits: "Credits",
       purchaseGroupSubscriptions: "Subscriptions",
-      purchaseGroupOther: "Other purchases",
+      purchaseGroupOther: "Purchases via De troostbook",
       purchaseSingular: "purchase",
       purchasePlural: "purchases",
     };
@@ -308,7 +308,7 @@ function getContentProductsMessages(language: UiLanguage): ContentProductsMessag
       openedAt: "Geoffnet am",
       purchaseGroupCredits: "Credits",
       purchaseGroupSubscriptions: "Abonnements",
-      purchaseGroupOther: "Weitere Einkaufe",
+      purchaseGroupOther: "Einkaufe uber De troostbook",
       purchaseSingular: "Einkauf",
       purchasePlural: "Einkaufe",
     };
@@ -353,7 +353,7 @@ function getContentProductsMessages(language: UiLanguage): ContentProductsMessag
     openedAt: "Geopend op",
     purchaseGroupCredits: "Credits",
     purchaseGroupSubscriptions: "Abonnementen",
-    purchaseGroupOther: "Overige aankopen",
+    purchaseGroupOther: "Aankopen via De troostbook",
     purchaseSingular: "aankoop",
     purchasePlural: "aankopen",
   };
