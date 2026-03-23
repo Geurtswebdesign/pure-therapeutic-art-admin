@@ -1,6 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getShopCatalogSettings } from "@/lib/settings/actions";
+import { redirect } from "next/navigation";
+import {
+  createShopCatalogItem,
+  getShopCatalogSettings,
+} from "@/lib/settings/actions";
 import {
   getAllCatalogItems,
   getCatalogItemPath,
@@ -20,22 +24,38 @@ export default async function AdminShopPage() {
   const settings = await getShopCatalogSettings();
   const items = getAllCatalogItems(settings);
 
+  async function createEbookAction() {
+    "use server";
+
+    const itemId = await createShopCatalogItem("ebooks");
+    redirect(getAdminAreaUrl(`/shop/${itemId}`));
+  }
+
   return (
     <div className="w-full space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Shop</h1>
           <p className="text-sm text-gray-600">
-            Beheer hier de shop-items voor boeken en spellen.
+            Beheer hier de shop-items voor boeken, e-books en spellen.
           </p>
         </div>
-
-        <Link
-          href="/shop"
-          className="rounded bg-[#2271b1] px-4 py-2 text-sm font-medium text-white hover:bg-[#135e96]"
-        >
-          Bekijk shop
-        </Link>
+        <div className="flex items-center gap-3">
+          <form action={createEbookAction}>
+            <button
+              type="submit"
+              className="rounded border border-[#2271b1] px-4 py-2 text-sm font-medium text-[#2271b1] hover:bg-[#eef6fb]"
+            >
+              Nieuw e-book
+            </button>
+          </form>
+          <Link
+            href="/shop"
+            className="rounded bg-[#2271b1] px-4 py-2 text-sm font-medium text-white hover:bg-[#135e96]"
+          >
+            Bekijk shop
+          </Link>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded border bg-white">

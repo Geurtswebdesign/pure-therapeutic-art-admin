@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { BookOpenText, Puzzle, type LucideIcon } from "lucide-react";
+import { BookOpenText, Download, Puzzle, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import HistoryBackButton from "@/components/public/HistoryBackButton";
 import PublicAppShell from "@/components/public/PublicAppShell";
@@ -19,13 +19,16 @@ const PRODUCT_CATEGORY_CONFIG = {
   boeken: {
     icon: BookOpenText,
   },
+  ebooks: {
+    icon: Download,
+  },
   spellen: {
     icon: Puzzle,
   },
 } as const;
 
 function isProductCategory(value: string): value is CatalogCategory {
-  return value === "boeken" || value === "spellen";
+  return value === "boeken" || value === "ebooks" || value === "spellen";
 }
 
 function ProductContentBlock({

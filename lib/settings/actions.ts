@@ -13,11 +13,15 @@ import {
   type GeneralSettings,
 } from "@/lib/settings/types";
 import {
+  addCatalogItem,
+  createCatalogItem,
   getCatalogItemById,
+  removeCatalogItem,
   replaceCatalogItem,
   DEFAULT_SHOP_CATALOG_SETTINGS,
   normalizeShopCatalogSettings,
   SHOP_CATALOG_SETTINGS_KEY,
+  type CatalogCategory,
   type CatalogItem,
   type ShopCatalogSettings,
 } from "@/lib/shop/catalog";
@@ -223,6 +227,7 @@ export async function saveShopCatalogSettings(
 
   const payload = {
     books: normalized.books,
+    ebooks: normalized.ebooks,
     games: normalized.games,
   };
 
@@ -285,6 +290,41 @@ export async function saveShopCatalogItem(
 
   revalidatePath(`/admin/shop/${itemId}`);
   revalidatePath(`/shop/${normalizedItem.category}/${normalizedItem.id}`);
+}
+
+export async function createShopCatalogItem(
+  category: CatalogCategory,
+  adminId?: string
+) {
+  const current = await getShopCatalogSettings();
+  const timestamp = Date.now().toString(36);
+  const itemId = `${category}-${timestamp}`;
+  const item = createCatalogItem(category, itemId);
+  const nextSettings = addCatalogItem(current, item);
+
+  await saveShopCatalogSettings(nextSettings, adminId);
+
+  revalidatePath("/admin/shop");
+  return itemId;
+}
+
+export async function deleteShopCatalogItem(
+  itemId: string,
+  adminId?: string
+) {
+  const current = await getShopCatalogSettings();
+  const currentItem = getCatalogItemById(current, itemId);
+
+  if (!currentItem) {
+    throw new Error("Shop-item niet gevonden.");
+  }
+
+  const nextSettings = removeCatalogItem(current, itemId);
+  await saveShopCatalogSettings(nextSettings, adminId);
+
+  revalidatePath("/admin/shop");
+  revalidatePath(`/shop/${currentItem.category}`);
+  revalidatePath(`/shop/${currentItem.category}/${currentItem.id}`);
 }
 
 export async function getCustomizerSettings(): Promise<CustomizerSettings> {

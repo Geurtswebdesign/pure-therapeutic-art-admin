@@ -33,6 +33,7 @@ type DraftState = {
   tag: string;
   price: number;
   href: string;
+  contentSlug: string;
   status: CatalogItem["status"];
 };
 
@@ -60,6 +61,7 @@ export default function ShopCatalogItemEditorClient({ item }: Props) {
     tag: item.tag,
     price: item.price,
     href: item.href ?? "",
+    contentSlug: item.contentSlug ?? "",
     status: item.status ?? "concept",
   });
   const [dirty, setDirty] = useState(false);
@@ -84,6 +86,7 @@ export default function ShopCatalogItemEditorClient({ item }: Props) {
         ...item,
         ...draft,
         href: draft.href,
+        contentSlug: draft.contentSlug,
         status: draft.status,
       });
       setDirty(false);

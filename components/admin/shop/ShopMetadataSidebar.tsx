@@ -34,6 +34,7 @@ type ShopEditorDraft = {
   tag: string;
   price: number;
   href: string;
+  contentSlug: string;
   status: CatalogItem["status"];
 };
 
@@ -209,6 +210,9 @@ export default function ShopMetadataSidebar({
           <div className="space-y-1 text-xs text-gray-600">
             <div>Categorie: {item.category}</div>
             <div>Slug: {item.id}</div>
+            {item.category === "ebooks" ? (
+              <div>Gekoppelde app-content: {draft.contentSlug || "nog niet gekoppeld"}</div>
+            ) : null}
           </div>
 
           {success ? (
@@ -249,6 +253,23 @@ export default function ShopMetadataSidebar({
               className="w-full rounded border px-2 py-1"
             />
           </label>
+
+          {item.category === "ebooks" ? (
+            <label className="block space-y-1">
+              <span className="block text-xs text-gray-600">App e-book slug</span>
+              <input
+                value={draft.contentSlug}
+                onChange={(event) =>
+                  onDraftChange({ contentSlug: event.target.value })
+                }
+                className="w-full rounded border px-2 py-1"
+                placeholder="bijv. rouwverwerking-werkboek"
+              />
+              <span className="block text-xs text-gray-500">
+                Gebruik hier dezelfde slug als het gepubliceerde e-book content-item in de app.
+              </span>
+            </label>
+          ) : null}
         </div>
       )}
 

@@ -1,4 +1,4 @@
-export type CatalogCategory = "boeken" | "spellen";
+export type CatalogCategory = "boeken" | "ebooks" | "spellen";
 export type CatalogStatus = "concept" | "live" | "in_development";
 
 export type CatalogItem = {
@@ -26,11 +26,13 @@ export type CatalogItem = {
   details: string[];
   tag: string;
   href?: string;
+  contentSlug?: string;
   status?: CatalogStatus;
 };
 
 export type ShopCatalogSettings = {
   books: CatalogItem[];
+  ebooks: CatalogItem[];
   games: CatalogItem[];
 };
 
@@ -57,6 +59,25 @@ const BOOK_PRODUCT_TEXT_DEFAULTS = {
   introText:
     "Bekijk eerst de productinformatie in de app. Daarna kun je desgewenst doorklikken om het product via De Troostboom te kopen.",
   ...COMMON_PRODUCT_TEXT_DEFAULTS,
+} as const;
+
+const EBOOK_PRODUCT_TEXT_DEFAULTS = {
+  introTitle: "E-bookinformatie",
+  introText:
+    "Bekijk eerst de productinformatie in de app. Na aankoop wordt het e-book gekoppeld aan je account en lees je het veilig binnen de app.",
+  descriptionTitle: "Inhoud",
+  detailsTitle: "Leeservaring",
+  purchaseTitle: "Kopen",
+  purchaseDescription:
+    "Wanneer je doorgaat, open je de productpagina van De Troostboom om dit e-book te kopen. Na aankoop verschijnt het in je account onder EBooks.",
+  purchaseButtonLabel: "Koop e-book via De Troostboom",
+  developmentStateLabel: "In ontwikkeling",
+  unavailablePriceLabel: "Nog niet beschikbaar",
+  developmentCalloutLabel: "Dit e-book is nog niet live",
+  developmentPurchaseText:
+    "Dit e-book is nog niet beschikbaar. Zodra de verkoop live staat, komt hier direct de koopknop.",
+  developmentNotice:
+    "Dit e-book staat alvast in de shop, maar kan nog niet besteld worden. Zodra de verkoop live is, wordt het meteen gekoppeld aan de app-reader.",
 } as const;
 
 const GAME_PRODUCT_TEXT_DEFAULTS = {
@@ -135,6 +156,7 @@ export const DEFAULT_SHOP_CATALOG_SETTINGS: ShopCatalogSettings = {
       status: "live",
     },
   ],
+  ebooks: [],
   games: [
     {
       id: "memospel-vergeet-niet-me-verdrietjes",
@@ -237,7 +259,9 @@ function normalizeCatalogCategory(
   value: unknown,
   fallback: CatalogCategory
 ): CatalogCategory {
-  return value === "boeken" || value === "spellen" ? value : fallback;
+  return value === "boeken" || value === "ebooks" || value === "spellen"
+    ? value
+    : fallback;
 }
 
 function normalizeCatalogItem(
@@ -295,22 +319,106 @@ function normalizeCatalogItem(
     details: asStringArray(item?.details, fallback.details),
     tag: asString(item?.tag, fallback.tag),
     href: asString(item?.href, fallback.href || ""),
+    contentSlug: asString(item?.contentSlug, fallback.contentSlug || ""),
     status: normalizeCatalogStatus(item?.status, fallback.status || "concept"),
+  };
+}
+
+function createEmptyCatalogItem(
+  category: CatalogCategory,
+  id: string
+): CatalogItem {
+  if (category === "boeken") {
+    return {
+      id,
+      category,
+      title: "Nieuw boek",
+      body: "<p>Voeg hier de beschrijving van het boek toe.</p>",
+      imageUrl: "",
+      imageAlt: "",
+      ...BOOK_PRODUCT_TEXT_DEFAULTS,
+      format: "Paperback",
+      price: 0,
+      description: "Korte omschrijving van dit boek.",
+      details: [
+        "Voeg hier productdetails toe.",
+        "Gebruik dit blok voor doelgroep, formaat en praktische informatie.",
+      ],
+      tag: "Boek",
+      href: "",
+      contentSlug: "",
+      status: "concept",
+    };
+  }
+
+  if (category === "ebooks") {
+    return {
+      id,
+      category,
+      title: "Nieuw e-book",
+      body: "<p>Voeg hier de beschrijving van het e-book toe.</p>",
+      imageUrl: "",
+      imageAlt: "",
+      ...EBOOK_PRODUCT_TEXT_DEFAULTS,
+      format: "E-book",
+      price: 0,
+      description: "Korte omschrijving van dit e-book.",
+      details: [
+        "Na aankoop lees je dit e-book veilig in de app.",
+        "Koppel hier dezelfde slug als het gepubliceerde e-book in content.",
+      ],
+      tag: "E-book",
+      href: "",
+      contentSlug: "",
+      status: "concept",
+    };
+  }
+
+  return {
+    id,
+    category,
+    title: "Nieuw spel",
+    body: "<p>Voeg hier de beschrijving van het spel toe.</p>",
+    imageUrl: "",
+    imageAlt: "",
+    ...GAME_PRODUCT_TEXT_DEFAULTS,
+    format: "Spel",
+    price: 0,
+    description: "Korte omschrijving van dit spel.",
+    details: [
+      "Voeg hier productdetails toe.",
+      "Gebruik dit blok voor doelgroep, spelvorm en praktische informatie.",
+    ],
+    tag: "Spel",
+    href: "",
+    contentSlug: "",
+    status: "concept",
   };
 }
 
 function normalizeCatalogArray(
   value: unknown,
-  fallback: CatalogItem[]
+  fallback: CatalogItem[],
+  category: CatalogCategory
 ): CatalogItem[] {
   if (!Array.isArray(value)) {
     return fallback;
   }
 
-  return fallback.map((fallbackItem, index) => {
-    const byId = value.find((entry) => asObject(entry)?.id === fallbackItem.id);
-    const candidate = byId ?? value[index] ?? null;
-    return normalizeCatalogItem(candidate, fallbackItem);
+  const fallbackById = new Map(fallback.map((item) => [item.id, item]));
+
+  return value.map((entry, index) => {
+    const candidate = asObject(entry);
+    const candidateId =
+      typeof candidate?.id === "string" && candidate.id.trim()
+        ? candidate.id.trim()
+        : `${category}-${index + 1}`;
+    const fallbackItem =
+      fallbackById.get(candidateId) ?? createEmptyCatalogItem(category, candidateId);
+    return normalizeCatalogItem(
+      { ...candidate, id: candidateId, category },
+      fallbackItem
+    );
   });
 }
 
@@ -318,8 +426,21 @@ export function normalizeShopCatalogSettings(value: unknown): ShopCatalogSetting
   const settings = asObject(value);
 
   return {
-    books: normalizeCatalogArray(settings?.books, DEFAULT_SHOP_CATALOG_SETTINGS.books),
-    games: normalizeCatalogArray(settings?.games, DEFAULT_SHOP_CATALOG_SETTINGS.games),
+    books: normalizeCatalogArray(
+      settings?.books,
+      DEFAULT_SHOP_CATALOG_SETTINGS.books,
+      "boeken"
+    ),
+    ebooks: normalizeCatalogArray(
+      settings?.ebooks,
+      DEFAULT_SHOP_CATALOG_SETTINGS.ebooks,
+      "ebooks"
+    ),
+    games: normalizeCatalogArray(
+      settings?.games,
+      DEFAULT_SHOP_CATALOG_SETTINGS.games,
+      "spellen"
+    ),
   };
 }
 
@@ -327,7 +448,9 @@ export function getCatalogItemsByCategory(
   catalog: ShopCatalogSettings,
   category: CatalogCategory
 ) {
-  return category === "boeken" ? catalog.books : catalog.games;
+  if (category === "boeken") return catalog.books;
+  if (category === "ebooks") return catalog.ebooks;
+  return catalog.games;
 }
 
 export function isCatalogItemPublic(item: CatalogItem) {
@@ -362,7 +485,7 @@ export function getPublicCatalogItem(
 }
 
 export function getAllCatalogItems(catalog: ShopCatalogSettings) {
-  return [...catalog.books, ...catalog.games];
+  return [...catalog.books, ...catalog.ebooks, ...catalog.games];
 }
 
 export function getCatalogItemById(
@@ -379,7 +502,36 @@ export function replaceCatalogItem(
 ): ShopCatalogSettings {
   return {
     books: catalog.books.map((item) => (item.id === itemId ? nextItem : item)),
+    ebooks: catalog.ebooks.map((item) => (item.id === itemId ? nextItem : item)),
     games: catalog.games.map((item) => (item.id === itemId ? nextItem : item)),
+  };
+}
+
+export function createCatalogItem(category: CatalogCategory, id: string) {
+  return createEmptyCatalogItem(category, id);
+}
+
+export function addCatalogItem(
+  catalog: ShopCatalogSettings,
+  item: CatalogItem
+): ShopCatalogSettings {
+  if (item.category === "boeken") {
+    return { ...catalog, books: [...catalog.books, item] };
+  }
+  if (item.category === "ebooks") {
+    return { ...catalog, ebooks: [...catalog.ebooks, item] };
+  }
+  return { ...catalog, games: [...catalog.games, item] };
+}
+
+export function removeCatalogItem(
+  catalog: ShopCatalogSettings,
+  itemId: string
+): ShopCatalogSettings {
+  return {
+    books: catalog.books.filter((item) => item.id !== itemId),
+    ebooks: catalog.ebooks.filter((item) => item.id !== itemId),
+    games: catalog.games.filter((item) => item.id !== itemId),
   };
 }
 
