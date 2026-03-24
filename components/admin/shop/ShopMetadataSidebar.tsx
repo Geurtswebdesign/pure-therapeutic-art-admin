@@ -36,6 +36,8 @@ type ShopEditorDraft = {
   price: number;
   href: string;
   epubUrl: string;
+  appleStoreProductId: string;
+  googleStoreProductId: string;
   status: CatalogItem["status"];
 };
 
@@ -245,6 +247,12 @@ export default function ShopMetadataSidebar({
             {item.category === "ebooks" ? (
               <>
                 <div>EPUB-bestand: {draft.epubUrl ? "toegevoegd" : "nog niet toegevoegd"}</div>
+                <div>
+                  Apple product-id: {draft.appleStoreProductId || "nog niet ingevuld"}
+                </div>
+                <div>
+                  Google product-id: {draft.googleStoreProductId || "nog niet ingevuld"}
+                </div>
               </>
             ) : null}
           </div>
@@ -296,16 +304,48 @@ export default function ShopMetadataSidebar({
           )}
 
           {item.category === "ebooks" ? (
-            <div className="space-y-1 rounded border bg-gray-50 px-3 py-3">
-              <div className="text-xs font-medium text-gray-700">EPUB koppeling</div>
-              <div className="text-sm text-stone-700">
-                {draft.epubUrl
-                  ? "EPUB gekoppeld in beveiligde opslag."
-                  : "Nog geen EPUB gekoppeld."}
+            <div className="space-y-3">
+              <div className="space-y-1 rounded border bg-gray-50 px-3 py-3">
+                <div className="text-xs font-medium text-gray-700">EPUB koppeling</div>
+                <div className="text-sm text-stone-700">
+                  {draft.epubUrl
+                    ? "EPUB gekoppeld in beveiligde opslag."
+                    : "Nog geen EPUB gekoppeld."}
+                </div>
+                <div className="break-all text-xs text-gray-500">
+                  {draft.epubUrl || "Upload hieronder het definitieve EPUB-bestand."}
+                </div>
               </div>
-              <div className="break-all text-xs text-gray-500">
-                {draft.epubUrl || "Upload hieronder het definitieve EPUB-bestand."}
-              </div>
+
+              <label className="block space-y-1">
+                <span className="block text-xs text-gray-600">Apple store product-id</span>
+                <input
+                  value={draft.appleStoreProductId}
+                  onChange={(event) =>
+                    onDraftChange({ appleStoreProductId: event.target.value })
+                  }
+                  className="w-full rounded border px-2 py-1"
+                  placeholder="bijv. nl.detroostboom.ebook.instilte"
+                />
+                <span className="block text-xs text-gray-500">
+                  Gebruik hier de exacte In-App Purchase product-id uit App Store Connect.
+                </span>
+              </label>
+
+              <label className="block space-y-1">
+                <span className="block text-xs text-gray-600">Google Play product-id</span>
+                <input
+                  value={draft.googleStoreProductId}
+                  onChange={(event) =>
+                    onDraftChange({ googleStoreProductId: event.target.value })
+                  }
+                  className="w-full rounded border px-2 py-1"
+                  placeholder="bijv. nl.detroostboom.ebook.instilte"
+                />
+                <span className="block text-xs text-gray-500">
+                  Gebruik hier de exacte managed product-id uit Google Play Console.
+                </span>
+              </label>
             </div>
           ) : null}
         </div>

@@ -34,6 +34,8 @@ type DraftState = {
   price: number;
   href: string;
   epubUrl: string;
+  appleStoreProductId: string;
+  googleStoreProductId: string;
   status: CatalogItem["status"];
 };
 
@@ -62,6 +64,8 @@ export default function ShopCatalogItemEditorClient({ item }: Props) {
     price: item.price,
     href: item.href ?? "",
     epubUrl: item.epubUrl ?? "",
+    appleStoreProductId: item.appleStoreProductId ?? "",
+    googleStoreProductId: item.googleStoreProductId ?? "",
     status: item.status ?? "concept",
   });
   const [dirty, setDirty] = useState(false);
@@ -87,6 +91,8 @@ export default function ShopCatalogItemEditorClient({ item }: Props) {
         ...draft,
         href: draft.href,
         epubUrl: draft.epubUrl,
+        appleStoreProductId: draft.appleStoreProductId,
+        googleStoreProductId: draft.googleStoreProductId,
         status: draft.status,
       });
       setDirty(false);

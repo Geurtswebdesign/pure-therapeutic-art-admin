@@ -13,6 +13,7 @@ type Props = {
   hasAccess: boolean;
   isLoggedIn: boolean;
   isReady: boolean;
+  hasStoreConfiguration: boolean;
   purchaseDescription: string;
   purchaseButtonLabel: string;
   developmentPurchaseText: string;
@@ -36,6 +37,11 @@ const COPY = {
     buying: "Aankoop verwerken...",
     readinessMissing:
       "Dit e-book is nog niet volledig klaar om in de app te lezen. Koppel eerst een definitief EPUB-bestand.",
+    nativeOnly:
+      "Dit e-book koop je via Apple of Google in de native app. Na succesvolle store-aankoop verschijnt het automatisch in je account onder EBooks.",
+    nativeMissing:
+      "Voor dit e-book ontbreken nog de Apple- en/of Google-product-id's. Vul die eerst in de shopadmin in.",
+    nativeBadge: "Beschikbaar in native app",
   },
   en: {
     missing: "This ebook has been purchased, but it is not linked to the app reader yet.",
@@ -51,6 +57,11 @@ const COPY = {
     buying: "Processing purchase...",
     readinessMissing:
       "This ebook is not fully ready to be read in the app yet. First attach a final EPUB file.",
+    nativeOnly:
+      "Buy this ebook through Apple or Google in the native app. After a successful store purchase it will appear automatically in your account under EBooks.",
+    nativeMissing:
+      "This ebook is missing the Apple and/or Google store product IDs. Fill those in first in the shop admin.",
+    nativeBadge: "Available in native app",
   },
   de: {
     missing: "Dieses E-Book wurde gekauft, ist aber noch nicht mit dem App-Reader verknupft.",
@@ -66,6 +77,11 @@ const COPY = {
     buying: "Kauf wird verarbeitet...",
     readinessMissing:
       "Dieses E-Book ist noch nicht vollstandig bereit fur den App-Reader. Verknupfe zuerst eine finale EPUB-Datei.",
+    nativeOnly:
+      "Dieses E-Book kaufst du uber Apple oder Google in der nativen App. Nach erfolgreichem Store-Kauf erscheint es automatisch in deinem Konto unter EBooks.",
+    nativeMissing:
+      "Fur dieses E-Book fehlen noch die Apple- und/oder Google-Produkt-IDs. Trage sie zuerst in der Shop-Admin ein.",
+    nativeBadge: "In nativer App verfugbar",
   },
 } as const;
 
@@ -75,6 +91,7 @@ export default function InAppEbookPurchaseCard({
   hasAccess,
   isLoggedIn,
   isReady,
+  hasStoreConfiguration,
   purchaseDescription,
   purchaseButtonLabel,
   developmentPurchaseText,
@@ -166,6 +183,15 @@ export default function InAppEbookPurchaseCard({
             {error ? (
               <p className="text-sm leading-6 text-[#b64040]">{error}</p>
             ) : null}
+          </div>
+        ) : purchaseMode === "native_store" ? (
+          <div className="space-y-4">
+            <p className="text-sm leading-6 text-[#6b5d50]">
+              {hasStoreConfiguration ? t.nativeOnly : t.nativeMissing}
+            </p>
+            <div className="inline-flex rounded-full border border-[#decfbe] bg-[#fcf6f1] px-4 py-2 text-sm font-medium text-[#8a5f49]">
+              {t.nativeBadge}
+            </div>
           </div>
         ) : (
           <div className="space-y-4">

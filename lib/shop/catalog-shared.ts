@@ -27,6 +27,8 @@ export type CatalogItem = {
   tag: string;
   href?: string;
   epubUrl?: string;
+  appleStoreProductId?: string;
+  googleStoreProductId?: string;
   status?: CatalogStatus;
 };
 
@@ -320,6 +322,14 @@ function normalizeCatalogItem(
     tag: asString(item?.tag, fallback.tag),
     href: asString(item?.href, fallback.href || ""),
     epubUrl: asString(item?.epubUrl, fallback.epubUrl || ""),
+    appleStoreProductId: asString(
+      item?.appleStoreProductId,
+      fallback.appleStoreProductId || ""
+    ),
+    googleStoreProductId: asString(
+      item?.googleStoreProductId,
+      fallback.googleStoreProductId || ""
+    ),
     status: normalizeCatalogStatus(item?.status, fallback.status || "concept"),
   };
 }
@@ -347,6 +357,8 @@ function createEmptyCatalogItem(
       tag: "Boek",
       href: "",
       epubUrl: "",
+      appleStoreProductId: "",
+      googleStoreProductId: "",
       status: "concept",
     };
   }
@@ -370,6 +382,8 @@ function createEmptyCatalogItem(
       tag: "E-book",
       href: "",
       epubUrl: "",
+      appleStoreProductId: "",
+      googleStoreProductId: "",
       status: "concept",
     };
   }
@@ -392,6 +406,8 @@ function createEmptyCatalogItem(
     tag: "Spel",
     href: "",
     epubUrl: "",
+    appleStoreProductId: "",
+    googleStoreProductId: "",
     status: "concept",
   };
 }

@@ -26,6 +26,8 @@ type EbookPurchaseRow = {
   purchased_at: string;
 };
 
+type StorePlatform = "apple" | "google";
+
 export type OwnedEbookProductSummary = {
   purchaseId: string;
   productId: string;
@@ -122,9 +124,32 @@ function getCatalogEbookById(catalog: Awaited<ReturnType<typeof getPublicShopCat
   );
 }
 
+function getStoreProductId(item: CatalogItem, platform: StorePlatform) {
+  const productId =
+    platform === "apple" ? item.appleStoreProductId : item.googleStoreProductId;
+  return productId?.trim() || null;
+}
+
 export async function getPublicEbookProductBySlug(productSlug: string) {
   const catalog = await getPublicShopCatalog();
   return getPublicCatalogItem(catalog, "ebooks", productSlug);
+}
+
+export async function getEbookProductByStoreProductId(
+  platform: StorePlatform,
+  storeProductId: string
+) {
+  const normalizedStoreProductId = storeProductId.trim();
+  if (!normalizedStoreProductId) {
+    return null;
+  }
+
+  const catalog = await getPublicShopCatalog();
+  return (
+    getCatalogItemsByCategory(catalog, "ebooks").find(
+      (item) => getStoreProductId(item, platform) === normalizedStoreProductId
+    ) ?? null
+  );
 }
 
 export async function listOwnedEbookProducts(
@@ -194,6 +219,81 @@ export async function grantDirectEbookPurchase(userId: string, item: CatalogItem
         metadata: {
           product_slug: item.id,
           granted_via: "direct_grant_mode",
+        },
+        purchased_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id,product_id",
+      }
+    );
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function grantEbookPurchaseFromStore(input: {
+  userId: string;
+  item: CatalogItem;
+  platform: StorePlatform;
+  storeTransactionId: string;
+  storeProductId: string;
+  amountCents?: number | null;
+  currency?: string | null;
+  rawPayload?: unknown;
+}) {
+  const supabase = createAdminClient();
+
+  const { data: existingTransaction, error: existingTransactionError } =
+    await supabase
+      .from("iap_transactions")
+      .select("id")
+      .eq("platform", input.platform)
+      .eq("store_transaction_id", input.storeTransactionId)
+      .maybeSingle<{ id: string }>();
+
+  if (existingTransactionError) {
+    throw existingTransactionError;
+  }
+
+  if (!existingTransaction?.id) {
+    const { error: transactionError } = await supabase
+      .from("iap_transactions")
+      .insert({
+        platform: input.platform,
+        store_transaction_id: input.storeTransactionId,
+        store_product_id: input.storeProductId,
+        user_id: input.userId,
+        pack_id: null,
+        quantity: 1,
+        amount_cents: input.amountCents ?? Math.round(input.item.price * 100),
+        currency: input.currency ?? "EUR",
+        status: "ebook_mapped",
+        raw_payload: input.rawPayload ?? null,
+      });
+
+    if (transactionError) {
+      throw transactionError;
+    }
+  }
+
+  const { error } = await supabase
+    .from("app_ebook_purchases")
+    .upsert(
+      {
+        user_id: input.userId,
+        product_id: input.item.id,
+        product_title: input.item.title,
+        amount_cents: input.amountCents ?? Math.round(input.item.price * 100),
+        currency: input.currency ?? "EUR",
+        source: input.platform,
+        purchase_status: "paid",
+        external_reference: input.storeTransactionId,
+        metadata: {
+          product_slug: input.item.id,
+          store_product_id: input.storeProductId,
+          platform: input.platform,
+          granted_via: "native_store_iap",
         },
         purchased_at: new Date().toISOString(),
       },
