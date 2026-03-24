@@ -6,6 +6,7 @@ import { ExternalLink } from "lucide-react";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { purchaseEbookInApp } from "@/app/shop/ebook-actions";
 import type { EbookPurchaseMode } from "@/lib/shop/ebook-purchase-mode";
+import NativeEbookPurchaseButton from "@/components/shop/NativeEbookPurchaseButton";
 
 type Props = {
   productSlug: string;
@@ -14,6 +15,8 @@ type Props = {
   isLoggedIn: boolean;
   isReady: boolean;
   hasStoreConfiguration: boolean;
+  appleStoreProductId: string;
+  googleStoreProductId: string;
   purchaseDescription: string;
   purchaseButtonLabel: string;
   developmentPurchaseText: string;
@@ -92,6 +95,8 @@ export default function InAppEbookPurchaseCard({
   isLoggedIn,
   isReady,
   hasStoreConfiguration,
+  appleStoreProductId,
+  googleStoreProductId,
   purchaseDescription,
   purchaseButtonLabel,
   developmentPurchaseText,
@@ -186,12 +191,26 @@ export default function InAppEbookPurchaseCard({
           </div>
         ) : purchaseMode === "native_store" ? (
           <div className="space-y-4">
-            <p className="text-sm leading-6 text-[#6b5d50]">
-              {hasStoreConfiguration ? t.nativeOnly : t.nativeMissing}
-            </p>
-            <div className="inline-flex rounded-full border border-[#decfbe] bg-[#fcf6f1] px-4 py-2 text-sm font-medium text-[#8a5f49]">
-              {t.nativeBadge}
-            </div>
+            {hasStoreConfiguration ? (
+              <>
+                <p className="text-sm leading-6 text-[#6b5d50]">{t.nativeOnly}</p>
+                <NativeEbookPurchaseButton
+                  appleStoreProductId={appleStoreProductId}
+                  googleStoreProductId={googleStoreProductId}
+                  language={language}
+                />
+                <div className="inline-flex rounded-full border border-[#decfbe] bg-[#fcf6f1] px-4 py-2 text-sm font-medium text-[#8a5f49]">
+                  {t.nativeBadge}
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm leading-6 text-[#6b5d50]">{t.nativeMissing}</p>
+                <div className="inline-flex rounded-full border border-[#decfbe] bg-[#fcf6f1] px-4 py-2 text-sm font-medium text-[#8a5f49]">
+                  {t.nativeBadge}
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-4">

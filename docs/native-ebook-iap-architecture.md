@@ -46,25 +46,32 @@ Bestand:
 Deze tabel bewaart welke gebruiker welk e-book bezit. De accountpagina en de
 reader gebruiken deze tabel als bron van waarheid.
 
-### 3. Storetransacties loggen
+### 3. Storetransacties via RevenueCat
 
 De bestaande tabel `iap_transactions` blijft de technische transactielog voor
-Apple en Google.
+Apple en Google, maar de storevalidatie loopt via RevenueCat.
 
-Nieuwe route:
+Nieuwe backendroutes:
 
 - `POST /api/iap/ebooks/record`
+- `POST /api/revenuecat/webhooks`
 
-Bestand:
+Bestanden:
 
 - `app/api/iap/ebooks/record/route.ts`
+- `app/api/revenuecat/webhooks/route.ts`
 
-Deze route:
+De productiestroom is:
 
-- accepteert een gevalideerde storetransactie
-- zoekt het juiste e-book op basis van `platform + storeProductId`
-- logt de transactie in `iap_transactions`
-- schrijft het eigendom weg naar `app_ebook_purchases`
+1. de native app koopt via RevenueCat
+2. RevenueCat valideert bij Apple / Google
+3. RevenueCat roept onze webhook aan
+4. de webhook zoekt het juiste e-book op basis van `platform + storeProductId`
+5. de webhook logt de transactie in `iap_transactions`
+6. de webhook schrijft het eigendom weg naar `app_ebook_purchases`
+
+`/api/iap/ebooks/record` blijft beschikbaar als interne fallback-haak, maar de
+normale native route loopt via RevenueCat webhooks.
 
 ## Readerarchitectuur
 
@@ -146,19 +153,21 @@ Daarom blijft de beveiligingsstrategie:
 
 ### iOS
 
-1. De app vraagt productinformatie op uit App Store Connect via `appleStoreProductId`
-2. De gebruiker koopt via StoreKit
-3. De native app stuurt de transactie naar `/api/iap/ebooks/record`
-4. De backend koppelt het e-book aan het account
-5. Het e-book verschijnt in `EBooks`
+1. De app configureert RevenueCat met de ingelogde app-user-id
+2. De app vraagt productinformatie op via `appleStoreProductId`
+3. De gebruiker koopt via StoreKit
+4. RevenueCat valideert de aankoop en stuurt een webhook
+5. De backend koppelt het e-book aan het account
+6. Het e-book verschijnt in `EBooks`
 
 ### Android
 
-1. De app vraagt productinformatie op uit Google Play via `googleStoreProductId`
-2. De gebruiker koopt via Play Billing
-3. De native app stuurt de transactie naar `/api/iap/ebooks/record`
-4. De backend koppelt het e-book aan het account
-5. Het e-book verschijnt in `EBooks`
+1. De app configureert RevenueCat met de ingelogde app-user-id
+2. De app vraagt productinformatie op via `googleStoreProductId`
+3. De gebruiker koopt via Play Billing
+4. RevenueCat valideert de aankoop en stuurt een webhook
+5. De backend koppelt het e-book aan het account
+6. Het e-book verschijnt in `EBooks`
 
 ## Nog te bouwen
 
@@ -168,22 +177,19 @@ Aanbevolen richting:
 
 - Capacitor bovenop de bestaande Next/webcode
 
-### Native e-book checkout client
+### RevenueCat console setup
 
-Nog nodig:
+Nog nodig buiten de repo:
 
-- productdetails laden uit Apple/Google
-- koopflow starten in de native app
-- aankoopbewijs client-side ontvangen
-- transactie server-side doorzetten naar `/api/iap/ebooks/record`
-
-### Servervalidatie verdiepen
-
-Deze repo heeft nu al de backend-haak voor het koppelen van eigendom. De volgende
-laag is volledige storevalidatie:
-
-- Apple: App Store Server API / transaction verification
-- Google: Play Billing backend verification / Play Developer API
+- RevenueCat project aanmaken
+- iOS app en Android app koppelen
+- Apple API key / App Store Connect koppelen
+- Google Play service-account koppelen
+- producten aanmaken in RevenueCat
+- webhook naar `/api/revenuecat/webhooks` configureren
+- `NEXT_PUBLIC_REVENUECAT_APPLE_API_KEY`
+- `NEXT_PUBLIC_REVENUECAT_GOOGLE_API_KEY`
+- `REVENUECAT_WEBHOOK_AUTH`
 
 ## Configuratie per e-book
 
@@ -207,10 +213,11 @@ Al gebouwd:
 - beveiligde readerroute
 - adminvelden voor store product-id’s
 - backendroute voor e-book IAP-recording
+- RevenueCat native bootstrap
+- RevenueCat webhook voor eigendomssync
 
 Nog open:
 
-- native iOS project
-- native Android project
-- store-SDK integratie
-- echte transaction verification tegen Apple/Google
+- storeconsole-configuratie
+- definitieve productcatalogus in Apple en Google
+- Android screenshotblokkade (`FLAG_SECURE`)

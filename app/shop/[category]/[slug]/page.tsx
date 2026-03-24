@@ -148,6 +148,8 @@ export default async function ShopProductPage({
               isLoggedIn={Boolean(user)}
               isReady={ebookState.isReady}
               hasStoreConfiguration={hasStoreConfiguration}
+              appleStoreProductId={item.appleStoreProductId ?? ""}
+              googleStoreProductId={item.googleStoreProductId ?? ""}
               purchaseDescription={item.purchaseDescription}
               purchaseButtonLabel={item.purchaseButtonLabel}
               developmentPurchaseText={

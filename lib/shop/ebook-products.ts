@@ -90,6 +90,17 @@ async function listEbookPurchaseRows(userId: string) {
   }
 }
 
+function normalizeAmountCents(
+  amountCents: number | null | undefined,
+  fallback: number
+) {
+  if (typeof amountCents === "number" && Number.isFinite(amountCents)) {
+    return Math.round(amountCents);
+  }
+
+  return fallback;
+}
+
 function getPurchaseOrderNumber(row: EbookPurchaseRow) {
   const metadata = asRecord(row.metadata);
   return (
@@ -243,6 +254,12 @@ export async function grantEbookPurchaseFromStore(input: {
   rawPayload?: unknown;
 }) {
   const supabase = createAdminClient();
+  const fallbackAmount = Math.round(input.item.price * 100);
+  const normalizedAmount = normalizeAmountCents(
+    input.amountCents,
+    fallbackAmount
+  );
+  const normalizedCurrency = input.currency ?? "EUR";
 
   const { data: existingTransaction, error: existingTransactionError } =
     await supabase
@@ -266,8 +283,8 @@ export async function grantEbookPurchaseFromStore(input: {
         user_id: input.userId,
         pack_id: null,
         quantity: 1,
-        amount_cents: input.amountCents ?? Math.round(input.item.price * 100),
-        currency: input.currency ?? "EUR",
+        amount_cents: normalizedAmount,
+        currency: normalizedCurrency,
         status: "ebook_mapped",
         raw_payload: input.rawPayload ?? null,
       });
@@ -284,8 +301,8 @@ export async function grantEbookPurchaseFromStore(input: {
         user_id: input.userId,
         product_id: input.item.id,
         product_title: input.item.title,
-        amount_cents: input.amountCents ?? Math.round(input.item.price * 100),
-        currency: input.currency ?? "EUR",
+        amount_cents: normalizedAmount,
+        currency: normalizedCurrency,
         source: input.platform,
         purchase_status: "paid",
         external_reference: input.storeTransactionId,
@@ -301,6 +318,36 @@ export async function grantEbookPurchaseFromStore(input: {
         onConflict: "user_id,product_id",
       }
     );
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function revokeEbookPurchaseFromStore(input: {
+  userId: string;
+  item: CatalogItem;
+  platform: StorePlatform;
+  externalReference?: string | null;
+  rawPayload?: unknown;
+}) {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("app_ebook_purchases")
+    .update({
+      purchase_status: "revoked",
+      source: input.platform,
+      external_reference: input.externalReference ?? null,
+      metadata: {
+        product_slug: input.item.id,
+        platform: input.platform,
+        revoked_via: "revenuecat_webhook",
+        raw_payload: input.rawPayload ?? null,
+      },
+    })
+    .eq("user_id", input.userId)
+    .eq("product_id", input.item.id)
+    .neq("purchase_status", "revoked");
 
   if (error) {
     throw error;

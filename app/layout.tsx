@@ -10,6 +10,7 @@ import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import TrackPageView from "@/components/analytics/TrackPageView";
 import { SplashGate } from "@/app/features/splash";
 import { SPLASH_SEEN_COOKIE_NAME } from "@/app/features/splash/constants";
+import { RevenueCatBootstrap } from "@/components/native/RevenueCatBootstrap";
 import { getPublicSplashSettings } from "@/lib/settings/public";
 import { getRequestHost, isAdminHost } from "@/lib/site/urls";
 
@@ -59,6 +60,10 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <WalletProvider initialBalance={balance}>
+          <RevenueCatBootstrap
+            disabled={disableSplash}
+            userId={user?.id ?? null}
+          />
           <SplashGate
             disableSplash={disableSplash}
             imageUrl={splashSettings.imageUrl}

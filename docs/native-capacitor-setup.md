@@ -77,6 +77,36 @@ npm run native:open:ios
 npm run native:open:android
 ```
 
+## Bundle ID en signing
+
+De native shell gebruikt nu standaard:
+
+- iOS bundle identifier: `com.detroostboom.puretherapeuticart`
+- Android application id: `com.detroostboom.puretherapeuticart`
+
+Controleer voor release:
+
+### iOS
+
+1. Open [ios/App/App.xcodeproj](/Users/dannygeurts/Documents/pure-therapeutic-art/ios/App/App.xcodeproj)
+2. Kies target `App`
+3. Zet onder `Signing & Capabilities`:
+   - jouw Apple Developer Team
+   - juiste provisioning profile / automatic signing
+4. Controleer:
+   - bundle identifier
+   - app display name
+   - version en build number
+
+### Android
+
+1. Open [android](/Users/dannygeurts/Documents/pure-therapeutic-art/android) in Android Studio
+2. Controleer in [build.gradle](/Users/dannygeurts/Documents/pure-therapeutic-art/android/app/build.gradle):
+   - `applicationId`
+   - `versionCode`
+   - `versionName`
+3. Maak daarna een release keystore en signing config voor Play release builds
+
 ## E-books en store billing
 
 Deze native shell is de basis voor:
@@ -89,3 +119,26 @@ Deze native shell is de basis voor:
 De verdere storearchitectuur staat uitgewerkt in:
 
 - [native-ebook-iap-architecture.md](/Users/dannygeurts/Documents/pure-therapeutic-art/docs/native-ebook-iap-architecture.md)
+
+## RevenueCat setup
+
+Voor de eerste billingintegratie gebruikt deze repo nu RevenueCat.
+
+Zet in je app-env:
+
+```env
+NEXT_PUBLIC_REVENUECAT_APPLE_API_KEY=
+NEXT_PUBLIC_REVENUECAT_GOOGLE_API_KEY=
+REVENUECAT_WEBHOOK_AUTH=
+EBOOK_PURCHASE_MODE=native_store
+```
+
+En configureer daarna in RevenueCat:
+
+1. iOS app koppelen met hetzelfde bundle id
+2. Android app koppelen met dezelfde application id
+3. Apple en Google storeconnecties leggen
+4. per e-book product-id's aanmaken die matchen met de shopadmin
+5. webhook instellen naar:
+   - `https://pure-therapeutic-art-therapy.com/api/revenuecat/webhooks`
+6. `Authorization` header in RevenueCat gelijk zetten aan `REVENUECAT_WEBHOOK_AUTH`
