@@ -12,6 +12,7 @@ import {
   listWebsiteOrderItemsForAccount,
   type WebsiteOrderItemRow,
 } from "@/lib/account/website-orders";
+import { listOwnedEbookProducts } from "@/lib/shop/ebook-products";
 
 type CreditPackPurchaseRow = {
   id: string;
@@ -95,7 +96,7 @@ type UserEntitlementRow = {
 
 export type AccountPurchaseItem = {
   id: string;
-  kind: "credit_pack" | "content_unlock" | "subscription";
+  kind: "credit_pack" | "content_unlock" | "subscription" | "ebook";
   title: string;
   subtitle: string;
   occurredAt: string;
@@ -209,22 +210,6 @@ function getEntitlementTitle(entitlementKey: string) {
 
 function getContentHref(slug: string | null) {
   return slug ? `/content/${slug}` : null;
-}
-
-function getAccountEbookHref(slug: string | null) {
-  return slug ? `/account/ebooks/${slug}` : null;
-}
-
-function getAccountProductEbookHref(productSlug: string | null) {
-  return productSlug ? `/account/ebooks/product/${productSlug}` : null;
-}
-
-function getWebsiteEbookMetadata(metadata: unknown) {
-  const record = asRecord(metadata);
-  return {
-    productSlug: asString(record?.product_slug ?? record?.productSlug) || null,
-    epubUrl: asUrl(record?.epub_url ?? record?.epubUrl),
-  };
 }
 
 function getSourceLabel(source: string | null | undefined) {
@@ -453,10 +438,13 @@ export async function getAccountContentProductsData(
   }
 ): Promise<AccountContentProductsData> {
   const supabase = createAdminClient();
-  const websiteRows = await listWebsiteOrderItemsForAccount({
-    userId: input.userId,
-    email: input.email ?? null,
-  });
+  const [websiteRows, ownedEbooks] = await Promise.all([
+    listWebsiteOrderItemsForAccount({
+      userId: input.userId,
+      email: input.email ?? null,
+    }),
+    listOwnedEbookProducts(input.userId),
+  ]);
 
   const [{ data: purchaseRows }, { data: unlockedRows }, { data: entitlementRows }] =
     await Promise.all([
@@ -630,101 +618,45 @@ export async function getAccountContentProductsData(
         productHref: details.productHref,
       };
     })),
+    ...(ownedEbooks.map((item) => ({
+      id: `ebook:${item.purchaseId}`,
+      kind: "ebook" as const,
+      title: item.title,
+      subtitle: item.excerpt ?? "E-book in de app",
+      occurredAt: item.purchasedAt,
+      amountCents: item.amountCents,
+      currency: item.currency,
+      href: item.href,
+      source: item.source,
+      themeTitle: null,
+      categoryTitle: null,
+      sourceLabel: getSourceLabel(item.source),
+      orderNumber: item.orderNumber,
+      orderStatus: item.orderStatus,
+      quantity: item.quantity,
+      invoiceHref: null,
+      productHref: null,
+    }))),
   ].sort(
     (left, right) =>
       new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime()
   );
 
-  const websiteEbookRows = websiteRows.filter((row) => row.item_kind === "ebook");
-  const latestWebsiteEbookByContentId = new Map<string, WebsiteOrderItemRow>();
-
-  for (const row of websiteEbookRows) {
-    if (!row.content_item_id) {
-      continue;
-    }
-
-    const current = latestWebsiteEbookByContentId.get(row.content_item_id);
-    if (
-      !current ||
-      new Date(row.occurred_at).getTime() > new Date(current.occurred_at).getTime()
-    ) {
-      latestWebsiteEbookByContentId.set(row.content_item_id, row);
-    }
-  }
-
-  const ebookContentIds = new Set<string>();
-  const ebooks: AccountEbookItem[] = [
-    ...((unlockedRows ?? [])
-      .filter((row) => row.content_item?.access_scope === "book")
-      .map((row) => {
-        const contentItemId = row.content_item?.id ?? null;
-        if (contentItemId) {
-          ebookContentIds.add(contentItemId);
-        }
-        const websiteRow = contentItemId
-          ? latestWebsiteEbookByContentId.get(contentItemId) ?? null
-          : null;
-        const details = websiteRow
-          ? getWebsiteOrderDetails(websiteRow)
-          : {
-              sourceLabel: "App",
-              orderNumber: null,
-              orderStatus: null,
-              quantity: null,
-            };
-        const ebookMetadata = websiteRow
-          ? getWebsiteEbookMetadata(websiteRow.metadata)
-          : { productSlug: null, epubUrl: null };
-
-        return {
-          id: row.id,
-          contentItemId,
-          title: row.content_item?.title || "E-book",
-          excerpt: row.content_item?.excerpt ?? null,
-          href:
-            getAccountProductEbookHref(ebookMetadata.productSlug) ??
-            getAccountEbookHref(row.content_item?.slug ?? null),
-          unlockedAt: row.unlocked_at,
-          themeTitle: contentItemId
-            ? themeByContentId.get(contentItemId) ?? null
-            : null,
-          categoryTitle: contentItemId
-            ? categoryByContentId.get(contentItemId) ?? null
-            : null,
-          sourceLabel: details.sourceLabel,
-          orderNumber: details.orderNumber,
-          orderStatus: details.orderStatus,
-          quantity: details.quantity,
-          syncState: "ready" as const,
-        };
-      })),
-    ...websiteEbookRows
-      .filter((row) => !row.content_item_id || !ebookContentIds.has(row.content_item_id))
-      .map((row) => {
-        const details = getWebsiteOrderDetails(row);
-        const ebookMetadata = getWebsiteEbookMetadata(row.metadata);
-        const href = getAccountProductEbookHref(ebookMetadata.productSlug);
-        return {
-          id: `pending-ebook:${row.id}`,
-          contentItemId: row.content_item_id ?? null,
-          title: row.title,
-          excerpt: row.subtitle ?? null,
-          href,
-          unlockedAt: row.occurred_at,
-          themeTitle: row.content_item_id
-            ? themeByContentId.get(row.content_item_id) ?? null
-            : null,
-          categoryTitle: row.content_item_id
-            ? categoryByContentId.get(row.content_item_id) ?? null
-            : null,
-          sourceLabel: details.sourceLabel,
-          orderNumber: details.orderNumber,
-          orderStatus: details.orderStatus,
-          quantity: details.quantity,
-          syncState: href ? ("ready" as const) : ("pending_link" as const),
-        };
-      }),
-  ].sort(
+  const ebooks: AccountEbookItem[] = ownedEbooks.map((item) => ({
+    id: item.purchaseId,
+    contentItemId: null,
+    title: item.title,
+    excerpt: item.excerpt,
+    href: item.href,
+    unlockedAt: item.purchasedAt,
+    themeTitle: null,
+    categoryTitle: null,
+    sourceLabel: getSourceLabel(item.source),
+    orderNumber: item.orderNumber,
+    orderStatus: item.orderStatus,
+    quantity: item.quantity,
+    syncState: item.syncState,
+  })).sort(
     (left, right) =>
       new Date(right.unlockedAt).getTime() - new Date(left.unlockedAt).getTime()
   );

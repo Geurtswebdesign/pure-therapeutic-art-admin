@@ -10,6 +10,12 @@ const PRODUCT_TYPES: Array<{
   description: string;
 }> = [
   {
+    category: "ebooks",
+    label: "E-book",
+    description:
+      "Voor app-only e-books die in het account gelezen worden in de beveiligde reader.",
+  },
+  {
     category: "boeken",
     label: "Boek",
     description:

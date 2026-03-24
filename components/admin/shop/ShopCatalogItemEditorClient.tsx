@@ -33,7 +33,6 @@ type DraftState = {
   tag: string;
   price: number;
   href: string;
-  contentSlug: string;
   epubUrl: string;
   status: CatalogItem["status"];
 };
@@ -62,7 +61,6 @@ export default function ShopCatalogItemEditorClient({ item }: Props) {
     tag: item.tag,
     price: item.price,
     href: item.href ?? "",
-    contentSlug: item.contentSlug ?? "",
     epubUrl: item.epubUrl ?? "",
     status: item.status ?? "concept",
   });
@@ -88,7 +86,6 @@ export default function ShopCatalogItemEditorClient({ item }: Props) {
         ...item,
         ...draft,
         href: draft.href,
-        contentSlug: draft.contentSlug,
         epubUrl: draft.epubUrl,
         status: draft.status,
       });

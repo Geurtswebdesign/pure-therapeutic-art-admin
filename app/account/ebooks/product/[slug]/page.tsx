@@ -7,6 +7,7 @@ import {
   getPublicEbookProductBySlug,
   resolveEbookProductState,
 } from "@/lib/shop/ebook-products";
+import { getEbookReaderFileHref } from "@/lib/shop/ebook-storage";
 
 export default async function AccountProductEbookPage({
   params,
@@ -42,7 +43,7 @@ export default async function AccountProductEbookPage({
       <ProtectedReaderShell watermarkText={user.email ?? user.id}>
         <AccountProductEbookReader
           title={state.item.title}
-          epubUrl={state.item.epubUrl}
+          epubFileUrl={getEbookReaderFileHref(state.item.id)}
           backHref="/account?panel=ebooks"
         />
       </ProtectedReaderShell>

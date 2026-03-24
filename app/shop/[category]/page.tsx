@@ -1,6 +1,6 @@
 import type { CreditScope } from "@/components/shop/ShopCatalog";
 import { notFound } from "next/navigation";
-import { BookOpenText, Coins, Puzzle } from "lucide-react";
+import { BookOpenText, Coins, Download, Puzzle } from "lucide-react";
 import HistoryBackButton from "@/components/public/HistoryBackButton";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import {
@@ -30,6 +30,13 @@ const CATEGORY_CONFIG = {
       "Overzicht van de fysieke en visuele boeken binnen de shop. Gericht op therapie, coaching en thuisgebruik.",
     listTitle: "Alle boeken",
     icon: BookOpenText,
+  },
+  ebooks: {
+    title: "E-books",
+    intro:
+      "Overzicht van de app-only e-books. Na aankoop verschijnen ze in je account onder EBooks en lees je ze in de beveiligde app-reader.",
+    listTitle: "Alle e-books",
+    icon: Download,
   },
   spellen: {
     title: "Spellen",
@@ -139,7 +146,7 @@ export default async function ShopCategoryPage({
   const { creditPacks, yearSubscriptionPack } = creditShopData;
   const catalog = await getPublicShopCatalog();
   const categoryItems =
-    category === "boeken" || category === "spellen"
+    category === "boeken" || category === "ebooks" || category === "spellen"
       ? getPublicCatalogItemsByCategory(catalog, category)
       : [];
 
@@ -186,12 +193,6 @@ export default async function ShopCategoryPage({
                 description={creditScopeConfig.emptyDescription}
               />
             )
-          ) : category === "boeken" ? (
-            <div className="grid gap-3">
-              {categoryItems.map((item) => (
-                <ProductDetailCard key={item.id} item={item} />
-              ))}
-            </div>
           ) : (
             <div className="grid gap-3">
               {categoryItems.map((item) => (

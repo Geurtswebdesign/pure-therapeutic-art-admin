@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, LoaderCircle } from "lucide-react";
 
 type Props = {
   title: string;
-  epubUrl: string;
+  epubFileUrl: string;
   backHref: string;
 };
 
@@ -21,7 +21,7 @@ type RenditionLocation = {
 
 export default function AccountProductEbookReader({
   title,
-  epubUrl,
+  epubFileUrl,
   backHref,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -46,12 +46,62 @@ export default function AccountProductEbookReader({
           return;
         }
 
-        const book = createBook(epubUrl);
+        const response = await fetch(epubFileUrl, {
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error("EPUB bestand niet beschikbaar");
+        }
+
+        const buffer = await response.arrayBuffer();
+        const book = createBook(buffer);
         const rendition = book.renderTo(containerRef.current, {
           width: "100%",
           height: "72vh",
           spread: "none",
           flow: "scrolled-doc",
+        });
+
+        rendition.hooks.content.register((contents: any) => {
+          const doc = contents?.document as Document | undefined;
+          const win = contents?.window as Window | undefined;
+          if (!doc || !win) {
+            return;
+          }
+
+          const preventDefault = (event: Event) => event.preventDefault();
+          const preventShortcut = (event: KeyboardEvent) => {
+            const key = event.key.toLowerCase();
+            if ((event.metaKey || event.ctrlKey) && ["c", "x", "p", "s"].includes(key)) {
+              event.preventDefault();
+            }
+          };
+
+          const style = doc.createElement("style");
+          style.textContent = `
+            html, body {
+              -webkit-user-select: none !important;
+              user-select: none !important;
+              -webkit-touch-callout: none !important;
+            }
+            img, svg, canvas {
+              pointer-events: none !important;
+            }
+            ::selection {
+              background: transparent !important;
+            }
+          `;
+          doc.head.appendChild(style);
+
+          doc.addEventListener("copy", preventDefault);
+          doc.addEventListener("cut", preventDefault);
+          doc.addEventListener("contextmenu", preventDefault);
+          doc.addEventListener("dragstart", preventDefault);
+          doc.addEventListener("selectstart", preventDefault);
+          doc.addEventListener("keydown", preventShortcut);
+          win.addEventListener("beforeprint", preventDefault);
         });
 
         rendition.on("relocated", (location: RenditionLocation) => {
@@ -100,7 +150,7 @@ export default function AccountProductEbookReader({
       renditionRef.current = null;
       bookRef.current = null;
     };
-  }, [epubUrl]);
+  }, [epubFileUrl]);
 
   function goPrevious() {
     renditionRef.current?.prev?.();

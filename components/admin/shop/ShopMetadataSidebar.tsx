@@ -8,6 +8,7 @@ import Image from "next/image";
 import MediaPicker from "@/components/content/media/MediaPicker";
 import { supabase } from "@/lib/supabase/browser";
 import { uploadMediaAssetClient } from "@/lib/content/uploadClient";
+import { uploadPrivateEbookAssetClient } from "@/lib/shop/uploadEbookClient";
 import { getCatalogItemPath, type CatalogItem } from "@/lib/shop/catalog-shared";
 import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
@@ -34,7 +35,6 @@ type ShopEditorDraft = {
   tag: string;
   price: number;
   href: string;
-  contentSlug: string;
   epubUrl: string;
   status: CatalogItem["status"];
 };
@@ -153,8 +153,8 @@ export default function ShopMetadataSidebar({
     setUploadingEpub(true);
 
     try {
-      const url = await uploadMediaAssetClient(file, `shop/${item.id}/epub`);
-      onDraftChange({ epubUrl: url });
+      const reference = await uploadPrivateEbookAssetClient(file, item.id);
+      onDraftChange({ epubUrl: reference });
     } catch {
       setEpubUploadError("EPUB uploaden mislukt. Probeer opnieuw.");
     } finally {
@@ -244,9 +244,6 @@ export default function ShopMetadataSidebar({
             <div>Slug: {item.id}</div>
             {item.category === "ebooks" ? (
               <>
-                <div>
-                  Gekoppelde app-content: {draft.contentSlug || "nog niet gekoppeld"}
-                </div>
                 <div>EPUB-bestand: {draft.epubUrl ? "toegevoegd" : "nog niet toegevoegd"}</div>
               </>
             ) : null}
@@ -280,54 +277,35 @@ export default function ShopMetadataSidebar({
             </div>
           </div>
 
-          <label className="block space-y-1">
-            <span className="block text-xs text-gray-600">Productlink</span>
-            <input
-              value={draft.href}
-              onChange={(event) =>
-                onDraftChange({ href: event.target.value })
-              }
-              className="w-full rounded border px-2 py-1"
-            />
-            {item.category === "ebooks" ? (
-              <span className="block text-xs text-gray-500">
-                Gebruik hier de WooCommerce product-URL. Na aankoop wordt het
-                e-book via de order-sync aan het account gekoppeld.
-              </span>
-            ) : null}
-          </label>
+          {item.category === "ebooks" ? (
+            <div className="rounded border bg-[#f8f3ed] px-3 py-3 text-sm leading-6 text-stone-700">
+              E-books worden intern in de app verkocht en gelezen. Externe
+              productlinks of content-slugs zijn hiervoor niet meer nodig.
+            </div>
+          ) : (
+            <label className="block space-y-1">
+              <span className="block text-xs text-gray-600">Productlink</span>
+              <input
+                value={draft.href}
+                onChange={(event) =>
+                  onDraftChange({ href: event.target.value })
+                }
+                className="w-full rounded border px-2 py-1"
+              />
+            </label>
+          )}
 
           {item.category === "ebooks" ? (
-            <div className="space-y-3">
-              <label className="block space-y-1">
-                <span className="block text-xs text-gray-600">App e-book slug</span>
-                <input
-                  value={draft.contentSlug}
-                  onChange={(event) =>
-                    onDraftChange({ contentSlug: event.target.value })
-                  }
-                  className="w-full rounded border px-2 py-1"
-                  placeholder="bijv. rouwverwerking-werkboek"
-                />
-                <span className="block text-xs text-gray-500">
-                  Gebruik hier dezelfde slug als het gepubliceerde e-book content-item in de app.
-                </span>
-              </label>
-
-              <label className="block space-y-1">
-                <span className="block text-xs text-gray-600">EPUB URL</span>
-                <input
-                  value={draft.epubUrl}
-                  onChange={(event) =>
-                    onDraftChange({ epubUrl: event.target.value })
-                  }
-                  className="w-full rounded border px-2 py-1"
-                  placeholder="https://..."
-                />
-                <span className="block text-xs text-gray-500">
-                  Deze URL wordt automatisch ingevuld zodra je hieronder een EPUB uploadt.
-                </span>
-              </label>
+            <div className="space-y-1 rounded border bg-gray-50 px-3 py-3">
+              <div className="text-xs font-medium text-gray-700">EPUB koppeling</div>
+              <div className="text-sm text-stone-700">
+                {draft.epubUrl
+                  ? "EPUB gekoppeld in beveiligde opslag."
+                  : "Nog geen EPUB gekoppeld."}
+              </div>
+              <div className="break-all text-xs text-gray-500">
+                {draft.epubUrl || "Upload hieronder het definitieve EPUB-bestand."}
+              </div>
             </div>
           ) : null}
         </div>
@@ -594,14 +572,9 @@ export default function ShopMetadataSidebar({
                   <div className="text-xs font-medium text-gray-700">
                     EPUB gekoppeld
                   </div>
-                  <a
-                    href={draft.epubUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block break-all text-sm text-blue-700 hover:underline"
-                  >
+                  <div className="break-all text-sm text-stone-700">
                     {draft.epubUrl}
-                  </a>
+                  </div>
                 </div>
               ) : (
                 <p className="text-xs text-gray-500">
@@ -630,7 +603,9 @@ export default function ShopMetadataSidebar({
               </div>
 
               <p className="text-xs leading-5 text-gray-500">
-                Upload hier het definitieve `.epub` bestand dat bij dit e-bookproduct hoort.
+                Upload hier het definitieve `.epub` bestand dat alleen binnen de
+                app-reader gebruikt wordt. Het bestand wordt in beveiligde
+                opslag geplaatst en niet als publieke downloadlink getoond.
               </p>
 
               {epubUploadError ? (

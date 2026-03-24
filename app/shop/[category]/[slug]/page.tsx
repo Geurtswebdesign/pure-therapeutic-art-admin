@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { BookOpenText, Puzzle, type LucideIcon } from "lucide-react";
+import { BookOpenText, Download, Puzzle, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import HistoryBackButton from "@/components/public/HistoryBackButton";
 import PublicAppShell from "@/components/public/PublicAppShell";
@@ -7,16 +7,25 @@ import {
   ProductInfoHero,
   ProductPurchaseCard,
 } from "@/components/shop/ShopCatalog";
+import InAppEbookPurchaseCard from "@/components/shop/InAppEbookPurchaseCard";
+import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import {
   getPublicCatalogItem,
   getPublicShopCatalog,
   isCatalogItemInDevelopment,
 } from "@/lib/shop/catalog";
+import { resolveEbookProductState } from "@/lib/shop/ebook-products";
+import { getEbookPurchaseMode } from "@/lib/shop/ebook-purchase-mode";
 
 const PRODUCT_CATEGORY_CONFIG = {
   boeken: {
     icon: BookOpenText,
+  },
+  ebooks: {
+    icon: Download,
   },
   spellen: {
     icon: Puzzle,
@@ -26,7 +35,7 @@ const PRODUCT_CATEGORY_CONFIG = {
 type ProductCategory = keyof typeof PRODUCT_CATEGORY_CONFIG;
 
 function isProductCategory(value: string): value is ProductCategory {
-  return value === "boeken" || value === "spellen";
+  return value === "boeken" || value === "ebooks" || value === "spellen";
 }
 
 function ProductContentBlock({
@@ -65,6 +74,17 @@ export default async function ShopProductPage({
 
   const config = PRODUCT_CATEGORY_CONFIG[category];
   const isInDevelopment = isCatalogItemInDevelopment(item);
+  const language = resolveUiLanguage(await getAppLanguage());
+  const user = category === "ebooks" ? await getCurrentUser() : null;
+  const ebookState =
+    category === "ebooks"
+      ? await resolveEbookProductState({
+          item,
+          userId: user?.id ?? null,
+        })
+      : null;
+  const ebookPurchaseMode =
+    category === "ebooks" ? getEbookPurchaseMode() : "disabled";
 
   return (
     <PublicAppShell activeTab="shop" title={item.title}>
@@ -116,11 +136,35 @@ export default async function ShopProductPage({
         </ProductContentBlock>
 
         <ProductContentBlock icon={config.icon} title={item.purchaseTitle}>
-          <ProductPurchaseCard
-            item={item}
-            showTitle={false}
-            className="border-0 bg-transparent p-0 shadow-none"
-          />
+          {category === "ebooks" && ebookState ? (
+            <InAppEbookPurchaseCard
+              productSlug={item.id}
+              readerHref={ebookState.readerHref}
+              hasAccess={ebookState.hasAccess}
+              isLoggedIn={Boolean(user)}
+              isReady={ebookState.isReady}
+              purchaseDescription={item.purchaseDescription}
+              purchaseButtonLabel={item.purchaseButtonLabel}
+              developmentPurchaseText={
+                ebookPurchaseMode === "disabled"
+                  ? "De in-app betaalstap voor e-books is nog niet gekoppeld. De aankoopregistratie en readerflow staan wel klaar."
+                  : item.developmentPurchaseText
+              }
+              developmentCalloutLabel={
+                ebookPurchaseMode === "disabled"
+                  ? "Betaalkoppeling ontbreekt"
+                  : item.developmentCalloutLabel
+              }
+              purchaseMode={ebookPurchaseMode}
+              language={language}
+            />
+          ) : (
+            <ProductPurchaseCard
+              item={item}
+              showTitle={false}
+              className="border-0 bg-transparent p-0 shadow-none"
+            />
+          )}
         </ProductContentBlock>
 
         {isInDevelopment ? (

@@ -26,7 +26,6 @@ export type CatalogItem = {
   details: string[];
   tag: string;
   href?: string;
-  contentSlug?: string;
   epubUrl?: string;
   status?: CatalogStatus;
 };
@@ -65,20 +64,20 @@ const BOOK_PRODUCT_TEXT_DEFAULTS = {
 const EBOOK_PRODUCT_TEXT_DEFAULTS = {
   introTitle: "E-bookinformatie",
   introText:
-    "Bekijk eerst de productinformatie in de app. Daarna koop je het e-book via De Troostboom en lees je het veilig binnen de app.",
+    "Bekijk eerst de productinformatie in de app. Daarna koop je het e-book in de app en lees je het veilig binnen je account.",
   descriptionTitle: "Inhoud",
   detailsTitle: "Leeservaring",
   purchaseTitle: "Kopen",
   purchaseDescription:
-    "Wanneer je doorgaat, open je de productpagina van De Troostboom om dit e-book daar te kopen. Na succesvolle bestelling verschijnt het in je account onder EBooks.",
-  purchaseButtonLabel: "Koop e-book via De Troostboom",
+    "Na succesvolle aankoop verschijnt dit e-book automatisch in je account onder EBooks en lees je het alleen binnen de app-reader.",
+  purchaseButtonLabel: "Koop e-book in app",
   developmentStateLabel: "In ontwikkeling",
   unavailablePriceLabel: "Nog niet beschikbaar",
   developmentCalloutLabel: "E-book nog niet live",
   developmentPurchaseText:
-    "Dit e-book is nog niet live. Zodra het gekoppeld is aan de website en de app-reader, kun je het hier kopen.",
+    "Dit e-book is nog niet live. Zodra het EPUB-bestand en de in-app betaalstap klaarstaan, kun je het hier kopen.",
   developmentNotice:
-    "Dit e-book staat alvast in de shop, maar is nog niet volledig gekoppeld aan de websiteverkoop en de app-reader. Zodra die koppeling live is, kun je het direct aanschaffen.",
+    "Dit e-book staat alvast in de shop, maar is nog niet helemaal gereed voor aankoop en lezen in de app.",
 } as const;
 
 const GAME_PRODUCT_TEXT_DEFAULTS = {
@@ -320,7 +319,6 @@ function normalizeCatalogItem(
     details: asStringArray(item?.details, fallback.details),
     tag: asString(item?.tag, fallback.tag),
     href: asString(item?.href, fallback.href || ""),
-    contentSlug: asString(item?.contentSlug, fallback.contentSlug || ""),
     epubUrl: asString(item?.epubUrl, fallback.epubUrl || ""),
     status: normalizeCatalogStatus(item?.status, fallback.status || "concept"),
   };
@@ -348,7 +346,6 @@ function createEmptyCatalogItem(
       ],
       tag: "Boek",
       href: "",
-      contentSlug: "",
       epubUrl: "",
       status: "concept",
     };
@@ -368,11 +365,10 @@ function createEmptyCatalogItem(
       description: "Korte omschrijving van dit e-book.",
       details: [
         "Na aankoop lees je dit e-book veilig in de app.",
-        "Koppel hier dezelfde slug als het gepubliceerde e-book in content.",
+        "Upload hieronder het definitieve EPUB-bestand voor de app-reader.",
       ],
       tag: "E-book",
       href: "",
-      contentSlug: "",
       epubUrl: "",
       status: "concept",
     };
@@ -395,7 +391,6 @@ function createEmptyCatalogItem(
     ],
     tag: "Spel",
     href: "",
-    contentSlug: "",
     epubUrl: "",
     status: "concept",
   };
