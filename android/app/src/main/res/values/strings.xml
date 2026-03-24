@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Pure Therapeutic ART</string>
+    <string name="title_activity_main">Pure Therapeutic ART</string>
+    <string name="package_name">com.detroostboom.puretherapeuticart</string>
+    <string name="custom_url_scheme">com.detroostboom.puretherapeuticart</string>
+</resources>

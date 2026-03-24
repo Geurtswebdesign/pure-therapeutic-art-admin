@@ -11,9 +11,21 @@
     "start": "next start",
     "build:standalone": "next build && node scripts/prepare_standalone_bundle.mjs",
     "start:standalone": "node server.cjs",
-    "lint": "eslint"
+    "lint": "eslint",
+    "native:prepare": "node scripts/prepare_capacitor_shell.mjs",
+    "native:add:ios": "npm run native:prepare && cap add ios",
+    "native:add:android": "npm run native:prepare && cap add android",
+    "native:copy": "npm run native:prepare && cap copy",
+    "native:sync": "npm run native:prepare && cap sync",
+    "native:open:ios": "cap open ios",
+    "native:open:android": "cap open android",
+    "native:doctor": "cap doctor"
   },
   "dependencies": {
+    "@capacitor/app": "^8.0.1",
+    "@capacitor/core": "^8.2.0",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.1",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -32,6 +44,9 @@
     "sharp": "^0.34.5"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/cli": "^8.2.0",
+    "@capacitor/ios": "^8.2.0",
     "@tailwindcss/postcss": "^4",
     "@types/jsdom": "^21.1.6",
     "@types/node": "^20",
