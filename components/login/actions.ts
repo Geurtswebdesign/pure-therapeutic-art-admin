@@ -14,6 +14,7 @@ import {
   getAdminAreaUrl,
   getAdminLoginUrl,
   getRequestHost,
+  isAdminHost,
   getServerCookieOptions,
   getSupabaseCookieOptions,
 } from "@/lib/site/urls";
@@ -270,6 +271,7 @@ export async function login(formData: FormData) {
   const cookieStore = await cookies();
   const requestHeaders = await headers();
   const requestHost = getRequestHost(requestHeaders);
+  const adminHostRequest = isAdminHost(requestHost);
   const ipAddress =
     requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     requestHeaders.get("x-real-ip") ||
@@ -494,7 +496,7 @@ export async function login(formData: FormData) {
     : null;
   const isAdmin = isAdminRole(adminProfile?.data?.role);
 
-  if (isAdmin && user) {
+  if (adminHostRequest && isAdmin && user) {
     const { data: factors } = await supabase.auth.mfa.listFactors();
     const verified = factors?.totp?.find((factor) => factor.status === "verified");
     const isRequired = security.mfaPolicy === "required_admin";
@@ -575,7 +577,7 @@ export async function login(formData: FormData) {
     getServerCookieOptions({ httpOnly: true }, requestHost)
   );
 
-  if (isAdmin) {
+  if (adminHostRequest && isAdmin) {
     redirect(getAdminAreaUrl("/", requestHost));
   }
 
