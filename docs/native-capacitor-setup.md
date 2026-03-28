@@ -24,6 +24,26 @@ CAPACITOR_SERVER_URL=http://192.168.1.10:3000 npm run native:sync
 
 Gebruik hiervoor een adres dat vanaf het device bereikbaar is.
 
+Voor de iOS Simulator op dezelfde Mac kun je direct `localhost` gebruiken:
+
+```bash
+npm run dev
+npm run native:sync:ios-sim
+```
+
+Daarna opnieuw runnen in Xcode. Zonder deze stap blijft de app in Xcode de live URL
+`https://pure-therapeutic-art-therapy.com` laden en zie je lokale layoutwijzigingen dus niet.
+
+Voor een fysieke iPhone moet je niet `localhost` gebruiken, maar het LAN-adres van je Mac:
+
+```bash
+npm run dev
+npm run native:sync:ios-device
+```
+
+Dat script detecteert automatisch je lokale IPv4-adres en zet `CAPACITOR_SERVER_URL`
+daarop. Zorg dat iPhone en Mac op hetzelfde netwerk zitten.
+
 ## Scripts
 
 ```bash

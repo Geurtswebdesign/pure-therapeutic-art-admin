@@ -1,6 +1,10 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import {
+  sanitizeAccordionSections,
+  type AccordionSection,
+} from "@/lib/content/accordionSections";
 
 
 type ContentStatus = "all" | "draft" | "published" | "archived";
@@ -19,6 +23,7 @@ export async function updateContentItem({
   language,
   category_term_ids,
   tag_term_ids,
+  accordion_sections,
 }: {
   id: string;
   title?: string;
@@ -33,6 +38,7 @@ export async function updateContentItem({
   language?: string;
   category_term_ids?: string[];
   tag_term_ids?: string[];
+  accordion_sections?: AccordionSection[];
 }) {
   const update: Partial<{
     title: string;
@@ -133,6 +139,128 @@ export async function updateContentItem({
 
   if (tag_term_ids !== undefined) {
     await syncTaxonomyTerms("tag", tag_term_ids);
+  }
+
+  if (accordion_sections !== undefined) {
+    const sanitizedSections = sanitizeAccordionSections(accordion_sections);
+
+    const { data: existingAccordionBlocks, error: existingAccordionError } =
+      await supabaseAdmin
+        .from("content_blocks")
+        .select("id")
+        .eq("content_item_id", id)
+        .eq("type", "accordion")
+        .order("order_index", { ascending: true });
+
+    if (existingAccordionError) {
+      console.error("[updateContentItem:accordion:load]", existingAccordionError);
+      throw new Error(
+        `Accordion laden mislukt: ${existingAccordionError.message}`
+      );
+    }
+
+    const existingIds = (existingAccordionBlocks ?? [])
+      .map((block) => block.id)
+      .filter((value): value is string => Boolean(value));
+
+    if (!sanitizedSections.length) {
+      if (existingIds.length) {
+        const { error: deleteAccordionError } = await supabaseAdmin
+          .from("content_blocks")
+          .delete()
+          .in("id", existingIds);
+
+        if (deleteAccordionError) {
+          console.error(
+            "[updateContentItem:accordion:delete]",
+            deleteAccordionError
+          );
+          throw new Error(
+            `Accordion verwijderen mislukt: ${deleteAccordionError.message}`
+          );
+        }
+      }
+    } else {
+      const { data: lastNonAccordionBlock, error: lastBlockError } =
+        await supabaseAdmin
+          .from("content_blocks")
+          .select("order_index")
+          .eq("content_item_id", id)
+          .neq("type", "accordion")
+          .order("order_index", { ascending: false })
+          .limit(1)
+          .maybeSingle<{ order_index: number | null }>();
+
+      if (lastBlockError) {
+        console.error("[updateContentItem:accordion:lastBlock]", lastBlockError);
+        throw new Error(
+          `Accordion positie bepalen mislukt: ${lastBlockError.message}`
+        );
+      }
+
+      const orderIndex = (lastNonAccordionBlock?.order_index ?? -1) + 1;
+      const payload = {
+        content_item_id: id,
+        type: "accordion",
+        order_index: orderIndex,
+        data: {
+          items: sanitizedSections,
+        },
+      };
+
+      const [primaryId, ...extraIds] = existingIds;
+
+      if (primaryId) {
+        const { error: updateAccordionError } = await supabaseAdmin
+          .from("content_blocks")
+          .update({
+            order_index: orderIndex,
+            data: payload.data,
+          })
+          .eq("id", primaryId);
+
+        if (updateAccordionError) {
+          console.error(
+            "[updateContentItem:accordion:update]",
+            updateAccordionError
+          );
+          throw new Error(
+            `Accordion opslaan mislukt: ${updateAccordionError.message}`
+          );
+        }
+
+        if (extraIds.length) {
+          const { error: cleanupAccordionError } = await supabaseAdmin
+            .from("content_blocks")
+            .delete()
+            .in("id", extraIds);
+
+          if (cleanupAccordionError) {
+            console.error(
+              "[updateContentItem:accordion:cleanup]",
+              cleanupAccordionError
+            );
+            throw new Error(
+              `Accordion opschonen mislukt: ${cleanupAccordionError.message}`
+            );
+          }
+        }
+      } else {
+        const { error: insertAccordionError } = await supabaseAdmin
+          .from("content_blocks")
+          .insert(payload);
+
+        if (insertAccordionError) {
+          console.error(
+            "[updateContentItem:accordion:insert]",
+            insertAccordionError
+          );
+          throw new Error(
+            `Accordion toevoegen mislukt: ${insertAccordionError.message}`
+          );
+        }
+      }
+    }
   }
 }
 

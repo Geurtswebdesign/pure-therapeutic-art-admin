@@ -42,6 +42,40 @@ function getHostFromOrigin(origin: string | null) {
   }
 }
 
+export function isLocalDevelopmentHost(host: string | null | undefined) {
+  const normalized = normalizeHost(host);
+  if (!normalized) return false;
+
+  if (
+    normalized === "localhost" ||
+    normalized === "::1" ||
+    normalized === "[::1]" ||
+    normalized.endsWith(".local")
+  ) {
+    return true;
+  }
+
+  if (/^127(?:\.\d{1,3}){3}$/.test(normalized)) {
+    return true;
+  }
+
+  if (/^10(?:\.\d{1,3}){3}$/.test(normalized)) {
+    return true;
+  }
+
+  if (/^192\.168(?:\.\d{1,3}){2}$/.test(normalized)) {
+    return true;
+  }
+
+  const private172Match = normalized.match(/^172\.(\d{1,3})(?:\.\d{1,3}){2}$/);
+  if (!private172Match) {
+    return false;
+  }
+
+  const secondOctet = Number(private172Match[1]);
+  return secondOctet >= 16 && secondOctet <= 31;
+}
+
 export function getPublicSiteOrigin() {
   return normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL);
 }
@@ -110,7 +144,11 @@ export function shouldBypassAdminRewrite(pathname: string) {
   );
 }
 
-export function getSharedCookieDomain() {
+export function getSharedCookieDomain(requestHost?: string | null) {
+  if (isLocalDevelopmentHost(requestHost)) {
+    return null;
+  }
+
   const explicitDomain = normalizeHost(process.env.APP_COOKIE_DOMAIN);
   if (explicitDomain) {
     return explicitDomain.startsWith(".")
@@ -131,8 +169,10 @@ export function getSharedCookieDomain() {
   return null;
 }
 
-export function getSupabaseCookieOptions(): CookieOptionsWithName {
-  const cookieDomain = getSharedCookieDomain();
+export function getSupabaseCookieOptions(
+  requestHost?: string | null
+): CookieOptionsWithName {
+  const cookieDomain = getSharedCookieDomain(requestHost);
 
   return {
     path: "/",
@@ -143,10 +183,11 @@ export function getSupabaseCookieOptions(): CookieOptionsWithName {
 }
 
 export function getServerCookieOptions(
-  overrides: CookieOptionsWithName = {}
+  overrides: CookieOptionsWithName = {},
+  requestHost?: string | null
 ): CookieOptionsWithName {
   return {
-    ...getSupabaseCookieOptions(),
+    ...getSupabaseCookieOptions(requestHost),
     ...overrides,
   };
 }
@@ -159,32 +200,36 @@ export function getPublicAreaUrl(pathname = "/") {
   return new URL(normalized, publicOrigin).toString();
 }
 
-export function getAdminAreaUrl(pathname = "/") {
+export function getAdminAreaUrl(pathname = "/", requestHost?: string | null) {
   const normalized = normalizePathname(pathname);
   const externalPath = isAdminInternalPath(normalized)
     ? toAdminExternalPath(normalized)
     : normalized;
   const adminOrigin = getAdminSiteOrigin();
 
-  if (!adminOrigin) {
+  if (!adminOrigin || isLocalDevelopmentHost(requestHost)) {
     return toAdminInternalPath(externalPath);
   }
 
   return new URL(externalPath, adminOrigin).toString();
 }
 
-export function getAdminLoginUrl(params?: Record<string, string | null | undefined>) {
+export function getAdminLoginUrl(
+  params?: Record<string, string | null | undefined>,
+  requestHost?: string | null
+) {
   const adminOrigin = getAdminSiteOrigin();
-  const url = adminOrigin
-    ? new URL("/login", adminOrigin)
-    : new URL("/login", "http://local");
+  const useInternalPath = !adminOrigin || isLocalDevelopmentHost(requestHost);
+  const url = useInternalPath
+    ? new URL("/login", "http://local")
+    : new URL("/login", adminOrigin);
 
   for (const [key, value] of Object.entries(params ?? {})) {
     if (!value) continue;
     url.searchParams.set(key, value);
   }
 
-  if (!adminOrigin) {
+  if (useInternalPath) {
     return `${url.pathname}${url.search}`;
   }
 

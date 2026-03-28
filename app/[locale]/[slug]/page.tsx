@@ -2,7 +2,7 @@
 // Supports published content + admin-only preview mode (Optie A)
 
 import { notFound } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import ContentLayout from "@/components/content/ContentLayout";
 import PublicContentArticle from "@/components/content/PublicContentArticle";
@@ -46,12 +46,15 @@ export default async function ContentPage({
   const { preview } = await searchParams;
 
   const cookieStore = await cookies();
+  const requestHeaders = await headers();
+  const requestHost =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookieOptions: getSupabaseCookieOptions(),
+      cookieOptions: getSupabaseCookieOptions(requestHost),
       cookies: {
         getAll() {
           return cookieStore.getAll();

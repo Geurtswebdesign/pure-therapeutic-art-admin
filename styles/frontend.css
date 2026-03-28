@@ -25,6 +25,17 @@ body {
   font-family: Corbel, sans-serif;
 }
 
+html.native-app,
+body.native-app {
+  height: 100%;
+  background: #f7efe8;
+  overscroll-behavior: none;
+}
+
+body.native-app {
+  overflow: hidden;
+}
+
 body:not(:has(.admin-shell)) {
   color: #4a4a4a;
 }

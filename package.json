@@ -17,6 +17,8 @@
     "native:add:android": "npm run native:prepare && cap add android",
     "native:copy": "npm run native:prepare && cap copy",
     "native:sync": "npm run native:prepare && cap sync",
+    "native:sync:ios-sim": "CAPACITOR_SERVER_URL=http://localhost:3000 npm run native:sync",
+    "native:sync:ios-device": "node scripts/sync_ios_device_dev.mjs",
     "native:open:ios": "cap open ios",
     "native:open:android": "cap open android",
     "native:doctor": "cap doctor"

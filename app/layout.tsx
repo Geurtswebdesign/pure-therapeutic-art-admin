@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { cookies, headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/frontend.css";
@@ -12,6 +12,7 @@ import { SplashGate } from "@/app/features/splash";
 import { SPLASH_SEEN_COOKIE_NAME } from "@/app/features/splash/constants";
 import { RevenueCatBootstrap } from "@/components/native/RevenueCatBootstrap";
 import { getPublicSplashSettings } from "@/lib/settings/public";
+import { isNativeAppUserAgent } from "@/lib/native/isNativeAppRequest";
 import { getRequestHost, isAdminHost } from "@/lib/site/urls";
 
 const geistSans = Geist({
@@ -29,6 +30,12 @@ export const metadata: Metadata = {
   description: "Hier komt een beschrijving van de app te staan.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default async function RootLayout({
   children,
 }: {
@@ -44,6 +51,7 @@ export default async function RootLayout({
   ]);
 
   const requestHost = getRequestHost(requestHeaders);
+  const isNativeApp = isNativeAppUserAgent(requestHeaders.get("user-agent"));
   const splashSeen = cookieStore.get(SPLASH_SEEN_COOKIE_NAME)?.value === "1";
   const disableSplash = isAdminHost(requestHost);
 
@@ -55,9 +63,9 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang={appLanguage}>
+    <html className={isNativeApp ? "native-app" : undefined} lang={appLanguage}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${isNativeApp ? "native-app" : ""} antialiased`}
       >
         <WalletProvider initialBalance={balance}>
           <RevenueCatBootstrap

@@ -7,6 +7,7 @@ import { updateContentItem } from "@/lib/content/actions";
 import type { Term } from "@/components/taxonomy/types";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
+import type { AccordionSection } from "@/lib/content/accordionSections";
 
 type ContentStatus = "all" | "draft" | "published" | "archived";
 type SaveMode = "save_draft" | "publish_or_update";
@@ -29,6 +30,7 @@ type Props = {
   selectedCategoryIds: string[];
   tagTerms: Term[];
   selectedTagIds: string[];
+  accordionSections: AccordionSection[];
   uiLanguage: UiLanguage;
 };
 
@@ -38,6 +40,7 @@ export default function ContentEditorClient({
   selectedCategoryIds,
   tagTerms,
   selectedTagIds,
+  accordionSections,
   uiLanguage,
 }: Props) {
   const metaText = getAppMessages(uiLanguage).metadata;
@@ -86,6 +89,7 @@ export default function ContentEditorClient({
     credit_cost: item.credit_cost ?? 0,
     category_term_ids: selectedCategoryIds,
     tag_term_ids: selectedTagIds,
+    accordion_sections: accordionSections,
   }));
   const [isSlugManual, setIsSlugManual] = useState(() => {
     const currentSlug = item.slug ?? "";
@@ -109,6 +113,7 @@ export default function ContentEditorClient({
       credit_cost: number;
       category_term_ids: string[];
       tag_term_ids: string[];
+      accordion_sections: AccordionSection[];
     }>
   ) => {
     setDraft((prev) => {
@@ -166,6 +171,7 @@ export default function ContentEditorClient({
         credit_cost: draft.credit_cost,
         category_term_ids: draft.category_term_ids,
         tag_term_ids: draft.tag_term_ids,
+        accordion_sections: draft.accordion_sections,
       });
 
       setDraft((prev) => ({
@@ -190,6 +196,8 @@ export default function ContentEditorClient({
         contentItemId={item.id}
         title={draft.title}
         body={draft.body}
+        accordionSections={draft.accordion_sections}
+        language={uiLanguage}
         onChange={onDraftChange}
       />
 

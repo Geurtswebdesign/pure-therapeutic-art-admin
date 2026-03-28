@@ -7,6 +7,7 @@ import {
 import {
   getAdminSiteOrigin,
   getRequestHost,
+  isLocalDevelopmentHost,
   getServerCookieOptions,
   isAdminHost,
   isAdminInternalPath,
@@ -102,7 +103,12 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(target);
   }
 
-  if (!adminRequest && adminOrigin && isAdminInternalPath(pathname)) {
+  if (
+    !adminRequest &&
+    adminOrigin &&
+    isAdminInternalPath(pathname) &&
+    !isLocalDevelopmentHost(requestHost)
+  ) {
     const target = new URL(toAdminExternalPath(pathname), adminOrigin);
     target.search = req.nextUrl.search;
     return NextResponse.redirect(target);
@@ -139,7 +145,7 @@ export async function proxy(req: NextRequest) {
       res.cookies.set(
         "admin_session_started_at",
         new Date().toISOString(),
-        getServerCookieOptions({ httpOnly: true })
+        getServerCookieOptions({ httpOnly: true }, requestHost)
       );
     }
   }

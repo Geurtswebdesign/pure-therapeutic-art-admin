@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { SUPER_ADMIN_ID } from "@/lib/auth/constants";
 import { getSupabaseCookieOptions } from "@/lib/site/urls";
@@ -6,12 +6,15 @@ import { isAdminRole } from "@/lib/users/accountTypes";
 
 export async function getAdminUser() {
   const cookieStore = await cookies();
+  const requestHeaders = await headers();
+  const requestHost =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookieOptions: getSupabaseCookieOptions(),
+      cookieOptions: getSupabaseCookieOptions(requestHost),
       cookies: {
         get(name: string) {
           return cookieStore.get(name)?.value;

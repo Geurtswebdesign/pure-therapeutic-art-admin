@@ -6,6 +6,7 @@ import { ArrowLeft, HeartHandshake, ShieldCheck, Stethoscope } from "lucide-reac
 import logo from "@/assets/branding/logo.png";
 import { login, registerAccount, verifyMfa } from "@/components/login/actions";
 import AdminTwoFactorCard from "@/components/admin/settings/AdminTwoFactorCard";
+import { isSupabaseStorageUrl } from "@/lib/images/isSupabaseStorageUrl";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage, type UiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
@@ -169,8 +170,10 @@ function AuthShell({
   maxWidthClassName = "max-w-md",
   children,
 }: AuthShellProps) {
+  const optimizeLogo = isSupabaseStorageUrl(logoUrl);
+
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f3e4d9_0%,#efe5dc_26%,#f7f2ec_64%,#f9f7f3_100%)] px-3 py-4 sm:px-6 sm:py-6">
+    <div className="min-h-[100svh] min-h-[100dvh] bg-[linear-gradient(180deg,#f3e4d9_0%,#efe5dc_26%,#f7f2ec_64%,#f9f7f3_100%)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:px-6 sm:pb-6 sm:pt-6">
       <div className={`mx-auto w-full ${maxWidthClassName}`}>
         <div className="overflow-hidden rounded-[2rem] border border-stone-300/70 bg-[linear-gradient(180deg,#fdfaf6_0%,#faf4ed_52%,#f7f1ea_100%)] shadow-[0_30px_80px_rgba(49,34,25,0.18)]">
           <header className="border-b border-stone-200/80 px-5 pb-5 pt-5">
@@ -181,7 +184,8 @@ function AuthShell({
                   alt={`${siteName} logo`}
                   width={48}
                   height={48}
-                  unoptimized
+                  sizes="48px"
+                  unoptimized={!optimizeLogo}
                   className="h-12 w-12 object-contain"
                 />
               ) : (

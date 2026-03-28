@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import logo from "@/assets/branding/logo.png";
+import { isSupabaseStorageUrl } from "@/lib/images/isSupabaseStorageUrl";
 import { DEFAULT_CUSTOMIZER_SETTINGS } from "@/lib/settings/types";
 
 type SplashScreenProps = {
@@ -18,6 +19,7 @@ export default function SplashScreen({
   const splashImageUrl = imageUrl?.trim() || null;
   const splashSlogan =
     slogan?.trim() || DEFAULT_CUSTOMIZER_SETTINGS.splashSlogan;
+  const optimizeSplashImage = isSupabaseStorageUrl(splashImageUrl);
 
   return (
     <div
@@ -28,7 +30,7 @@ export default function SplashScreen({
       }`}
     >
       <div className="mx-auto flex min-h-full w-full max-w-md items-center justify-center">
-        <div className="flex min-h-[calc(100dvh-2.5rem)] w-full flex-col overflow-hidden rounded-[2.25rem] border border-[#e7d9cf] bg-[linear-gradient(180deg,#fbf3e7_0%,#faf5ef_58%,#edd7d2_100%)] px-8 pb-10 pt-5 text-center shadow-[0_32px_90px_rgba(61,42,33,0.18)]">
+        <div className="flex min-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-2.5rem)] w-full flex-col overflow-hidden rounded-[2.25rem] border border-[#e7d9cf] bg-[linear-gradient(180deg,#fbf3e7_0%,#faf5ef_58%,#edd7d2_100%)] px-8 pb-10 pt-5 text-center shadow-[0_32px_90px_rgba(61,42,33,0.18)]">
           <div className="flex flex-col items-center">
             <div className="flex w-full justify-center">
               {splashImageUrl ? (
@@ -37,7 +39,8 @@ export default function SplashScreen({
                   alt="Splash afbeelding"
                   width={406}
                   height={319}
-                  unoptimized
+                  sizes="(max-width: 768px) 16rem, 16rem"
+                  unoptimized={!optimizeSplashImage}
                   className="h-auto max-h-[31.5rem] w-full max-w-[16rem] object-contain"
                   priority
                 />

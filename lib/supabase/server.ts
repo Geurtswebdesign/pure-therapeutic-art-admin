@@ -1,15 +1,18 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { getSupabaseCookieOptions } from "@/lib/site/urls";
 
 export async function createClient() {
   const cookieStore = await cookies();
+  const requestHeaders = await headers();
+  const requestHost =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookieOptions: getSupabaseCookieOptions(),
+      cookieOptions: getSupabaseCookieOptions(requestHost),
       cookies: {
         getAll() {
           return cookieStore.getAll();

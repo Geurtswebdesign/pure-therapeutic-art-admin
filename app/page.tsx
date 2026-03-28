@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
+import { isSupabaseStorageUrl } from "@/lib/images/isSupabaseStorageUrl";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { getHomepageCategories } from "@/lib/content/public-queries";
@@ -192,7 +193,8 @@ export default async function Home() {
                       alt={category.featured_image_alt || category.name}
                       width={80}
                       height={80}
-                      unoptimized
+                      sizes="80px"
+                      unoptimized={!isSupabaseStorageUrl(category.featured_image_url)}
                       className="h-20 w-20 rounded-full object-cover shadow-[0_10px_28px_rgba(18,20,26,0.14)]"
                     />
                   ) : (

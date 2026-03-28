@@ -13,6 +13,7 @@ import type { UserAccountType } from "@/lib/users/accountTypes";
 import {
   getAdminAreaUrl,
   getAdminLoginUrl,
+  getRequestHost,
   getServerCookieOptions,
   getSupabaseCookieOptions,
 } from "@/lib/site/urls";
@@ -137,11 +138,13 @@ export async function registerAccount(formData: FormData) {
   }
 
   const cookieStore = await cookies();
+  const requestHeaders = await headers();
+  const requestHost = getRequestHost(requestHeaders);
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookieOptions: getSupabaseCookieOptions(),
+      cookieOptions: getSupabaseCookieOptions(requestHost),
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -266,6 +269,7 @@ export async function login(formData: FormData) {
 
   const cookieStore = await cookies();
   const requestHeaders = await headers();
+  const requestHost = getRequestHost(requestHeaders);
   const ipAddress =
     requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     requestHeaders.get("x-real-ip") ||
@@ -421,7 +425,7 @@ export async function login(formData: FormData) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookieOptions: getSupabaseCookieOptions(),
+      cookieOptions: getSupabaseCookieOptions(requestHost),
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -502,7 +506,7 @@ export async function login(formData: FormData) {
         eventLabel: "required_admin",
         path: "/login",
       });
-      redirect(getAdminLoginUrl({ step: "mfa-setup" }));
+      redirect(getAdminLoginUrl({ step: "mfa-setup" }, requestHost));
     }
 
     if (verified?.id) {
@@ -515,7 +519,7 @@ export async function login(formData: FormData) {
           getServerCookieOptions({
             httpOnly: true,
             maxAge: 5 * 60,
-          })
+          }, requestHost)
         );
         cookieStore.set(
           "mfa_challenge_id",
@@ -523,7 +527,7 @@ export async function login(formData: FormData) {
           getServerCookieOptions({
             httpOnly: true,
             maxAge: 5 * 60,
-          })
+          }, requestHost)
         );
         await logServerEvent({
           eventName: "mfa_challenge_started",
@@ -531,7 +535,7 @@ export async function login(formData: FormData) {
           eventLabel: "totp",
           path: "/login",
         });
-        redirect(getAdminLoginUrl({ step: "mfa" }));
+      redirect(getAdminLoginUrl({ step: "mfa" }, requestHost));
       }
     }
   }
@@ -568,11 +572,11 @@ export async function login(formData: FormData) {
   cookieStore.set(
     "admin_session_started_at",
     nowIso,
-    getServerCookieOptions({ httpOnly: true })
+    getServerCookieOptions({ httpOnly: true }, requestHost)
   );
 
   if (isAdmin) {
-    redirect(getAdminAreaUrl("/"));
+    redirect(getAdminAreaUrl("/", requestHost));
   }
 
   redirect(safeNext || "/account");
@@ -581,6 +585,8 @@ export async function login(formData: FormData) {
 export async function verifyMfa(formData: FormData) {
   const code = String(formData.get("code") ?? "").trim();
   const cookieStore = await cookies();
+  const requestHeaders = await headers();
+  const requestHost = getRequestHost(requestHeaders);
   const factorId = cookieStore.get("mfa_factor_id")?.value;
   const challengeId = cookieStore.get("mfa_challenge_id")?.value;
 
@@ -598,7 +604,7 @@ export async function verifyMfa(formData: FormData) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookieOptions: getSupabaseCookieOptions(),
+      cookieOptions: getSupabaseCookieOptions(requestHost),
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -625,18 +631,18 @@ export async function verifyMfa(formData: FormData) {
       eventLabel: verifyError.message,
       path: "/login",
     });
-    redirect(getAdminLoginUrl({ step: "mfa", error: "invalid" }));
+    redirect(getAdminLoginUrl({ step: "mfa", error: "invalid" }, requestHost));
   }
 
   cookieStore.set(
     "mfa_factor_id",
     "",
-    getServerCookieOptions({ httpOnly: true, maxAge: 0 })
+    getServerCookieOptions({ httpOnly: true, maxAge: 0 }, requestHost)
   );
   cookieStore.set(
     "mfa_challenge_id",
     "",
-    getServerCookieOptions({ httpOnly: true, maxAge: 0 })
+    getServerCookieOptions({ httpOnly: true, maxAge: 0 }, requestHost)
   );
 
   await logServerEvent({
@@ -650,8 +656,8 @@ export async function verifyMfa(formData: FormData) {
   cookieStore.set(
     "admin_session_started_at",
     nowIso,
-    getServerCookieOptions({ httpOnly: true })
+    getServerCookieOptions({ httpOnly: true }, requestHost)
   );
 
-  redirect(getAdminAreaUrl("/"));
+  redirect(getAdminAreaUrl("/", requestHost));
 }

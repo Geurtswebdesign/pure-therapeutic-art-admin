@@ -1,9 +1,8 @@
-"use client";
-
 import type { ContentBlock } from "@/lib/content/types";
 import Paragraph from "./public/Paragraph";
 import ImageBlock from "./public/ImageBlock";
 import GalleryBlock from "./public/GalleryBlock";
+import AccordionBlock from "./public/AccordionBlock";
 
 export default function PublicBlockRenderer({
   blocks,
@@ -30,6 +29,10 @@ export default function PublicBlockRenderer({
 
         if (block.type === "gallery") {
           return <GalleryBlock key={i} images={block.data.images} />;
+        }
+
+        if (block.type === "accordion") {
+          return <AccordionBlock key={i} items={block.data.items} />;
         }
 
         return null;

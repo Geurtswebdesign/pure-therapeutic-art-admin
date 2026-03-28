@@ -1,5 +1,7 @@
 import ContentEditorClient from "./ContentEditorClient";
-import { getContentItem } from "@/lib/content/queries";
+import { getContentBlocks, getContentItem } from "@/lib/content/queries";
+import { extractAccordionSectionsFromBlocks } from "@/lib/content/accordionSections";
+import { parseContentBlocks } from "@/lib/content/renderer";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
@@ -12,8 +14,14 @@ export default async function ContentEditorPage({
   const { id } = await params;
   const uiLanguage = resolveUiLanguage(await getPrimaryLanguage());
 
-  const item = await getContentItem(id);
+  const [item, rawBlocks] = await Promise.all([
+    getContentItem(id),
+    getContentBlocks(id),
+  ]);
   const supabase = createAdminClient();
+  const accordionSections = extractAccordionSectionsFromBlocks(
+    parseContentBlocks(rawBlocks ?? [])
+  );
 
   const { data: categoryTaxonomy } = await supabase
     .from("content_taxonomies")
@@ -90,6 +98,7 @@ export default async function ContentEditorPage({
       selectedCategoryIds={selectedCategoryIds}
       tagTerms={tagTerms}
       selectedTagIds={selectedTagIds}
+      accordionSections={accordionSections}
     />
   );
 }

@@ -10,6 +10,7 @@ import type { Term } from "@/components/taxonomy/types";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
+import type { AccordionSection } from "@/lib/content/accordionSections";
 
 type ContentStatus = "all" | "draft" | "published" | "archived";
 type SaveMode = "save_draft" | "publish_or_update";
@@ -71,6 +72,7 @@ export default function NewContentEditorClient({
     credit_cost: 0,
     category_term_ids: [] as string[],
     tag_term_ids: [] as string[],
+    accordion_sections: [] as AccordionSection[],
   }));
   const [isSlugManual, setIsSlugManual] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -93,6 +95,7 @@ export default function NewContentEditorClient({
       credit_cost: number;
       category_term_ids: string[];
       tag_term_ids: string[];
+      accordion_sections: AccordionSection[];
     }>
   ) => {
     setDraft((prev) => {
@@ -159,6 +162,7 @@ export default function NewContentEditorClient({
         credit_cost: draft.credit_cost,
         category_term_ids: draft.category_term_ids,
         tag_term_ids: draft.tag_term_ids,
+        accordion_sections: draft.accordion_sections,
       });
 
       setDraft((prev) => ({
@@ -211,6 +215,8 @@ export default function NewContentEditorClient({
         contentItemId={persistedItemIdRef.current ?? "draft-temp"}
         title={draft.title}
         body={draft.body}
+        accordionSections={draft.accordion_sections}
+        language={uiLanguage}
         onChange={onDraftChange}
       />
 
