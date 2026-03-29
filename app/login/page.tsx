@@ -7,6 +7,7 @@ import logo from "@/assets/branding/logo.png";
 import { login, registerAccount, verifyMfa } from "@/components/login/actions";
 import AdminTwoFactorCard from "@/components/admin/settings/AdminTwoFactorCard";
 import { isSupabaseStorageUrl } from "@/lib/images/isSupabaseStorageUrl";
+import { getLoginRateLimitMessage } from "@/lib/auth/getLoginRateLimitMessage";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage, type UiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
@@ -22,6 +23,7 @@ import {
 type LoginSearchParams = {
   step?: string | string[];
   error?: string | string[];
+  minutes?: string | string[];
   next?: string | string[];
   mode?: string | string[];
   registered?: string | string[];
@@ -268,6 +270,9 @@ export default async function LoginPage({
   const adminRequestHost = isAdminHost(getRequestHost(requestHeaders));
   const step = Array.isArray(params?.step) ? params?.step[0] : params?.step;
   const error = Array.isArray(params?.error) ? params?.error[0] : params?.error;
+  const minutesParam = Array.isArray(params?.minutes)
+    ? params?.minutes[0]
+    : params?.minutes;
   const next = Array.isArray(params?.next) ? params?.next[0] : params?.next;
   const mode = Array.isArray(params?.mode) ? params?.mode[0] : params?.mode;
   const registered = Array.isArray(params?.registered)
@@ -278,6 +283,8 @@ export default async function LoginPage({
   const hasMfaError = error === "invalid";
   const isRegisterMode = !adminRequestHost && mode === "register";
   const hasLoginError = error === "invalid";
+  const hasRateLimitError = error === "rate-limit";
+  const rateLimitMinutes = Number.parseInt(minutesParam ?? "", 10);
   const hasRegisterError = error === "register";
   const hasTherapistPackError = error === "therapist-pack";
   const registrationSucceeded = registered === "1";
@@ -288,6 +295,10 @@ export default async function LoginPage({
   const therapistRegistrationAvailable = therapistPacks.length > 0;
   const defaultTherapistPlan = therapistPacks[0]?.plan ?? "monthly";
   const backHref = getPublicAreaUrl("/");
+  const loginRateLimitMessage = getLoginRateLimitMessage(
+    language,
+    Number.isFinite(rateLimitMinutes) ? rateLimitMinutes : null
+  );
 
   if (isMfaStep) {
     return (
@@ -653,6 +664,11 @@ export default async function LoginPage({
             {hasLoginError ? (
               <p className="rounded-[1rem] border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
                 {copy.loginFailed}
+              </p>
+            ) : null}
+            {hasRateLimitError ? (
+              <p className="rounded-[1rem] border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                {loginRateLimitMessage}
               </p>
             ) : null}
 

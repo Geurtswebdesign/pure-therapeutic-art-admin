@@ -384,6 +384,15 @@ export async function login(formData: FormData) {
       )
     : 1;
   const blockMinutes = security.loginWindowMinutes * blockMultiplier;
+  const rateLimitRedirect =
+    origin === "account"
+      ? `/account?error=rate-limit&minutes=${blockMinutes}`
+      : adminHostRequest
+        ? getAdminLoginUrl(
+            { error: "rate-limit", minutes: String(blockMinutes) },
+            requestHost
+          )
+        : `/login?error=rate-limit&minutes=${blockMinutes}${safeNext ? `&next=${encodeURIComponent(safeNext)}` : ""}`;
 
   if (tooManyByEmail || tooManyByIp || tooManyByDevice || escalationTriggered) {
     const reason = tooManyByEmail
@@ -418,9 +427,7 @@ export async function login(formData: FormData) {
       blockedMinutes: blockMinutes,
     });
 
-    throw new Error(
-      `Te veel loginpogingen. Probeer opnieuw over ${blockMinutes} minuten.`
-    );
+    redirect(rateLimitRedirect);
   }
 
   const supabase = createServerClient(

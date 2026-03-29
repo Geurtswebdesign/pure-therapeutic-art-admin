@@ -61,28 +61,53 @@ export async function createUser({
   const userId = authResult.data.user.id;
 
   // 2️⃣ Profile
-  await supabaseAdmin.from("profiles").update({
-    display_name: displayName,
-    role: accessRole,
-    profile_data: {
-      account_type: nextAccountType,
-    },
-  }).eq("user_id", userId);
+  const { error: profileError } = await supabaseAdmin
+    .from("profiles")
+    .upsert(
+      {
+        user_id: userId,
+        display_name: displayName,
+        role: accessRole,
+        profile_data: {
+          account_type: nextAccountType,
+        },
+      },
+      { onConflict: "user_id" }
+    );
+
+  if (profileError) {
+    throw new Error("Profiel aanmaken mislukt");
+  }
 
   // 3️⃣ Wallet
-  await supabaseAdmin.from("credit_wallets").insert({
-    user_id: userId,
-    credits_available: creditsInitial,
-    credits_total_purchased: 0,
-  });
+  const { error: walletError } = await supabaseAdmin
+    .from("credit_wallets")
+    .upsert(
+      {
+        user_id: userId,
+        credits_available: creditsInitial,
+        credits_total_purchased: 0,
+      },
+      { onConflict: "user_id" }
+    );
+
+  if (walletError) {
+    throw new Error("Credit wallet aanmaken mislukt");
+  }
 
   // 4️⃣ Start credits (optioneel)
   if (creditsInitial > 0) {
-    await supabaseAdmin.from("credit_transactions").insert({
+    const { error: transactionError } = await supabaseAdmin
+      .from("credit_transactions")
+      .insert({
       user_id: userId,
       delta: creditsInitial,
       reason: "admin_initial",
     });
+
+    if (transactionError) {
+      throw new Error("Startcredits registreren mislukt");
+    }
   }
 
   return { userId };

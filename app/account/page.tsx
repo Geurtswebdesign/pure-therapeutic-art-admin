@@ -8,6 +8,7 @@ import LanguagePreferenceDialog from "@/components/account/LanguagePreferenceDia
 import ThemeProgressGrid from "@/components/account/ThemeProgressGrid";
 import { login } from "@/components/login/actions";
 import { getLegalDocuments } from "@/lib/account/legal-documents";
+import { getLoginRateLimitMessage } from "@/lib/auth/getLoginRateLimitMessage";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
@@ -29,6 +30,7 @@ import { setMySubscriptionCancellationPreference } from "@/app/account/actions";
 
 type AccountSearchParams = {
   error?: string | string[];
+  minutes?: string | string[];
   tab?: string | string[];
   panel?: string | string[];
 };
@@ -817,9 +819,18 @@ export default async function AccountPage({
     language === "en" ? "en-US" : language === "de" ? "de-DE" : "nl-NL";
   const params = await searchParams;
   const error = Array.isArray(params?.error) ? params?.error[0] : params?.error;
+  const minutesParam = Array.isArray(params?.minutes)
+    ? params?.minutes[0]
+    : params?.minutes;
   const tab = Array.isArray(params?.tab) ? params?.tab[0] : params?.tab;
   const activePanel = normalizeActivePanel(params?.panel);
   const hasInvalidError = error === "invalid";
+  const hasRateLimitError = error === "rate-limit";
+  const rateLimitMinutes = Number.parseInt(minutesParam ?? "", 10);
+  const loginRateLimitMessage = getLoginRateLimitMessage(
+    language,
+    Number.isFinite(rateLimitMinutes) ? rateLimitMinutes : null
+  );
   const activeTab = tab === "profile" ? "profile" : "overview";
 
   const user = await getCurrentUser();
@@ -869,6 +880,9 @@ export default async function AccountPage({
               <p className="text-sm text-red-600">
                 Ongeldige inloggegevens. Probeer het opnieuw.
               </p>
+            ) : null}
+            {hasRateLimitError ? (
+              <p className="text-sm text-amber-700">{loginRateLimitMessage}</p>
             ) : null}
 
             <div className="flex gap-2 pt-1">
