@@ -1,12 +1,25 @@
 import Link from "next/link";
+import RichTextExcerpt from "@/components/content/RichTextExcerpt";
 import HistoryBackButton from "@/components/public/HistoryBackButton";
 import type { ThemePageDetail } from "@/lib/content/theme-queries";
 
 export default function ThemePageView({
   theme,
+  backHref,
+  backLabel = "Terug",
 }: {
   theme: ThemePageDetail;
+  backHref?: string;
+  backLabel?: string;
 }) {
+  const resolvedBackHref =
+    backHref ??
+    (theme.parentTheme
+      ? `/content/themas/${theme.parentTheme.slug}`
+      : theme.primaryCategory
+        ? `/content?category=${theme.primaryCategory.slug}`
+        : "/content");
+
   return (
     <div className="mx-auto max-w-2xl space-y-5">
       <section className="rounded-[1.75rem] border border-[#e4d8cb] bg-[#f8f3ed] p-5 shadow-sm sm:p-7">
@@ -15,14 +28,18 @@ export default function ThemePageView({
             {theme.title}
           </h1>
           {theme.description ? (
-            <p className="mt-3 text-sm italic leading-6 text-stone-600">
-              {theme.description}
-            </p>
+            <RichTextExcerpt
+              html={theme.description}
+              className="mt-3 text-sm leading-6 text-stone-600 [&_p]:m-0 [&_p+p]:mt-3 [&_strong]:text-stone-800 [&_em]:text-stone-600 [&_a]:text-stone-800 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mt-1"
+            />
           ) : null}
         </header>
         <div className="flex items-start justify-between gap-3">
-          <HistoryBackButton className="inline-flex rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700">
-            Terug
+          <HistoryBackButton
+            fallbackHref={resolvedBackHref}
+            className="inline-flex rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700"
+          >
+            {backLabel}
           </HistoryBackButton>
         </div>
         {theme.childThemes.length ? (
@@ -52,9 +69,10 @@ export default function ThemePageView({
             {theme.sections.map((section) => (
               <li key={section.id}>
                 {section.description ? (
-                  <p className="mt-1 text-sm italic leading-6 text-stone-600">
-                    {section.description}
-                  </p>
+                  <RichTextExcerpt
+                    html={section.description}
+                    className="mt-1 text-sm leading-6 text-stone-600 [&_p]:m-0 [&_p+p]:mt-3 [&_strong]:text-stone-800 [&_em]:text-stone-600 [&_a]:text-stone-800 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mt-1"
+                  />
                 ) : null}
 
                 {section.items.length ? (

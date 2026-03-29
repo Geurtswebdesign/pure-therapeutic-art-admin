@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import ThemePageView from "@/components/content/ThemePageView";
+import { stripRichText } from "@/lib/content/stripRichText";
 import { getPublishedThemePageBySlug } from "@/lib/content/theme-queries";
 
 export default async function ThemePage({
@@ -31,6 +32,6 @@ export async function generateMetadata({
 
   return {
     title: theme.title,
-    description: theme.description ?? "",
+    description: stripRichText(theme.description),
   };
 }

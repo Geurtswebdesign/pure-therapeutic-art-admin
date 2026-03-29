@@ -1,12 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ThemePageSummary } from "@/lib/content/theme-queries";
+import { stripRichText } from "@/lib/content/stripRichText";
 
 export default function ThemePageCard({
   theme,
 }: {
   theme: ThemePageSummary;
 }) {
+  const description = stripRichText(theme.description);
+
   return (
     <Link
       href={`/content/themas/${theme.slug}`}
@@ -39,9 +42,9 @@ export default function ThemePageCard({
             {theme.title}
           </h2>
 
-          {theme.description ? (
+          {description ? (
             <p className="mt-2 line-clamp-3 text-sm leading-6 text-stone-600">
-              {theme.description}
+              {description}
             </p>
           ) : null}
 

@@ -8,6 +8,7 @@ import {
   deleteThemePage,
   saveThemePage,
 } from "@/app/admin/content/themes/actions";
+import ClassicTextEditor from "@/components/content/ClassicTextEditor";
 import ThemeMediaPickerDialog from "@/components/content/themes/ThemeMediaPickerDialog";
 import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 import type {
@@ -240,6 +241,9 @@ export default function ThemeEditorClient({
     initialData.categoryOptions.find(
       (option) => option.id === draft.primaryCategoryTermId
     ) ?? null;
+  const themeEditorUploadScope = draft.id
+    ? `theme-pages/${draft.id}`
+    : "theme-pages/draft";
 
   function updateDraft(patch: Partial<ThemePageDraft>) {
     setDraft((prev) => {
@@ -684,12 +688,14 @@ export default function ThemeEditorClient({
           </div>
           <div className="md:col-span-2">
             <FieldLabel>Beschrijving</FieldLabel>
-            <textarea
-              value={draft.description}
-              onChange={(event) => updateDraft({ description: event.target.value })}
-              rows={5}
-              className="mt-1 w-full rounded border border-stone-300 px-3 py-2"
-            />
+            <div className="mt-1 overflow-hidden rounded border border-stone-300">
+              <ClassicTextEditor
+                contentItemId={`${themeEditorUploadScope}/description`}
+                value={draft.description}
+                onChange={(value) => updateDraft({ description: value })}
+                height={260}
+              />
+            </div>
           </div>
           <div>
             <FieldLabel>Parent-thema</FieldLabel>
@@ -929,16 +935,18 @@ export default function ThemeEditorClient({
                 </div>
                 <div className="md:col-span-2">
                   <FieldLabel>Beschrijving</FieldLabel>
-                  <textarea
-                    value={section.description}
-                    onChange={(event) =>
-                      updateSection(sectionIndex, {
-                        description: event.target.value,
-                      })
-                    }
-                    rows={3}
-                    className="mt-1 w-full rounded border border-stone-300 px-3 py-2"
-                  />
+                  <div className="mt-1 overflow-hidden rounded border border-stone-300">
+                    <ClassicTextEditor
+                      contentItemId={`${themeEditorUploadScope}/sections/${sectionIndex + 1}`}
+                      value={section.description}
+                      onChange={(value) =>
+                        updateSection(sectionIndex, {
+                          description: value,
+                        })
+                      }
+                      height={220}
+                    />
+                  </div>
                 </div>
                 <div>
                   <FieldLabel>Layout</FieldLabel>
@@ -1203,16 +1211,18 @@ export default function ThemeEditorClient({
                           </div>
                           <div className="md:col-span-2">
                             <FieldLabel>Aangepaste teasertekst</FieldLabel>
-                            <textarea
-                              value={item.customExcerpt}
-                              onChange={(event) =>
-                                updateItem(sectionIndex, itemIndex, {
-                                  customExcerpt: event.target.value,
-                                })
-                              }
-                              rows={3}
-                              className="mt-1 w-full rounded border border-stone-300 px-3 py-2"
-                            />
+                            <div className="mt-1 overflow-hidden rounded border border-stone-300">
+                              <ClassicTextEditor
+                                contentItemId={`${themeEditorUploadScope}/sections/${sectionIndex + 1}/items/${itemIndex + 1}`}
+                                value={item.customExcerpt}
+                                onChange={(value) =>
+                                  updateItem(sectionIndex, itemIndex, {
+                                    customExcerpt: value,
+                                  })
+                                }
+                                height={200}
+                              />
+                            </div>
                           </div>
                           <div>
                             <FieldLabel>Override-afbeelding URL</FieldLabel>
