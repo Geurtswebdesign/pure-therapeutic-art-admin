@@ -1,5 +1,6 @@
 import Image from "next/image";
 import LockedView from "@/components/content/LockedView";
+import RichTextExcerpt from "@/components/content/RichTextExcerpt";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
 import type { ContentAccessScope } from "@/lib/content/access";
 import type { UiLanguage } from "@/lib/i18n/runtime";
@@ -38,7 +39,10 @@ export default function LockedContentPreview({
         <h1 className="text-3xl font-semibold tracking-tight text-stone-950">{item.title}</h1>
 
         {item.excerpt ? (
-          <p className="mx-auto max-w-xl text-sm leading-6 text-stone-600">{item.excerpt}</p>
+          <RichTextExcerpt
+            html={item.excerpt}
+            className="mx-auto max-w-xl text-stone-600 [&_p]:m-0 [&_p+p]:mt-3 [&_p]:text-sm [&_p]:leading-6 [&_strong]:text-stone-800 [&_a]:text-stone-800"
+          />
         ) : null}
       </header>
 

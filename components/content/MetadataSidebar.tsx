@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import PreviewButton from "@/components/admin/PreviewButton";
 import StatusSelect from "./StatusSelect";
+import ClassicTextEditor from "@/components/content/ClassicTextEditor";
 import { deleteContentItem } from "@/lib/content/actions";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase/browser";
@@ -84,6 +85,7 @@ export default function MetadataSidebar({
   const isPublished = draft.status === "published";
   const hasPersistedItem = Boolean(item.id);
   const liveSlug = draft.slug.trim();
+  const excerptEditorItemId = item.id ?? "draft-temp-excerpt";
 
   function renderBox(
     key: BoxKey,
@@ -400,13 +402,15 @@ export default function MetadataSidebar({
       {renderBox(
         "excerpt",
         t.excerpt,
-        <textarea
-          value={draft.excerpt}
-          onChange={(e) => onDraftChange({ excerpt: e.target.value })}
-          rows={5}
-          className="w-full rounded border px-2 py-1"
-          placeholder={t.excerptPlaceholder}
-        />
+        <div className="space-y-2">
+          <ClassicTextEditor
+            contentItemId={excerptEditorItemId}
+            value={draft.excerpt}
+            onChange={(value) => onDraftChange({ excerpt: value })}
+            height={260}
+          />
+          <p className="text-xs text-gray-500">{t.excerptPlaceholder}</p>
+        </div>
       )}
 
       {renderBox(

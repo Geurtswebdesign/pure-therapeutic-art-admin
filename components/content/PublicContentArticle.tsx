@@ -5,6 +5,8 @@ import type { ContentBlock } from "@/lib/content/types";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
 import PublicBlockRenderer from "@/components/content/PublicBlockRenderer";
 import type { ThemeItemNavigation } from "@/lib/content/public-queries";
+import HistoryBackButton from "@/components/public/HistoryBackButton";
+import RichTextExcerpt from "@/components/content/RichTextExcerpt";
 
 type Item = {
   title: string | null;
@@ -21,12 +23,16 @@ export default function PublicContentArticle({
   isSeedCategory,
   themeNavigation,
   progressCard,
+  backHref = "/content",
+  backLabel = "Terug",
 }: {
   item: Item;
   blocks: ContentBlock[];
   isSeedCategory: boolean;
   themeNavigation?: ThemeItemNavigation | null;
   progressCard?: ReactNode;
+  backHref?: string;
+  backLabel?: string;
   languageLabel: string;
   statusLabel?: string | null;
 }) {
@@ -38,6 +44,15 @@ export default function PublicContentArticle({
           : "mx-auto max-w-2xl rounded-[1.5rem] border border-[#e4d8cb] bg-[#f8f3ed] p-5 shadow-sm sm:p-7"
       }
     >
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <HistoryBackButton
+          fallbackHref={backHref}
+          className="inline-flex rounded-full border border-stone-300 bg-white/85 px-4 py-2 text-sm text-stone-800"
+        >
+          {backLabel}
+        </HistoryBackButton>
+      </div>
+
       <header className={isSeedCategory ? "mb-8 space-y-4" : "mb-7 space-y-3"}>
         <h1
           className={
@@ -50,15 +65,14 @@ export default function PublicContentArticle({
         </h1>
 
         {item.excerpt ? (
-          <p
+          <RichTextExcerpt
+            html={item.excerpt}
             className={
               isSeedCategory
-                ? "max-w-3xl text-lg leading-8 text-stone-600"
-                : "mx-auto max-w-xl text-sm leading-6 text-stone-600"
+                ? "max-w-3xl text-stone-600 [&_p]:m-0 [&_p+p]:mt-3 [&_p]:text-lg [&_p]:leading-8 [&_strong]:text-stone-800 [&_em]:text-stone-600 [&_a]:text-stone-800"
+                : "mx-auto max-w-xl text-stone-600 [&_p]:m-0 [&_p+p]:mt-3 [&_p]:text-sm [&_p]:leading-6 [&_strong]:text-stone-800 [&_em]:text-stone-600 [&_a]:text-stone-800"
             }
-          >
-            {item.excerpt}
-          </p>
+          />
         ) : null}
       </header>
 

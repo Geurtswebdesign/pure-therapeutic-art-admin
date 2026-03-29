@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ContentBlock } from "@/lib/content/types";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
 import PublicBlockRenderer from "@/components/content/PublicBlockRenderer";
+import RichTextExcerpt from "@/components/content/RichTextExcerpt";
 import type { ThemeItemNavigation } from "@/lib/content/public-queries";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 
@@ -87,9 +88,10 @@ export default function AccountEbookReader({
           </h1>
 
           {item.excerpt ? (
-            <p className="max-w-xl text-sm leading-6 text-stone-600">
-              {item.excerpt}
-            </p>
+            <RichTextExcerpt
+              html={item.excerpt}
+              className="max-w-xl text-stone-600 [&_p]:m-0 [&_p+p]:mt-3 [&_p]:text-sm [&_p]:leading-6 [&_strong]:text-stone-800 [&_a]:text-stone-800"
+            />
           ) : null}
 
           <div className="rounded-[1.1rem] border border-dashed border-[#d9c7b8] bg-white/80 px-4 py-3 text-sm leading-6 text-stone-600">

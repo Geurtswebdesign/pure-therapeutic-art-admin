@@ -12,6 +12,7 @@ import {
   listWebsiteOrderItemsForAccount,
   type WebsiteOrderItemRow,
 } from "@/lib/account/website-orders";
+import { stripRichText } from "@/lib/content/stripRichText";
 import { listOwnedEbookProducts } from "@/lib/shop/ebook-products";
 
 type CreditPackPurchaseRow = {
@@ -598,7 +599,7 @@ export async function getAccountContentProductsData(
               ? ("subscription" as const)
               : ("content_unlock" as const),
         title: row.title,
-        subtitle: row.subtitle ?? "",
+        subtitle: stripRichText(row.subtitle ?? ""),
         occurredAt: row.occurred_at,
         amountCents: row.amount_cents,
         currency: row.currency,
@@ -622,7 +623,7 @@ export async function getAccountContentProductsData(
       id: `ebook:${item.purchaseId}`,
       kind: "ebook" as const,
       title: item.title,
-      subtitle: item.excerpt ?? "E-book in de app",
+      subtitle: stripRichText(item.excerpt) || "E-book in de app",
       occurredAt: item.purchasedAt,
       amountCents: item.amountCents,
       currency: item.currency,
@@ -646,7 +647,7 @@ export async function getAccountContentProductsData(
     id: item.purchaseId,
     contentItemId: null,
     title: item.title,
-    excerpt: item.excerpt,
+    excerpt: stripRichText(item.excerpt) || null,
     href: item.href,
     unlockedAt: item.purchasedAt,
     themeTitle: null,

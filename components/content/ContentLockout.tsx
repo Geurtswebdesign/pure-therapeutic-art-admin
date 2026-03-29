@@ -1,10 +1,10 @@
 import Image from "next/image";
-import logo from "@/assets/branding/logo.png";
 import LockedView from "@/components/content/LockedView";
+import HistoryBackButton from "@/components/public/HistoryBackButton";
+import RichTextExcerpt from "@/components/content/RichTextExcerpt";
 import type { ContentAccessScope } from "@/lib/content/access";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
-import { getPublicBranding } from "@/lib/settings/public";
 
 type Props = {
   item: {
@@ -20,6 +20,8 @@ type Props = {
   isLoggedIn: boolean;
   wrapInPageContainer?: boolean;
   language: UiLanguage;
+  backHref?: string;
+  backLabel?: string;
 };
 
 export default async function ContentLockout({
@@ -29,10 +31,21 @@ export default async function ContentLockout({
   isLoggedIn,
   language,
   wrapInPageContainer = true,
+  backHref = "/content",
+  backLabel = "Terug",
 }: Props) {
   const t = getAppMessages(language).metadata;
   const content = (
     <article className="lockout-container space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <HistoryBackButton
+          fallbackHref={backHref}
+          className="inline-flex rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-800"
+        >
+          {backLabel}
+        </HistoryBackButton>
+      </div>
+
       <h1 className="lockout-title">
         {item.title}
       </h1>
@@ -49,9 +62,10 @@ export default async function ContentLockout({
       ) : null}
 
       {item.excerpt ? (
-        <p className="lockout-copy">
-          {item.excerpt}
-        </p>
+        <RichTextExcerpt
+          html={item.excerpt}
+          className="lockout-copy [&_p]:m-0 [&_p+p]:mt-3 [&_strong]:text-stone-800 [&_a]:text-stone-800"
+        />
       ) : null}
 
       <LockedView

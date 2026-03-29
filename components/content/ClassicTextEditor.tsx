@@ -35,12 +35,14 @@ type Props = {
   contentItemId: string;
   value: string;
   onChange: (value: string) => void;
+  height?: number;
 };
 
 export default function ClassicTextEditor({
   contentItemId,
   value,
   onChange,
+  height = 400,
 }: Props) {
   const safeValue = value || "";
 
@@ -49,7 +51,7 @@ export default function ClassicTextEditor({
       apiKey={process.env.NEXT_PUBLIC_TINYMCE_KEY}
       value={safeValue}
       init={{
-        height: 400,
+        height,
         menubar: false,
         branding: false,
 

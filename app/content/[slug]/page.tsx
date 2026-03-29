@@ -21,6 +21,7 @@ import {
   isContentProgressStorageReady,
 } from "@/lib/content/progress";
 import { toContentProgressSnapshot } from "@/lib/content/progress-types";
+import { stripRichText } from "@/lib/content/stripRichText";
 
 export default async function ContentDetailPage({
   params,
@@ -45,7 +46,14 @@ export default async function ContentDetailPage({
   }
 
   if (requiresUnlock && !hasUserAccess) {
+    const category = await getPrimaryCategoryForContentItem(item.id);
+    const themeNavigation = await getThemeNavigationForContentItem(item.id);
     const balance = user ? await getBalanceByScope(user.id, scope) : 0;
+    const backHref = themeNavigation
+      ? `/content/themas/${themeNavigation.theme.slug}`
+      : category
+        ? `/content?category=${category.slug}`
+        : "/content";
 
     return (
       <ContentLockout
@@ -54,6 +62,7 @@ export default async function ContentDetailPage({
         scope={scope}
         isLoggedIn={!!user}
         language={language}
+        backHref={backHref}
       />
     );
   }
@@ -77,6 +86,11 @@ export default async function ContentDetailPage({
     title: item.title,
     categories: category?.name ? [category.name] : [],
   });
+  const backHref = themeNavigation
+    ? `/content/themas/${themeNavigation.theme.slug}`
+    : category
+      ? `/content?category=${category.slug}`
+      : "/content";
 
   const article = (
     <PublicContentArticle
@@ -84,6 +98,7 @@ export default async function ContentDetailPage({
       blocks={blocks}
       isSeedCategory={isSeedCategory}
       themeNavigation={themeNavigation}
+      backHref={backHref}
       progressCard={
         user && progressStorageReady && !isLegalContent ? (
           <ContentProgressCard
@@ -118,13 +133,14 @@ export async function generateMetadata({
   const item = await getPublishedContentBySlug(slug);
 
   if (!item) return {};
+  const description = stripRichText(item.excerpt);
 
   return {
     title: item.title,
-    description: item.excerpt ?? "",
+    description,
     openGraph: {
       title: item.title,
-      description: item.excerpt ?? "",
+      description,
     },
   };
 }
