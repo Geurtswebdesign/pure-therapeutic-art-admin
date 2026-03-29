@@ -1,3 +1,5 @@
+import { getPublicAreaUrl } from "@/lib/site/urls";
+
 export default function PreviewButton({
   slug,
   locale,
@@ -9,8 +11,9 @@ export default function PreviewButton({
 }) {
   return (
     <a
-      href={`/${locale}/${slug}?preview=1`}
+      href={getPublicAreaUrl(`/${locale}/${slug}?preview=1`)}
       target="_blank"
+      rel="noopener noreferrer"
       className={[
         "rounded bg-yellow-100 px-3 py-2 text-sm text-yellow-800 hover:bg-yellow-200",
         fullWidth && "block w-full text-center",

@@ -15,6 +15,7 @@ import { LANGUAGE_OPTIONS } from "@/lib/i18n/languages";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
+import { getPublicAreaUrl } from "@/lib/site/urls";
 
 export type ContentStatus = "all" | "draft" | "published" | "archived";
 
@@ -190,7 +191,7 @@ export default function MetadataSidebar({
 
             {hasPersistedItem && liveSlug && draft.status === "published" ? (
               <a
-                href={`/${item.language}/${liveSlug}`}
+                href={getPublicAreaUrl(`/${item.language}/${liveSlug}`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded border px-3 py-2 text-sm hover:bg-gray-100"
