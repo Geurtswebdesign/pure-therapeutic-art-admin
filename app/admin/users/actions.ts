@@ -328,9 +328,41 @@ export async function updateUserProfileExtended(input: {
 export async function bulkDeleteUsers(userIds: string[]) {
   if (userIds.length === 0) return;
 
-  // ❗ Auth users verwijderen
-  // Supabase zorgt via FK + triggers voor cascade
-  for (const userId of userIds) {
+  const admin = await getAdminUser();
+  if (!admin) {
+    throw new Error("Niet geautoriseerd");
+  }
+
+  const safeUserIds = userIds.filter((userId) => userId !== admin.id);
+  if (safeUserIds.length === 0) {
+    return;
+  }
+
+  const supabase = createAdminClient();
+
+  // Verwijderbare gebruikers kunnen nog als auteur of admin-ref voorkomen.
+  // Deze relaties zijn nullable en moeten eerst losgekoppeld worden.
+  const { error: contentOwnerError } = await supabase
+    .from("content_items")
+    .update({ created_by: null })
+    .in("created_by", safeUserIds);
+
+  if (contentOwnerError) {
+    console.error("BULK DELETE CONTENT OWNER CLEANUP ERROR:", contentOwnerError);
+    throw new Error("Content-auteur loskoppelen mislukt");
+  }
+
+  const { error: creditAdminError } = await supabase
+    .from("credit_transactions")
+    .update({ admin_id: null })
+    .in("admin_id", safeUserIds);
+
+  if (creditAdminError) {
+    console.error("BULK DELETE CREDIT ADMIN CLEANUP ERROR:", creditAdminError);
+    throw new Error("Creditgeschiedenis loskoppelen mislukt");
+  }
+
+  for (const userId of safeUserIds) {
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (error) {
@@ -338,6 +370,18 @@ export async function bulkDeleteUsers(userIds: string[]) {
       throw new Error("Gebruikers verwijderen mislukt");
     }
   }
+
+  await logSecurityAuditEvent({
+    eventType: "users_deleted_by_admin",
+    severity: "warning",
+    actorUserId: admin.id,
+    details: {
+      affectedUsers: safeUserIds.length,
+      userIds: safeUserIds,
+    },
+  });
+
+  revalidatePath("/admin/users");
 }
 
 export async function deactivateYearAssignmentsEntitlement(input: {

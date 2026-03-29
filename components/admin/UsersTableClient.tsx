@@ -39,6 +39,7 @@ export default function UsersTableClient({
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   type BulkAction =
   | ""
@@ -73,6 +74,7 @@ export default function UsersTableClient({
 
   async function applyBulkAction() {
     if (selected.length === 0 || !bulkAction) return;
+    setError(null);
 
     // ❗ jezelf beschermen
     const safeIds = selected.filter(
@@ -88,29 +90,51 @@ export default function UsersTableClient({
         if (!ok) return;
 
         setLoading(true);
-        await bulkDeleteUsers(safeIds);
-        setLoading(false);
-        location.reload();
+        try {
+          await bulkDeleteUsers(safeIds);
+          location.reload();
+        } catch (err: unknown) {
+          setError(err instanceof Error ? err.message : "Gebruikers verwijderen mislukt");
+        } finally {
+          setLoading(false);
+        }
         return;
     }
 
     if (bulkAction === "make-admin") {
         setLoading(true);
-        await bulkUpdateUserRole(safeIds, "admin");
-        setLoading(false);
+        try {
+          await bulkUpdateUserRole(safeIds, "admin");
+          location.reload();
+        } catch (err: unknown) {
+          setError(err instanceof Error ? err.message : "Rol wijzigen mislukt");
+        } finally {
+          setLoading(false);
+        }
+        return;
     }
 
     if (bulkAction === "make-user") {
         setLoading(true);
-        await bulkUpdateUserRole(safeIds, "user");
-        setLoading(false);
+        try {
+          await bulkUpdateUserRole(safeIds, "user");
+          location.reload();
+        } catch (err: unknown) {
+          setError(err instanceof Error ? err.message : "Rol wijzigen mislukt");
+        } finally {
+          setLoading(false);
+        }
+        return;
     }
-
-    location.reload();
-    }
+  }
 
   return (
     <div className="space-y-4">
+      {error ? (
+        <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
 
       {/* FILTERS / BULK */}
       <div className="flex gap-3 items-center">
