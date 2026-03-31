@@ -4,6 +4,19 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ThemePageDraft } from "@/lib/content/theme-admin";
 
+type ThemeActionSuccess = {
+  ok: true;
+  id: string;
+  slug: string;
+};
+
+type ThemeActionFailure = {
+  ok: false;
+  error: string;
+};
+
+export type ThemeActionResult = ThemeActionSuccess | ThemeActionFailure;
+
 function slugify(text: string) {
   return text
     .toLowerCase()
@@ -50,6 +63,105 @@ function normalizeSectionItems(section: ThemePageDraft["sections"][number]) {
   });
 }
 
+function normalizeOptionalText(value: string) {
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function getNormalizedSectionSlug(section: ThemePageDraft["sections"][number]) {
+  const sectionSlug = (section.slug || slugify(section.title)).trim();
+
+  if (!sectionSlug) {
+    throw new Error("Elke sectie die je bewaart heeft een slug nodig.");
+  }
+
+  return sectionSlug;
+}
+
+function validateSectionSlugs(sections: ThemePageDraft["sections"]) {
+  const seenSlugs = new Map<string, string>();
+
+  for (const section of sections) {
+    if (!section.title.trim()) continue;
+
+    const sectionSlug = getNormalizedSectionSlug(section);
+    const existingTitle = seenSlugs.get(sectionSlug);
+
+    if (existingTitle) {
+      throw new Error(
+        `De secties "${existingTitle}" en "${section.title}" hebben dezelfde slug "${sectionSlug}". Geef elke sectie een unieke slug.`
+      );
+    }
+
+    seenSlugs.set(sectionSlug, section.title);
+  }
+}
+
+async function validateThemeUniqueness(
+  input: ThemePageDraft,
+  supabase: ReturnType<typeof createAdminClient>,
+  themeSlug: string
+) {
+  const normalizedSourceKey = normalizeOptionalText(input.sourceKey);
+
+  let slugQuery = supabase
+    .from("content_theme_pages")
+    .select("id, title")
+    .eq("slug", themeSlug)
+    .limit(1);
+
+  if (input.id) {
+    slugQuery = slugQuery.neq("id", input.id);
+  }
+
+  const { data: slugConflict, error: slugError } = await slugQuery.maybeSingle<{
+    id: string;
+    title: string;
+  }>();
+
+  if (slugError) {
+    throw new Error(`Bestaande thema-slugs controleren mislukt: ${slugError.message}`);
+  }
+
+  if (slugConflict) {
+    throw new Error(
+      `De slug "${themeSlug}" wordt al gebruikt door "${slugConflict.title}". Kies een unieke slug.`
+    );
+  }
+
+  if (!normalizedSourceKey) {
+    return;
+  }
+
+  let sourceKeyQuery = supabase
+    .from("content_theme_pages")
+    .select("id, title")
+    .eq("source_key", normalizedSourceKey)
+    .limit(1);
+
+  if (input.id) {
+    sourceKeyQuery = sourceKeyQuery.neq("id", input.id);
+  }
+
+  const { data: sourceKeyConflict, error: sourceKeyError } =
+    await sourceKeyQuery.maybeSingle<{
+      id: string;
+      title: string;
+    }>();
+
+  if (sourceKeyError) {
+    throw new Error(
+      `Bestaande bronkoppelingen controleren mislukt: ${sourceKeyError.message}`
+    );
+  }
+
+  if (sourceKeyConflict) {
+    throw new Error(
+      `De bronsleutel "${normalizedSourceKey}" is al gekoppeld aan "${sourceKeyConflict.title}".`
+    );
+  }
+}
+
 async function validatePrimaryCategoryTerm(
   primaryCategoryTermId: string | null,
   supabase: ReturnType<typeof createAdminClient>
@@ -84,21 +196,30 @@ async function validatePrimaryCategoryTerm(
   }
 }
 
-export async function saveThemePage(input: ThemePageDraft) {
+async function saveThemePageInternal(
+  input: ThemePageDraft
+): Promise<ThemeActionSuccess> {
   const supabase = createAdminClient();
   const fallbackSlug = slugify(input.title || "thema");
+  const themeSlug = (input.slug || fallbackSlug).trim();
 
+  if (!themeSlug) {
+    throw new Error("Geef het thema een slug.");
+  }
+
+  validateSectionSlugs(input.sections);
   await validatePrimaryCategoryTerm(input.primaryCategoryTermId || null, supabase);
+  await validateThemeUniqueness(input, supabase, themeSlug);
 
   const pagePayload = {
     parent_theme_page_id: input.parentThemePageId || null,
-    source_key: input.sourceKey || null,
-    slug: input.slug || fallbackSlug,
-    eyebrow: input.eyebrow || null,
+    source_key: normalizeOptionalText(input.sourceKey),
+    slug: themeSlug,
+    eyebrow: normalizeOptionalText(input.eyebrow),
     title: input.title || "Ongetiteld thema",
-    description: input.description || null,
-    hero_image_url: input.heroImageUrl || null,
-    hero_image_alt: input.heroImageAlt || null,
+    description: normalizeOptionalText(input.description),
+    hero_image_url: normalizeOptionalText(input.heroImageUrl),
+    hero_image_alt: normalizeOptionalText(input.heroImageAlt),
     hero_image_position: input.heroImagePosition,
     primary_category_term_id: input.primaryCategoryTermId || null,
     is_published: input.isPublished,
@@ -138,10 +259,16 @@ export async function saveThemePage(input: ThemePageDraft) {
     savedSlug = data.slug;
   }
 
-  const { data: existingSections } = await supabase
+  const { data: existingSections, error: existingSectionsError } = await supabase
     .from("content_theme_sections")
     .select("id")
     .eq("theme_page_id", themeId);
+
+  if (existingSectionsError) {
+    throw new Error(
+      `Bestaande secties laden mislukt: ${existingSectionsError.message}`
+    );
+  }
 
   const existingSectionIds = new Set(
     (existingSections ?? [])
@@ -154,14 +281,16 @@ export async function saveThemePage(input: ThemePageDraft) {
   for (const [sectionIndex, section] of input.sections.entries()) {
     if (!section.title.trim()) continue;
 
+    const sectionSlug = getNormalizedSectionSlug(section);
+
     const sectionPayload = {
       theme_page_id: themeId,
-      slug: section.slug || slugify(section.title),
+      slug: sectionSlug,
       title: section.title,
-      description: section.description || null,
+      description: normalizeOptionalText(section.description),
       layout_style: section.layoutStyle,
-      section_image_url: section.sectionImageUrl || null,
-      section_image_alt: section.sectionImageAlt || null,
+      section_image_url: normalizeOptionalText(section.sectionImageUrl),
+      section_image_alt: normalizeOptionalText(section.sectionImageAlt),
       section_image_position: section.sectionImagePosition,
       sort_order: Number.isFinite(section.sortOrder)
         ? section.sortOrder
@@ -247,10 +376,28 @@ export async function saveThemePage(input: ThemePageDraft) {
     revalidatePath(`/content/themas/${savedSlug}`);
   }
 
-  return { id: themeId, slug: savedSlug };
+  return { ok: true, id: themeId, slug: savedSlug };
 }
 
-export async function deleteThemePage(id: string, slug?: string | null) {
+export async function saveThemePage(
+  input: ThemePageDraft
+): Promise<ThemeActionResult> {
+  try {
+    return await saveThemePageInternal(input);
+  } catch (error) {
+    console.error("saveThemePage failed", error);
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "Thema opslaan mislukt.",
+    };
+  }
+}
+
+async function deleteThemePageInternal(
+  id: string,
+  slug?: string | null
+): Promise<ThemeActionSuccess> {
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("content_theme_pages")
@@ -267,5 +414,21 @@ export async function deleteThemePage(id: string, slug?: string | null) {
     revalidatePath(`/content/themas/${slug}`);
   }
 
-  return { success: true };
+  return { ok: true, id, slug: slug ?? "" };
+}
+
+export async function deleteThemePage(
+  id: string,
+  slug?: string | null
+): Promise<ThemeActionResult> {
+  try {
+    return await deleteThemePageInternal(id, slug);
+  } catch (error) {
+    console.error("deleteThemePage failed", error);
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "Thema verwijderen mislukt.",
+    };
+  }
 }

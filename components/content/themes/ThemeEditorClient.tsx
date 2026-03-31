@@ -117,6 +117,28 @@ function getDuplicateItemError(
   return null;
 }
 
+function getDuplicateSectionSlugError(draft: ThemePageDraft) {
+  const seenSectionSlugs = new Map<string, string>();
+
+  for (const section of draft.sections) {
+    if (!section.title.trim()) continue;
+
+    const sectionSlug = (section.slug || slugify(section.title)).trim();
+    if (!sectionSlug) {
+      return "Elke sectie die je bewaart heeft een slug nodig.";
+    }
+
+    const existingTitle = seenSectionSlugs.get(sectionSlug);
+    if (existingTitle) {
+      return `De secties "${existingTitle}" en "${section.title}" hebben dezelfde slug "${sectionSlug}". Geef elke sectie een unieke slug.`;
+    }
+
+    seenSectionSlugs.set(sectionSlug, section.title);
+  }
+
+  return null;
+}
+
 function moveArrayItem<T>(items: T[], fromIndex: number, toIndex: number) {
   if (toIndex < 0 || toIndex >= items.length) {
     return items;
@@ -459,9 +481,15 @@ export default function ThemeEditorClient({
     setError(null);
     const nextDraft = normalizeDraftOrdering(draft);
     const duplicateItemError = getDuplicateItemError(nextDraft, contentOptionById);
+    const duplicateSectionSlugError = getDuplicateSectionSlugError(nextDraft);
 
     if (duplicateItemError) {
       setError(duplicateItemError);
+      return;
+    }
+
+    if (duplicateSectionSlugError) {
+      setError(duplicateSectionSlugError);
       return;
     }
 
@@ -470,6 +498,11 @@ export default function ThemeEditorClient({
     startTransition(() => {
       void saveThemePage(nextDraft)
         .then((result) => {
+          if (!result.ok) {
+            setError(result.error);
+            return;
+          }
+
           setFeedback("Thema opgeslagen.");
           if (!nextDraft.id) {
             router.replace(
@@ -500,7 +533,12 @@ export default function ThemeEditorClient({
 
     startTransition(() => {
       void deleteThemePage(draft.id!, draft.slug)
-        .then(() => {
+        .then((result) => {
+          if (!result.ok) {
+            setError(result.error);
+            return;
+          }
+
           router.push(resolveAdminBrowserHref(pathname, "/admin/content/themes"));
           router.refresh();
         })
