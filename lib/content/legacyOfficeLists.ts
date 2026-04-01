@@ -1,4 +1,5 @@
 type ListTag = "ol" | "ul";
+const LEADING_LIST_MARKER_PATTERN = /^[\s\u00a0]*[§•▪■●\-–—]+[\s\u00a0]+/;
 
 function normalizeWhitespace(value: string) {
   return value.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
@@ -109,6 +110,62 @@ function pruneEmptyInlineElements(root: Element) {
   }
 }
 
+function findFirstTextNode(root: Node): Text | null {
+  for (const child of Array.from(root.childNodes)) {
+    if (child.nodeType === 8) {
+      continue;
+    }
+
+    if (child.nodeType === 3) {
+      return child as Text;
+    }
+
+    if (child.nodeType === 1) {
+      const nested = findFirstTextNode(child);
+      if (nested) {
+        return nested;
+      }
+    }
+  }
+
+  return null;
+}
+
+function stripLeadingLegacyListMarker(root: Element) {
+  let changed = false;
+
+  while (true) {
+    const firstTextNode = findFirstTextNode(root);
+    if (!firstTextNode) {
+      return changed;
+    }
+
+    const originalText = firstTextNode.textContent ?? "";
+    const strippedText = originalText.replace(LEADING_LIST_MARKER_PATTERN, "");
+
+    if (strippedText !== originalText) {
+      if (strippedText) {
+        firstTextNode.textContent = strippedText;
+      } else {
+        firstTextNode.remove();
+      }
+
+      pruneEmptyInlineElements(root);
+      changed = true;
+      continue;
+    }
+
+    if (!normalizeWhitespace(originalText)) {
+      firstTextNode.remove();
+      pruneEmptyInlineElements(root);
+      changed = true;
+      continue;
+    }
+
+    return changed;
+  }
+}
+
 function createListItemFromLegacyElement(source: Element, doc: Document) {
   const clone = source.cloneNode(true) as Element;
 
@@ -211,6 +268,12 @@ export function normalizeLegacyOfficeListsInBody(body: Element, doc: Document) {
     }
 
     index = runIndex - 1;
+  }
+
+  for (const listItem of Array.from(body.querySelectorAll("li"))) {
+    if (stripLeadingLegacyListMarker(listItem)) {
+      changed = true;
+    }
   }
 
   return changed;
