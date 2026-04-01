@@ -1,5 +1,5 @@
 type ListTag = "ol" | "ul";
-const LEADING_LIST_MARKER_PATTERN = /^[\s\u00a0]*[§•▪■●\-–—]+[\s\u00a0]+/;
+const LEADING_LIST_MARKER_PATTERN = /^[\s\u00a0]*[§•▪■●\-–—]+(?:[\s\u00a0]+)?/;
 
 function normalizeWhitespace(value: string) {
   return value.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
