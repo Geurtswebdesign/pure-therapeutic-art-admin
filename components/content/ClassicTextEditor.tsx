@@ -10,6 +10,10 @@ import Underline from "@tiptap/extension-underline";
 import type { DOMOutputSpec } from "@tiptap/pm/model";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import {
+  containsLegacyOfficeListMarkup,
+  normalizeLegacyOfficeListsInBody,
+} from "@/lib/content/legacyOfficeLists";
 import { uploadImageClient } from "@/lib/content/uploadClient";
 
 type UploadedImage = {
@@ -31,6 +35,22 @@ function normalizeEditorValue(value: string) {
   }
 
   return value;
+}
+
+function normalizeLegacyOfficeHtml(value: string) {
+  if (!value || !containsLegacyOfficeListMarkup(value) || typeof DOMParser === "undefined") {
+    return value;
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(value, "text/html");
+  const changed = normalizeLegacyOfficeListsInBody(doc.body, doc);
+
+  return changed ? doc.body.innerHTML : value;
+}
+
+function getNormalizedEditorContent(value: string) {
+  return normalizeEditorValue(normalizeLegacyOfficeHtml(value));
 }
 
 function escapeHtml(value: string) {
@@ -262,7 +282,8 @@ export default function ClassicTextEditor({
   onChange,
   height = 400,
 }: Props) {
-  const safeValue = value || "";
+  const rawValue = normalizeEditorValue(value || "");
+  const safeValue = getNormalizedEditorContent(value || "");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const latestValueRef = useRef(safeValue);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -296,6 +317,7 @@ export default function ClassicTextEditor({
       attributes: {
         class: "classic-text-editor__content",
       },
+      transformPastedHTML: (html) => normalizeLegacyOfficeHtml(html),
     },
     content: safeValue,
     onUpdate: ({ editor: currentEditor }) => {
@@ -325,6 +347,16 @@ export default function ClassicTextEditor({
       editor.commands.setContent(nextValue, { emitUpdate: false });
     }
   }, [editor, isSourceMode, safeValue]);
+
+  useEffect(() => {
+    if (isSourceMode || !rawValue || rawValue === safeValue) {
+      return;
+    }
+
+    latestValueRef.current = safeValue;
+    setSourceValue(safeValue);
+    onChange(safeValue);
+  }, [isSourceMode, onChange, rawValue, safeValue]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -387,8 +419,9 @@ export default function ClassicTextEditor({
     }
 
     if (isSourceMode) {
-      editor.commands.setContent(sourceValue, { emitUpdate: false });
-      latestValueRef.current = sourceValue;
+      const nextValue = getNormalizedEditorContent(sourceValue);
+      editor.commands.setContent(nextValue, { emitUpdate: false });
+      updateSourceValue(nextValue);
     } else {
       const nextValue = normalizeEditorValue(editor.getHTML());
       latestValueRef.current = nextValue;

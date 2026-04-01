@@ -1,5 +1,18 @@
 import "server-only";
 import { JSDOM } from "jsdom";
+import { normalizeLegacyOfficeListsInBody } from "@/lib/content/legacyOfficeLists";
+
+function hasVisibleNodeContent(element: Element): boolean {
+  if (element.querySelector("img")) {
+    return true;
+  }
+
+  const normalizedText = (element.textContent ?? "")
+    .replace(/\u00a0/g, " ")
+    .trim();
+
+  return normalizedText.length > 0;
+}
 
 /**
  * Normalize editor-generated HTML into a strict, public-safe format.
@@ -13,18 +26,32 @@ export function normalizeHtml(input: string): string {
     const doc = dom.window.document;
     const body = doc.body;
 
+    normalizeLegacyOfficeListsInBody(body, doc);
+
     /**
      * 1️⃣ Remove empty paragraphs
      */
     body
       .querySelectorAll<HTMLParagraphElement>("p")
       .forEach((p: HTMLParagraphElement) => {
-        const hasText = p.textContent?.trim();
-        const hasImage = p.querySelector("img");
-
-        if (!hasText && !hasImage) {
-          p.remove();
+        if (hasVisibleNodeContent(p)) {
+          return;
         }
+
+        const previous = p.previousElementSibling;
+        const next = p.nextElementSibling;
+        const keepAsSpacer =
+          previous !== null &&
+          next !== null &&
+          hasVisibleNodeContent(previous) &&
+          hasVisibleNodeContent(next);
+
+        if (keepAsSpacer) {
+          p.replaceChildren(doc.createElement("br"));
+          return;
+        }
+
+        p.remove();
       });
 
     /**
