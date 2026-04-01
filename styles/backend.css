@@ -277,6 +277,36 @@
   padding-left: 1.5rem;
 }
 
+.classic-text-editor__surface .tiptap.ProseMirror ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror ul li {
+  position: relative;
+  padding-left: 1.25rem;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror ul li::before {
+  content: "";
+  position: absolute;
+  top: 0.72em;
+  left: 0.1rem;
+  width: 0.38rem;
+  height: 0.38rem;
+  background: currentColor;
+  transform: translateY(-50%);
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror li > ul {
+  margin-top: 0.5rem;
+  padding-left: 1.25rem;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror li > ol {
+  margin-top: 0.5rem;
+}
+
 .classic-text-editor__surface .tiptap.ProseMirror a {
   color: #2271b1;
   text-decoration: underline;
