@@ -166,3 +166,189 @@
 ) {
   color: #ffffff !important;
 }
+
+.classic-text-editor {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #d6d6d6;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.classic-text-editor[data-fullscreen="true"] {
+  padding: 1rem;
+  background: #f0f0f1;
+}
+
+.classic-text-editor__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #d6d6d6;
+  background: #f8f7f4;
+}
+
+.classic-text-editor__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.classic-text-editor__group--end {
+  margin-left: auto;
+}
+
+.classic-text-editor__button,
+.classic-text-editor__select {
+  min-height: 2.25rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #c8c8c8;
+  border-radius: 0.4rem;
+  background: #ffffff;
+  font-size: 0.875rem;
+  line-height: 1.2;
+}
+
+.classic-text-editor__button[data-active="true"] {
+  border-color: #2271b1;
+  background: #eaf4fb;
+  color: #135e96;
+}
+
+.classic-text-editor__button:disabled,
+.classic-text-editor__select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.classic-text-editor__error {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #efc2c2;
+  background: #fff3f3;
+  color: #a12626;
+  font-size: 0.875rem;
+}
+
+.classic-text-editor__surface {
+  background: #ffffff;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror,
+.classic-text-editor__source {
+  min-height: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror {
+  outline: none;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror > *:first-child {
+  margin-top: 0;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror > *:last-child {
+  margin-bottom: 0;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror p,
+.classic-text-editor__surface .tiptap.ProseMirror ul,
+.classic-text-editor__surface .tiptap.ProseMirror ol,
+.classic-text-editor__surface .tiptap.ProseMirror blockquote,
+.classic-text-editor__surface .tiptap.ProseMirror figure {
+  margin: 0 0 1rem;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror h2,
+.classic-text-editor__surface .tiptap.ProseMirror h3,
+.classic-text-editor__surface .tiptap.ProseMirror h4 {
+  margin: 1.5rem 0 0.75rem;
+  color: #1d2327;
+  line-height: 1.2;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror ul,
+.classic-text-editor__surface .tiptap.ProseMirror ol {
+  padding-left: 1.5rem;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror a {
+  color: #2271b1;
+  text-decoration: underline;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror figure.image {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror figure.image.aligncenter {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror figure.image figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #6a6a6a;
+  text-align: center;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror figure.gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror figure.gallery[data-columns="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror figure.gallery[data-columns="4"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror figure.gallery img {
+  width: 100%;
+}
+
+.classic-text-editor__surface .tiptap.ProseMirror .ProseMirror-selectednode {
+  outline: 2px solid #2271b1;
+  outline-offset: 0.2rem;
+}
+
+.classic-text-editor__source {
+  width: 100%;
+  border: 0;
+  resize: vertical;
+  outline: none;
+  background: #ffffff;
+  font-family: Menlo, Monaco, Consolas, monospace;
+}
+
+@media (max-width: 768px) {
+  .classic-text-editor__group--end {
+    margin-left: 0;
+  }
+
+  .classic-text-editor__toolbar {
+    gap: 0.5rem;
+  }
+
+  .classic-text-editor__surface .tiptap.ProseMirror figure.gallery,
+  .classic-text-editor__surface .tiptap.ProseMirror figure.gallery[data-columns="4"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
