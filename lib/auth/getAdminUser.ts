@@ -1,35 +1,12 @@
-import { cookies, headers } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
 import { SUPER_ADMIN_ID } from "@/lib/auth/constants";
-import { getSupabaseCookieOptions } from "@/lib/site/urls";
+import { createClient, getUserOrNull } from "@/lib/supabase/server";
 import { isAdminRole } from "@/lib/users/accountTypes";
 
 export async function getAdminUser() {
-  const cookieStore = await cookies();
-  const requestHeaders = await headers();
-  const requestHost =
-    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const supabase = await createClient();
+  const user = await getUserOrNull(supabase);
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookieOptions: getSupabaseCookieOptions(requestHost),
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
-
-  // 1️⃣ Auth user ophalen
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!user) {
     return null;
   }
 

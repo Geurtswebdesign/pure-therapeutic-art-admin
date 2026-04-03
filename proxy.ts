@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import {
   DEFAULT_SECURITY_SETTINGS,
   normalizeSecuritySettings,
@@ -14,7 +15,14 @@ import {
   shouldBypassAdminRewrite,
   toAdminExternalPath,
   toAdminInternalPath,
+  getSupabaseCookieOptions,
 } from "@/lib/site/urls";
+import {
+  getSupabaseAuthStorageKey,
+  hasSupabaseAuthCookies,
+  isRecoverableAuthError,
+  isSupabaseAuthCookieName,
+} from "@/lib/supabase/auth-cookies";
 
 const FETCH_TIMEOUT_MS = 2500;
 const SECURITY_SETTINGS_TTL_MS = 30_000;
@@ -91,11 +99,111 @@ async function getSecuritySettingsFromDb(): Promise<SecuritySettings> {
   }
 }
 
+async function syncSupabaseSession(
+  req: NextRequest,
+  requestHost: string | null
+) {
+  const existingCookies = req.cookies.getAll();
+  if (!hasSupabaseAuthCookies(existingCookies)) {
+    return {
+      requestHeaders: new Headers(req.headers),
+      responseCookies: [] as Array<{
+        name: string;
+        value: string;
+        options: ReturnType<typeof getSupabaseCookieOptions> & { maxAge?: number };
+      }>,
+    };
+  }
+
+  let currentCookies = [...existingCookies];
+  const responseCookies: Array<{
+    name: string;
+    value: string;
+    options: ReturnType<typeof getSupabaseCookieOptions> & { maxAge?: number };
+  }> = [];
+
+  const upsertCookie = (name: string, value: string) => {
+    currentCookies = currentCookies.filter((cookie) => cookie.name !== name);
+    if (value) {
+      currentCookies.push({ name, value });
+    }
+  };
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookieOptions: getSupabaseCookieOptions(requestHost),
+      cookies: {
+        encode: "tokens-only",
+        getAll() {
+          return currentCookies;
+        },
+        setAll(cookiesToSet) {
+          for (const { name, value, options } of cookiesToSet) {
+            upsertCookie(name, value);
+            responseCookies.push({ name, value, options });
+          }
+        },
+      },
+    }
+  );
+
+  try {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (!user && error && isRecoverableAuthError(error)) {
+      throw error;
+    }
+  } catch (error) {
+    if (!isRecoverableAuthError(error)) {
+      return;
+    }
+
+    const storageKey = getSupabaseAuthStorageKey();
+    if (!storageKey) return;
+
+    const cookieOptions = {
+      ...getSupabaseCookieOptions(requestHost),
+      maxAge: 0,
+    };
+
+    for (const cookie of existingCookies) {
+      if (!isSupabaseAuthCookieName(cookie.name, storageKey)) continue;
+      upsertCookie(cookie.name, "");
+      responseCookies.push({
+        name: cookie.name,
+        value: "",
+        options: cookieOptions,
+      });
+    }
+  }
+
+  const requestHeaders = new Headers(req.headers);
+  const cookieHeader = currentCookies
+    .filter((cookie) => cookie.value)
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+    .join("; ");
+
+  if (cookieHeader) {
+    requestHeaders.set("cookie", cookieHeader);
+  } else {
+    requestHeaders.delete("cookie");
+  }
+
+  return { requestHeaders, responseCookies };
+}
+
 export async function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
   const requestHost = getRequestHost(req.headers);
   const adminOrigin = getAdminSiteOrigin();
   const adminRequest = isAdminHost(requestHost);
+  const sessionSync = await syncSupabaseSession(req, requestHost);
+  const requestHeaders = sessionSync.requestHeaders;
 
   if (adminRequest && isAdminInternalPath(pathname)) {
     const target = new URL(toAdminExternalPath(pathname), req.url);
@@ -128,15 +236,15 @@ export async function proxy(req: NextRequest) {
         })()
       : null;
 
-  const res = rewriteUrl
+  let res = rewriteUrl
     ? NextResponse.rewrite(rewriteUrl, {
         request: {
-          headers: req.headers,
+          headers: requestHeaders,
         },
       })
     : NextResponse.next({
         request: {
-          headers: req.headers,
+          headers: requestHeaders,
         },
       });
 
@@ -159,10 +267,14 @@ export async function proxy(req: NextRequest) {
       effectivePathname.startsWith("/api");
 
     if (!allowedDuringMaintenance) {
-      return NextResponse.redirect(new URL("/maintenance", req.url));
+      res = NextResponse.redirect(new URL("/maintenance", req.url));
     }
   } else if (effectivePathname.startsWith("/maintenance")) {
-    return NextResponse.redirect(new URL("/", req.url));
+    res = NextResponse.redirect(new URL("/", req.url));
+  }
+
+  for (const cookie of sessionSync.responseCookies) {
+    res.cookies.set(cookie.name, cookie.value, cookie.options);
   }
 
   return res;
