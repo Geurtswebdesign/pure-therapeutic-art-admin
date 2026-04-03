@@ -103,16 +103,18 @@ async function syncSupabaseSession(
   req: NextRequest,
   requestHost: string | null
 ) {
+  const requestHeaders = new Headers(req.headers);
+  const emptyResult = {
+    requestHeaders,
+    responseCookies: [] as Array<{
+      name: string;
+      value: string;
+      options: ReturnType<typeof getSupabaseCookieOptions> & { maxAge?: number };
+    }>,
+  };
   const existingCookies = req.cookies.getAll();
   if (!hasSupabaseAuthCookies(existingCookies)) {
-    return {
-      requestHeaders: new Headers(req.headers),
-      responseCookies: [] as Array<{
-        name: string;
-        value: string;
-        options: ReturnType<typeof getSupabaseCookieOptions> & { maxAge?: number };
-      }>,
-    };
+    return emptyResult;
   }
 
   let currentCookies = [...existingCookies];
@@ -160,11 +162,11 @@ async function syncSupabaseSession(
     }
   } catch (error) {
     if (!isRecoverableAuthError(error)) {
-      return;
+      return emptyResult;
     }
 
     const storageKey = getSupabaseAuthStorageKey();
-    if (!storageKey) return;
+    if (!storageKey) return emptyResult;
 
     const cookieOptions = {
       ...getSupabaseCookieOptions(requestHost),
@@ -182,7 +184,6 @@ async function syncSupabaseSession(
     }
   }
 
-  const requestHeaders = new Headers(req.headers);
   const cookieHeader = currentCookies
     .filter((cookie) => cookie.value)
     .map((cookie) => `${cookie.name}=${cookie.value}`)
