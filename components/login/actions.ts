@@ -2,8 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { getRuntimeSecuritySettings } from "@/lib/security/runtime";
 import { logSecurityAuditEvent } from "@/lib/security/audit";
 import { sendMail } from "@/lib/mail/sendMail";
@@ -16,7 +16,6 @@ import {
   getRequestHost,
   isAdminHost,
   getServerCookieOptions,
-  getSupabaseCookieOptions,
 } from "@/lib/site/urls";
 import {
   getActiveTherapistSubscriptionPack,
@@ -138,26 +137,7 @@ export async function registerAccount(formData: FormData) {
     redirect("/login?mode=register&error=therapist-pack");
   }
 
-  const cookieStore = await cookies();
-  const requestHeaders = await headers();
-  const requestHost = getRequestHost(requestHeaders);
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookieOptions: getSupabaseCookieOptions(requestHost),
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
+  const supabase = await createClient();
   const supabaseAdmin = createAdminClient();
 
   await logServerEvent({
@@ -430,23 +410,7 @@ export async function login(formData: FormData) {
     redirect(rateLimitRedirect);
   }
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookieOptions: getSupabaseCookieOptions(requestHost),
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
+  const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -609,23 +573,7 @@ export async function verifyMfa(formData: FormData) {
     redirect("/login?step=mfa&error=invalid");
   }
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookieOptions: getSupabaseCookieOptions(requestHost),
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
+  const supabase = await createClient();
 
   const { error: verifyError } = await supabase.auth.mfa.verify({
     factorId,

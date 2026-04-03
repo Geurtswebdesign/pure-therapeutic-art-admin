@@ -1,14 +1,11 @@
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { createClient, getUserOrNull } from "@/lib/supabase/server";
 import { getRuntimeSecuritySettings } from "@/lib/security/runtime";
 import { isAdminRole } from "@/lib/users/accountTypes";
 import "@/styles/backend.css";
-import {
-  getSupabaseCookieOptions,
-  toAdminInternalPath,
-} from "@/lib/site/urls";
+import { toAdminInternalPath } from "@/lib/site/urls";
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminTopbar from "@/components/admin/AdminTopbar";
@@ -22,26 +19,10 @@ export default async function AdminLayout({
 }) {
   const cookieStore = await cookies();
   const requestHeaders = await headers();
-  const requestHost =
-    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookieOptions: getSupabaseCookieOptions(requestHost),
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  const supabase = await createClient();
 
   // 🔐 Auth check
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUserOrNull(supabase);
 
   if (!user) {
     redirect("/login");

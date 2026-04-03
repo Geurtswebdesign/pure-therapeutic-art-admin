@@ -2,8 +2,6 @@
 // Supports published content + admin-only preview mode (Optie A)
 
 import { notFound } from "next/navigation";
-import { cookies, headers } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
 import ContentLayout from "@/components/content/ContentLayout";
 import PublicContentArticle from "@/components/content/PublicContentArticle";
 import ContentProgressCard from "@/components/content/ContentProgressCard";
@@ -20,7 +18,7 @@ import {
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { logServerEvent } from "@/lib/analytics/server";
 import { isLegalContentMetadata } from "@/lib/content/legal-content";
-import { getSupabaseCookieOptions } from "@/lib/site/urls";
+import { createClient, getUserOrNull } from "@/lib/supabase/server";
 import {
   getUserContentProgress,
   isContentProgressStorageReady,
@@ -45,30 +43,12 @@ export default async function ContentPage({
   const language = resolveUiLanguage(locale);
   const { preview } = await searchParams;
 
-  const cookieStore = await cookies();
-  const requestHeaders = await headers();
-  const requestHost =
-    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookieOptions: getSupabaseCookieOptions(requestHost),
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-      },
-    }
-  );
+  const supabase = await createClient();
 
   /* -------------------------------------------------
    * 1️⃣ Check gebruiker + preview permissie
    * ------------------------------------------------- */
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUserOrNull(supabase);
 
   const isAdmin =
     user?.app_metadata?.role === "admin" ||

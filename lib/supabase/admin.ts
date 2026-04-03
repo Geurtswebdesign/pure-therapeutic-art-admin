@@ -20,6 +20,7 @@ export function createAdminClient() {
     {
       auth: {
         persistSession: false,
+        autoRefreshToken: false,
       },
     }
   );

@@ -391,8 +391,8 @@ export async function getHomepageCategories(
     .from("content_term_relationships")
     .select("content_item_id, term_id")
     .in(
-      "content_item_id",
-      (items ?? []).map((item) => item.id)
+      "term_id",
+      categories.map((category) => category.id)
     );
 
   if (relationshipsError) throw relationshipsError;
