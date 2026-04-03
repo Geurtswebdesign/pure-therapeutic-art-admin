@@ -86,21 +86,45 @@ function getInitials(name: string) {
     .join("");
 }
 
+async function getSafeProfile(userId: string): Promise<ProfileRow | null> {
+  try {
+    const supabaseAdmin = createAdminClient();
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("display_name, profile_data")
+      .eq("user_id", userId)
+      .maybeSingle<ProfileRow>();
+
+    if (error) {
+      console.error("[Home] profile", error);
+      return null;
+    }
+
+    return data ?? null;
+  } catch (error) {
+    console.error("[Home] profile", error);
+    return null;
+  }
+}
+
+async function getSafeHomepageCategories() {
+  try {
+    return await getHomepageCategories(50, { homepageOnly: true });
+  } catch (error) {
+    console.error("[Home] homepage categories", error);
+    return [];
+  }
+}
+
 export default async function Home() {
   const language = resolveUiLanguage(await getAppLanguage());
   const t = getAppMessages(language).home;
   const user = await getCurrentUser();
-  const supabaseAdmin = createAdminClient();
 
-  let profile: ProfileRow | null = null;
-  if (user) {
-    const { data } = await supabaseAdmin
-      .from("profiles")
-      .select("display_name, profile_data")
-      .eq("user_id", user.id)
-      .maybeSingle<ProfileRow>();
-    profile = data ?? null;
-  }
+  const [profile, categories] = await Promise.all([
+    user ? getSafeProfile(user.id) : Promise.resolve<ProfileRow | null>(null),
+    getSafeHomepageCategories(),
+  ]);
 
   const displayName =
     profile?.display_name ??
@@ -116,7 +140,6 @@ export default async function Home() {
     "";
   const motivationalText =
     "Mooi dat je er bent. Pak een moment voor jezelf en zet vandaag een kleine stap.";
-  const categories = await getHomepageCategories(50, { homepageOnly: true });
   return (
     <PublicAppShell activeTab="home" subtitle="Rust, groei en troost">
       <section className="space-y-4">
