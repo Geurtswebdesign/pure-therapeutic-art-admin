@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
-import { isSupabaseStorageUrl } from "@/lib/images/isSupabaseStorageUrl";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { getHomepageCategories } from "@/lib/content/public-queries";
@@ -209,20 +208,20 @@ export default async function Home() {
                 href={`/content?category=${category.slug}`}
                 className={`group flex h-full min-h-[260px] flex-col rounded-[1.5rem] p-3 text-center shadow-sm transition hover:-translate-y-0.5 ${style.cardClass}`}
               >
-                <div className="relative mx-auto mb-3 h-20 w-20">
+                <div className="relative mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-white p-2 shadow-[0_10px_28px_rgba(18,20,26,0.14)]">
                   {category.featured_image_url ? (
                     <Image
                       src={category.featured_image_url}
                       alt={category.featured_image_alt || category.name}
-                      width={80}
-                      height={80}
+                      width={64}
+                      height={64}
                       sizes="80px"
-                      unoptimized={!isSupabaseStorageUrl(category.featured_image_url)}
-                      className="h-20 w-20 rounded-full object-cover shadow-[0_10px_28px_rgba(18,20,26,0.14)]"
+                      unoptimized
+                      className="h-16 w-16 rounded-full object-cover"
                     />
                   ) : (
                     <div
-                      className={`h-20 w-20 rounded-full shadow-[0_10px_28px_rgba(18,20,26,0.14)] ${style.orbClass}`}
+                      className={`h-16 w-16 rounded-full ${style.orbClass}`}
                     />
                   )}
                 </div>

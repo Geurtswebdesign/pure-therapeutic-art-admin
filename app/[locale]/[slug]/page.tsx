@@ -42,7 +42,6 @@ export default async function ContentPage({
   const { locale, slug } = await params;
   const language = resolveUiLanguage(locale);
   const { preview } = await searchParams;
-
   const supabase = await createClient();
 
   /* -------------------------------------------------
@@ -95,7 +94,16 @@ export default async function ContentPage({
   }
 
   if (!isPreview && requiresUnlock && !hasUserAccess) {
+    const [category, themeNavigation] = await Promise.all([
+      getPrimaryCategoryForContentItem(item.id),
+      getThemeNavigationForContentItem(item.id),
+    ]);
     const balance = user ? await getBalanceByScope(user.id, scope) : 0;
+    const backHref = themeNavigation
+      ? `/content/themas/${themeNavigation.theme.slug}`
+      : category
+        ? `/content?category=${category.slug}`
+        : "/content";
 
     return (
       <ContentLayout isPreview={isPreview}>
@@ -105,6 +113,7 @@ export default async function ContentPage({
           scope={scope}
           isLoggedIn={!!user}
           language={language}
+          backHref={backHref}
         />
       </ContentLayout>
     );
@@ -137,6 +146,11 @@ export default async function ContentPage({
     title: item.title,
     categories: category?.name ? [category.name] : [],
   });
+  const backHref = themeNavigation
+    ? `/content/themas/${themeNavigation.theme.slug}`
+    : category
+      ? `/content?category=${category.slug}`
+      : "/content";
 
   /* -------------------------------------------------
    * 5️⃣ Render (IDENTIEK aan live)
@@ -155,6 +169,7 @@ export default async function ContentPage({
         blocks={blocks}
         isSeedCategory={isSeedCategory}
         themeNavigation={themeNavigation}
+        backHref={backHref}
         progressCard={
           user && progressStorageReady && !isLegalContent ? (
             <ContentProgressCard

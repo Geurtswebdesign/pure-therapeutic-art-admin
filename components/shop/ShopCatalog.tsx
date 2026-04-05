@@ -161,18 +161,10 @@ export function getPackSupportLabel(pack: CreditPack) {
   if (isMostChosenPack(pack)) {
     return "Meest gekozen";
   }
-
   if (pack.bonus_credits > 0) {
     return `+${pack.bonus_credits} bonus`;
   }
-
-  const total = getPackCount(pack);
-  if (total <= 10) return "Start pakket";
-  if (total <= 50) return "Basis pakket";
-  if (total <= 150) return "Plus pakket";
-  return "Voordeel pakket";
 }
-
 export function getYearSubscriptionTitle(pack: CreditPack) {
   return pack.name?.trim() || "Jaarabonnement";
 }
