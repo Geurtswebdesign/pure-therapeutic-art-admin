@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { recordIapTransaction } from "@/lib/iap/storage";
 import {
   getEbookProductByStoreProductId,
   grantEbookPurchaseFromStore,
@@ -95,6 +97,65 @@ export async function POST(request: Request) {
 
   const item = await getEbookProductByStoreProductId(platform, event.product_id);
   if (!item) {
+    if (
+      event.type === "INITIAL_PURCHASE" ||
+      event.type === "NON_RENEWING_PURCHASE"
+    ) {
+      if (!transactionId) {
+        return NextResponse.json({ ok: true, ignored: "missing_transaction_id" });
+      }
+
+      const record = await recordIapTransaction({
+        platform,
+        storeTransactionId: transactionId,
+        storeProductId: event.product_id,
+        userId,
+        quantity: 1,
+        amountCents:
+          typeof event.price_in_purchased_currency === "number"
+            ? Math.round(event.price_in_purchased_currency * 100)
+            : null,
+        currency: event.currency ?? "EUR",
+        rawPayload: payload,
+      });
+
+      if (!record.ok) {
+        return NextResponse.json(
+          { error: record.error ?? "credit_pack_record_failed" },
+          { status: 500 }
+        );
+      }
+
+      if (!record.packId) {
+        return NextResponse.json({ ok: true, ignored: "no_product_mapping" });
+      }
+
+      if (record.alreadyRecorded) {
+        return NextResponse.json({
+          ok: true,
+          action: "credit_pack_already_processed",
+        });
+      }
+
+      const supabase = createAdminClient();
+      const { error } = await supabase.rpc("admin_record_credit_pack_purchase", {
+        p_user_id: userId,
+        p_pack_id: record.packId,
+        p_quantity: 1,
+        p_note: `${platform} revenuecat ${transactionId}`,
+      });
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        ok: true,
+        action: "credit_pack_credited",
+        packId: record.packId,
+      });
+    }
+
     return NextResponse.json({ ok: true, ignored: "no_product_mapping" });
   }
 

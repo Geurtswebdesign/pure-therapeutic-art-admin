@@ -4,12 +4,19 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight, ExternalLink, Image as ImageIcon } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { CreditPackPurchaseMode } from "@/lib/iap/credit-pack-purchase-mode";
+import {
+  getCreditPackStoreProducts,
+  getDefaultCreditPackStoreProductId,
+} from "@/lib/iap/credit-pack-products";
 import { isTherapistSubscriptionPackSlug } from "@/lib/users/entitlements";
 import {
   getCatalogItemPath,
   isCatalogItemInDevelopment,
   type CatalogItem,
 } from "@/lib/shop/catalog";
+import type { UiLanguage } from "@/lib/i18n/runtime";
+import NativeCreditPackPurchaseButton from "@/components/shop/NativeCreditPackPurchaseButton";
 
 export type CreditScope = "assignment" | "book" | "game" | "referral";
 
@@ -24,6 +31,8 @@ export type CreditPack = {
   currency: string;
   is_active: boolean;
   sort_order: number;
+  appleStoreProductId?: string;
+  googleStoreProductId?: string;
 };
 
 type AssignmentCreditShopData = {
@@ -59,14 +68,32 @@ export async function getCreditShopData(
       return true;
     });
 
+    const storeProducts = await getCreditPackStoreProducts(
+      rows.map((pack) => pack.id)
+    );
+
+    const rowsWithStoreProducts = rows.map((pack) => {
+      const mappedProducts = storeProducts.get(pack.id);
+      const fallbackStoreProductId = getDefaultCreditPackStoreProductId(pack);
+
+      return {
+        ...pack,
+        appleStoreProductId:
+          mappedProducts?.appleStoreProductId ?? fallbackStoreProductId ?? "",
+        googleStoreProductId:
+          mappedProducts?.googleStoreProductId ?? fallbackStoreProductId ?? "",
+      } satisfies CreditPack;
+    });
+
     return {
       creditPacks:
         scope === "assignment"
-          ? rows.filter((pack) => pack.slug !== "jaarabonnement")
-          : rows,
+          ? rowsWithStoreProducts.filter((pack) => pack.slug !== "jaarabonnement")
+          : rowsWithStoreProducts,
       yearSubscriptionPack:
         scope === "assignment"
-          ? rows.find((pack) => pack.slug === "jaarabonnement") ?? null
+          ? rowsWithStoreProducts.find((pack) => pack.slug === "jaarabonnement") ??
+            null
           : null,
     };
   } catch {
@@ -169,12 +196,6 @@ export function getPackSupportLabel(pack: CreditPack): ReactNode {
   if (pack.bonus_credits > 0) {
     return `+${pack.bonus_credits} bonus`;
   }
-
-  const total = getPackCount(pack);
-  if (total <= 10) return "Start pakket";
-  if (total <= 50) return "Basis pakket";
-  if (total <= 150) return "Plus pakket";
-  return "Voordeel pakket";
 }
 export function getYearSubscriptionTitle(pack: CreditPack) {
   return pack.name?.trim() || "Jaarabonnement";
@@ -465,7 +486,17 @@ export function CreditPreviewCard({ pack }: { pack: CreditPack }) {
   );
 }
 
-export function CreditPackDetailCard({ pack }: { pack: CreditPack }) {
+export function CreditPackDetailCard({
+  pack,
+  isLoggedIn = false,
+  language = "nl",
+  purchaseMode = "disabled",
+}: {
+  pack: CreditPack;
+  isLoggedIn?: boolean;
+  language?: UiLanguage;
+  purchaseMode?: CreditPackPurchaseMode;
+}) {
   const total = getPackCount(pack);
   const isMostChosen = isMostChosenPack(pack);
 
@@ -507,6 +538,16 @@ export function CreditPackDetailCard({ pack }: { pack: CreditPack }) {
             <p className="text-xs leading-5 text-[#6f6154]">
               {getPackDescription(pack)}
             </p>
+            {purchaseMode === "native_store" ? (
+              <div className="mt-3">
+                <NativeCreditPackPurchaseButton
+                  appleStoreProductId={pack.appleStoreProductId ?? ""}
+                  googleStoreProductId={pack.googleStoreProductId ?? ""}
+                  isLoggedIn={isLoggedIn}
+                  language={language}
+                />
+              </div>
+            ) : null}
           </div>
           <span className="shrink-0 rounded-full border border-[#ead6c6] bg-[#fcf6f1] px-2.5 py-1 text-xs font-medium text-[#8a5f49]">
             {formatPackPrice(pack)}

@@ -151,6 +151,7 @@ NEXT_PUBLIC_REVENUECAT_APPLE_API_KEY=
 NEXT_PUBLIC_REVENUECAT_GOOGLE_API_KEY=
 REVENUECAT_WEBHOOK_AUTH=
 EBOOK_PURCHASE_MODE=native_store
+CREDIT_PACK_PURCHASE_MODE=native_store
 ```
 
 En configureer daarna in RevenueCat:
@@ -159,6 +160,15 @@ En configureer daarna in RevenueCat:
 2. Android app koppelen met dezelfde application id
 3. Apple en Google storeconnecties leggen
 4. per e-book product-id's aanmaken die matchen met de shopadmin
-5. webhook instellen naar:
+5. voor credit packs dezelfde store product-id's gebruiken als in de app-logica of expliciet mappen via `public.iap_products`
+   - standaard fallback conventie: `credits.{scope}.{key}`
+   - voor opdrachtpacks zijn dat nu:
+     - `credits.assignment.start`
+     - `credits.assignment.basis`
+     - `credits.assignment.standaard`
+     - `credits.assignment.plus`
+     - `credits.assignment.voordeel`
+   - de app accepteert tijdelijk ook nog de oude bundle-prefixed variant voor bestaande mappings
+6. webhook instellen naar:
    - `https://pure-therapeutic-art-therapy.com/api/revenuecat/webhooks`
-6. `Authorization` header in RevenueCat gelijk zetten aan `REVENUECAT_WEBHOOK_AUTH`
+7. `Authorization` header in RevenueCat gelijk zetten aan `REVENUECAT_WEBHOOK_AUTH`

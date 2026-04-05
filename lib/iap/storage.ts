@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveCreditPackIdByStoreProductId } from "@/lib/iap/credit-pack-products";
 
 type IapTransactionInput = {
   platform: "apple" | "google";
@@ -13,15 +14,10 @@ type IapTransactionInput = {
 
 export async function recordIapTransaction(input: IapTransactionInput) {
   const supabase = createAdminClient();
-
-  const { data: product } = await supabase
-    .from("iap_products")
-    .select("pack_id, is_active")
-    .eq("platform", input.platform)
-    .eq("store_product_id", input.storeProductId)
-    .maybeSingle<{ pack_id: string; is_active: boolean }>();
-
-  const packId = product?.is_active ? product.pack_id : null;
+  const packId = await resolveCreditPackIdByStoreProductId(
+    input.platform,
+    input.storeProductId
+  );
 
   const { data: existing } = await supabase
     .from("iap_transactions")
@@ -72,4 +68,3 @@ export async function recordIapNotification(input: {
     raw_payload: input.rawPayload,
   });
 }
-

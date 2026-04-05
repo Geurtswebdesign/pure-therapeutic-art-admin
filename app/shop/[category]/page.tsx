@@ -11,6 +11,10 @@ import {
   ProductDetailCard,
   YearSubscriptionDetailCard,
 } from "@/components/shop/ShopCatalog";
+import { getCurrentUser } from "@/lib/auth/getCurrentUser";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getCreditPackPurchaseMode } from "@/lib/iap/credit-pack-purchase-mode";
 import {
   getPublicCatalogItemsByCategory,
   getPublicShopCatalog,
@@ -143,6 +147,12 @@ export default async function ShopCategoryPage({
     category === "credits"
       ? await getCreditShopData(creditScope)
       : { creditPacks: [], yearSubscriptionPack: null };
+  const user = category === "credits" ? await getCurrentUser() : null;
+  const language = resolveUiLanguage(
+    category === "credits" ? await getAppLanguage() : "nl"
+  );
+  const creditPackPurchaseMode =
+    category === "credits" ? getCreditPackPurchaseMode() : "disabled";
   const { creditPacks, yearSubscriptionPack } = creditShopData;
   const catalog = await getPublicShopCatalog();
   const categoryItems =
@@ -182,7 +192,13 @@ export default async function ShopCategoryPage({
                 {creditPacks.length ? (
                   <div className="grid gap-3">
                     {creditPacks.map((pack) => (
-                      <CreditPackDetailCard key={pack.id} pack={pack} />
+                      <CreditPackDetailCard
+                        key={pack.id}
+                        pack={pack}
+                        isLoggedIn={Boolean(user)}
+                        language={language}
+                        purchaseMode={creditPackPurchaseMode}
+                      />
                     ))}
                   </div>
                 ) : null}
