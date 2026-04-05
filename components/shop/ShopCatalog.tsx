@@ -157,9 +157,13 @@ export function getPackDescription(pack: CreditPack) {
   return "Voordelig als je vooruit wilt inkopen en altijd voldoende opdrachten beschikbaar wilt hebben.";
 }
 
-export function getPackSupportLabel(pack: CreditPack) {
+export function getPackSupportLabel(pack: CreditPack): ReactNode {
   if (isMostChosenPack(pack)) {
-    return "Meest gekozen";
+    return (
+      <span className="rounded-full border border-[#d9a578] bg-[#fff3e7] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9a5a31]">
+        Meest gekozen
+      </span>
+    );
   }
 
   if (pack.bonus_credits > 0) {
@@ -440,13 +444,8 @@ export function CreditPreviewCard({ pack }: { pack: CreditPack }) {
           : "border border-[#e5d8ca] bg-[linear-gradient(180deg,#efede7_0%,#e4dfd9_100%)]"
       }`}
     >
-      {isMostChosen ? (
-        <div className="absolute right-3 top-3 rounded-full border border-[#d9a578] bg-white/95 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9a5a31]">
-          Meest gekozen
-        </div>
-      ) : null}
       <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7b6e61]">
-        Opdrachtpakket
+        Opdracht pakket
       </div>
       <div className="mt-3 text-[2rem] font-semibold leading-none text-stone-950">
         {total}
@@ -460,7 +459,7 @@ export function CreditPreviewCard({ pack }: { pack: CreditPack }) {
       <div className="mt-2 text-base font-semibold text-stone-950">
         {formatPackPrice(pack)}
       </div>
-      <div className="mt-2 text-[11px] text-[#8d5c44]">
+      <div className={`mt-2 ${isMostChosen ? "" : "text-[11px] text-[#8d5c44]"}`}>
         {getPackSupportLabel(pack)}
       </div>
     </article>
@@ -495,14 +494,13 @@ export function CreditPackDetailCard({ pack }: { pack: CreditPack }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8b6c5c]">
-                {getPackSupportLabel(pack)}
-              </div>
               {isMostChosen ? (
-                <span className="rounded-full border border-[#d9a578] bg-[#fff3e7] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9a5a31]">
-                  Meest gekozen
-                </span>
-              ) : null}
+                getPackSupportLabel(pack)
+              ) : (
+                <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8b6c5c]">
+                  {getPackSupportLabel(pack)}
+                </div>
+              )}
             </div>
             <h4 className="text-sm font-semibold text-stone-950">
               {pack.name}
