@@ -111,6 +111,10 @@ export function getPackCount(pack: CreditPack) {
   return pack.credits_base + pack.bonus_credits;
 }
 
+export function isMostChosenPack(pack: CreditPack) {
+  return pack.credit_scope === "assignment" && getPackCount(pack) === 100;
+}
+
 export function getPackUnitLabel(scope: CreditScope, amount: number) {
   if (scope === "book") {
     return amount === 1 ? "boekcredit" : "boekcredits";
@@ -134,26 +138,39 @@ export function getPackDescription(pack: CreditPack) {
     return `Vrij te gebruiken voor ${total} opdrachten, inclusief ${pack.bonus_credits} bonuscredits.`;
   }
 
-  if (total <= 5) {
-    return "Geschikt om een paar losse opdrachten vrij te spelen.";
-  }
-
   if (total <= 10) {
-    return "Handig als je regelmatig opdrachten wilt openen in de app.";
+    return "Ideaal om kennis te maken en losse opdrachten vrij te spelen.";
   }
 
-  return "Fijn voor intensiever gebruik of als je vooruit wilt inkopen.";
+  if (total <= 50) {
+    return "Fijn als je regelmatig opdrachten wilt openen in de app.";
+  }
+
+  if (total <= 100) {
+    return "De beste balans tussen hoeveelheid en prijs voor regelmatig gebruik.";
+  }
+
+  if (total <= 150) {
+    return "Handig als je intensiever werkt en extra ruimte achter de hand wilt houden.";
+  }
+
+  return "Voordelig als je vooruit wilt inkopen en altijd voldoende opdrachten beschikbaar wilt hebben.";
 }
 
 export function getPackSupportLabel(pack: CreditPack) {
+  if (isMostChosenPack(pack)) {
+    return "Meest gekozen";
+  }
+
   if (pack.bonus_credits > 0) {
     return `+${pack.bonus_credits} bonus`;
   }
 
   const total = getPackCount(pack);
-  if (total <= 5) return "Klein pakket";
-  if (total <= 10) return "Middel pakket";
-  return "Groot pakket";
+  if (total <= 10) return "Start pakket";
+  if (total <= 50) return "Basis pakket";
+  if (total <= 150) return "Plus pakket";
+  return "Voordeel pakket";
 }
 
 export function getYearSubscriptionTitle(pack: CreditPack) {
@@ -413,9 +430,21 @@ export function ProductPurchaseCard({
 
 export function CreditPreviewCard({ pack }: { pack: CreditPack }) {
   const total = getPackCount(pack);
+  const isMostChosen = isMostChosenPack(pack);
 
   return (
-    <article className="aspect-square rounded-[1.35rem] border border-[#e5d8ca] bg-[linear-gradient(180deg,#efede7_0%,#e4dfd9_100%)] px-3 py-4 text-center shadow-[0_14px_26px_rgba(57,41,28,0.08)]">
+    <article
+      className={`relative aspect-square rounded-[1.35rem] px-3 py-4 text-center shadow-[0_14px_26px_rgba(57,41,28,0.08)] ${
+        isMostChosen
+          ? "border border-[#c2875d] bg-[linear-gradient(180deg,#fff2e3_0%,#f3dfcb_100%)]"
+          : "border border-[#e5d8ca] bg-[linear-gradient(180deg,#efede7_0%,#e4dfd9_100%)]"
+      }`}
+    >
+      {isMostChosen ? (
+        <div className="absolute right-3 top-3 rounded-full border border-[#d9a578] bg-white/95 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9a5a31]">
+          Meest gekozen
+        </div>
+      ) : null}
       <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7b6e61]">
         Opdrachtpakket
       </div>
@@ -440,10 +469,17 @@ export function CreditPreviewCard({ pack }: { pack: CreditPack }) {
 
 export function CreditPackDetailCard({ pack }: { pack: CreditPack }) {
   const total = getPackCount(pack);
+  const isMostChosen = isMostChosenPack(pack);
 
   return (
     <article className="grid grid-cols-[92px_1fr] gap-3 rounded-[1.4rem] border border-[#eadfce] bg-white/90 p-3">
-      <div className="rounded-[1.1rem] bg-[linear-gradient(180deg,#ede8e1_0%,#dfd8ce_100%)] px-2 py-3 text-center">
+      <div
+        className={`rounded-[1.1rem] px-2 py-3 text-center ${
+          isMostChosen
+            ? "bg-[linear-gradient(180deg,#fff2e3_0%,#f3dfcb_100%)]"
+            : "bg-[linear-gradient(180deg,#ede8e1_0%,#dfd8ce_100%)]"
+        }`}
+      >
         <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#7d6e63]">
           {pack.name}
         </div>
@@ -458,8 +494,15 @@ export function CreditPackDetailCard({ pack }: { pack: CreditPack }) {
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8b6c5c]">
-              {getPackSupportLabel(pack)}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8b6c5c]">
+                {getPackSupportLabel(pack)}
+              </div>
+              {isMostChosen ? (
+                <span className="rounded-full border border-[#d9a578] bg-[#fff3e7] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9a5a31]">
+                  Meest gekozen
+                </span>
+              ) : null}
             </div>
             <h4 className="text-sm font-semibold text-stone-950">
               {pack.name}
