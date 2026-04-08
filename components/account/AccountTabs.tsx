@@ -123,6 +123,7 @@ export default function AccountTabs({
         <AccountProfileForm
           userId={userId}
           accountType={userAccountType}
+          hasTherapistDirectoryAccess={false}
           initialDisplayName={displayName}
           initialBio={bio}
           initialFirstName={profileData?.first_name ?? ""}

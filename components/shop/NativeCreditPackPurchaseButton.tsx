@@ -112,7 +112,7 @@ export default function NativeCreditPackPurchaseButton({
     return () => {
       cancelled = true;
     };
-  }, [storeProductId, t.missing, t.unavailable]);
+  }, [storeProductId]);
 
   if (!Capacitor.isNativePlatform()) {
     return null;

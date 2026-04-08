@@ -1005,7 +1005,7 @@ export default async function AccountPage({
   const showPublicDirectoryHint =
     userAccountType === "therapist" &&
     !therapistProfile.public_profile_enabled &&
-    therapistSubscription.status !== "ended";
+    therapistSubscription.status === "active";
 
   const themeItems = progressCollections.themes.map((theme) => {
     const progressPercent = theme.totalChapterCount
@@ -1140,6 +1140,9 @@ export default async function AccountPage({
             <AccountProfileForm
               userId={user.id}
               accountType={userAccountType}
+              hasTherapistDirectoryAccess={
+                therapistSubscription.status === "active"
+              }
               initialDisplayName={displayName}
               initialBio={bio}
               initialFirstName={firstName}

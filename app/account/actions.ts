@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isKnownLanguage, normalizeLanguageCode } from "@/lib/i18n/languages";
+import { getTherapistDirectoryEntitlementSummary } from "@/lib/users/therapistDirectoryAccess";
 import {
   normalizeTherapistProfileData,
   type AppProfileData,
@@ -31,12 +32,38 @@ export async function updateMyProfile(input: {
   }
 
   const supabase = createAdminClient();
-
   const { data: profileRow } = await supabase
     .from("profiles")
     .select("profile_data")
     .eq("user_id", user.id)
     .maybeSingle<{ profile_data?: AppProfileData | null }>();
+
+  const accountType =
+    input.accountType ??
+    profileRow?.profile_data?.account_type ??
+    "user";
+  const therapistDirectoryEntitlement =
+    accountType === "therapist"
+      ? await getTherapistDirectoryEntitlementSummary(user.id)
+      : null;
+
+  let nextTherapistProfile =
+    input.therapistProfile === null
+      ? null
+      : input.therapistProfile
+        ? normalizeTherapistProfileData(input.therapistProfile)
+        : profileRow?.profile_data?.therapist_profile ?? null;
+
+  if (
+    accountType === "therapist" &&
+    nextTherapistProfile &&
+    therapistDirectoryEntitlement?.status !== "active"
+  ) {
+    nextTherapistProfile = {
+      ...nextTherapistProfile,
+      public_profile_enabled: false,
+    };
+  }
 
   const nextProfileData = {
     ...(profileRow?.profile_data ?? {}),
@@ -46,16 +73,8 @@ export async function updateMyProfile(input: {
     nickname: "",
     website: normalizeText(input.website),
     avatar_url: normalizeText(input.avatarUrl),
-    account_type:
-      input.accountType ??
-      profileRow?.profile_data?.account_type ??
-      "user",
-    therapist_profile:
-      input.therapistProfile === null
-        ? null
-        : input.therapistProfile
-          ? normalizeTherapistProfileData(input.therapistProfile)
-          : profileRow?.profile_data?.therapist_profile ?? null,
+    account_type: accountType,
+    therapist_profile: nextTherapistProfile,
   };
 
   const { error } = await supabase

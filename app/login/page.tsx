@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { headers } from "next/headers";
-import { ArrowLeft, HeartHandshake, ShieldCheck, Stethoscope } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Stethoscope } from "lucide-react";
 import logo from "@/assets/branding/logo.png";
 import { login, registerAccount, verifyMfa } from "@/components/login/actions";
 import AdminTwoFactorCard from "@/components/admin/settings/AdminTwoFactorCard";
@@ -10,6 +10,7 @@ import { getLoginRateLimitMessage } from "@/lib/auth/getLoginRateLimitMessage";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage, type UiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
+import { isNativeAppUserAgent } from "@/lib/native/isNativeAppRequest";
 import { getPublicBranding } from "@/lib/settings/public";
 import { getActiveTherapistSubscriptionPacks } from "@/lib/users/therapistSubscriptionPacks";
 import {
@@ -35,6 +36,7 @@ type AuthShellProps = {
   eyebrow: string;
   backLabel: string;
   backHref: string;
+  isNativeApp?: boolean;
   maxWidthClassName?: string;
   children: ReactNode;
 };
@@ -48,13 +50,15 @@ const AUTH_COPY: Record<
     adminLoginIntro: string;
     registerIntro: string;
     setupIntro: string;
-    clientDescription: string;
     therapistDescription: string;
+    paidTherapistDescription: string;
     registerHint: string;
     loginFailed: string;
     therapistPackTitle: string;
     therapistPackUnavailable: string;
     therapistPackError: string;
+    noPlan: string;
+    noPlanDescription: string;
     monthlyPlan: string;
     yearlyPlan: string;
     monthlyDescription: string;
@@ -69,27 +73,30 @@ const AUTH_COPY: Record<
     adminLoginIntro:
       "Log in om verder te gaan naar de beheeromgeving van de app.",
     registerIntro:
-      "Kies het account dat bij je past en maak een profiel aan in dezelfde stijl als de rest van de app.",
+      "Maak een gratis therapeut-account aan. Je profiel blijft standaard verborgen in de therapeutenlijst totdat je later een therapeut-abonnement activeert.",
     setupIntro:
       "Beveilig je adminaccount voordat je verdergaat naar de beheeromgeving.",
-    clientDescription:
-      "Voor persoonlijke ondersteuning, opdrachten en aankopen in de app.",
     therapistDescription:
-      "Voor professionals die de app inzetten en zichtbaar willen zijn als therapeut.",
+      "Voor professionals die de app gebruiken. Dit account is gratis en staat niet automatisch in de therapeutenlijst.",
+    paidTherapistDescription:
+      "Wil je meteen met de betaalde versie starten, kies hieronder dan alvast je therapeut-abonnement. Na registratie kun je dit direct in de shop afronden.",
     registerHint:
-      "Na registratie kun je je profiel en aanvullende gegevens verder aanvullen in je account.",
+      "Na registratie kun je je profiel verder aanvullen. Kies je hieronder al een abonnement, dan kun je dat daarna meteen in de shop afronden.",
     loginFailed: "Inloggen mislukt. Controleer je gegevens en probeer opnieuw.",
-    therapistPackTitle: "Kies een therapeut-abonnement",
+    therapistPackTitle: "Startvariant",
     therapistPackUnavailable:
       "Er zijn op dit moment geen actieve therapeut-abonnementen beschikbaar.",
     therapistPackError:
-      "Het gekozen therapeut-abonnement is niet beschikbaar. Kies een actief pakket.",
-    monthlyPlan: "Maandelijks",
-    yearlyPlan: "Jaarlijks",
+      "Het gekozen therapeut-abonnement is niet beschikbaar. Kies een actief pakket of start gratis.",
+    noPlan: "Gratis account",
+    noPlanDescription:
+      "Je profiel blijft verborgen totdat je later zelf een therapeut-abonnement activeert.",
+    monthlyPlan: "Betaald maandelijks",
+    yearlyPlan: "Betaald jaarlijks",
     monthlyDescription:
-      "Geschikt als je eerst wilt starten met een kortere looptijd.",
+      "Kies dit als je direct met de maandelijkse betaalde variant wilt starten.",
     yearlyDescription:
-      "Voor langdurige zichtbaarheid en gebruik binnen het therapeut-account.",
+      "Kies dit als je direct met de jaarlijkse betaalde variant wilt starten.",
   },
   en: {
     eyebrow: "Secure access",
@@ -97,27 +104,30 @@ const AUTH_COPY: Record<
     loginIntro: "Log in to continue to your personal space in the app.",
     adminLoginIntro: "Log in to continue to the admin area of the app.",
     registerIntro:
-      "Choose the account that fits you and create a profile in the same style as the rest of the app.",
+      "Create a free therapist account. Your profile stays hidden from the therapist directory until you later activate a therapist subscription.",
     setupIntro:
       "Secure your admin account before continuing to the admin area.",
-    clientDescription:
-      "For personal support, assignments and purchases in the app.",
     therapistDescription:
-      "For professionals who use the app and want to be visible as a therapist.",
+      "For professionals who use the app. This account is free and is not listed in the therapist directory by default.",
+    paidTherapistDescription:
+      "If you want to start with the paid version right away, choose your therapist subscription below. After registration you can complete it directly in the shop.",
     registerHint:
-      "After registration you can complete your profile and add more details in your account.",
+      "After registration you can complete your profile. If you choose a subscription below, you can complete it in the shop right away afterwards.",
     loginFailed: "Login failed. Check your details and try again.",
-    therapistPackTitle: "Choose a therapist subscription",
+    therapistPackTitle: "Starting option",
     therapistPackUnavailable:
       "There are currently no active therapist subscriptions available.",
     therapistPackError:
-      "The selected therapist subscription is unavailable. Choose an active plan.",
-    monthlyPlan: "Monthly",
-    yearlyPlan: "Yearly",
+      "The selected therapist subscription is unavailable. Choose an active plan or start with the free account.",
+    noPlan: "Free account",
+    noPlanDescription:
+      "Your profile stays hidden until you activate a therapist subscription later.",
+    monthlyPlan: "Paid monthly",
+    yearlyPlan: "Paid yearly",
     monthlyDescription:
-      "A good fit if you want to start with a shorter term first.",
+      "Choose this if you want to start right away with the monthly paid option.",
     yearlyDescription:
-      "For longer-term visibility and use within the therapist account.",
+      "Choose this if you want to start right away with the yearly paid option.",
   },
   de: {
     eyebrow: "Sicherer Zugang",
@@ -127,28 +137,31 @@ const AUTH_COPY: Record<
     adminLoginIntro:
       "Melde dich an, um mit dem Adminbereich der App fortzufahren.",
     registerIntro:
-      "Wahle das passende Konto und erstelle ein Profil im gleichen Stil wie der Rest der App.",
+      "Erstelle ein kostenloses Therapeutenkonto. Dein Profil bleibt standardmaessig im Therapeutenverzeichnis verborgen, bis du spaeter ein Therapeuten-Abo aktivierst.",
     setupIntro:
       "Sichere dein Admin-Konto, bevor du zum Adminbereich weitergehst.",
-    clientDescription:
-      "Fur persoenliche Unterstutzung, Aufgaben und Einkaufe in der App.",
     therapistDescription:
-      "Fur Fachpersonen, die die App nutzen und als Therapeut sichtbar sein wollen.",
+      "Fur Fachpersonen, die die App nutzen. Dieses Konto ist kostenlos und erscheint nicht automatisch im Therapeutenverzeichnis.",
+    paidTherapistDescription:
+      "Wenn du direkt mit der bezahlten Version starten moechtest, waehle unten schon dein Therapeuten-Abo. Nach der Registrierung kannst du es sofort im Shop abschliessen.",
     registerHint:
-      "Nach der Registrierung kannst du dein Profil und weitere Angaben in deinem Konto ergaenzen.",
+      "Nach der Registrierung kannst du dein Profil weiter ergaenzen. Wenn du unten bereits ein Abo waehlen moechtest, kannst du es danach sofort im Shop abschliessen.",
     loginFailed:
       "Anmeldung fehlgeschlagen. Bitte pruefe deine Angaben und versuche es erneut.",
-    therapistPackTitle: "Therapeuten-Abo waehlen",
+    therapistPackTitle: "Startoption",
     therapistPackUnavailable:
       "Aktuell sind keine aktiven Therapeuten-Abonnements verfuegbar.",
     therapistPackError:
-      "Das gewaehlte Therapeuten-Abonnement ist nicht verfuegbar. Bitte waehle ein aktives Paket.",
-    monthlyPlan: "Monatlich",
-    yearlyPlan: "Jaehrlich",
+      "Das gewaehlte Therapeuten-Abonnement ist nicht verfuegbar. Bitte waehle ein aktives Paket oder starte kostenlos.",
+    noPlan: "Kostenloses Konto",
+    noPlanDescription:
+      "Dein Profil bleibt verborgen, bis du spaeter ein Therapeuten-Abo aktivierst.",
+    monthlyPlan: "Bezahlt monatlich",
+    yearlyPlan: "Bezahlt jaehrlich",
     monthlyDescription:
-      "Geeignet, wenn du zuerst mit einer kuerzeren Laufzeit starten moechtest.",
+      "Waehle dies, wenn du direkt mit der monatlichen bezahlten Variante starten moechtest.",
     yearlyDescription:
-      "Fuer laengere Sichtbarkeit und Nutzung innerhalb des Therapeutenkontos.",
+      "Waehle dies, wenn du direkt mit der jaehrlichen bezahlten Variante starten moechtest.",
   },
 };
 
@@ -168,14 +181,31 @@ function AuthShell({
   eyebrow,
   backLabel,
   backHref,
+  isNativeApp = false,
   maxWidthClassName = "max-w-md",
   children,
 }: AuthShellProps) {
+  const shellClassName = isNativeApp
+    ? "h-[100svh] h-[100dvh] overflow-hidden bg-[linear-gradient(180deg,#f3e4d9_0%,#efe5dc_26%,#f7f2ec_64%,#f9f7f3_100%)] px-0 pb-0 pt-0"
+    : "min-h-[100svh] min-h-[100dvh] bg-[linear-gradient(180deg,#f3e4d9_0%,#efe5dc_26%,#f7f2ec_64%,#f9f7f3_100%)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:px-6 sm:pb-6 sm:pt-6";
+  const wrapperClassName = isNativeApp
+    ? "h-full w-full"
+    : `mx-auto w-full ${maxWidthClassName}`;
+  const cardClassName = isNativeApp
+    ? "flex h-full min-h-0 w-full flex-col overflow-hidden bg-[linear-gradient(180deg,#fdfaf6_0%,#faf4ed_52%,#f7f1ea_100%)]"
+    : "overflow-hidden rounded-[2rem] border border-stone-300/70 bg-[linear-gradient(180deg,#fdfaf6_0%,#faf4ed_52%,#f7f1ea_100%)] shadow-[0_30px_80px_rgba(49,34,25,0.18)]";
+  const headerClassName = isNativeApp
+    ? "shrink-0 border-b border-stone-200/75 bg-white/80 px-4 pb-4 pt-3 backdrop-blur-sm"
+    : "border-b border-stone-200/80 px-5 pb-5 pt-5";
+  const contentClassName = isNativeApp
+    ? "min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5 sm:py-6"
+    : "px-4 py-5 sm:px-5 sm:py-6";
+
   return (
-    <div className="min-h-[100svh] min-h-[100dvh] bg-[linear-gradient(180deg,#f3e4d9_0%,#efe5dc_26%,#f7f2ec_64%,#f9f7f3_100%)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:px-6 sm:pb-6 sm:pt-6">
-      <div className={`mx-auto w-full ${maxWidthClassName}`}>
-        <div className="overflow-hidden rounded-[2rem] border border-stone-300/70 bg-[linear-gradient(180deg,#fdfaf6_0%,#faf4ed_52%,#f7f1ea_100%)] shadow-[0_30px_80px_rgba(49,34,25,0.18)]">
-          <header className="border-b border-stone-200/80 px-5 pb-5 pt-5">
+    <div className={shellClassName}>
+      <div className={wrapperClassName}>
+        <div className={cardClassName}>
+          <header className={headerClassName}>
             <div className="flex items-center gap-3">
               <div className="relative h-12 w-12 shrink-0">
                 {logoUrl ? (
@@ -222,7 +252,7 @@ function AuthShell({
             </div>
           </header>
 
-          <div className="px-4 py-5 sm:px-5 sm:py-6">{children}</div>
+          <div className={contentClassName}>{children}</div>
         </div>
       </div>
     </div>
@@ -265,7 +295,9 @@ export default async function LoginPage({
   const therapistPacks = await getActiveTherapistSubscriptionPacks();
   const params = await searchParams;
   const requestHeaders = await headers();
-  const adminRequestHost = isAdminHost(getRequestHost(requestHeaders));
+  const requestHost = getRequestHost(requestHeaders);
+  const adminRequestHost = isAdminHost(requestHost);
+  const isNativeApp = isNativeAppUserAgent(requestHeaders.get("user-agent"));
   const step = Array.isArray(params?.step) ? params?.step[0] : params?.step;
   const error = Array.isArray(params?.error) ? params?.error[0] : params?.error;
   const minutesParam = Array.isArray(params?.minutes)
@@ -290,9 +322,7 @@ export default async function LoginPage({
   const registerHref = next
     ? `/login?mode=register&next=${encodeURIComponent(next)}`
     : "/login?mode=register";
-  const therapistRegistrationAvailable = therapistPacks.length > 0;
-  const defaultTherapistPlan = therapistPacks[0]?.plan ?? "monthly";
-  const backHref = getPublicAreaUrl("/");
+  const backHref = adminRequestHost ? getPublicAreaUrl("/") : "/";
   const loginRateLimitMessage = getLoginRateLimitMessage(
     language,
     Number.isFinite(rateLimitMinutes) ? rateLimitMinutes : null
@@ -307,6 +337,7 @@ export default async function LoginPage({
         eyebrow={copy.eyebrow}
         backLabel={copy.backHome}
         backHref={backHref}
+        isNativeApp={isNativeApp}
       >
         <div className="space-y-4">
           <div className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/85 p-4 shadow-sm">
@@ -362,6 +393,7 @@ export default async function LoginPage({
         eyebrow={copy.eyebrow}
         backLabel={copy.backHome}
         backHref={backHref}
+        isNativeApp={isNativeApp}
         maxWidthClassName="max-w-3xl"
       >
         <div className="space-y-4">
@@ -404,6 +436,7 @@ export default async function LoginPage({
       eyebrow={copy.eyebrow}
       backLabel={copy.backHome}
       backHref={backHref}
+      isNativeApp={isNativeApp}
     >
       <section className="space-y-4">
         <div className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/85 p-4 shadow-sm">
@@ -459,6 +492,7 @@ export default async function LoginPage({
             className="space-y-4 rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-4 shadow-sm"
           >
             <input type="hidden" name="next" value={next || "/account"} />
+            <input type="hidden" name="account_type" value="therapist" />
 
             <div className="grid grid-cols-2 gap-3">
               <FormField label={t.firstName}>
@@ -488,130 +522,93 @@ export default async function LoginPage({
               />
             </FormField>
 
-            <div className="space-y-2">
-              <span className="block text-sm font-medium text-stone-700">
-                {t.accountType}
-              </span>
-              <input
-                id="register-account-client"
-                type="radio"
-                name="account_type"
-                value="client"
-                defaultChecked
-                className="peer/client sr-only"
-              />
-              <input
-                id="register-account-therapist"
-                type="radio"
-                name="account_type"
-                value="therapist"
-                disabled={!therapistRegistrationAvailable}
-                className="peer/therapist sr-only"
-              />
-              <div className="grid gap-3">
-                <label
-                  htmlFor="register-account-client"
-                  className="block cursor-pointer"
-                >
-                  <span className="flex rounded-[1.25rem] border border-[#e5d8ca] bg-[#fffaf6] p-4 shadow-sm transition peer-checked/client:border-[#b46b52] peer-checked/client:bg-[#fff2ea] peer-checked/client:shadow-[0_10px_24px_rgba(83,54,36,0.12)]">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f6e7dc] text-[#9a5b43]">
-                      <HeartHandshake size={20} strokeWidth={1.8} />
-                    </span>
-                    <span className="ml-3 block">
-                      <span className="block text-sm font-semibold text-stone-950">
-                        {t.accountTypeClient}
-                      </span>
-                      <span className="mt-1 block text-xs leading-5 text-[#6b5d50]">
-                        {copy.clientDescription}
-                      </span>
-                    </span>
+            <div className="rounded-[1.25rem] border border-[#e5d8ca] bg-[#fffaf6] p-4 shadow-sm">
+              <div className="flex items-start gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f6e7dc] text-[#9a5b43]">
+                  <Stethoscope size={20} strokeWidth={1.8} />
+                </span>
+                <span className="block">
+                  <span className="block text-sm font-semibold text-stone-950">
+                    {t.accountTypeTherapist}
                   </span>
-                </label>
-
-                <label
-                  htmlFor={
-                    therapistRegistrationAvailable
-                      ? "register-account-therapist"
-                      : undefined
-                  }
-                  className={`block ${
-                    therapistRegistrationAvailable
-                      ? "cursor-pointer"
-                      : "cursor-not-allowed"
-                  }`}
-                >
-                  <span
-                    className={`flex rounded-[1.25rem] border p-4 shadow-sm transition ${
-                      therapistRegistrationAvailable
-                        ? "border-[#e5d8ca] bg-[#fffaf6] peer-checked/therapist:border-[#b46b52] peer-checked/therapist:bg-[#fff2ea] peer-checked/therapist:shadow-[0_10px_24px_rgba(83,54,36,0.12)]"
-                        : "border-[#eadfce] bg-[#f8f2eb] opacity-60"
-                    }`}
-                  >
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f6e7dc] text-[#9a5b43]">
-                      <Stethoscope size={20} strokeWidth={1.8} />
-                    </span>
-                    <span className="ml-3 block">
-                      <span className="block text-sm font-semibold text-stone-950">
-                        {t.accountTypeTherapist}
-                      </span>
-                      <span className="mt-1 block text-xs leading-5 text-[#6b5d50]">
-                        {therapistRegistrationAvailable
-                          ? copy.therapistDescription
-                          : copy.therapistPackUnavailable}
-                      </span>
-                    </span>
+                  <span className="mt-1 block text-xs leading-5 text-[#6b5d50]">
+                    {copy.therapistDescription}
                   </span>
-                </label>
+                </span>
               </div>
+            </div>
 
-              {therapistRegistrationAvailable ? (
-                <div className="hidden rounded-[1.25rem] border border-[#e5d8ca] bg-[#fffaf6] p-4 shadow-sm peer-checked/therapist:block">
-                  <div className="flex items-center gap-2 text-[#6f5949]">
-                    <ShieldCheck size={16} strokeWidth={1.8} />
-                    <span className="text-xs font-medium uppercase tracking-[0.22em] text-[#6f5949]">
-                      {copy.therapistPackTitle}
+            <div className="rounded-[1.25rem] border border-[#e5d8ca] bg-[#fffaf6] p-4 shadow-sm">
+              <div className="flex items-center gap-2 text-[#6f5949]">
+                <ShieldCheck size={16} strokeWidth={1.8} />
+                <span className="text-xs font-medium uppercase tracking-[0.22em] text-[#6f5949]">
+                  {copy.therapistPackTitle}
+                </span>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-[#6b5d50]">
+                {copy.paidTherapistDescription}
+              </p>
+
+              {therapistPacks.length ? (
+                <div className="mt-4 grid gap-3">
+                  <label className="block cursor-pointer">
+                    <input
+                      type="radio"
+                      name="therapist_plan"
+                      value=""
+                      defaultChecked
+                      className="peer sr-only"
+                    />
+                    <span className="flex rounded-[1.1rem] border border-[#e5d8ca] bg-white p-4 shadow-sm transition peer-checked:border-[#b46b52] peer-checked:bg-[#fff2ea] peer-checked:shadow-[0_10px_24px_rgba(83,54,36,0.12)]">
+                      <span className="block flex-1">
+                        <span className="block text-sm font-semibold text-stone-950">
+                          {copy.noPlan}
+                        </span>
+                        <span className="mt-2 block text-xs leading-5 text-[#6b5d50]">
+                          {copy.noPlanDescription}
+                        </span>
+                      </span>
                     </span>
-                  </div>
+                  </label>
 
-                  <div className="mt-3 grid gap-3">
-                    {therapistPacks.map((pack, index) => (
-                      <label key={pack.id} className="block cursor-pointer">
-                        <input
-                          type="radio"
-                          name="therapist_plan"
-                          value={pack.plan}
-                          defaultChecked={
-                            pack.plan === defaultTherapistPlan && index === 0
-                          }
-                          className="peer sr-only"
-                        />
-                        <span className="flex rounded-[1.1rem] border border-[#e5d8ca] bg-white p-4 shadow-sm transition peer-checked:border-[#b46b52] peer-checked:bg-[#fff2ea] peer-checked:shadow-[0_10px_24px_rgba(83,54,36,0.12)]">
-                          <span className="block flex-1">
-                            <span className="block text-sm font-semibold text-stone-950">
-                              {pack.name}
-                            </span>
-                            <span className="mt-1 block text-xs uppercase tracking-[0.18em] text-[#8a5f49]">
-                              {pack.plan === "monthly"
-                                ? copy.monthlyPlan
-                                : copy.yearlyPlan}
-                            </span>
-                            <span className="mt-2 block text-xs leading-5 text-[#6b5d50]">
-                              {pack.plan === "monthly"
-                                ? copy.monthlyDescription
-                                : copy.yearlyDescription}
-                            </span>
+                  {therapistPacks.map((pack) => (
+                    <label key={pack.id} className="block cursor-pointer">
+                      <input
+                        type="radio"
+                        name="therapist_plan"
+                        value={pack.plan}
+                        className="peer sr-only"
+                      />
+                      <span className="flex rounded-[1.1rem] border border-[#e5d8ca] bg-white p-4 shadow-sm transition peer-checked:border-[#b46b52] peer-checked:bg-[#fff2ea] peer-checked:shadow-[0_10px_24px_rgba(83,54,36,0.12)]">
+                        <span className="block flex-1">
+                          <span className="block text-sm font-semibold text-stone-950">
+                            {pack.name}
                           </span>
-                          <span className="ml-4 shrink-0 text-right">
-                            <span className="block text-base font-semibold text-stone-950">
-                              {formatMoney(pack.price_cents, pack.currency)}
-                            </span>
+                          <span className="mt-1 block text-xs uppercase tracking-[0.18em] text-[#8a5f49]">
+                            {pack.plan === "monthly"
+                              ? copy.monthlyPlan
+                              : copy.yearlyPlan}
+                          </span>
+                          <span className="mt-2 block text-xs leading-5 text-[#6b5d50]">
+                            {pack.plan === "monthly"
+                              ? copy.monthlyDescription
+                              : copy.yearlyDescription}
                           </span>
                         </span>
-                      </label>
-                    ))}
-                  </div>
+                        <span className="ml-4 shrink-0 text-right">
+                          <span className="block text-base font-semibold text-stone-950">
+                            {formatMoney(pack.price_cents, pack.currency)}
+                          </span>
+                        </span>
+                      </span>
+                    </label>
+                  ))}
                 </div>
-              ) : null}
+              ) : (
+                <p className="mt-4 rounded-[1rem] border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  {copy.therapistPackUnavailable}
+                </p>
+              )}
             </div>
 
             {hasRegisterError || hasTherapistPackError ? (
