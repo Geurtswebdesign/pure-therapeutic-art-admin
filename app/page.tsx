@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
-import { isSupabaseStorageUrl } from "@/lib/images/isSupabaseStorageUrl";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { getHomepageCategories } from "@/lib/content/public-queries";
@@ -86,21 +85,45 @@ function getInitials(name: string) {
     .join("");
 }
 
+async function getSafeProfile(userId: string): Promise<ProfileRow | null> {
+  try {
+    const supabaseAdmin = createAdminClient();
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("display_name, profile_data")
+      .eq("user_id", userId)
+      .maybeSingle<ProfileRow>();
+
+    if (error) {
+      console.error("[Home] profile", error);
+      return null;
+    }
+
+    return data ?? null;
+  } catch (error) {
+    console.error("[Home] profile", error);
+    return null;
+  }
+}
+
+async function getSafeHomepageCategories() {
+  try {
+    return await getHomepageCategories(50, { homepageOnly: true });
+  } catch (error) {
+    console.error("[Home] homepage categories", error);
+    return [];
+  }
+}
+
 export default async function Home() {
   const language = resolveUiLanguage(await getAppLanguage());
   const t = getAppMessages(language).home;
   const user = await getCurrentUser();
-  const supabaseAdmin = createAdminClient();
 
-  let profile: ProfileRow | null = null;
-  if (user) {
-    const { data } = await supabaseAdmin
-      .from("profiles")
-      .select("display_name, profile_data")
-      .eq("user_id", user.id)
-      .maybeSingle<ProfileRow>();
-    profile = data ?? null;
-  }
+  const [profile, categories] = await Promise.all([
+    user ? getSafeProfile(user.id) : Promise.resolve<ProfileRow | null>(null),
+    getSafeHomepageCategories(),
+  ]);
 
   const displayName =
     profile?.display_name ??
@@ -116,7 +139,6 @@ export default async function Home() {
     "";
   const motivationalText =
     "Mooi dat je er bent. Pak een moment voor jezelf en zet vandaag een kleine stap.";
-  const categories = await getHomepageCategories(50, { homepageOnly: true });
   return (
     <PublicAppShell activeTab="home" subtitle="Rust, groei en troost">
       <section className="space-y-4">
@@ -186,20 +208,20 @@ export default async function Home() {
                 href={`/content?category=${category.slug}`}
                 className={`group flex h-full min-h-[260px] flex-col rounded-[1.5rem] p-3 text-center shadow-sm transition hover:-translate-y-0.5 ${style.cardClass}`}
               >
-                <div className="relative mx-auto mb-3 h-20 w-20">
+                <div className="relative mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-white p-2 shadow-[0_10px_28px_rgba(18,20,26,0.14)]">
                   {category.featured_image_url ? (
                     <Image
                       src={category.featured_image_url}
                       alt={category.featured_image_alt || category.name}
-                      width={80}
-                      height={80}
+                      width={64}
+                      height={64}
                       sizes="80px"
-                      unoptimized={!isSupabaseStorageUrl(category.featured_image_url)}
-                      className="h-20 w-20 rounded-full object-cover shadow-[0_10px_28px_rgba(18,20,26,0.14)]"
+                      unoptimized
+                      className="h-16 w-16 rounded-full object-cover"
                     />
                   ) : (
                     <div
-                      className={`h-20 w-20 rounded-full shadow-[0_10px_28px_rgba(18,20,26,0.14)] ${style.orbClass}`}
+                      className={`h-16 w-16 rounded-full ${style.orbClass}`}
                     />
                   )}
                 </div>

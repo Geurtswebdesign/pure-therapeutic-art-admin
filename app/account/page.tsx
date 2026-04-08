@@ -860,7 +860,7 @@ export default async function AccountPage({
                 name="email"
                 type="email"
                 required
-                className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none focus:border-[#b64040]"
+                className="w-full rounded-xl border border-stone-300 px-3 py-2 text-base outline-none focus:border-[#b64040] sm:text-sm"
               />
             </div>
 
@@ -872,7 +872,7 @@ export default async function AccountPage({
                 name="password"
                 type="password"
                 required
-                className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none focus:border-[#b64040]"
+                className="w-full rounded-xl border border-stone-300 px-3 py-2 text-base outline-none focus:border-[#b64040] sm:text-sm"
               />
             </div>
 
@@ -1005,7 +1005,7 @@ export default async function AccountPage({
   const showPublicDirectoryHint =
     userAccountType === "therapist" &&
     !therapistProfile.public_profile_enabled &&
-    therapistSubscription.status !== "ended";
+    therapistSubscription.status === "active";
 
   const themeItems = progressCollections.themes.map((theme) => {
     const progressPercent = theme.totalChapterCount
@@ -1073,7 +1073,7 @@ export default async function AccountPage({
           ? trajectoryT.chapterSingular
           : trajectoryT.chapterPlural
       }`,
-      openByDefault: theme.inProgressChapterCount > 0,
+      openByDefault: false,
       chapters: themeChapters,
     };
   });
@@ -1140,6 +1140,9 @@ export default async function AccountPage({
             <AccountProfileForm
               userId={user.id}
               accountType={userAccountType}
+              hasTherapistDirectoryAccess={
+                therapistSubscription.status === "active"
+              }
               initialDisplayName={displayName}
               initialBio={bio}
               initialFirstName={firstName}

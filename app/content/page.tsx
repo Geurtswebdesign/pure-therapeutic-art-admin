@@ -87,6 +87,15 @@ function formatCategoryLabel(slug: string) {
     .join(" ");
 }
 
+async function getSafeHomepageCategories() {
+  try {
+    return await getHomepageCategories(200);
+  } catch (error) {
+    console.error("[ContentIndexPage] categories", error);
+    return [];
+  }
+}
+
 export default async function ContentIndexPage({
   searchParams,
 }: {
@@ -98,7 +107,7 @@ export default async function ContentIndexPage({
   const categorySlug = Array.isArray(params?.category)
     ? params?.category[0]
     : params?.category;
-  const categories = await getHomepageCategories(200);
+  const categories = await getSafeHomepageCategories();
   const activeCategory = categorySlug
     ? categories.find((category) => category.slug === categorySlug) ?? null
     : null;

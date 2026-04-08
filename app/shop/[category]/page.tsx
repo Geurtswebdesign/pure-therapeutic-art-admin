@@ -1,6 +1,6 @@
 import type { CreditScope } from "@/components/shop/ShopCatalog";
 import { notFound } from "next/navigation";
-import { BookOpenText, Coins, Download, Puzzle } from "lucide-react";
+import { BookOpenText, Coins, Download, Puzzle, Stethoscope } from "lucide-react";
 import HistoryBackButton from "@/components/public/HistoryBackButton";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import {
@@ -9,12 +9,19 @@ import {
   DetailList,
   getCreditShopData,
   ProductDetailCard,
+  TherapistSubscriptionDetailCard,
   YearSubscriptionDetailCard,
 } from "@/components/shop/ShopCatalog";
+import { getCurrentUser } from "@/lib/auth/getCurrentUser";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getCreditPackPurchaseMode } from "@/lib/iap/credit-pack-purchase-mode";
 import {
   getPublicCatalogItemsByCategory,
   getPublicShopCatalog,
 } from "@/lib/shop/catalog";
+import { getActiveTherapistSubscriptionPacks } from "@/lib/users/therapistSubscriptionPacks";
+import { getTherapistDirectoryAccessState } from "@/lib/users/therapistDirectoryAccess";
 
 const CATEGORY_CONFIG = {
   credits: {
@@ -143,6 +150,20 @@ export default async function ShopCategoryPage({
     category === "credits"
       ? await getCreditShopData(creditScope)
       : { creditPacks: [], yearSubscriptionPack: null };
+  const user = category === "credits" ? await getCurrentUser() : null;
+  const therapistDirectoryAccess =
+    category === "credits" && user
+      ? await getTherapistDirectoryAccessState(user.id)
+      : null;
+  const therapistSubscriptionPacks =
+    therapistDirectoryAccess?.shouldShowTherapistSubscriptionShopOption
+      ? await getActiveTherapistSubscriptionPacks()
+      : [];
+  const language = resolveUiLanguage(
+    category === "credits" ? await getAppLanguage() : "nl"
+  );
+  const creditPackPurchaseMode =
+    category === "credits" ? getCreditPackPurchaseMode() : "disabled";
   const { creditPacks, yearSubscriptionPack } = creditShopData;
   const catalog = await getPublicShopCatalog();
   const categoryItems =
@@ -172,6 +193,25 @@ export default async function ShopCategoryPage({
           </p>
         </div>
 
+        {category === "credits" && therapistSubscriptionPacks.length ? (
+          <div id="therapeut-abonnement">
+            <DetailList icon={Stethoscope} title="Therapeutenabonnement">
+              <div className="space-y-4">
+                <p className="max-w-sm text-sm leading-6 text-[#6b5d50]">
+                  Met dit abonnement kun je je gratis therapeut-account
+                  uitbreiden zodat je profiel zichtbaar kan worden in de
+                  therapeutenlijst.
+                </p>
+                <div className="grid gap-3">
+                  {therapistSubscriptionPacks.map((pack) => (
+                    <TherapistSubscriptionDetailCard key={pack.id} pack={pack} />
+                  ))}
+                </div>
+              </div>
+            </DetailList>
+          </div>
+        ) : null}
+
         <DetailList icon={config.icon} title={config.listTitle}>
           {category === "credits" ? (
             creditPacks.length || yearSubscriptionPack ? (
@@ -182,7 +222,13 @@ export default async function ShopCategoryPage({
                 {creditPacks.length ? (
                   <div className="grid gap-3">
                     {creditPacks.map((pack) => (
-                      <CreditPackDetailCard key={pack.id} pack={pack} />
+                      <CreditPackDetailCard
+                        key={pack.id}
+                        pack={pack}
+                        isLoggedIn={Boolean(user)}
+                        language={language}
+                        purchaseMode={creditPackPurchaseMode}
+                      />
                     ))}
                   </div>
                 ) : null}

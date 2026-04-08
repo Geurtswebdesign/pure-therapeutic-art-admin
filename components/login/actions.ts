@@ -17,9 +17,7 @@ import {
   isAdminHost,
   getServerCookieOptions,
 } from "@/lib/site/urls";
-import {
-  getActiveTherapistSubscriptionPack,
-} from "@/lib/users/therapistSubscriptionPacks";
+import { getActiveTherapistSubscriptionPack } from "@/lib/users/therapistSubscriptionPacks";
 import type { TherapistSubscriptionPlan } from "@/lib/users/entitlements";
 
 async function maybeSendSecurityAlert(input: {
@@ -96,14 +94,18 @@ async function maybeSendSecurityAlert(input: {
   }
 }
 
-function resolveFrontendAccountType(value: string): UserAccountType {
-  return value === "therapist" ? "therapist" : "client";
+function resolveFrontendAccountType(): UserAccountType {
+  return "therapist";
 }
 
 function resolveTherapistSubscriptionPlan(
   value: string
-): TherapistSubscriptionPlan {
-  return value === "yearly" ? "yearly" : "monthly";
+): TherapistSubscriptionPlan | null {
+  if (value === "monthly" || value === "yearly") {
+    return value;
+  }
+
+  return null;
 }
 
 export async function registerAccount(formData: FormData) {
@@ -112,28 +114,28 @@ export async function registerAccount(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   const requestedNext = String(formData.get("next") ?? "").trim();
-  const accountType = resolveFrontendAccountType(
-    String(formData.get("account_type") ?? "client").trim()
-  );
+  const accountType = resolveFrontendAccountType();
   const therapistPlan = resolveTherapistSubscriptionPlan(
-    String(formData.get("therapist_plan") ?? "monthly").trim()
+    String(formData.get("therapist_plan") ?? "").trim()
   );
   const displayName = [firstName, lastName].filter(Boolean).join(" ").trim();
+  const defaultNext = therapistPlan
+    ? "/shop/credits#therapeut-abonnement"
+    : "/account";
   const safeNext =
     requestedNext.startsWith("/") && !requestedNext.startsWith("//")
       ? requestedNext
-      : "/account";
+      : defaultNext;
 
   if (!firstName || !lastName || !email || password.length < 8) {
     redirect("/login?mode=register&error=register");
   }
 
-  const selectedTherapistPack =
-    accountType === "therapist"
-      ? await getActiveTherapistSubscriptionPack(therapistPlan)
-      : null;
+  const selectedTherapistPack = therapistPlan
+    ? await getActiveTherapistSubscriptionPack(therapistPlan)
+    : null;
 
-  if (accountType === "therapist" && !selectedTherapistPack) {
+  if (therapistPlan && !selectedTherapistPack) {
     redirect("/login?mode=register&error=therapist-pack");
   }
 
@@ -143,10 +145,7 @@ export async function registerAccount(formData: FormData) {
   await logServerEvent({
     eventName: "register_submit",
     eventCategory: "auth",
-    eventLabel:
-      accountType === "therapist"
-        ? `therapist:${therapistPlan}`
-        : accountType,
+    eventLabel: therapistPlan ? `therapist:${therapistPlan}` : "therapist:free",
     path: "/login",
   });
 
@@ -180,18 +179,17 @@ export async function registerAccount(formData: FormData) {
         first_name: firstName,
         last_name: lastName,
         account_type: accountType,
-        therapist_subscription_preference:
-          accountType === "therapist" && selectedTherapistPack
-            ? {
-                plan: selectedTherapistPack.plan,
-                pack_id: selectedTherapistPack.id,
-                pack_slug: selectedTherapistPack.slug,
-                pack_name: selectedTherapistPack.name,
-                amount_cents: selectedTherapistPack.price_cents,
-                currency: selectedTherapistPack.currency,
-                selected_at: new Date().toISOString(),
-              }
-            : null,
+        therapist_subscription_preference: selectedTherapistPack
+          ? {
+              plan: selectedTherapistPack.plan,
+              pack_id: selectedTherapistPack.id,
+              pack_slug: selectedTherapistPack.slug,
+              pack_name: selectedTherapistPack.name,
+              amount_cents: selectedTherapistPack.price_cents,
+              currency: selectedTherapistPack.currency,
+              selected_at: new Date().toISOString(),
+            }
+          : null,
       },
     },
     { onConflict: "user_id" }
@@ -219,10 +217,7 @@ export async function registerAccount(formData: FormData) {
   await logServerEvent({
     eventName: "register_success",
     eventCategory: "auth",
-    eventLabel:
-      accountType === "therapist"
-        ? `therapist:${therapistPlan}`
-        : accountType,
+    eventLabel: therapistPlan ? `therapist:${therapistPlan}` : "therapist:free",
     path: "/login",
   });
 

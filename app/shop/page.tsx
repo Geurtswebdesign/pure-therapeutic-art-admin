@@ -1,4 +1,4 @@
-import { BookOpenText, Coins, Download, Puzzle } from "lucide-react";
+import { BookOpenText, Coins, Download, Puzzle, Stethoscope } from "lucide-react";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import {
   AssignmentCreditsEmptyState,
@@ -7,18 +7,30 @@ import {
   ProductPreviewCard,
   SectionFooterLink,
   SectionHeader,
+  TherapistSubscriptionPreviewCard,
   YearSubscriptionPreviewCard,
 } from "@/components/shop/ShopCatalog";
+import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import {
   getPublicCatalogItemsByCategory,
   getPublicShopCatalog,
 } from "@/lib/shop/catalog";
+import { getActiveTherapistSubscriptionPacks } from "@/lib/users/therapistSubscriptionPacks";
+import { getTherapistDirectoryAccessState } from "@/lib/users/therapistDirectoryAccess";
 
 export const dynamic = "force-dynamic";
 
 export default async function ShopPage() {
   const { creditPacks, yearSubscriptionPack } =
     await getAssignmentCreditShopData();
+  const user = await getCurrentUser();
+  const therapistDirectoryAccess = user
+    ? await getTherapistDirectoryAccessState(user.id)
+    : null;
+  const therapistSubscriptionPacks =
+    therapistDirectoryAccess?.shouldShowTherapistSubscriptionShopOption
+      ? await getActiveTherapistSubscriptionPacks()
+      : [];
   const catalog = await getPublicShopCatalog();
   const books = getPublicCatalogItemsByCategory(catalog, "boeken");
   const ebooks = getPublicCatalogItemsByCategory(catalog, "ebooks");
@@ -57,6 +69,27 @@ export default async function ShopPage() {
           )}
           <SectionFooterLink href="/shop/credits" />
         </section>
+
+        {therapistSubscriptionPacks.length ? (
+          <section className="space-y-4">
+            <SectionHeader
+              icon={Stethoscope}
+              title="Therapeutenabonnement"
+              href="/shop/credits#therapeut-abonnement"
+            />
+            <p className="max-w-sm text-sm leading-6 text-[#6b5d50]">
+              Voor therapeuten met een gratis account die hun profiel zichtbaar
+              willen maken in de therapeutenlijst. Zodra het abonnement actief
+              is, kun je in je profiel kiezen om openbaar te worden.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {therapistSubscriptionPacks.map((pack) => (
+                <TherapistSubscriptionPreviewCard key={pack.id} pack={pack} />
+              ))}
+            </div>
+            <SectionFooterLink href="/shop/credits#therapeut-abonnement" />
+          </section>
+        ) : null}
 
         <section className="space-y-4">
           <SectionHeader icon={BookOpenText} title="Boeken" href="/shop/boeken" />

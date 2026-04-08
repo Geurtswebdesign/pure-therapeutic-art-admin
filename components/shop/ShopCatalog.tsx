@@ -4,12 +4,20 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight, ExternalLink, Image as ImageIcon } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { CreditPackPurchaseMode } from "@/lib/iap/credit-pack-purchase-mode";
+import {
+  getCreditPackStoreProducts,
+  getDefaultCreditPackStoreProductId,
+} from "@/lib/iap/credit-pack-products";
 import { isTherapistSubscriptionPackSlug } from "@/lib/users/entitlements";
+import type { TherapistSubscriptionPackOption } from "@/lib/users/therapistSubscriptionPacks";
 import {
   getCatalogItemPath,
   isCatalogItemInDevelopment,
   type CatalogItem,
 } from "@/lib/shop/catalog";
+import type { UiLanguage } from "@/lib/i18n/runtime";
+import NativeCreditPackPurchaseButton from "@/components/shop/NativeCreditPackPurchaseButton";
 
 export type CreditScope = "assignment" | "book" | "game" | "referral";
 
@@ -24,6 +32,8 @@ export type CreditPack = {
   currency: string;
   is_active: boolean;
   sort_order: number;
+  appleStoreProductId?: string;
+  googleStoreProductId?: string;
 };
 
 type AssignmentCreditShopData = {
@@ -59,14 +69,32 @@ export async function getCreditShopData(
       return true;
     });
 
+    const storeProducts = await getCreditPackStoreProducts(
+      rows.map((pack) => pack.id)
+    );
+
+    const rowsWithStoreProducts = rows.map((pack) => {
+      const mappedProducts = storeProducts.get(pack.id);
+      const fallbackStoreProductId = getDefaultCreditPackStoreProductId(pack);
+
+      return {
+        ...pack,
+        appleStoreProductId:
+          mappedProducts?.appleStoreProductId ?? fallbackStoreProductId ?? "",
+        googleStoreProductId:
+          mappedProducts?.googleStoreProductId ?? fallbackStoreProductId ?? "",
+      } satisfies CreditPack;
+    });
+
     return {
       creditPacks:
         scope === "assignment"
-          ? rows.filter((pack) => pack.slug !== "jaarabonnement")
-          : rows,
+          ? rowsWithStoreProducts.filter((pack) => pack.slug !== "jaarabonnement")
+          : rowsWithStoreProducts,
       yearSubscriptionPack:
         scope === "assignment"
-          ? rows.find((pack) => pack.slug === "jaarabonnement") ?? null
+          ? rowsWithStoreProducts.find((pack) => pack.slug === "jaarabonnement") ??
+            null
           : null,
     };
   } catch {
@@ -176,13 +204,42 @@ export function getPackSupportLabel(pack: CreditPack): ReactNode {
   if (total <= 150) return "Plus pakket";
   return "Voordeel pakket";
 }
-
 export function getYearSubscriptionTitle(pack: CreditPack) {
   return pack.name?.trim() || "Jaarabonnement";
 }
 
 export function getYearSubscriptionDescription() {
   return "12 maanden toegang tot alle opdrachten in de app. Tijdens een actief abonnement heb je geen losse opdrachtcredits nodig.";
+}
+
+function getTherapistSubscriptionMonths(
+  pack: TherapistSubscriptionPackOption
+) {
+  return pack.plan === "monthly" ? 1 : 12;
+}
+
+function getTherapistSubscriptionDurationLabel(
+  pack: TherapistSubscriptionPackOption
+) {
+  return getTherapistSubscriptionMonths(pack) === 1 ? "maand" : "maanden";
+}
+
+function getTherapistSubscriptionDescription(
+  pack: TherapistSubscriptionPackOption
+) {
+  if (pack.plan === "monthly") {
+    return "Voor therapeuten die eerst laagdrempelig zichtbaar willen worden in de therapeutenlijst.";
+  }
+
+  return "Voor therapeuten die hun profiel langdurig zichtbaar willen maken in de therapeutenlijst.";
+}
+
+function getTherapistSubscriptionSupportText() {
+  return "Zodra het abonnement actief is, kun je in je account aangeven dat je profiel zichtbaar mag worden in de therapeutenlijst.";
+}
+
+function formatTherapistSubscriptionPrice(pack: TherapistSubscriptionPackOption) {
+  return formatMoney(pack.price_cents / 100, pack.currency || "EUR");
 }
 
 export function SectionHeader({
@@ -466,7 +523,17 @@ export function CreditPreviewCard({ pack }: { pack: CreditPack }) {
   );
 }
 
-export function CreditPackDetailCard({ pack }: { pack: CreditPack }) {
+export function CreditPackDetailCard({
+  pack,
+  isLoggedIn = false,
+  language = "nl",
+  purchaseMode = "disabled",
+}: {
+  pack: CreditPack;
+  isLoggedIn?: boolean;
+  language?: UiLanguage;
+  purchaseMode?: CreditPackPurchaseMode;
+}) {
   const total = getPackCount(pack);
   const isMostChosen = isMostChosenPack(pack);
 
@@ -508,6 +575,16 @@ export function CreditPackDetailCard({ pack }: { pack: CreditPack }) {
             <p className="text-xs leading-5 text-[#6f6154]">
               {getPackDescription(pack)}
             </p>
+            {purchaseMode === "native_store" ? (
+              <div className="mt-3">
+                <NativeCreditPackPurchaseButton
+                  appleStoreProductId={pack.appleStoreProductId ?? ""}
+                  googleStoreProductId={pack.googleStoreProductId ?? ""}
+                  isLoggedIn={isLoggedIn}
+                  language={language}
+                />
+              </div>
+            ) : null}
           </div>
           <span className="shrink-0 rounded-full border border-[#ead6c6] bg-[#fcf6f1] px-2.5 py-1 text-xs font-medium text-[#8a5f49]">
             {formatPackPrice(pack)}
@@ -579,6 +656,91 @@ export function YearSubscriptionDetailCard({ pack }: { pack: CreditPack }) {
           </div>
           <p className="text-xs leading-5 text-[#6f6154]">
             {getYearSubscriptionDescription()}
+          </p>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export function TherapistSubscriptionPreviewCard({
+  pack,
+}: {
+  pack: TherapistSubscriptionPackOption;
+}) {
+  const months = getTherapistSubscriptionMonths(pack);
+
+  return (
+    <article className="rounded-[1.45rem] border border-[#e5d8ca] bg-[linear-gradient(135deg,#f7f1ea_0%,#efe6db_52%,#fcf8f4_100%)] p-4 shadow-[0_16px_30px_rgba(57,41,28,0.08)]">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7b6e61]">
+            Therapeutenlijst
+          </div>
+          <h3 className="mt-2 font-serif text-2xl leading-none text-stone-950">
+            {months} {getTherapistSubscriptionDurationLabel(pack)}
+          </h3>
+          <p className="mt-2 text-sm font-medium text-stone-900">
+            Profiel zichtbaar maken
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full border border-[#ead6c6] bg-white/90 px-2.5 py-1 text-xs font-medium text-[#8a5f49]">
+          {formatTherapistSubscriptionPrice(pack)}
+        </span>
+      </div>
+      <div className="mt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8b6c5c]">
+        {pack.name}
+      </div>
+      <p className="mt-2 text-xs leading-5 text-[#6f6154]">
+        {getTherapistSubscriptionDescription(pack)}
+      </p>
+    </article>
+  );
+}
+
+export function TherapistSubscriptionDetailCard({
+  pack,
+}: {
+  pack: TherapistSubscriptionPackOption;
+}) {
+  const months = getTherapistSubscriptionMonths(pack);
+
+  return (
+    <article className="rounded-[1.5rem] border border-[#e5d8ca] bg-[linear-gradient(135deg,#f7f1ea_0%,#efe6db_52%,#fcf8f4_100%)] p-4 shadow-[0_16px_30px_rgba(57,41,28,0.08)]">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7b6e61]">
+            Therapeutenabonnement
+          </div>
+          <h4 className="mt-2 font-serif text-[1.8rem] leading-none text-stone-950">
+            {pack.name}
+          </h4>
+        </div>
+        <span className="shrink-0 rounded-full border border-[#ead6c6] bg-white/90 px-2.5 py-1 text-xs font-medium text-[#8a5f49]">
+          {formatTherapistSubscriptionPrice(pack)}
+        </span>
+      </div>
+      <div className="mt-4 grid grid-cols-[96px_1fr] gap-3">
+        <div className="rounded-[1.1rem] bg-white/75 px-2 py-3 text-center">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#7d6e63]">
+            Duur
+          </div>
+          <div className="mt-2 text-xl font-semibold leading-none text-stone-950">
+            {months}
+          </div>
+          <div className="mt-1 text-[11px] text-stone-600">
+            {getTherapistSubscriptionDurationLabel(pack)}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8b6c5c]">
+            Therapeutenlijst
+          </div>
+          <p className="text-xs leading-5 text-[#6f6154]">
+            {getTherapistSubscriptionDescription(pack)}
+          </p>
+          <p className="text-xs leading-5 text-[#6f6154]">
+            {getTherapistSubscriptionSupportText()}
           </p>
         </div>
       </div>

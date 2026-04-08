@@ -13,6 +13,7 @@
     "start:standalone": "node server.cjs",
     "lint": "eslint",
     "native:prepare": "node scripts/prepare_capacitor_shell.mjs",
+    "native:icons": "node scripts/generate_native_app_icons.mjs",
     "native:add:ios": "npm run native:prepare && cap add ios",
     "native:add:android": "npm run native:prepare && cap add android",
     "native:copy": "npm run native:prepare && cap copy",

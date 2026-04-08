@@ -17,19 +17,27 @@ export const getAppLanguage = cache(async (): Promise<string> => {
   const user = await getCurrentUser();
 
   if (user) {
-    const supabase = createAdminClient();
-    const { data } = await supabase
-      .from("profiles")
-      .select("profile_data")
-      .eq("user_id", user.id)
-      .maybeSingle<ProfileLanguageRow>();
+    try {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("profile_data")
+        .eq("user_id", user.id)
+        .maybeSingle<ProfileLanguageRow>();
 
-    const preferredLanguage = data?.profile_data?.preferred_language;
-    if (typeof preferredLanguage === "string" && preferredLanguage.trim()) {
-      const code = normalizeLanguageCode(preferredLanguage);
-      if (isKnownLanguage(code)) {
-        return code;
+      if (error) {
+        console.error("[getAppLanguage]", error);
+      } else {
+        const preferredLanguage = data?.profile_data?.preferred_language;
+        if (typeof preferredLanguage === "string" && preferredLanguage.trim()) {
+          const code = normalizeLanguageCode(preferredLanguage);
+          if (isKnownLanguage(code)) {
+            return code;
+          }
+        }
       }
+    } catch (error) {
+      console.error("[getAppLanguage]", error);
     }
   }
 

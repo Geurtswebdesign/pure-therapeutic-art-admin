@@ -14,8 +14,10 @@ function getAllowedDevOrigins() {
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  devIndicators: false,
   allowedDevOrigins: getAllowedDevOrigins(),
   images: {
+    unoptimized: process.env.NODE_ENV === "development",
     remotePatterns: [
       {
         protocol: "https",
@@ -23,7 +25,7 @@ const nextConfig: NextConfig = {
         pathname: "/storage/v1/object/public/**",
       },
     ],
-    formats: ["image/avif", "image/webp"],
+    formats: ["image/webp"],
   },
 };
 

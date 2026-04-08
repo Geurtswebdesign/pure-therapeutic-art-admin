@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { updateMyProfile } from "@/app/account/actions";
@@ -16,6 +17,7 @@ import { THERAPIST_PROFILE_OPTION_SETS } from "@/lib/users/therapistProfileOptio
 type Props = {
   userId: string;
   accountType: UserAccountType;
+  hasTherapistDirectoryAccess: boolean;
   initialDisplayName: string;
   initialBio: string;
   initialFirstName: string;
@@ -30,6 +32,7 @@ type Props = {
 export default function AccountProfileForm({
   userId,
   accountType,
+  hasTherapistDirectoryAccess,
   initialDisplayName,
   initialBio,
   initialFirstName,
@@ -45,6 +48,23 @@ export default function AccountProfileForm({
   const t = messages.accountProfile;
   const general = messages.userGeneral;
   const therapist = initialTherapistProfile;
+  const directoryAccessCopy = {
+    nl: {
+      description:
+        "Je gratis therapeut-account blijft verborgen in de therapeutenlijst. Neem in de shop eerst een therapeut-abonnement als je dit profiel zichtbaar wilt kunnen maken.",
+      cta: "Bekijk therapeut-abonnementen",
+    },
+    en: {
+      description:
+        "Your free therapist account stays hidden from the therapist directory. Take a therapist subscription in the shop first if you want to make this profile visible.",
+      cta: "View therapist subscriptions",
+    },
+    de: {
+      description:
+        "Dein kostenloses Therapeutenkonto bleibt im Therapeutenverzeichnis verborgen. Schliesse zuerst im Shop ein Therapeuten-Abo ab, wenn du dieses Profil sichtbar machen moechtest.",
+      cta: "Therapeuten-Abos ansehen",
+    },
+  }[language];
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
   const [displayName, setDisplayName] = useState(initialDisplayName);
@@ -52,7 +72,9 @@ export default function AccountProfileForm({
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
   const bio = initialBio;
   const [publicDirectory, setPublicDirectory] = useState(
-    therapist?.public_profile_enabled ?? false
+    hasTherapistDirectoryAccess
+      ? therapist?.public_profile_enabled ?? false
+      : false
   );
   const [professionalTitle, setProfessionalTitle] = useState(
     therapist?.professional_title ?? ""
@@ -131,7 +153,11 @@ export default function AccountProfileForm({
     setDisplayName(initialDisplayName);
     setWebsite(initialWebsite);
     setAvatarUrl(initialAvatarUrl);
-    setPublicDirectory(therapist?.public_profile_enabled ?? false);
+    setPublicDirectory(
+      hasTherapistDirectoryAccess
+        ? therapist?.public_profile_enabled ?? false
+        : false
+    );
     setProfessionalTitle(therapist?.professional_title ?? "");
     setShortIntro(therapist?.short_intro ?? "");
     setPracticeName(therapist?.practice_name ?? "");
@@ -171,7 +197,9 @@ export default function AccountProfileForm({
           therapistProfile:
             accountType === "therapist"
               ? {
-                  public_profile_enabled: publicDirectory,
+                  public_profile_enabled: hasTherapistDirectoryAccess
+                    ? publicDirectory
+                    : false,
                   professional_title: professionalTitle,
                   short_intro: shortIntro,
                   practice_name: practiceName,
@@ -310,19 +338,34 @@ export default function AccountProfileForm({
               {general.therapistDetails}
             </h3>
             <p className="mt-1 text-sm leading-6 text-stone-600">
-              {general.publicDirectoryHint}
+              {hasTherapistDirectoryAccess
+                ? general.publicDirectoryHint
+                : directoryAccessCopy.description}
             </p>
           </div>
 
-          <label className="flex items-start gap-3 rounded-xl border border-stone-200 bg-white px-3 py-3">
-            <input
-              type="checkbox"
-              checked={publicDirectory}
-              onChange={(e) => setPublicDirectory(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-stone-300"
-            />
-            <span className="text-sm text-stone-700">{general.publicDirectory}</span>
-          </label>
+          {hasTherapistDirectoryAccess ? (
+            <label className="flex items-start gap-3 rounded-xl border border-stone-200 bg-white px-3 py-3">
+              <input
+                type="checkbox"
+                checked={publicDirectory}
+                onChange={(e) => setPublicDirectory(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-stone-300"
+              />
+              <span className="text-sm text-stone-700">
+                {general.publicDirectory}
+              </span>
+            </label>
+          ) : (
+            <div className="rounded-xl border border-[#eadfce] bg-[#fcf6f1] px-4 py-3">
+              <Link
+                href="/shop/credits#therapeut-abonnement"
+                className="inline-flex items-center rounded-full border border-[#d8c7b8] bg-white px-3 py-1.5 text-xs font-medium text-[#8a5f49] transition hover:bg-[#fffaf6]"
+              >
+                {directoryAccessCopy.cta}
+              </Link>
+            </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block space-y-1">

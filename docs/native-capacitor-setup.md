@@ -151,6 +151,7 @@ NEXT_PUBLIC_REVENUECAT_APPLE_API_KEY=
 NEXT_PUBLIC_REVENUECAT_GOOGLE_API_KEY=
 REVENUECAT_WEBHOOK_AUTH=
 EBOOK_PURCHASE_MODE=native_store
+CREDIT_PACK_PURCHASE_MODE=native_store
 ```
 
 En configureer daarna in RevenueCat:
@@ -159,6 +160,58 @@ En configureer daarna in RevenueCat:
 2. Android app koppelen met dezelfde application id
 3. Apple en Google storeconnecties leggen
 4. per e-book product-id's aanmaken die matchen met de shopadmin
-5. webhook instellen naar:
+5. voor credit packs dezelfde store product-id's gebruiken als in de app-logica of expliciet mappen via `public.iap_products`
+   - standaard fallback conventie: `credits.{scope}.{key}`
+   - voor opdrachtpacks zijn dat nu:
+     - `credits.assignment.start`
+     - `credits.assignment.basis`
+     - `credits.assignment.standaard`
+     - `credits.assignment.plus`
+     - `credits.assignment.voordeel`
+   - de app accepteert tijdelijk ook nog de oude bundle-prefixed variant voor bestaande mappings
+6. webhook instellen naar:
    - `https://pure-therapeutic-art-therapy.com/api/revenuecat/webhooks`
-6. `Authorization` header in RevenueCat gelijk zetten aan `REVENUECAT_WEBHOOK_AUTH`
+7. `Authorization` header in RevenueCat gelijk zetten aan `REVENUECAT_WEBHOOK_AUTH`
+
+## Google Play koppeling
+
+De Android app gebruikt dezelfde app-id als iOS:
+
+- package name / application id: `com.detroostboom.puretherapeuticart`
+
+Controleer dit in:
+
+- [capacitor.config.ts](/Users/dannygeurts/Documents/pure-therapeutic-art/capacitor.config.ts)
+- [android/app/build.gradle](/Users/dannygeurts/Documents/pure-therapeutic-art/android/app/build.gradle)
+
+Voor de Google Play koppeling moet je buiten de code deze stappen afronden:
+
+1. Maak in Google Play Console een app aan met package name `com.detroostboom.puretherapeuticart`
+2. Maak in RevenueCat onder `Apps & providers` ook een Android app aan voor dezelfde package name
+3. Kopieer daarna de Android SDK key uit RevenueCat naar:
+
+```env
+NEXT_PUBLIC_REVENUECAT_GOOGLE_API_KEY=
+```
+
+4. Koppel Google Play aan RevenueCat via de Play Console integratie of service account
+5. Maak in Google Play Console je producten aan met exact dezelfde product-id's als de app verwacht
+6. Upload een Android build naar een interne test track of closed testing track
+7. Voeg testgebruikers toe in Google Play Console
+8. Installeer die testbuild op een Android toestel dat is ingelogd met een testaccount
+
+Voor de huidige app zijn dit de standaard product-id's voor opdrachtpakketten:
+
+- `credits.assignment.start`
+- `credits.assignment.basis`
+- `credits.assignment.standaard`
+- `credits.assignment.plus`
+- `credits.assignment.voordeel`
+
+Gebruik voor e-books en abonnementen dezelfde product-id's als in RevenueCat en de shopadmin. Als een product-id afwijkt van de standaard in de app, map hem dan expliciet via `public.iap_products`.
+
+Belangrijk bij testen op Android:
+
+- producten worden meestal pas fetchbaar nadat er een testbuild via Google Play is geïnstalleerd
+- lokaal sideloaden buiten Play om is voor Billing-tests meestal niet genoeg
+- de tester moet toegang hebben tot de interne of closed test track
