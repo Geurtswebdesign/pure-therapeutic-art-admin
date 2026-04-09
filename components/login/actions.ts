@@ -13,6 +13,7 @@ import type { UserAccountType } from "@/lib/users/accountTypes";
 import {
   getAdminAreaUrl,
   getAdminLoginUrl,
+  getPublicAreaUrl,
   getRequestHost,
   isAdminHost,
   getServerCookieOptions,
@@ -106,6 +107,27 @@ function resolveTherapistSubscriptionPlan(
   }
 
   return null;
+}
+
+function getPublicLoginUrl(params?: Record<string, string | null | undefined>) {
+  const url = new URL("/login", "http://local");
+
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (!value) continue;
+    url.searchParams.set(key, value);
+  }
+
+  return `${url.pathname}${url.search}`;
+}
+
+function getScopedLoginUrl(
+  params: Record<string, string | null | undefined>,
+  adminHostRequest: boolean,
+  requestHost: string | null
+) {
+  return adminHostRequest
+    ? getAdminLoginUrl(params, requestHost)
+    : getPublicLoginUrl(params);
 }
 
 export async function registerAccount(formData: FormData) {
@@ -226,6 +248,65 @@ export async function registerAccount(formData: FormData) {
   }
 
   redirect("/login?registered=1");
+}
+
+export async function requestPasswordReset(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const requestHeaders = await headers();
+  const requestHost = getRequestHost(requestHeaders);
+  const adminHostRequest = isAdminHost(requestHost);
+  const emailDomain = email.includes("@") ? email.split("@")[1] : "unknown";
+
+  if (!email) {
+    redirect(
+      getScopedLoginUrl(
+        { mode: "forgot", error: "recovery" },
+        adminHostRequest,
+        requestHost
+      )
+    );
+  }
+
+  const supabase = await createClient();
+  const redirectTo = adminHostRequest
+    ? getAdminAreaUrl("/reset-password", requestHost)
+    : getPublicAreaUrl("/reset-password");
+
+  await logServerEvent({
+    eventName: "password_reset_requested",
+    eventCategory: "auth",
+    eventLabel: emailDomain,
+    path: "/login",
+  });
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo,
+  });
+
+  if (error) {
+    await logServerEvent({
+      eventName: "password_reset_request_failed",
+      eventCategory: "auth",
+      eventLabel: error.message,
+      path: "/login",
+    });
+
+    redirect(
+      getScopedLoginUrl(
+        { mode: "forgot", error: "recovery" },
+        adminHostRequest,
+        requestHost
+      )
+    );
+  }
+
+  redirect(
+    getScopedLoginUrl(
+      { mode: "forgot", sent: "1" },
+      adminHostRequest,
+      requestHost
+    )
+  );
 }
 
 export async function login(formData: FormData) {

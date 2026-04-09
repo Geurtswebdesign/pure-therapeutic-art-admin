@@ -135,6 +135,8 @@ export function shouldBypassAdminRewrite(pathname: string) {
   return (
     normalized === "/login" ||
     normalized.startsWith("/login/") ||
+    normalized === "/reset-password" ||
+    normalized.startsWith("/reset-password/") ||
     normalized === "/maintenance" ||
     normalized.startsWith("/maintenance/") ||
     normalized === "/unauthorized" ||
