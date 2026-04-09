@@ -31,5 +31,9 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "supabase/functions/**/*.ts"]
+  "exclude": [
+    "node_modules",
+    "supabase/functions/**/*.ts",
+    "deploy/supabase-selfhost/volumes/functions/**/*.ts"
+  ]
 }
