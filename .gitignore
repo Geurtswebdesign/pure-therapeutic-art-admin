@@ -33,3 +33,9 @@ node_modules/
 # temporary legal doc review files
 tmp/
 output/doc/legal/~$*.docx
+
+# local migration artifacts
+migration-dumps/
+
+# codex temp files
+.codex-tmp/

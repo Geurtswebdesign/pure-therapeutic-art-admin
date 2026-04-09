@@ -1,10 +1,18 @@
-import Image from "next/image";
 import Link from "next/link";
-import type { InputHTMLAttributes, ReactNode } from "react";
 import { headers } from "next/headers";
-import { ArrowLeft, ShieldCheck, Stethoscope } from "lucide-react";
-import logo from "@/assets/branding/logo.png";
-import { login, registerAccount, verifyMfa } from "@/components/login/actions";
+import { ShieldCheck, Stethoscope } from "lucide-react";
+import {
+  login,
+  registerAccount,
+  requestPasswordReset,
+  verifyMfa,
+} from "@/components/login/actions";
+import {
+  AUTH_FRAME_COPY,
+  AuthInput,
+  AuthShell,
+  FormField,
+} from "@/components/login/AuthFrame";
 import AdminTwoFactorCard from "@/components/admin/settings/AdminTwoFactorCard";
 import { getLoginRateLimitMessage } from "@/lib/auth/getLoginRateLimitMessage";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
@@ -27,18 +35,7 @@ type LoginSearchParams = {
   next?: string | string[];
   mode?: string | string[];
   registered?: string | string[];
-};
-
-type AuthShellProps = {
-  siteName: string;
-  logoUrl: string | null;
-  title: string;
-  eyebrow: string;
-  backLabel: string;
-  backHref: string;
-  isNativeApp?: boolean;
-  maxWidthClassName?: string;
-  children: ReactNode;
+  sent?: string | string[];
 };
 
 const AUTH_COPY: Record<
@@ -174,115 +171,6 @@ function formatMoney(amountCents: number, currency = "EUR") {
   }).format(amountCents / 100);
 }
 
-function AuthShell({
-  siteName,
-  logoUrl,
-  title,
-  eyebrow,
-  backLabel,
-  backHref,
-  isNativeApp = false,
-  maxWidthClassName = "max-w-md",
-  children,
-}: AuthShellProps) {
-  const shellClassName = isNativeApp
-    ? "h-[100svh] h-[100dvh] overflow-hidden bg-[linear-gradient(180deg,#f3e4d9_0%,#efe5dc_26%,#f7f2ec_64%,#f9f7f3_100%)] px-0 pb-0 pt-0"
-    : "min-h-[100svh] min-h-[100dvh] bg-[linear-gradient(180deg,#f3e4d9_0%,#efe5dc_26%,#f7f2ec_64%,#f9f7f3_100%)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:px-6 sm:pb-6 sm:pt-6";
-  const wrapperClassName = isNativeApp
-    ? "h-full w-full"
-    : `mx-auto w-full ${maxWidthClassName}`;
-  const cardClassName = isNativeApp
-    ? "flex h-full min-h-0 w-full flex-col overflow-hidden bg-[linear-gradient(180deg,#fdfaf6_0%,#faf4ed_52%,#f7f1ea_100%)]"
-    : "overflow-hidden rounded-[2rem] border border-stone-300/70 bg-[linear-gradient(180deg,#fdfaf6_0%,#faf4ed_52%,#f7f1ea_100%)] shadow-[0_30px_80px_rgba(49,34,25,0.18)]";
-  const headerClassName = isNativeApp
-    ? "shrink-0 border-b border-stone-200/75 bg-white/80 px-4 pb-4 pt-3 backdrop-blur-sm"
-    : "border-b border-stone-200/80 px-5 pb-5 pt-5";
-  const contentClassName = isNativeApp
-    ? "min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5 sm:py-6"
-    : "px-4 py-5 sm:px-5 sm:py-6";
-
-  return (
-    <div className={shellClassName}>
-      <div className={wrapperClassName}>
-        <div className={cardClassName}>
-          <header className={headerClassName}>
-            <div className="flex items-center gap-3">
-              <div className="relative h-12 w-12 shrink-0">
-                {logoUrl ? (
-                  <Image
-                    src={logoUrl}
-                    alt={`${siteName} logo`}
-                    fill
-                    sizes="48px"
-                    unoptimized
-                    className="object-contain"
-                  />
-                ) : (
-                  <Image
-                    src={logo}
-                    alt={siteName}
-                    fill
-                    sizes="48px"
-                    className="object-contain"
-                    priority
-                  />
-                )}
-              </div>
-              <div className="min-w-0">
-                <div className="truncate text-xl leading-tight text-stone-900">
-                  {siteName}
-                </div>
-                <div className="truncate text-xs uppercase tracking-[0.22em] text-stone-500">
-                  {eyebrow}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 flex items-start justify-between gap-3">
-              <h1 className="font-serif text-3xl leading-tight text-stone-950">
-                {title}
-              </h1>
-              <Link
-                href={backHref}
-                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#decfbe] bg-white/80 px-3 py-2 text-xs font-medium text-stone-700 shadow-sm"
-              >
-                <ArrowLeft size={14} strokeWidth={1.8} />
-                {backLabel}
-              </Link>
-            </div>
-          </header>
-
-          <div className={contentClassName}>{children}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FormField({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <label className="block space-y-1.5">
-      <span className="block text-sm font-medium text-stone-700">{label}</span>
-      {children}
-    </label>
-  );
-}
-
-function AuthInput(props: InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      {...props}
-      className="w-full rounded-[1rem] border border-[#d9cbbb] bg-white px-3 py-3 text-base text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-[#c68567] focus:ring-2 focus:ring-[#ecd2c2] sm:text-sm"
-    />
-  );
-}
-
 export default async function LoginPage({
   searchParams,
 }: {
@@ -290,6 +178,7 @@ export default async function LoginPage({
 }) {
   const language = resolveUiLanguage(await getAppLanguage());
   const t = getAppMessages(language).login;
+  const frameCopy = AUTH_FRAME_COPY[language];
   const copy = AUTH_COPY[language];
   const branding = await getPublicBranding();
   const therapistPacks = await getActiveTherapistSubscriptionPacks();
@@ -308,20 +197,33 @@ export default async function LoginPage({
   const registered = Array.isArray(params?.registered)
     ? params?.registered[0]
     : params?.registered;
+  const sent = Array.isArray(params?.sent) ? params?.sent[0] : params?.sent;
   const isMfaStep = step === "mfa";
   const isMfaSetup = step === "mfa-setup";
   const hasMfaError = error === "invalid";
   const isRegisterMode = !adminRequestHost && mode === "register";
+  const isRecoveryMode = mode === "forgot";
   const hasLoginError = error === "invalid";
   const hasRateLimitError = error === "rate-limit";
+  const hasRecoveryError = error === "recovery";
   const rateLimitMinutes = Number.parseInt(minutesParam ?? "", 10);
   const hasRegisterError = error === "register";
   const hasTherapistPackError = error === "therapist-pack";
   const registrationSucceeded = registered === "1";
-  const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : "/login";
+  const recoverySent = sent === "1";
+  const loginHref = adminRequestHost
+    ? getAdminLoginUrl(next ? { next } : undefined, requestHost)
+    : next
+      ? `/login?next=${encodeURIComponent(next)}`
+      : "/login";
   const registerHref = next
     ? `/login?mode=register&next=${encodeURIComponent(next)}`
     : "/login?mode=register";
+  const forgotPasswordHref = adminRequestHost
+    ? getAdminLoginUrl({ mode: "forgot" }, requestHost)
+    : next
+      ? `/login?mode=forgot&next=${encodeURIComponent(next)}`
+      : "/login?mode=forgot";
   const backHref = adminRequestHost ? getPublicAreaUrl("/") : "/";
   const loginRateLimitMessage = getLoginRateLimitMessage(
     language,
@@ -334,8 +236,8 @@ export default async function LoginPage({
         siteName={branding.siteName}
         logoUrl={branding.logoUrl}
         title={t.mfaTitle}
-        eyebrow={copy.eyebrow}
-        backLabel={copy.backHome}
+        eyebrow={frameCopy.eyebrow}
+        backLabel={frameCopy.backHome}
         backHref={backHref}
         isNativeApp={isNativeApp}
       >
@@ -390,8 +292,8 @@ export default async function LoginPage({
         siteName={branding.siteName}
         logoUrl={branding.logoUrl}
         title={t.mfaTitle}
-        eyebrow={copy.eyebrow}
-        backLabel={copy.backHome}
+        eyebrow={frameCopy.eyebrow}
+        backLabel={frameCopy.backHome}
         backHref={backHref}
         isNativeApp={isNativeApp}
         maxWidthClassName="max-w-3xl"
@@ -432,9 +334,9 @@ export default async function LoginPage({
     <AuthShell
       siteName={branding.siteName}
       logoUrl={branding.logoUrl}
-      title={isRegisterMode ? t.registerTitle : t.title}
-      eyebrow={copy.eyebrow}
-      backLabel={copy.backHome}
+      title={isRegisterMode ? t.registerTitle : isRecoveryMode ? t.forgotTitle : t.title}
+      eyebrow={frameCopy.eyebrow}
+      backLabel={frameCopy.backHome}
       backHref={backHref}
       isNativeApp={isNativeApp}
     >
@@ -443,11 +345,17 @@ export default async function LoginPage({
           <div className="flex items-center gap-2 text-[#6f5949]">
             <ShieldCheck size={18} strokeWidth={1.8} />
             <span className="text-xs font-medium uppercase tracking-[0.22em] text-[#6f5949]">
-              {isRegisterMode ? t.modeRegister : t.modeLogin}
+              {isRegisterMode
+                ? t.modeRegister
+                : isRecoveryMode
+                  ? t.forgotTitle
+                  : t.modeLogin}
             </span>
           </div>
           <p className="mt-3 text-sm leading-6 text-[#6b5d50]">
-            {adminRequestHost
+            {isRecoveryMode
+              ? t.forgotIntro
+              : adminRequestHost
               ? copy.adminLoginIntro
               : isRegisterMode
                 ? copy.registerIntro
@@ -630,6 +538,46 @@ export default async function LoginPage({
               {copy.registerHint}
             </p>
           </form>
+        ) : isRecoveryMode ? (
+          <form
+            action={requestPasswordReset}
+            className="space-y-4 rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-4 shadow-sm"
+          >
+            <FormField label={t.email}>
+              <AuthInput
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+              />
+            </FormField>
+
+            {recoverySent ? (
+              <p className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                {t.forgotSent}
+              </p>
+            ) : null}
+
+            {hasRecoveryError ? (
+              <p className="rounded-[1rem] border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                {t.forgotFailed}
+              </p>
+            ) : null}
+
+            <button
+              type="submit"
+              className="w-full rounded-full bg-[#1d2327] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#2b3439]"
+            >
+              {t.forgotSubmit}
+            </button>
+
+            <Link
+              href={loginHref}
+              className="inline-flex text-sm font-medium text-[#8a5f49] underline-offset-4 hover:underline"
+            >
+              {t.backToLogin}
+            </Link>
+          </form>
         ) : (
           <form
             action={login}
@@ -655,6 +603,15 @@ export default async function LoginPage({
                 autoComplete="current-password"
               />
             </FormField>
+
+            <div className="flex justify-end">
+              <Link
+                href={forgotPasswordHref}
+                className="text-sm font-medium text-[#8a5f49] underline-offset-4 hover:underline"
+              >
+                {t.forgotPassword}
+              </Link>
+            </div>
 
             {hasLoginError ? (
               <p className="rounded-[1rem] border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">

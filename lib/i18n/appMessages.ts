@@ -13,12 +13,20 @@ type AppMessages = {
     modeRegister: string;
     email: string;
     password: string;
+    confirmPassword: string;
     firstName: string;
     lastName: string;
     accountType: string;
     accountTypeClient: string;
     accountTypeTherapist: string;
     submit: string;
+    forgotPassword: string;
+    forgotTitle: string;
+    forgotIntro: string;
+    forgotSubmit: string;
+    forgotSent: string;
+    forgotFailed: string;
+    backToLogin: string;
     registerTitle: string;
     registerSubmit: string;
     registerSuccess: string;
@@ -30,6 +38,14 @@ type AppMessages = {
     mfaInvalid: string;
     mfaSetupPrompt: string;
     mfaSetupContinue: string;
+    resetTitle: string;
+    resetIntro: string;
+    resetLoading: string;
+    resetInvalid: string;
+    resetMismatch: string;
+    resetSubmit: string;
+    resetSubmitBusy: string;
+    resetSuccess: string;
   };
   accountPage: {
     title: string;
@@ -293,12 +309,23 @@ const nl: AppMessages = {
     modeRegister: "Registreren",
     email: "E-mail",
     password: "Wachtwoord",
+    confirmPassword: "Bevestig wachtwoord",
     firstName: "Voornaam",
     lastName: "Achternaam",
     accountType: "Ik meld me aan als",
     accountTypeClient: "Gebruiker (client)",
     accountTypeTherapist: "Therapeut",
     submit: "Inloggen",
+    forgotPassword: "Wachtwoord vergeten?",
+    forgotTitle: "Wachtwoord herstellen",
+    forgotIntro:
+      "Vul je e-mailadres in. Als er een account bestaat, sturen we je direct een herstelmail.",
+    forgotSubmit: "Stuur herstelmail",
+    forgotSent:
+      "Als er een account bestaat voor dit e-mailadres, staat er nu een herstelmail voor je klaar.",
+    forgotFailed:
+      "Het versturen van de herstelmail is mislukt. Probeer het opnieuw.",
+    backToLogin: "Terug naar inloggen",
     registerTitle: "Account aanmaken",
     registerSubmit: "Account aanmaken",
     registerSuccess:
@@ -312,6 +339,17 @@ const nl: AppMessages = {
     mfaSetupPrompt:
       "2FA is verplicht voor admins. Stel dit nu in om verder te gaan.",
     mfaSetupContinue: "Ga door naar admin",
+    resetTitle: "Nieuw wachtwoord kiezen",
+    resetIntro:
+      "Kies een nieuw wachtwoord voor je account. Daarna kun je weer normaal inloggen.",
+    resetLoading: "Herstel-link controleren...",
+    resetInvalid:
+      "Deze herstel-link is ongeldig of verlopen. Vraag opnieuw een wachtwoordreset aan.",
+    resetMismatch: "De wachtwoorden komen niet overeen.",
+    resetSubmit: "Nieuw wachtwoord opslaan",
+    resetSubmitBusy: "Bezig met opslaan...",
+    resetSuccess:
+      "Je wachtwoord is bijgewerkt. Je kunt nu inloggen met je nieuwe wachtwoord.",
   },
   accountPage: {
     title: "Mijn account",
@@ -573,12 +611,23 @@ const en: AppMessages = {
     modeRegister: "Register",
     email: "Email",
     password: "Password",
+    confirmPassword: "Confirm password",
     firstName: "First name",
     lastName: "Last name",
     accountType: "I am registering as",
     accountTypeClient: "User (client)",
     accountTypeTherapist: "Therapist",
     submit: "Log in",
+    forgotPassword: "Forgot password?",
+    forgotTitle: "Reset password",
+    forgotIntro:
+      "Enter your email address. If an account exists, we will send a recovery email right away.",
+    forgotSubmit: "Send recovery email",
+    forgotSent:
+      "If an account exists for this email address, a recovery email is on its way.",
+    forgotFailed:
+      "Sending the recovery email failed. Please try again.",
+    backToLogin: "Back to login",
     registerTitle: "Create account",
     registerSubmit: "Create account",
     registerSuccess:
@@ -592,6 +641,17 @@ const en: AppMessages = {
     mfaSetupPrompt:
       "2FA is required for admins. Set it up now to continue.",
     mfaSetupContinue: "Continue to admin",
+    resetTitle: "Choose a new password",
+    resetIntro:
+      "Set a new password for your account. After that you can log in normally again.",
+    resetLoading: "Checking recovery link...",
+    resetInvalid:
+      "This recovery link is invalid or expired. Request a new password reset.",
+    resetMismatch: "The passwords do not match.",
+    resetSubmit: "Save new password",
+    resetSubmitBusy: "Saving...",
+    resetSuccess:
+      "Your password has been updated. You can now log in with your new password.",
   },
   accountPage: { title: "My account", subtitle: "Manage your profile, credits and unlocked content." },
   accountTabs: { ...nl.accountTabs, overview: "Overview", profile: "Edit profile", unlocked: "Unlocked content", clients: "Clients", welcome: "Welcome", accountType: "Account type", availableCredits: "Available credits", unlockedItems: "Unlocked items", unlockedTitle: "Unlocked content", noUnlocked: "No unlocked content yet.", unknownContent: "Unknown content", titleCol: "Title", categoryCol: "Category", dateCol: "Date", therapistDesc: "This is the base for the therapist account. We can add client linking and progress next.", roleTherapist: "Therapist", roleAdmin: "Administrator", roleClient: "Client", roleUser: "User" },
@@ -620,12 +680,23 @@ const de: AppMessages = {
     modeRegister: "Registrieren",
     email: "E-Mail",
     password: "Passwort",
+    confirmPassword: "Passwort bestaetigen",
     firstName: "Vorname",
     lastName: "Nachname",
     accountType: "Ich registriere mich als",
     accountTypeClient: "Benutzer (Klient)",
     accountTypeTherapist: "Therapeut",
     submit: "Anmelden",
+    forgotPassword: "Passwort vergessen?",
+    forgotTitle: "Passwort zurucksetzen",
+    forgotIntro:
+      "Gib deine E-Mail-Adresse ein. Wenn ein Konto existiert, senden wir dir sofort eine Wiederherstellungs-E-Mail.",
+    forgotSubmit: "Wiederherstellungs-E-Mail senden",
+    forgotSent:
+      "Wenn fur diese E-Mail-Adresse ein Konto existiert, wurde eine Wiederherstellungs-E-Mail versendet.",
+    forgotFailed:
+      "Die Wiederherstellungs-E-Mail konnte nicht gesendet werden. Bitte versuche es erneut.",
+    backToLogin: "Zuruck zum Login",
     registerTitle: "Konto erstellen",
     registerSubmit: "Konto erstellen",
     registerSuccess:
@@ -640,6 +711,17 @@ const de: AppMessages = {
     mfaSetupPrompt:
       "2FA ist fuer Admins verpflichtend. Jetzt einrichten, um fortzufahren.",
     mfaSetupContinue: "Weiter zum Admin",
+    resetTitle: "Neues Passwort festlegen",
+    resetIntro:
+      "Lege ein neues Passwort fur dein Konto fest. Danach kannst du dich wieder normal anmelden.",
+    resetLoading: "Wiederherstellungs-Link wird gepruft...",
+    resetInvalid:
+      "Dieser Wiederherstellungs-Link ist ungueltig oder abgelaufen. Bitte fordere einen neuen Passwort-Reset an.",
+    resetMismatch: "Die Passwoerter stimmen nicht ueberein.",
+    resetSubmit: "Neues Passwort speichern",
+    resetSubmitBusy: "Speichern...",
+    resetSuccess:
+      "Dein Passwort wurde aktualisiert. Du kannst dich jetzt mit dem neuen Passwort anmelden.",
   },
   accountPage: { title: "Mein Konto", subtitle: "Verwalte dein Profil, Credits und freigeschaltete Inhalte." },
   accountTabs: { ...nl.accountTabs, overview: "Ubersicht", profile: "Profil bearbeiten", unlocked: "Freigeschaltete Inhalte", clients: "Klienten", welcome: "Willkommen", accountType: "Kontotyp", availableCredits: "Verfugbare Credits", unlockedItems: "Freigeschaltete Elemente", unlockedTitle: "Freigeschaltete Inhalte", noUnlocked: "Noch keine freigeschalteten Inhalte.", unknownContent: "Unbekannter Inhalt", titleCol: "Titel", categoryCol: "Kategorie", dateCol: "Datum", therapistDesc: "Dies ist die Basis fur das Therapeutenkonto. Verknupfung von Klienten und Fortschritt folgt als nachstes.", roleTherapist: "Therapeut", roleAdmin: "Administrator", roleClient: "Klient", roleUser: "Benutzer" },

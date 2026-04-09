@@ -42,7 +42,16 @@ function resolveFunctionsBaseUrl() {
     );
   }
 
-  return supabaseUrl.replace(".supabase.co", ".functions.supabase.co");
+  try {
+    const url = new URL(supabaseUrl);
+    if (url.hostname.endsWith(".supabase.co")) {
+      return supabaseUrl.replace(".supabase.co", ".functions.supabase.co");
+    }
+
+    return new URL("/functions/v1", supabaseUrl).toString().replace(/\/$/, "");
+  } catch {
+    return `${supabaseUrl.replace(/\/$/, "")}/functions/v1`;
+  }
 }
 
 function resolveEventsUrl() {
