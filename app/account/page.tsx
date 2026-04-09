@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Download, type LucideIcon } from "lucide-react";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import AppLogoutButton from "@/components/account/AppLogoutButton";
@@ -6,9 +7,7 @@ import AccountPanelAutoScroll from "@/components/account/AccountPanelAutoScroll"
 import AccountProfileForm from "@/components/account/AccountProfileForm";
 import LanguagePreferenceDialog from "@/components/account/LanguagePreferenceDialog";
 import ThemeProgressGrid from "@/components/account/ThemeProgressGrid";
-import { login } from "@/components/login/actions";
 import { getLegalDocuments } from "@/lib/account/legal-documents";
-import { getLoginRateLimitMessage } from "@/lib/auth/getLoginRateLimitMessage";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
@@ -818,91 +817,26 @@ export default async function AccountPage({
   const locale =
     language === "en" ? "en-US" : language === "de" ? "de-DE" : "nl-NL";
   const params = await searchParams;
-  const error = Array.isArray(params?.error) ? params?.error[0] : params?.error;
-  const minutesParam = Array.isArray(params?.minutes)
-    ? params?.minutes[0]
-    : params?.minutes;
   const tab = Array.isArray(params?.tab) ? params?.tab[0] : params?.tab;
   const activePanel = normalizeActivePanel(params?.panel);
-  const hasInvalidError = error === "invalid";
-  const hasRateLimitError = error === "rate-limit";
-  const rateLimitMinutes = Number.parseInt(minutesParam ?? "", 10);
-  const loginRateLimitMessage = getLoginRateLimitMessage(
-    language,
-    Number.isFinite(rateLimitMinutes) ? rateLimitMinutes : null
-  );
   const activeTab = tab === "profile" ? "profile" : "overview";
 
   const user = await getCurrentUser();
   const supabase = createAdminClient();
 
   if (!user) {
-    return (
-      <PublicAppShell activeTab="profiel">
-        <section className="space-y-4">
-          <div className="rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-sm">
-            <h2 className="font-serif text-2xl text-stone-950">Welkom terug</h2>
-            <p className="mt-2 text-sm leading-6 text-stone-600">
-              Log in om je profiel, voortgang en aankopen te bekijken.
-            </p>
-          </div>
+    const nextParams = new URLSearchParams();
+    if (tab) {
+      nextParams.set("tab", tab);
+    }
+    if (activePanel) {
+      nextParams.set("panel", activePanel);
+    }
 
-          <form
-            action={login}
-            className="space-y-3 rounded-[1.5rem] border border-stone-200 bg-white p-4 shadow-sm"
-          >
-            <input type="hidden" name="next" value="/account" />
-            <input type="hidden" name="origin" value="account" />
-
-            <div>
-              <label className="mb-1 block text-sm text-stone-700">E-mail</label>
-              <input
-                name="email"
-                type="email"
-                required
-                className="w-full rounded-xl border border-stone-300 px-3 py-2 text-base outline-none focus:border-[#b64040] sm:text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm text-stone-700">
-                Wachtwoord
-              </label>
-              <input
-                name="password"
-                type="password"
-                required
-                className="w-full rounded-xl border border-stone-300 px-3 py-2 text-base outline-none focus:border-[#b64040] sm:text-sm"
-              />
-            </div>
-
-            {hasInvalidError ? (
-              <p className="text-sm text-red-600">
-                Ongeldige inloggegevens. Probeer het opnieuw.
-              </p>
-            ) : null}
-            {hasRateLimitError ? (
-              <p className="text-sm text-amber-700">{loginRateLimitMessage}</p>
-            ) : null}
-
-            <div className="flex gap-2 pt-1">
-              <button
-                type="submit"
-                className="inline-flex rounded-full bg-[#b64040] px-4 py-2 text-sm font-medium text-white"
-              >
-                Inloggen
-              </button>
-              <Link
-                href="/login?mode=register"
-                className="inline-flex rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-800"
-              >
-                Aanmelden
-              </Link>
-            </div>
-          </form>
-        </section>
-      </PublicAppShell>
-    );
+    const nextPath = nextParams.size
+      ? `/account?${nextParams.toString()}`
+      : "/account";
+    redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   }
 
   const [

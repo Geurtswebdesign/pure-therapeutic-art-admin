@@ -183,13 +183,13 @@ export default async function Home() {
               <div className="flex gap-2 pt-1">
                 <Link
                   className="rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-800"
-                  href="/account"
+                  href="/login?next=%2Faccount"
                 >
                   {t.login}
                 </Link>
                 <Link
                   className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white"
-                  href="/login?mode=register"
+                  href="/login?mode=register&next=%2Faccount"
                 >
                   Aanmelden
                 </Link>
