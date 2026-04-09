@@ -306,7 +306,7 @@ const nl: AppMessages = {
   login: {
     title: "Inloggen",
     modeLogin: "Inloggen",
-    modeRegister: "Registreren",
+    modeRegister: "Aanmelden",
     email: "E-mail",
     password: "Wachtwoord",
     confirmPassword: "Bevestig wachtwoord",
@@ -330,7 +330,7 @@ const nl: AppMessages = {
     registerSubmit: "Account aanmaken",
     registerSuccess:
       "Je account is aangemaakt. Log in of controleer je e-mail als bevestiging nodig is.",
-    registerFailed: "Registreren mislukt. Controleer je gegevens en probeer opnieuw.",
+    registerFailed: "Aanmelden mislukt. Controleer je gegevens en probeer opnieuw.",
     mfaTitle: "Bevestig 2FA",
     mfaPrompt: "Vul de code uit je authenticator app in.",
     mfaCode: "2FA-code",
