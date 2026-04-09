@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/auth/getAdminUser";
+import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendTransactionalEmail } from "@/lib/mail/service";
 import {
@@ -168,7 +169,12 @@ export async function getEmailSettingsAdminData(): Promise<EmailSettingsAdminDat
     },
     templates: templates ?? [],
     senderProfiles: senderProfiles ?? [],
-    branding: branding ?? DEFAULT_BRANDING,
+    branding: branding
+      ? {
+          ...branding,
+          logo_url: normalizeSupabaseStorageUrl(branding.logo_url),
+        }
+      : DEFAULT_BRANDING,
     logs: logs ?? [],
     deliveryStats,
   };
@@ -275,7 +281,7 @@ export async function saveEmailBranding(input: {
   const payload = {
     app_name: input.appName.trim() || DEFAULT_BRANDING.app_name,
     primary_color: input.primaryColor.trim() || DEFAULT_BRANDING.primary_color,
-    logo_url: input.logoUrl?.trim() || null,
+    logo_url: normalizeSupabaseStorageUrl(input.logoUrl?.trim() || null),
     support_email: input.supportEmail?.trim() || null,
     footer_text: input.footerText?.trim() || null,
     website_url: input.websiteUrl?.trim() || null,

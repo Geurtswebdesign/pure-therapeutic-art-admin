@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import {
   DEFAULT_CUSTOMIZER_SETTINGS,
   DEFAULT_GENERAL_SETTINGS,
@@ -52,7 +53,7 @@ export const getPublicBranding = cache(async (): Promise<PublicBranding> => {
     const value = asObject(data?.value);
 
     return {
-      logoUrl: asString(value?.logoUrl, "") || null,
+      logoUrl: normalizeSupabaseStorageUrl(asString(value?.logoUrl, "")) || null,
       siteName: asString(value?.siteName, DEFAULT_GENERAL_SETTINGS.siteName),
     };
   } catch {
@@ -79,9 +80,11 @@ export const getPublicSplashSettings = cache(
 
       return {
         imageUrl:
-          asString(
-            value?.splashImageUrl,
-            DEFAULT_CUSTOMIZER_SETTINGS.splashImageUrl
+          normalizeSupabaseStorageUrl(
+            asString(
+              value?.splashImageUrl,
+              DEFAULT_CUSTOMIZER_SETTINGS.splashImageUrl
+            )
           ) || null,
         slogan: asString(
           value?.splashSlogan,
@@ -122,7 +125,9 @@ export const getPublicHeaderOverride = cache(
         (headersRes.data ?? []).map((row) => [
           row.id as string,
           {
-            logoUrl: (row.logo_url as string) || null,
+            logoUrl:
+              normalizeSupabaseStorageUrl((row.logo_url as string) || null) ||
+              null,
             logoAlt: (row.logo_alt as string) || null,
             subtitle: (row.subtitle as string) || null,
           },

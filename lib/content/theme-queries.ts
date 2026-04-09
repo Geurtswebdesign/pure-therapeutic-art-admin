@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 
 export type ThemePageSummary = {
   id: string;
@@ -166,7 +167,7 @@ function mapThemeSummary(
     eyebrow: page.eyebrow,
     title: page.title,
     description: page.description,
-    heroImageUrl: page.hero_image_url,
+    heroImageUrl: normalizeSupabaseStorageUrl(page.hero_image_url),
     heroImageAlt: page.hero_image_alt,
     heroImagePosition: page.hero_image_position,
     sortOrder: page.sort_order,
@@ -470,7 +471,9 @@ export async function getPublishedThemePageBySlug(
       language: content.language,
       creditCost: content.credit_cost,
       featured: row.featured,
-      imageUrl: row.override_image_url || content.featured_image_url,
+      imageUrl: normalizeSupabaseStorageUrl(
+        row.override_image_url || content.featured_image_url
+      ),
       imageAlt:
         row.override_image_alt ||
         content.featured_image_alt ||
@@ -488,7 +491,7 @@ export async function getPublishedThemePageBySlug(
     title: section.title,
     description: section.description,
     layoutStyle: section.layout_style,
-    sectionImageUrl: section.section_image_url,
+    sectionImageUrl: normalizeSupabaseStorageUrl(section.section_image_url),
     sectionImageAlt: section.section_image_alt,
     sectionImagePosition: section.section_image_position,
     sortOrder: section.sort_order,

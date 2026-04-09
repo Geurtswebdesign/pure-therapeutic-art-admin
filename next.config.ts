@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { getSupabaseStorageRemotePatterns } from "./lib/images/supabaseStorageUrl";
 
 function getAllowedDevOrigins() {
   const configuredHosts = process.env.ALLOWED_DEV_ORIGINS?.split(",")
@@ -18,13 +19,10 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: getAllowedDevOrigins(),
   images: {
     unoptimized: process.env.NODE_ENV === "development",
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "xyrcjaaodgrntcddmpba.supabase.co",
-        pathname: "/storage/v1/object/public/**",
-      },
-    ],
+    remotePatterns:
+      getSupabaseStorageRemotePatterns() as NonNullable<
+        NonNullable<NextConfig["images"]>["remotePatterns"]
+      >,
     formats: ["image/webp"],
   },
 };

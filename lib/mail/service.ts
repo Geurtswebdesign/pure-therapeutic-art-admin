@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import { normalizeTemplateHtml } from "@/lib/mail/normalizeTemplateHtml";
 import { renderEmailLayout } from "@/lib/mail/renderEmailLayout";
 import { renderTemplate } from "@/lib/mail/renderTemplate";
@@ -69,7 +70,14 @@ export async function getEmailBrandingSettings() {
     .maybeSingle<EmailBrandingSettings>();
 
   if (error) throw new Error(error.message);
-  return data ?? DEFAULT_BRANDING;
+  if (!data) {
+    return DEFAULT_BRANDING;
+  }
+
+  return {
+    ...data,
+    logo_url: normalizeSupabaseStorageUrl(data.logo_url),
+  };
 }
 
 async function insertEmailLog(input: {

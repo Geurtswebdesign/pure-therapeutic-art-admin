@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 
 type ThemePageCategoryRow = {
   id: string;
@@ -287,7 +288,10 @@ export async function getPublishedContent(categorySlug?: string | null) {
   const { data, error } = await query;
 
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []).map((item) => ({
+    ...item,
+    featured_image_url: normalizeSupabaseStorageUrl(item.featured_image_url),
+  }));
 }
 
 export async function getHomepageCategories(
@@ -465,6 +469,7 @@ export async function getHomepageCategories(
 
   const rows = categories.map((category) => ({
     ...category,
+    featured_image_url: normalizeSupabaseStorageUrl(category.featured_image_url),
     itemCount: itemIdsByCategoryId.get(category.id)?.size ?? 0,
     featuredItem: firstItemByCategory.get(category.id) ?? null,
   }));
@@ -486,7 +491,14 @@ export async function getPublishedContentBySlug(slug: string) {
     return null;
   }
 
-  return data;
+  if (!data) {
+    return null;
+  }
+
+  return {
+    ...data,
+    featured_image_url: normalizeSupabaseStorageUrl(data.featured_image_url),
+  };
 }
 
 function normalizeLookupValue(value: string) {
@@ -545,7 +557,12 @@ export async function getPublishedContentByReference(reference: string) {
       .sort((left, right) => right.score - left.score)[0]?.row ?? null;
 
   if (bestSlugMatch) {
-    return bestSlugMatch;
+    return {
+      ...bestSlugMatch,
+      featured_image_url: normalizeSupabaseStorageUrl(
+        bestSlugMatch.featured_image_url
+      ),
+    };
   }
 
   const { data: titleMatch, error: titleError } = await supabase
@@ -560,7 +577,14 @@ export async function getPublishedContentByReference(reference: string) {
     return null;
   }
 
-  return titleMatch;
+  if (!titleMatch) {
+    return null;
+  }
+
+  return {
+    ...titleMatch,
+    featured_image_url: normalizeSupabaseStorageUrl(titleMatch.featured_image_url),
+  };
 }
 
 export async function getPublishedBlocks(contentItemId: string) {

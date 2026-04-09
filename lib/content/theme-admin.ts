@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import {
   getThemeImportedMediaLookup,
   type ThemeImportedMediaEntry,
@@ -421,9 +422,10 @@ function buildMatchedSourceDraft(
     title: section.title,
     description: section.description,
     layoutStyle: section.suggestedLayout,
-    sectionImageUrl:
+    sectionImageUrl: normalizeSupabaseStorageUrl(
       importedMediaBySourcePath.get(section.suggestedSectionImagePath || "")
-        ?.publicUrl ?? "",
+        ?.publicUrl ?? ""
+    ),
     sectionImageAlt: section.title,
     sectionImagePosition: section.suggestedSectionImagePath ? "top" : "none",
     sortOrder: (sectionIndex + 1) * 10,
@@ -441,8 +443,9 @@ function buildMatchedSourceDraft(
         customTitle: "",
         customExcerpt: "",
         featured: itemIndex === 0 && section.suggestedLayout === "featured",
-        overrideImageUrl:
-          importedMediaBySourcePath.get(item.suggestedImagePath || "")?.publicUrl ?? "",
+        overrideImageUrl: normalizeSupabaseStorageUrl(
+          importedMediaBySourcePath.get(item.suggestedImagePath || "")?.publicUrl ?? ""
+        ),
         overrideImageAlt: item.title,
         overrideImagePosition: item.suggestedImagePath ? "top" : "inherit",
         sortOrder: item.order * 10,
@@ -458,9 +461,10 @@ function buildMatchedSourceDraft(
     eyebrow: sourceEntry.parentKey ? "Subthema" : "Thema",
     title: sourceEntry.title,
     description: sourceEntry.description,
-    heroImageUrl:
+    heroImageUrl: normalizeSupabaseStorageUrl(
       importedMediaBySourcePath.get(sourceEntry.suggestedHeroImagePath || "")
-        ?.publicUrl ?? "",
+        ?.publicUrl ?? ""
+    ),
     heroImageAlt: sourceEntry.title,
     heroImagePosition: sourceEntry.suggestedHeroImagePath ? "right" : "top",
     primaryCategoryTermId: "",
@@ -595,7 +599,7 @@ export async function getThemeEditorData(input?: {
       customTitle: item.custom_title ?? "",
       customExcerpt: item.custom_excerpt ?? "",
       featured: item.featured,
-      overrideImageUrl: item.override_image_url ?? "",
+      overrideImageUrl: normalizeSupabaseStorageUrl(item.override_image_url) ?? "",
       overrideImageAlt: item.override_image_alt ?? "",
       overrideImagePosition: item.override_image_position,
       sortOrder: item.sort_order,
@@ -611,7 +615,7 @@ export async function getThemeEditorData(input?: {
     eyebrow: themePage.eyebrow ?? "",
     title: themePage.title,
     description: themePage.description ?? "",
-    heroImageUrl: themePage.hero_image_url ?? "",
+    heroImageUrl: normalizeSupabaseStorageUrl(themePage.hero_image_url) ?? "",
     heroImageAlt: themePage.hero_image_alt ?? "",
     heroImagePosition: themePage.hero_image_position ?? "right",
     primaryCategoryTermId: themePage.primary_category_term_id ?? "",
@@ -623,7 +627,7 @@ export async function getThemeEditorData(input?: {
       title: section.title,
       description: section.description ?? "",
       layoutStyle: section.layout_style,
-      sectionImageUrl: section.section_image_url ?? "",
+      sectionImageUrl: normalizeSupabaseStorageUrl(section.section_image_url) ?? "",
       sectionImageAlt: section.section_image_alt ?? "",
       sectionImagePosition: section.section_image_position ?? "none",
       sortOrder: section.sort_order,

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/browser";
 import type { Taxonomy, Term } from "./types";
 import MediaPicker from "@/components/content/media/MediaPicker";
+import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
 function slugify(text: string) {
@@ -27,7 +28,7 @@ export default function EditTermForm(props: {
   const [slug, setSlug] = useState(props.term.slug);
   const [description, setDescription] = useState(props.term.description || "");
   const [featuredImageUrl, setFeaturedImageUrl] = useState(
-    props.term.featured_image_url || ""
+    normalizeSupabaseStorageUrl(props.term.featured_image_url) || ""
   );
   const [featuredImageAlt, setFeaturedImageAlt] = useState(
     props.term.featured_image_alt || ""
@@ -68,7 +69,8 @@ export default function EditTermForm(props: {
         name,
         slug,
         description,
-        featured_image_url: featuredImageUrl || null,
+        featured_image_url:
+          normalizeSupabaseStorageUrl(featuredImageUrl) || null,
         featured_image_alt: featuredImageAlt || null,
         parent_id: props.taxonomy.is_hierarchical ? (parentId || null) : null,
         is_homepage_seed:

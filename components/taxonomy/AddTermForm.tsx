@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase/browser";
 import type { Taxonomy, Term } from "./types";
 import { trackEvent } from "@/lib/analytics/track";
 import MediaPicker from "@/components/content/media/MediaPicker";
+import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 
 type Props = {
   taxonomy: Taxonomy;
@@ -71,7 +72,8 @@ export default function AddTermForm({
         name,
         slug: slug || slugify(name),
         description,
-        featured_image_url: featuredImageUrl || null,
+        featured_image_url:
+          normalizeSupabaseStorageUrl(featuredImageUrl) || null,
         featured_image_alt: featuredImageAlt || null,
         parent_id: parentId || null,
         is_homepage_seed: taxonomy.slug === "category" ? isHomepageSeed : false,

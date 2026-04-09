@@ -11,6 +11,7 @@ import { parseContentBlocks } from "@/lib/content/renderer";
 import { hasAccess } from "@/lib/unlock/hasAccess";
 import { getBalanceByScope } from "@/lib/users/getBalanceByScope";
 import { getContentAccessScope } from "@/lib/content/access";
+import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import {
   getPrimaryCategoryForContentItem,
   getThemeNavigationForContentItem,
@@ -68,6 +69,8 @@ export default async function ContentPage({
   if (!item || itemError) {
     notFound();
   }
+
+  item.featured_image_url = normalizeSupabaseStorageUrl(item.featured_image_url);
 
   /* -------------------------------------------------
    * 3️⃣ Status check

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/auth/getAdminUser";
+import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logSecurityAuditEvent } from "@/lib/security/audit";
 import {
@@ -72,7 +73,9 @@ export async function getGeneralSettings(): Promise<GeneralSettings> {
 
   return {
     siteName: asString(value?.siteName, DEFAULT_GENERAL_SETTINGS.siteName),
-    logoUrl: asString(value?.logoUrl, DEFAULT_GENERAL_SETTINGS.logoUrl),
+    logoUrl: normalizeSupabaseStorageUrl(
+      asString(value?.logoUrl, DEFAULT_GENERAL_SETTINGS.logoUrl)
+    ) || "",
     timezone: asString(value?.timezone, DEFAULT_GENERAL_SETTINGS.timezone),
     locale: asString(value?.locale, DEFAULT_GENERAL_SETTINGS.locale),
     currency: asString(value?.currency, DEFAULT_GENERAL_SETTINGS.currency),
@@ -98,6 +101,7 @@ export async function saveGeneralSettings(
   const supabase = createAdminClient();
   const value = {
     ...settings,
+    logoUrl: normalizeSupabaseStorageUrl(settings.logoUrl) || "",
     primaryLanguage: normalizedPrimary,
   };
 
@@ -367,10 +371,13 @@ export async function getCustomizerSettings(): Promise<CustomizerSettings> {
     ),
     cardRadius: asString(value?.cardRadius, DEFAULT_CUSTOMIZER_SETTINGS.cardRadius),
     fontScale: asString(value?.fontScale, DEFAULT_CUSTOMIZER_SETTINGS.fontScale),
-    splashImageUrl: asString(
-      value?.splashImageUrl,
-      DEFAULT_CUSTOMIZER_SETTINGS.splashImageUrl
-    ),
+    splashImageUrl:
+      normalizeSupabaseStorageUrl(
+        asString(
+          value?.splashImageUrl,
+          DEFAULT_CUSTOMIZER_SETTINGS.splashImageUrl
+        )
+      ) || "",
     splashSlogan: asString(
       value?.splashSlogan,
       DEFAULT_CUSTOMIZER_SETTINGS.splashSlogan
@@ -409,11 +416,16 @@ export async function saveCustomizerSettings(
         .maybeSingle<{ value: unknown }>()
     : null;
 
+  const normalizedSettings = {
+    ...settings,
+    splashImageUrl: normalizeSupabaseStorageUrl(settings.splashImageUrl) || "",
+  };
+
   const { error } = existing
     ? await supabase
         .from("app_settings")
         .update({
-          value: settings,
+          value: normalizedSettings,
           updated_by: adminId ?? admin.id,
         })
         .eq("id", existing.id)
@@ -421,7 +433,7 @@ export async function saveCustomizerSettings(
         scope: "global",
         scope_id: null,
         key: "customizer",
-        value: settings,
+        value: normalizedSettings,
         updated_by: adminId ?? admin.id,
       });
 
@@ -494,7 +506,7 @@ export async function getCustomizerHeaderConfig(): Promise<CustomizerHeaderConfi
       headers: (headersRes.data ?? []).map((row) => ({
         id: row.id as string,
         name: asString(row.name, "Header"),
-        logoUrl: asString(row.logo_url, ""),
+        logoUrl: normalizeSupabaseStorageUrl(asString(row.logo_url, "")) || "",
         logoAlt: asString(row.logo_alt, ""),
         subtitle: asString(row.subtitle, ""),
         isActive: asBoolean(row.is_active, true),
@@ -529,7 +541,7 @@ export async function saveCustomizerHeaderConfig(
   const headersPayload = config.headers.map((h, index) => ({
     id: h.id,
     name: h.name,
-    logo_url: h.logoUrl,
+    logo_url: normalizeSupabaseStorageUrl(h.logoUrl) || "",
     logo_alt: h.logoAlt,
     subtitle: h.subtitle,
     is_active: h.isActive,

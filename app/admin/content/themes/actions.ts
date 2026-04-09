@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import type { ThemePageDraft } from "@/lib/content/theme-admin";
 
 type ThemeActionSuccess = {
@@ -52,7 +53,8 @@ function normalizeSectionItems(section: ThemePageDraft["sections"][number]) {
         custom_title: item.customTitle || null,
         custom_excerpt: item.customExcerpt || null,
         featured: item.featured,
-        override_image_url: item.overrideImageUrl || null,
+        override_image_url:
+          normalizeSupabaseStorageUrl(item.overrideImageUrl) || null,
         override_image_alt: item.overrideImageAlt || null,
         override_image_position: item.overrideImagePosition,
         sort_order: Number.isFinite(item.sortOrder)
@@ -218,7 +220,9 @@ async function saveThemePageInternal(
     eyebrow: normalizeOptionalText(input.eyebrow),
     title: input.title || "Ongetiteld thema",
     description: normalizeOptionalText(input.description),
-    hero_image_url: normalizeOptionalText(input.heroImageUrl),
+    hero_image_url: normalizeSupabaseStorageUrl(
+      normalizeOptionalText(input.heroImageUrl)
+    ),
     hero_image_alt: normalizeOptionalText(input.heroImageAlt),
     hero_image_position: input.heroImagePosition,
     primary_category_term_id: input.primaryCategoryTermId || null,
@@ -289,7 +293,9 @@ async function saveThemePageInternal(
       title: section.title,
       description: normalizeOptionalText(section.description),
       layout_style: section.layoutStyle,
-      section_image_url: normalizeOptionalText(section.sectionImageUrl),
+      section_image_url: normalizeSupabaseStorageUrl(
+        normalizeOptionalText(section.sectionImageUrl)
+      ),
       section_image_alt: normalizeOptionalText(section.sectionImageAlt),
       section_image_position: section.sectionImagePosition,
       sort_order: Number.isFinite(section.sortOrder)

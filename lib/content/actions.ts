@@ -5,6 +5,7 @@ import {
   sanitizeAccordionSections,
   type AccordionSection,
 } from "@/lib/content/accordionSections";
+import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 
 
 type ContentStatus = "all" | "draft" | "published" | "archived";
@@ -59,7 +60,9 @@ export async function updateContentItem({
   if (slug !== undefined) update.slug = slug;
   if (excerpt !== undefined) update.excerpt = excerpt;
   if (published_at !== undefined) update.published_at = published_at;
-  if (featured_image_url !== undefined) update.featured_image_url = featured_image_url;
+  if (featured_image_url !== undefined) {
+    update.featured_image_url = normalizeSupabaseStorageUrl(featured_image_url);
+  }
   if (featured_image_alt !== undefined) update.featured_image_alt = featured_image_alt;
   if (credit_cost !== undefined) update.credit_cost = credit_cost;
   if (language !== undefined) update.language = language;
