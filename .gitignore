@@ -36,3 +36,6 @@ output/doc/legal/~$*.docx
 
 # local migration artifacts
 migration-dumps/
+
+# codex temp files
+.codex-tmp/
