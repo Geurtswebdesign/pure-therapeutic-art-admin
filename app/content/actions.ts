@@ -2,9 +2,21 @@
 
 import { createClient } from "../../lib/supabase/server";
 import { getContentAccessScope } from "@/lib/content/access";
+import { hasAccess } from "@/lib/unlock/hasAccess";
 
 export async function unlockContentItem(contentItemId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user && (await hasAccess(user.id, contentItemId))) {
+    return {
+      unlocked: true,
+      already_unlocked: true,
+    };
+  }
+
   const scope = await getContentAccessScope(contentItemId);
 
   const { data, error } =

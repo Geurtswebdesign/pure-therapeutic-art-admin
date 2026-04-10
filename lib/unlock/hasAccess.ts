@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getContentAccessScope } from "@/lib/content/access";
+import { getTranslationFamilyIds } from "@/lib/content/translation-family";
 import {
   isTimedEntitlementActive,
   YEAR_ASSIGNMENTS_ENTITLEMENT_KEY,
@@ -30,17 +31,19 @@ export async function hasAccess(userId: string, contentItemId: string): Promise<
     if (hasActiveEntitlement) return true;
   }
 
+  const familyIds = await getTranslationFamilyIds(contentItemId);
+
   const { data, error } = await supabase
     .from("content_unlocks")
     .select("id")
     .eq("user_id", userId)
-    .eq("content_item_id", contentItemId)
-    .maybeSingle();
+    .in("content_item_id", familyIds)
+    .limit(1);
 
   if (error) {
     console.error("[hasAccess]", error);
     return false;
   }
 
-  return !!data;
+  return (data?.length ?? 0) > 0;
 }
