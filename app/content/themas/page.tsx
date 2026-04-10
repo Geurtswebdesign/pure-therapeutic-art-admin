@@ -1,8 +1,11 @@
 import ThemePageCard from "@/components/content/ThemePageCard";
 import { getPublishedThemePages } from "@/lib/content/theme-queries";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
 
 export default async function ThemePagesIndex() {
-  const themes = await getPublishedThemePages();
+  const language = resolveUiLanguage(await getAppLanguage());
+  const themes = await getPublishedThemePages({ preferredLanguage: language });
 
   return (
     <div className="space-y-5">

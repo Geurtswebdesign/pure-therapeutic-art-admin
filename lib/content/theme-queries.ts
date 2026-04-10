@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getPreferredPublishedContentMapByIds } from "@/lib/content/language-preference";
 import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 
 export type ThemePageSummary = {
@@ -107,6 +108,7 @@ type ThemeContentRow = {
   credit_cost: number | null;
   featured_image_url: string | null;
   featured_image_alt: string | null;
+  translation_source_id?: string | null;
 };
 
 type TermRow = {
@@ -314,6 +316,7 @@ async function getSectionAndItemCounts(pageIds: string[]) {
 
 export async function getPublishedThemePages(options?: {
   includeChildren?: boolean;
+  preferredLanguage?: string | null;
 }): Promise<ThemePageSummary[]> {
   const pages = await getThemeRows();
   if (!pages.length) return [];
@@ -356,7 +359,8 @@ export async function getPublishedThemePages(options?: {
 }
 
 export async function getPublishedThemePageBySlug(
-  slug: string
+  slug: string,
+  preferredLanguage?: string | null
 ): Promise<ThemePageDetail | null> {
   const supabase = createAdminClient();
   const pages = await getThemeRows();
@@ -441,27 +445,32 @@ export async function getPublishedThemePageBySlug(
 
   let contentById = new Map<string, ThemeContentRow>();
   if (contentIds.length) {
-    const { data: contentRows, error: contentError } = await supabase
-      .from("content_items")
-      .select(
-        "id, title, slug, excerpt, language, credit_cost, featured_image_url, featured_image_alt"
-      )
-      .in("id", contentIds)
-      .eq("status", "published");
-
-    if (contentError) {
-      console.error("getPublishedThemePageBySlug:content", contentError);
-    } else {
-      contentById = new Map(
-        ((contentRows ?? []) as ThemeContentRow[]).map((item) => [item.id, item])
-      );
+    try {
+      contentById = await getPreferredPublishedContentMapByIds<ThemeContentRow>({
+        contentIds,
+        preferredLanguage,
+        select:
+          "id, title, slug, excerpt, language, credit_cost, featured_image_url, featured_image_alt, translation_source_id",
+      });
+    } catch (error) {
+      console.error("getPublishedThemePageBySlug:content", error);
     }
   }
 
   const itemsBySectionId = new Map<string, ThemePageItem[]>();
+  const seenContentIdsBySectionId = new Map<string, Set<string>>();
   for (const row of sectionItemRows) {
     const content = contentById.get(row.content_item_id);
     if (!content) continue;
+
+    const seenContentIds =
+      seenContentIdsBySectionId.get(row.theme_section_id) ?? new Set<string>();
+    if (seenContentIds.has(content.id)) {
+      continue;
+    }
+    seenContentIds.add(content.id);
+    seenContentIdsBySectionId.set(row.theme_section_id, seenContentIds);
+
     const items = itemsBySectionId.get(row.theme_section_id) ?? [];
     items.push({
       id: content.id,

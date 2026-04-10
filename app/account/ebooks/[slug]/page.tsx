@@ -32,7 +32,7 @@ export default async function AccountEbookPage({
 
   const language = resolveUiLanguage(await getAppLanguage());
   const { slug } = await params;
-  const item = await getPublishedContentBySlug(slug);
+  const item = await getPublishedContentBySlug(slug, language);
 
   if (!item) {
     notFound();
@@ -74,7 +74,7 @@ export default async function AccountEbookPage({
   const [blocks, category, themeNavigation] = await Promise.all([
     getPublishedBlocks(item.id),
     getPrimaryCategoryForContentItem(item.id),
-    getThemeNavigationForContentItem(item.id),
+    getThemeNavigationForContentItem(item.id, language),
   ]);
 
   const isLegalContent = isLegalContentMetadata({

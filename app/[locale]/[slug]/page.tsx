@@ -14,6 +14,8 @@ import { getContentAccessScope } from "@/lib/content/access";
 import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import {
   getPrimaryCategoryForContentItem,
+  getPublishedBlocks,
+  getPublishedContentBySlug,
   getThemeNavigationForContentItem,
 } from "@/lib/content/public-queries";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
@@ -59,18 +61,30 @@ export default async function ContentPage({
   /* -------------------------------------------------
    * 2️⃣ Content item ophalen (incl. body)
    * ------------------------------------------------- */
-  const { data: item, error: itemError } = await supabase
-    .from("content_items")
-    .select("id, slug, title, body, status, language, credit_cost, excerpt, featured_image_url, featured_image_alt")
-    .eq("slug", slug)
-    .eq("language", locale)
-    .single();
+  const item = isPreview
+    ? await (async () => {
+        const { data } = await supabase
+          .from("content_items")
+          .select(
+            "id, slug, title, body, status, language, credit_cost, excerpt, featured_image_url, featured_image_alt"
+          )
+          .eq("slug", slug)
+          .maybeSingle();
 
-  if (!item || itemError) {
+        return data
+          ? {
+              ...data,
+              featured_image_url: normalizeSupabaseStorageUrl(
+                data.featured_image_url
+              ),
+            }
+          : null;
+      })()
+    : await getPublishedContentBySlug(slug, language);
+
+  if (!item) {
     notFound();
   }
-
-  item.featured_image_url = normalizeSupabaseStorageUrl(item.featured_image_url);
 
   /* -------------------------------------------------
    * 3️⃣ Status check
@@ -99,7 +113,7 @@ export default async function ContentPage({
   if (!isPreview && requiresUnlock && !hasUserAccess) {
     const [category, themeNavigation] = await Promise.all([
       getPrimaryCategoryForContentItem(item.id),
-      getThemeNavigationForContentItem(item.id),
+      getThemeNavigationForContentItem(item.id, language),
     ]);
     const balance = user ? await getBalanceByScope(user.id, scope) : 0;
     const backHref = themeNavigation
@@ -132,16 +146,11 @@ export default async function ContentPage({
   /* -------------------------------------------------
    * 4️⃣ Blocks ophalen
    * ------------------------------------------------- */
-  const { data: rawBlocks } = await supabase
-    .from("content_blocks")
-    .select("type, data, order_index")
-    .eq("content_item_id", item.id)
-    .order("order_index");
-
+  const rawBlocks = await getPublishedBlocks(item.id);
   const blocks = parseContentBlocks(rawBlocks ?? []);
   const [category, themeNavigation] = await Promise.all([
     getPrimaryCategoryForContentItem(item.id),
-    getThemeNavigationForContentItem(item.id),
+    getThemeNavigationForContentItem(item.id, language),
   ]);
   const isSeedCategory = Boolean(category?.is_homepage_seed);
   const isLegalContent = isLegalContentMetadata({
@@ -182,7 +191,7 @@ export default async function ContentPage({
             />
           ) : null
         }
-        languageLabel={locale}
+        languageLabel={item.language ?? language}
         statusLabel={isPreview ? item.status : null}
       />
     </ContentLayout>

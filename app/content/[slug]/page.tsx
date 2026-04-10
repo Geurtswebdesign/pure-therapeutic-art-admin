@@ -31,13 +31,13 @@ export default async function ContentDetailPage({
   const language = resolveUiLanguage(await getAppLanguage());
   const { slug } = await params;
 
-  const item = await getPublishedContentBySlug(slug);
+  const item = await getPublishedContentBySlug(slug, language);
   if (!item) notFound();
 
   const user = await getCurrentUser();
   const scope = await getContentAccessScope(item.id);
 
-  const requiresUnlock = item.credit_cost > 0;
+  const requiresUnlock = (item.credit_cost ?? 0) > 0;
 
   let hasUserAccess = false;
 
@@ -78,7 +78,7 @@ export default async function ContentDetailPage({
   const [blocks, category, themeNavigation] = await Promise.all([
     getPublishedBlocks(item.id),
     getPrimaryCategoryForContentItem(item.id),
-    getThemeNavigationForContentItem(item.id),
+    getThemeNavigationForContentItem(item.id, language),
   ]);
   const isSeedCategory = Boolean(category?.is_homepage_seed);
   const isLegalContent = isLegalContentMetadata({
@@ -108,7 +108,7 @@ export default async function ContentDetailPage({
           />
         ) : null
       }
-      languageLabel={language}
+      languageLabel={item.language ?? language}
     />
   );
 
@@ -130,7 +130,8 @@ export async function generateMetadata({
 }) {
   const { slug } = await params; // ⬅️ OOK HIER
 
-  const item = await getPublishedContentBySlug(slug);
+  const language = resolveUiLanguage(await getAppLanguage());
+  const item = await getPublishedContentBySlug(slug, language);
 
   if (!item) return {};
   const description = stripRichText(item.excerpt);

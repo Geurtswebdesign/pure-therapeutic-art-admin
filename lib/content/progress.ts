@@ -1,6 +1,7 @@
 "use server";
 
 import { isLegalContentMetadata } from "@/lib/content/legal-content";
+import { getPreferredPublishedContentMapByIds } from "@/lib/content/language-preference";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type {
   ContentProgressStatus,
@@ -23,6 +24,8 @@ type ProgressContentRow = {
   title: string | null;
   slug: string | null;
   status: string | null;
+  language: string | null;
+  translation_source_id?: string | null;
 };
 
 type ProgressRelationshipRow = {
@@ -230,7 +233,10 @@ export async function upsertUserContentProgress(
   return data;
 }
 
-async function getUnlockedContentBase(userId: string) {
+async function getUnlockedContentBase(
+  userId: string,
+  preferredLanguage?: string | null
+) {
   const supabase = createAdminClient();
   const { data: unlockRows, error: unlockError } = await supabase
     .from("content_unlocks")
@@ -256,19 +262,11 @@ async function getUnlockedContentBase(userId: string) {
     return [];
   }
 
-  const { data: contentItems, error: contentItemsError } = await supabase
-    .from("content_items")
-    .select("id, title, slug, status")
-    .in("id", contentIds)
-    .eq("status", "published");
-
-  if (contentItemsError) {
-    throw contentItemsError;
-  }
-
-  const contentById = new Map(
-    ((contentItems ?? []) as ProgressContentRow[]).map((item) => [item.id, item])
-  );
+  const contentById = await getPreferredPublishedContentMapByIds<ProgressContentRow>({
+    contentIds,
+    preferredLanguage,
+    select: "id, title, slug, status, language, translation_source_id",
+  });
 
   const categoriesByContentId = new Map<string, string[]>();
   const { data: categoryTaxonomy, error: categoryTaxonomyError } = await supabase
@@ -434,7 +432,7 @@ async function getUnlockedContentBase(userId: string) {
       }
 
       return {
-        contentItemId: item.id,
+        contentItemId,
         title: item.title?.trim() || "Onbekende content",
         slug: item.slug,
         categories,
@@ -468,9 +466,10 @@ async function getUnlockedContentBase(userId: string) {
 }
 
 async function buildUserProgressItems(
-  userId: string
+  userId: string,
+  preferredLanguage?: string | null
 ): Promise<UserProgressListItem[]> {
-  const baseItems = await getUnlockedContentBase(userId);
+  const baseItems = await getUnlockedContentBase(userId, preferredLanguage);
   if (!baseItems.length) {
     return [];
   }
@@ -730,10 +729,11 @@ async function buildThemeProgressSummaries(
 }
 
 export async function getUserProgressCollections(
-  userId: string
+  userId: string,
+  preferredLanguage?: string | null
 ): Promise<ProgressCollectionResult> {
   const storageReady = await isContentProgressStorageReady();
-  const items = await buildUserProgressItems(userId);
+  const items = await buildUserProgressItems(userId, preferredLanguage);
   const themes = await buildThemeProgressSummaries(items);
 
   const unlocked = [...items]

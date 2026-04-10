@@ -9,7 +9,7 @@ import { getAppMessages } from "@/lib/i18n/appMessages";
 type Props = {
   item: {
     id: string;
-    title: string;
+    title: string | null;
     excerpt: string | null;
     featured_image_url: string | null;
     featured_image_alt: string | null;
@@ -35,6 +35,7 @@ export default async function ContentLockout({
   backLabel = "Terug",
 }: Props) {
   const t = getAppMessages(language).metadata;
+  const title = item.title ?? "Content";
   const content = (
     <article className="lockout-container space-y-5">
       <div className="flex items-center justify-between gap-3">
@@ -47,13 +48,13 @@ export default async function ContentLockout({
       </div>
 
       <h1 className="lockout-title">
-        {item.title}
+        {title}
       </h1>
 
       {item.featured_image_url ? (
         <Image
           src={item.featured_image_url}
-          alt={item.featured_image_alt || item.title || t.featuredImageAlt}
+          alt={item.featured_image_alt || title || t.featuredImageAlt}
           width={1200}
           height={630}
           unoptimized

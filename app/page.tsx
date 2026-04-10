@@ -106,9 +106,12 @@ async function getSafeProfile(userId: string): Promise<ProfileRow | null> {
   }
 }
 
-async function getSafeHomepageCategories() {
+async function getSafeHomepageCategories(preferredLanguage?: string) {
   try {
-    return await getHomepageCategories(50, { homepageOnly: true });
+    return await getHomepageCategories(50, {
+      homepageOnly: true,
+      preferredLanguage,
+    });
   } catch (error) {
     console.error("[Home] homepage categories", error);
     return [];
@@ -122,7 +125,7 @@ export default async function Home() {
 
   const [profile, categories] = await Promise.all([
     user ? getSafeProfile(user.id) : Promise.resolve<ProfileRow | null>(null),
-    getSafeHomepageCategories(),
+    getSafeHomepageCategories(language),
   ]);
 
   const displayName =

@@ -87,9 +87,9 @@ function formatCategoryLabel(slug: string) {
     .join(" ");
 }
 
-async function getSafeHomepageCategories() {
+async function getSafeHomepageCategories(preferredLanguage?: string) {
   try {
-    return await getHomepageCategories(200);
+    return await getHomepageCategories(200, { preferredLanguage });
   } catch (error) {
     console.error("[ContentIndexPage] categories", error);
     return [];
@@ -107,7 +107,7 @@ export default async function ContentIndexPage({
   const categorySlug = Array.isArray(params?.category)
     ? params?.category[0]
     : params?.category;
-  const categories = await getSafeHomepageCategories();
+  const categories = await getSafeHomepageCategories(language);
   const activeCategory = categorySlug
     ? categories.find((category) => category.slug === categorySlug) ?? null
     : null;
@@ -115,7 +115,10 @@ export default async function ContentIndexPage({
   const showingSeedCategory = Boolean(activeCategory && isSeedCategory(activeCategory));
   const showingRegularCategory = Boolean(activeCategory && !isSeedCategory(activeCategory));
   const themes = showingRegularCategory
-    ? await getPublishedThemePages({ includeChildren: true })
+    ? await getPublishedThemePages({
+        includeChildren: true,
+        preferredLanguage: language,
+      })
     : [];
   const rootCategories = categories
     .filter((category) => !category.parent_id && isSeedCategory(category))
@@ -130,7 +133,7 @@ export default async function ContentIndexPage({
     : [];
   const inlineTheme =
     showingRegularCategory && categoryThemes.length === 1
-      ? await getPublishedThemePageBySlug(categoryThemes[0].slug)
+      ? await getPublishedThemePageBySlug(categoryThemes[0].slug, language)
       : null;
 
   if (inlineTheme) {

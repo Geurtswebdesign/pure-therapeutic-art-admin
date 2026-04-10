@@ -1,6 +1,14 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  collapseToPreferredTranslations,
+  getContentLanguagePreference,
+  getPreferredPublishedContentMapByIds,
+  getTranslationRootId,
+  pickPreferredTranslation,
+} from "@/lib/content/language-preference";
+import { getTranslationFamilyIds } from "@/lib/content/translation-family";
 import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 
 type ThemePageCategoryRow = {
@@ -24,6 +32,21 @@ type ThemeSectionItemRow = {
 type ThemeItemNavigationLink = {
   href: string;
   title: string;
+};
+
+type PublicContentRow = {
+  id: string;
+  title: string | null;
+  slug: string | null;
+  excerpt: string | null;
+  published_at: string | null;
+  language: string | null;
+  credit_cost: number | null;
+  featured_image_url: string | null;
+  featured_image_alt: string | null;
+  translation_source_id?: string | null;
+  body?: string | null;
+  status?: string | null;
 };
 
 export type ThemeItemNavigation = {
@@ -233,8 +256,13 @@ async function getFallbackCategoryTermForContentItem(contentItemId: string) {
   return pages?.[0]?.primary_category_term_id ?? null;
 }
 
-export async function getPublishedContent(categorySlug?: string | null) {
+export async function getPublishedContent(
+  categorySlug?: string | null,
+  preferredLanguage?: string | null
+) {
   const supabase = createAdminClient();
+  const { preferredLanguage: activeLanguage, fallbackLanguage } =
+    await getContentLanguagePreference(preferredLanguage);
   let categoryContentIds: string[] | null = null;
 
   if (categorySlug) {
@@ -276,7 +304,7 @@ export async function getPublishedContent(categorySlug?: string | null) {
   let query = supabase
     .from("content_items")
     .select(
-      "id, title, slug, excerpt, published_at, language, credit_cost, featured_image_url, featured_image_alt"
+      "id, title, slug, excerpt, published_at, language, credit_cost, featured_image_url, featured_image_alt, translation_source_id"
     )
     .eq("status", "published")
     .order("published_at", { ascending: false });
@@ -288,7 +316,11 @@ export async function getPublishedContent(categorySlug?: string | null) {
   const { data, error } = await query;
 
   if (error) throw error;
-  return (data ?? []).map((item) => ({
+  return collapseToPreferredTranslations(
+    (data ?? []) as PublicContentRow[],
+    activeLanguage,
+    fallbackLanguage
+  ).map((item) => ({
     ...item,
     featured_image_url: normalizeSupabaseStorageUrl(item.featured_image_url),
   }));
@@ -296,9 +328,11 @@ export async function getPublishedContent(categorySlug?: string | null) {
 
 export async function getHomepageCategories(
   limit = 10,
-  options?: { homepageOnly?: boolean }
+  options?: { homepageOnly?: boolean; preferredLanguage?: string | null }
 ) {
   const supabase = createAdminClient();
+  const { preferredLanguage, fallbackLanguage } =
+    await getContentLanguagePreference(options?.preferredLanguage);
   const categoryTaxonomy = await getTaxonomyId("category");
   if (!categoryTaxonomy) return [];
 
@@ -384,7 +418,7 @@ export async function getHomepageCategories(
   const { data: items, error: itemsError } = await supabase
     .from("content_items")
     .select(
-      "id, title, slug, excerpt, language, credit_cost, published_at"
+      "id, title, slug, excerpt, language, credit_cost, published_at, translation_source_id"
     )
     .eq("status", "published")
     .order("published_at", { ascending: false });
@@ -402,17 +436,14 @@ export async function getHomepageCategories(
   if (relationshipsError) throw relationshipsError;
 
   const itemById = new Map(
-    (items ?? []).map((item) => [
-      item.id,
-      {
-        id: item.id,
-        title: item.title,
-        slug: item.slug,
-        excerpt: item.excerpt,
-        language: item.language,
-        credit_cost: item.credit_cost,
-      },
-    ])
+    (items ?? []).map((item) => [item.id, item as PublicContentRow])
+  );
+  const preferredItemByFamilyId = new Map(
+    collapseToPreferredTranslations(
+      (items ?? []) as PublicContentRow[],
+      preferredLanguage,
+      fallbackLanguage
+    ).map((item) => [getTranslationRootId(item), item])
   );
 
   const itemIdsByCategoryId = createEmptyItemSetMap(categories.map((category) => category.id));
@@ -444,21 +475,19 @@ export async function getHomepageCategories(
 
   const firstItemByCategory = new Map<
     string,
-    {
-      id: string;
-      title: string;
-      slug: string;
-      excerpt: string | null;
-      language: string | null;
-      credit_cost: number | null;
-    }
+    Pick<
+      PublicContentRow,
+      "id" | "title" | "slug" | "excerpt" | "language" | "credit_cost"
+    >
   >();
 
   for (const item of items ?? []) {
     const categoryIds = categoryIdsByContentItemId.get(item.id) ?? new Set<string>();
     if (!categoryIds.size) continue;
 
-    const itemSummary = itemById.get(item.id);
+    const itemSummary =
+      preferredItemByFamilyId.get(getTranslationRootId(item as PublicContentRow)) ??
+      itemById.get(item.id);
     if (!itemSummary) continue;
 
     for (const categoryId of categoryIds) {
@@ -477,14 +506,19 @@ export async function getHomepageCategories(
   return rows;
 }
 
-export async function getPublishedContentBySlug(slug: string) {
+export async function getPublishedContentBySlug(
+  slug: string,
+  preferredLanguage?: string | null
+) {
   const supabase = createAdminClient();
+  const { preferredLanguage: activeLanguage, fallbackLanguage } =
+    await getContentLanguagePreference(preferredLanguage);
   const { data, error } = await supabase
     .from("content_items")
     .select("*")
     .eq("slug", slug)
     .eq("status", "published")
-    .maybeSingle();
+    .maybeSingle<PublicContentRow>();
 
   if (error) {
     console.error("getPublishedContentBySlug:", error);
@@ -495,9 +529,28 @@ export async function getPublishedContentBySlug(slug: string) {
     return null;
   }
 
+  const rootId = getTranslationRootId(data);
+  const { data: familyRows, error: familyError } = await supabase
+    .from("content_items")
+    .select("*")
+    .eq("status", "published")
+    .or(`id.eq.${rootId},translation_source_id.eq.${rootId}`)
+    .returns<PublicContentRow[]>();
+
+  if (familyError) {
+    console.error("getPublishedContentBySlug:family", familyError);
+  }
+
+  const preferredRow =
+    pickPreferredTranslation(
+      (familyRows ?? []) as PublicContentRow[],
+      activeLanguage,
+      fallbackLanguage
+    ) ?? data;
+
   return {
-    ...data,
-    featured_image_url: normalizeSupabaseStorageUrl(data.featured_image_url),
+    ...preferredRow,
+    featured_image_url: normalizeSupabaseStorageUrl(preferredRow.featured_image_url),
   };
 }
 
@@ -517,12 +570,17 @@ function slugifyLookupValue(value: string) {
     .replace(/^-|-$/g, "");
 }
 
-export async function getPublishedContentByReference(reference: string) {
+export async function getPublishedContentByReference(
+  reference: string,
+  preferredLanguage?: string | null
+) {
   const trimmed = reference.trim();
   if (!trimmed) {
     return null;
   }
 
+  const { preferredLanguage: activeLanguage, fallbackLanguage } =
+    await getContentLanguagePreference(preferredLanguage);
   const slugified = slugifyLookupValue(trimmed);
   const slugCandidates = Array.from(
     new Set([trimmed, slugified].map((value) => value.trim()).filter(Boolean))
@@ -557,10 +615,29 @@ export async function getPublishedContentByReference(reference: string) {
       .sort((left, right) => right.score - left.score)[0]?.row ?? null;
 
   if (bestSlugMatch) {
+    const rootId = getTranslationRootId(bestSlugMatch as PublicContentRow);
+    const { data: familyRows, error: familyError } = await supabase
+      .from("content_items")
+      .select("*")
+      .eq("status", "published")
+      .or(`id.eq.${rootId},translation_source_id.eq.${rootId}`)
+      .returns<PublicContentRow[]>();
+
+    if (familyError) {
+      console.error("getPublishedContentByReference:family", familyError);
+    }
+
+    const preferredRow =
+      pickPreferredTranslation(
+        (familyRows ?? []) as PublicContentRow[],
+        activeLanguage,
+        fallbackLanguage
+      ) ?? (bestSlugMatch as PublicContentRow);
+
     return {
-      ...bestSlugMatch,
+      ...preferredRow,
       featured_image_url: normalizeSupabaseStorageUrl(
-        bestSlugMatch.featured_image_url
+        preferredRow.featured_image_url
       ),
     };
   }
@@ -581,9 +658,28 @@ export async function getPublishedContentByReference(reference: string) {
     return null;
   }
 
+  const rootId = getTranslationRootId(titleMatch as PublicContentRow);
+  const { data: familyRows, error: familyError } = await supabase
+    .from("content_items")
+    .select("*")
+    .eq("status", "published")
+    .or(`id.eq.${rootId},translation_source_id.eq.${rootId}`)
+    .returns<PublicContentRow[]>();
+
+  if (familyError) {
+    console.error("getPublishedContentByReference:titleFamily", familyError);
+  }
+
+  const preferredRow =
+    pickPreferredTranslation(
+      (familyRows ?? []) as PublicContentRow[],
+      activeLanguage,
+      fallbackLanguage
+    ) ?? (titleMatch as PublicContentRow);
+
   return {
-    ...titleMatch,
-    featured_image_url: normalizeSupabaseStorageUrl(titleMatch.featured_image_url),
+    ...preferredRow,
+    featured_image_url: normalizeSupabaseStorageUrl(preferredRow.featured_image_url),
   };
 }
 
@@ -600,14 +696,16 @@ export async function getPublishedBlocks(contentItemId: string) {
 }
 
 export async function getThemeNavigationForContentItem(
-  contentItemId: string
+  contentItemId: string,
+  preferredLanguage?: string | null
 ): Promise<ThemeItemNavigation | null> {
   const supabase = createAdminClient();
+  const currentFamilyIds = await getTranslationFamilyIds(contentItemId);
 
   const { data: currentLinks, error: currentLinksError } = await supabase
     .from("content_theme_section_items")
     .select("theme_section_id, content_item_id, sort_order")
-    .eq("content_item_id", contentItemId);
+    .in("content_item_id", currentFamilyIds);
 
   if (currentLinksError) {
     throw currentLinksError;
@@ -762,20 +860,19 @@ export async function getThemeNavigationForContentItem(
     return null;
   }
 
-  const { data: contentRows, error: contentRowsError } = await supabase
-    .from("content_items")
-    .select("id, title, slug, language")
-    .in("id", themeContentIds)
-    .eq("status", "published");
+  const contentById = await getPreferredPublishedContentMapByIds<{
+    id: string;
+    title: string | null;
+    slug: string | null;
+    language: string | null;
+    translation_source_id?: string | null;
+  }>({
+    contentIds: themeContentIds,
+    preferredLanguage,
+    select: "id, title, slug, language, translation_source_id",
+  });
 
-  if (contentRowsError) {
-    throw contentRowsError;
-  }
-
-  const contentById = new Map(
-    (contentRows ?? []).map((item) => [item.id, item])
-  );
-
+  const seenContentIds = new Set<string>();
   const orderedPublishedItems = orderedThemeSectionItems
     .map((row) => {
       const content = contentById.get(row.content_item_id);
@@ -789,6 +886,18 @@ export async function getThemeNavigationForContentItem(
         title: row.custom_title || content.title || "Ongetitelde content",
       };
     })
+    .filter((row) => {
+      if (!row) {
+        return false;
+      }
+
+      if (seenContentIds.has(row.id)) {
+        return false;
+      }
+
+      seenContentIds.add(row.id);
+      return true;
+    })
     .filter(
       (
         row
@@ -800,7 +909,7 @@ export async function getThemeNavigationForContentItem(
     );
 
   const currentIndex = orderedPublishedItems.findIndex(
-    (item) => item.id === contentItemId
+    (item) => currentFamilyIds.includes(item.id)
   );
 
   if (currentIndex === -1) {

@@ -873,7 +873,7 @@ export default async function AccountPage({
       .eq("entitlement_key", THERAPIST_DIRECTORY_ENTITLEMENT_KEY)
       .order("created_at", { ascending: false })
       .returns<TherapistEntitlementRow[]>(),
-    getUserProgressCollections(user.id),
+    getUserProgressCollections(user.id, language),
     getAccountContentProductsData({
       userId: user.id,
       email: user.email ?? null,
