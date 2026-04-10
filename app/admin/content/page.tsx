@@ -3,7 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import ContentTableClient from "@/components/content/admin/ContentTableClient";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import { normalizeLanguageCode } from "@/lib/i18n/languages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getSupportedLanguageOptions } from "@/lib/i18n/settings";
 import { getAdminAreaUrl } from "@/lib/site/urls";
 
 const PAGE_SIZE = 20;
@@ -33,6 +35,7 @@ type PageProps = {
   searchParams: Promise<{
     s?: SearchParamValue;
     status?: SearchParamValue;
+    language?: SearchParamValue;
     category?: SearchParamValue;
     credits?: SearchParamValue;
     sort?: SearchParamValue;
@@ -84,13 +87,22 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
   const language = resolveUiLanguage(await getPrimaryLanguage());
   const t = getAdminMessages(language).contentPage;
   const supabase = createAdminClient();
+  const contentLanguageOptions = await getSupportedLanguageOptions(language);
   const params = await searchParams;
   const search = takeFirst(params.s)?.trim() ?? "";
   const statusFilter = normalizeStatusFilter(takeFirst(params.status));
+  const requestedContentLanguage = normalizeLanguageCode(
+    takeFirst(params.language) ?? ""
+  );
   const requestedCategory = takeFirst(params.category)?.trim() ?? "";
   const creditFilter = normalizeCreditFilter(takeFirst(params.credits));
   const sort = normalizeSortOption(takeFirst(params.sort));
   const requestedPage = parsePageNumber(takeFirst(params.page));
+  const activeContentLanguage = contentLanguageOptions.some(
+    (option) => option.code === requestedContentLanguage
+  )
+    ? requestedContentLanguage
+    : "";
   const effectiveSort: SortOption =
     creditFilter === "credits_desc" || creditFilter === "credits_asc"
       ? creditFilter
@@ -181,6 +193,13 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
       nextQuery = nextQuery.gt("credit_cost", 0) as FilterableContentQuery;
     }
 
+    if (activeContentLanguage) {
+      nextQuery = nextQuery.eq(
+        "language",
+        activeContentLanguage
+      ) as FilterableContentQuery;
+    }
+
     if (status === "all") {
       return nextQuery.neq("status", "trash") as T;
     }
@@ -256,7 +275,9 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
   const contentQuery = applyContentFilters(
     supabase
       .from("content_items")
-      .select("id, title, body, status, updated_at, published_at, credit_cost"),
+      .select(
+        "id, title, body, status, updated_at, published_at, credit_cost, language"
+      ),
     statusFilter
   );
 
@@ -298,6 +319,7 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
       updated_at: string;
       published_at?: string | null;
       credit_cost?: number | null;
+      language?: string | null;
     }>).map((item) => ({
       ...item,
       credit_cost: item.credit_cost ?? 0,
@@ -394,9 +416,11 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
         items={itemsWithTerms}
         allCategories={allCategories}
         language={language}
+        languageOptions={contentLanguageOptions}
         filters={{
           search,
           status: statusFilter,
+          contentLanguage: activeContentLanguage,
           category: activeCategory,
           credits: creditFilter,
           sort: effectiveSort,

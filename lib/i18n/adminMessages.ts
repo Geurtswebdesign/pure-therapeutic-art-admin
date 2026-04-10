@@ -253,9 +253,12 @@ type AdminMessages = {
     searchPlaceholder: string;
     title: string;
     status: string;
+    language: string;
+    languageLabel: string;
     categories: string;
     tags: string;
     date: string;
+    allLanguages: string;
     allCategories: string;
     creditsLabel: string;
     allCredits: string;
@@ -580,9 +583,12 @@ const nl: AdminMessages = {
     searchPlaceholder: "Berichten zoeken",
     title: "Titel",
     status: "Status",
+    language: "Taal",
+    languageLabel: "Taalfilter",
     categories: "Categorieen",
     tags: "Tags",
     date: "Datum",
+    allLanguages: "Alle talen",
     allCategories: "Alle categorieen",
     creditsLabel: "Credits filter",
     allCredits: "Alle credits",
@@ -886,7 +892,10 @@ const en: AdminMessages = {
     searchPlaceholder: "Search posts",
     title: "Title",
     status: "Status",
+    language: "Language",
+    languageLabel: "Language filter",
     categories: "Categories",
+    allLanguages: "All languages",
     allCategories: "All categories",
     creditsLabel: "Credits filter",
     allCredits: "All credits",
@@ -1193,7 +1202,10 @@ const de: AdminMessages = {
     searchPlaceholder: "Inhalte suchen",
     title: "Titel",
     status: "Status",
+    language: "Sprache",
+    languageLabel: "Sprachfilter",
     categories: "Kategorien",
+    allLanguages: "Alle Sprachen",
     allCategories: "Alle Kategorien",
     creditsLabel: "Credits-Filter",
     allCredits: "Alle Credits",

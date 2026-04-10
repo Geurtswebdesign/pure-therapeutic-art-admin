@@ -25,6 +25,10 @@ import {
   quickEditContentItem,
 } from "@/lib/content/actions/quickEditContentItem";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import {
+  getLanguageDisplayLabel,
+  type LanguageOption,
+} from "@/lib/i18n/languages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 
@@ -46,6 +50,7 @@ type ContentItem = {
   title: string;
   content?: string | null;
   status: ContentStatus;
+  language?: string | null;
   updated_at: string;
   published_at?: string | null;
   credit_cost: number;
@@ -58,13 +63,14 @@ type ContentItem = {
 type ContentTableFilters = {
   search: string;
   status: StatusFilter;
+  contentLanguage: string;
   category: string;
   credits: CreditFilter;
   sort: SortOption;
   currentPage: number;
 };
 
-type ColumnKey = "status" | "categories" | "tags" | "date";
+type ColumnKey = "status" | "language" | "categories" | "tags" | "date";
 
 const DEFAULT_SORT: SortOption = "updated_desc";
 
@@ -72,6 +78,7 @@ export default function ContentTableClient({
   items,
   allCategories = [],
   language,
+  languageOptions,
   filters,
   pageSize,
   totalItems,
@@ -81,6 +88,7 @@ export default function ContentTableClient({
   items: ContentItem[];
   allCategories?: { id: string; name: string }[];
   language: UiLanguage;
+  languageOptions: LanguageOption[];
   filters: ContentTableFilters;
   pageSize: number;
   totalItems: number;
@@ -103,6 +111,7 @@ export default function ContentTableClient({
 
   const visibleColumns: Record<ColumnKey, boolean> = {
     status: true,
+    language: true,
     categories: true,
     tags: true,
     date: true,
@@ -126,7 +135,12 @@ export default function ContentTableClient({
   }, [selected.length]);
 
   function navigate(
-    updates: Partial<Record<"s" | "status" | "category" | "credits" | "sort" | "page", string | null>>,
+    updates: Partial<
+      Record<
+        "s" | "status" | "language" | "category" | "credits" | "sort" | "page",
+        string | null
+      >
+    >,
     options?: {
       resetPage?: boolean;
       scroll?: boolean;
@@ -139,6 +153,8 @@ export default function ContentTableClient({
       const normalizedValue =
         key === "status" && value === "all"
           ? null
+          : key === "language" && value === "all"
+            ? null
           : key === "credits" && value === "all"
             ? null
           : key === "sort" && value === DEFAULT_SORT
@@ -250,6 +266,22 @@ export default function ContentTableClient({
   const rangeStart = totalItems === 0 ? 0 : (filters.currentPage - 1) * pageSize + 1;
   const rangeEnd = totalItems === 0 ? 0 : Math.min(filters.currentPage * pageSize, totalItems);
   const paginationItems = buildPagination(filters.currentPage, totalPages);
+  const tableColumnCount =
+    2 +
+    Number(visibleColumns.status) +
+    Number(visibleColumns.language) +
+    Number(visibleColumns.categories) +
+    Number(visibleColumns.tags) +
+    Number(visibleColumns.date);
+
+  function getContentLanguageLabel(code?: string | null) {
+    if (!code) {
+      return "—";
+    }
+
+    const option = languageOptions.find((item) => item.code === code);
+    return option?.label ?? getLanguageDisplayLabel(code, language);
+  }
 
   return (
     <>
@@ -315,6 +347,25 @@ export default function ContentTableClient({
           >
             {t.apply}
           </button>
+
+          <select
+            value={filters.contentLanguage}
+            onChange={(event) =>
+              navigate(
+                { language: event.target.value || null },
+                { resetPage: true, method: "replace" }
+              )
+            }
+            className="border px-2 py-1 text-sm"
+            aria-label={t.languageLabel}
+          >
+            <option value="">{t.allLanguages}</option>
+            {languageOptions.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.label}
+              </option>
+            ))}
+          </select>
 
           <select
             value={filters.category}
@@ -411,6 +462,7 @@ export default function ContentTableClient({
                 </th>
                 <th className="px-2 py-2 text-left">{t.title}</th>
                 {visibleColumns.status && <th className="px-2 py-2">{t.status}</th>}
+                {visibleColumns.language && <th className="px-2 py-2">{t.language}</th>}
                 {visibleColumns.categories && <th className="px-2 py-2">{t.categories}</th>}
                 {visibleColumns.tags && <th className="px-2 py-2">{t.tags}</th>}
                 {visibleColumns.date && <th className="px-2 py-2">{t.date}</th>}
@@ -466,6 +518,12 @@ export default function ContentTableClient({
                       </td>
                     )}
 
+                    {visibleColumns.language && (
+                      <td className="px-2 py-2">
+                        {getContentLanguageLabel(item.language)}
+                      </td>
+                    )}
+
                     {visibleColumns.categories && (
                       <td className="px-2 py-2">
                         {item.content_categories?.map((category) => category.name).join(", ") || "—"}
@@ -489,7 +547,7 @@ export default function ContentTableClient({
 
                   {quickEditId === item.id && (
                     <tr className="bg-gray-50">
-                      <td colSpan={6}>
+                      <td colSpan={tableColumnCount}>
                         <QuickEditForm
                           item={item}
                           allCategories={allCategories}
@@ -509,7 +567,10 @@ export default function ContentTableClient({
 
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
+                  <td
+                    colSpan={tableColumnCount}
+                    className="px-4 py-6 text-center text-gray-500"
+                  >
                     {t.noContentFound}
                   </td>
                 </tr>
