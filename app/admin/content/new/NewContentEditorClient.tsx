@@ -151,7 +151,7 @@ export default function NewContentEditorClient({
       const generatedSlug = slugify(draft.title);
       const finalSlug = draft.slug.trim() || generatedSlug || `content-${item.id.slice(0, 8)}`;
 
-      await updateContentItem({
+      const result = await updateContentItem({
         id: item.id,
         title: draft.title,
         body: draft.body,
@@ -171,7 +171,7 @@ export default function NewContentEditorClient({
       setDraft((prev) => ({
         ...prev,
         status: nextStatus,
-        slug: finalSlug,
+        slug: result.slug ?? finalSlug,
         published_at: publishInput,
       }));
       setDirty(false);

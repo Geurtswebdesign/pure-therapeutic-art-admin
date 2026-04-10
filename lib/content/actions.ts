@@ -6,9 +6,65 @@ import {
   type AccordionSection,
 } from "@/lib/content/accordionSections";
 import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
+import {
+  DEFAULT_PRIMARY_LANGUAGE,
+  getLanguageBaseCode,
+  normalizeLanguageCode,
+} from "@/lib/i18n/languages";
 
 
 type ContentStatus = "all" | "draft" | "published" | "archived";
+
+function slugifyContentValue(value: string) {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+async function buildUniqueContentSlug(input: {
+  preferredSlug: string;
+  contentItemId: string;
+  language: string;
+}) {
+  const normalizedLanguage =
+    normalizeLanguageCode(input.language) || DEFAULT_PRIMARY_LANGUAGE;
+  const languageSuffix =
+    getLanguageBaseCode(normalizedLanguage) || DEFAULT_PRIMARY_LANGUAGE;
+  const baseSlug =
+    slugifyContentValue(input.preferredSlug) ||
+    `content-${input.contentItemId.slice(0, 8)}`;
+  const candidateSet = new Set<string>([baseSlug, `${baseSlug}-${languageSuffix}`]);
+
+  for (let index = 2; index <= 50; index += 1) {
+    candidateSet.add(`${baseSlug}-${languageSuffix}-${index}`);
+  }
+
+  for (const candidate of candidateSet) {
+    const { data, error } = await supabaseAdmin
+      .from("content_items")
+      .select("id")
+      .eq("slug", candidate)
+      .neq("id", input.contentItemId)
+      .limit(1);
+
+    if (error) {
+      console.error("[updateContentItem:slug:check]", error);
+      throw new Error(`Slugcontrole mislukt: ${error.message}`);
+    }
+
+    if (!data?.length) {
+      return candidate;
+    }
+  }
+
+  throw new Error("Kon geen unieke slug genereren voor dit content-item.");
+}
 
 export async function updateContentItem({
   id,
@@ -40,7 +96,24 @@ export async function updateContentItem({
   category_term_ids?: string[];
   tag_term_ids?: string[];
   accordion_sections?: AccordionSection[];
-}) {
+}) : Promise<{ slug: string | null }> {
+  const { data: currentItem, error: currentItemError } = await supabaseAdmin
+    .from("content_items")
+    .select("slug, language")
+    .eq("id", id)
+    .maybeSingle<{ slug: string | null; language: string | null }>();
+
+  if (currentItemError || !currentItem) {
+    console.error("[updateContentItem:load]", currentItemError);
+    throw new Error(
+      currentItemError?.message || "Bestaand content-item niet gevonden."
+    );
+  }
+
+  const effectiveLanguage =
+    language !== undefined
+      ? language
+      : currentItem.language ?? DEFAULT_PRIMARY_LANGUAGE;
   const update: Partial<{
     title: string;
     body: string;
@@ -57,7 +130,13 @@ export async function updateContentItem({
   if (title !== undefined) update.title = title;
   if (body !== undefined) update.body = body;
   if (status !== undefined) update.status = status;
-  if (slug !== undefined) update.slug = slug;
+  if (slug !== undefined) {
+    update.slug = await buildUniqueContentSlug({
+      preferredSlug: slug,
+      contentItemId: id,
+      language: effectiveLanguage,
+    });
+  }
   if (excerpt !== undefined) update.excerpt = excerpt;
   if (published_at !== undefined) update.published_at = published_at;
   if (featured_image_url !== undefined) {
@@ -265,6 +344,10 @@ export async function updateContentItem({
       }
     }
   }
+
+  return {
+    slug: update.slug ?? currentItem.slug,
+  };
 }
 
 export async function deleteContentItem(id: string) {

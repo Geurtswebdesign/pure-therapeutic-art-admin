@@ -49,7 +49,7 @@ export default function MetadataSidebarClient({
         setDirty(true);
       }}
       onSaveAll={async () => {
-        await updateContentItem({
+        const result = await updateContentItem({
           id: item.id,
           status: draft.status,
           slug: draft.slug,
@@ -62,6 +62,10 @@ export default function MetadataSidebarClient({
           category_term_ids: draft.category_term_ids,
           tag_term_ids: draft.tag_term_ids,
         });
+        setDraft((current) => ({
+          ...current,
+          slug: result.slug ?? current.slug,
+        }));
         setDirty(false);
       }}
       categoryTerms={[]}

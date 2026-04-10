@@ -160,7 +160,7 @@ export default function ContentEditorClient({
         ? generatedSlug || `content-${item.id.slice(0, 8)}`
         : draft.slug;
 
-      await updateContentItem({
+      const result = await updateContentItem({
         id: item.id,
         title: draft.title,
         body: draft.body,
@@ -180,7 +180,7 @@ export default function ContentEditorClient({
       setDraft((prev) => ({
         ...prev,
         status: nextStatus,
-        slug: finalSlug,
+        slug: result.slug ?? finalSlug,
         published_at: publishInput,
         language: draft.language,
       }));
