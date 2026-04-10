@@ -32,6 +32,17 @@ type OpenAiMessage = {
   content: string;
 };
 
+function getTranslationTimeoutMs() {
+  const rawValue = process.env.OPENAI_TRANSLATION_TIMEOUT_MS?.trim();
+  const parsedValue = rawValue ? Number.parseInt(rawValue, 10) : NaN;
+
+  if (Number.isFinite(parsedValue) && parsedValue >= 10_000) {
+    return parsedValue;
+  }
+
+  return 180_000;
+}
+
 function getOpenAiConfig() {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
@@ -198,26 +209,51 @@ export async function translateContentPayload(
   }
 
   const { apiKey, model } = getOpenAiConfig();
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: buildMessages({
-        ...input,
-        sourceLanguage,
-        targetLanguage,
+  const timeoutMs = getTranslationTimeoutMs();
+
+  let response: Response;
+  try {
+    response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: buildMessages({
+          ...input,
+          sourceLanguage,
+          targetLanguage,
+        }),
+        response_format: buildResponseFormat(),
       }),
-      response_format: buildResponseFormat(),
-    }),
-    signal: AbortSignal.timeout(60_000),
-  });
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (error) {
+    const isTimeoutError =
+      error instanceof Error &&
+      (error.name === "TimeoutError" ||
+        error.name === "AbortError" ||
+        /aborted due to timeout/i.test(error.message));
+
+    if (isTimeoutError) {
+      throw new Error(
+        `OpenAI-vertaling duurde te lang en is afgebroken na ${Math.round(timeoutMs / 1000)} seconden. Probeer het opnieuw of verhoog OPENAI_TRANSLATION_TIMEOUT_MS op de server.`
+      );
+    }
+
+    throw error;
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
+    if (response.status === 429 && /insufficient_quota/i.test(errorText)) {
+      throw new Error(
+        "OpenAI-vertaling mislukt omdat het API-project geen beschikbare quota meer heeft. Controleer billing en credits in OpenAI Platform."
+      );
+    }
+
     throw new Error(
       `OpenAI-vertaling mislukt (${response.status}): ${errorText}`
     );
