@@ -16,7 +16,11 @@ import {
 import AdminTwoFactorCard from "@/components/admin/settings/AdminTwoFactorCard";
 import { getLoginRateLimitMessage } from "@/lib/auth/getLoginRateLimitMessage";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
-import { resolveUiLanguage, type UiLanguage } from "@/lib/i18n/runtime";
+import {
+  resolveBaseUiLanguage,
+  resolveUiLanguage,
+  type BaseUiLanguage,
+} from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { isNativeAppUserAgent } from "@/lib/native/isNativeAppRequest";
 import { getPublicBranding } from "@/lib/settings/public";
@@ -40,7 +44,7 @@ type LoginSearchParams = {
 };
 
 const AUTH_COPY: Record<
-  UiLanguage,
+  BaseUiLanguage,
   {
     eyebrow: string;
     backHome: string;
@@ -178,9 +182,10 @@ export default async function LoginPage({
   searchParams?: Promise<LoginSearchParams>;
 }) {
   const language = resolveUiLanguage(await getAppLanguage());
+  const baseLanguage = resolveBaseUiLanguage(language);
   const t = getAppMessages(language).login;
-  const frameCopy = AUTH_FRAME_COPY[language];
-  const copy = AUTH_COPY[language];
+  const frameCopy = AUTH_FRAME_COPY[baseLanguage];
+  const copy = AUTH_COPY[baseLanguage];
   const branding = await getPublicBranding();
   const therapistPacks = await getActiveTherapistSubscriptionPacks();
   const params = await searchParams;

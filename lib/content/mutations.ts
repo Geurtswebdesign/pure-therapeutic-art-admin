@@ -1,22 +1,10 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { DEFAULT_PRIMARY_LANGUAGE } from "@/lib/i18n/languages";
+import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 
 export async function createContentItem() {
-  const { data: generalSettingsRow } = await supabaseAdmin
-    .from("app_settings")
-    .select("value")
-    .eq("scope", "global")
-    .is("scope_id", null)
-    .eq("key", "general")
-    .maybeSingle<{ value: { primaryLanguage?: string } }>();
-
-  const language =
-    typeof generalSettingsRow?.value?.primaryLanguage === "string" &&
-    generalSettingsRow.value.primaryLanguage.trim()
-      ? generalSettingsRow.value.primaryLanguage.trim().toLowerCase()
-      : DEFAULT_PRIMARY_LANGUAGE;
+  const language = await getPrimaryLanguage();
 
   const { data, error } = await supabaseAdmin
     .from("content_items")

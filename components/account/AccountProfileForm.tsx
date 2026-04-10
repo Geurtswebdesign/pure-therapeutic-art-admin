@@ -7,7 +7,7 @@ import { updateMyProfile } from "@/app/account/actions";
 import MultiSelectDropdown from "@/components/forms/MultiSelectDropdown";
 import { uploadMediaAssetClient } from "@/lib/content/uploadClient";
 import { getAppMessages } from "@/lib/i18n/appMessages";
-import type { UiLanguage } from "@/lib/i18n/runtime";
+import { resolveBaseUiLanguage, type UiLanguage } from "@/lib/i18n/runtime";
 import {
   type TherapistProfileData,
   type UserAccountType,
@@ -48,6 +48,7 @@ export default function AccountProfileForm({
   const t = messages.accountProfile;
   const general = messages.userGeneral;
   const therapist = initialTherapistProfile;
+  const baseLanguage = resolveBaseUiLanguage(language);
   const directoryAccessCopy = {
     nl: {
       description:
@@ -64,7 +65,7 @@ export default function AccountProfileForm({
         "Dein kostenloses Therapeutenkonto bleibt im Therapeutenverzeichnis verborgen. Schliesse zuerst im Shop ein Therapeuten-Abo ab, wenn du dieses Profil sichtbar machen moechtest.",
       cta: "Therapeuten-Abos ansehen",
     },
-  }[language];
+  }[baseLanguage];
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
   const [displayName, setDisplayName] = useState(initialDisplayName);

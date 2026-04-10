@@ -8,11 +8,14 @@ import {
   Purchases,
   type PurchasesStoreProduct,
 } from "@revenuecat/purchases-capacitor";
-
-type UiLanguage = "nl" | "en" | "de";
+import {
+  resolveBaseUiLanguage,
+  type BaseUiLanguage,
+  type UiLanguage,
+} from "@/lib/i18n/runtime";
 
 const COPY: Record<
-  UiLanguage,
+  BaseUiLanguage,
   {
     loading: string;
     buying: string;
@@ -75,7 +78,7 @@ export default function NativeEbookPurchaseButton({
   googleStoreProductId: string;
   language: UiLanguage;
 }) {
-  const t = COPY[language] ?? COPY.nl;
+  const t = COPY[resolveBaseUiLanguage(language)];
   const router = useRouter();
   const [product, setProduct] = useState<PurchasesStoreProduct | null>(null);
   const [error, setError] = useState<string | null>(null);

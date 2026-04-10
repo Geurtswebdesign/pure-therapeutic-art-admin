@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isKnownLanguage, normalizeLanguageCode } from "@/lib/i18n/languages";
+import { getSupportedLanguageCodes } from "@/lib/i18n/settings";
 import { getTherapistDirectoryEntitlementSummary } from "@/lib/users/therapistDirectoryAccess";
 import {
   normalizeTherapistProfileData,
@@ -101,7 +102,8 @@ export async function updateMyPreferredLanguage(languageCode: string) {
   }
 
   const normalizedCode = normalizeLanguageCode(languageCode);
-  if (!isKnownLanguage(normalizedCode)) {
+  const supportedLanguages = await getSupportedLanguageCodes();
+  if (!isKnownLanguage(normalizedCode, supportedLanguages)) {
     throw new Error("Ongeldige taal");
   }
 

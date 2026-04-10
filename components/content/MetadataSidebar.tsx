@@ -11,7 +11,7 @@ import { supabase } from "@/lib/supabase/browser";
 import MediaPicker from "@/components/content/media/MediaPicker";
 import type { Term } from "@/components/taxonomy/types";
 import { buildTermTree, flattenTree } from "@/components/taxonomy/types";
-import { LANGUAGE_OPTIONS } from "@/lib/i18n/languages";
+import type { LanguageOption } from "@/lib/i18n/languages";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
@@ -47,6 +47,7 @@ type MetadataSidebarProps = {
   saving?: boolean;
   categoryTerms: Term[];
   tagTerms: Term[];
+  languageOptions: LanguageOption[];
 };
 
 type BoxKey = "publish" | "permalink" | "featured" | "categories" | "tags" | "excerpt" | "options";
@@ -70,6 +71,7 @@ export default function MetadataSidebar({
   saving = false,
   categoryTerms,
   tagTerms,
+  languageOptions,
 }: MetadataSidebarProps) {
   const t = getAppMessages(language).metadata;
   const router = useRouter();
@@ -425,7 +427,7 @@ export default function MetadataSidebar({
               onChange={(e) => onDraftChange({ language: e.target.value })}
               className="w-full rounded border px-2 py-1 text-sm"
             >
-              {LANGUAGE_OPTIONS.map((lang) => (
+              {languageOptions.map((lang) => (
                 <option key={lang.code} value={lang.code}>
                   {lang.label}
                 </option>

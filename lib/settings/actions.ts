@@ -28,7 +28,10 @@ import {
 } from "@/lib/shop/catalog";
 import {
   DEFAULT_PRIMARY_LANGUAGE,
+  DEFAULT_SUPPORTED_LANGUAGES,
+  ensureLanguageCodes,
   normalizeLanguageCode,
+  parseLanguageCodes,
 } from "@/lib/i18n/languages";
 
 function asObject(value: unknown): Record<string, unknown> | null {
@@ -82,6 +85,16 @@ export async function getGeneralSettings(): Promise<GeneralSettings> {
     primaryLanguage: normalizeLanguageCode(
       asString(value?.primaryLanguage, DEFAULT_GENERAL_SETTINGS.primaryLanguage)
     ),
+    supportedLanguages: ensureLanguageCodes(
+      parseLanguageCodes(
+        Array.isArray(value?.supportedLanguages)
+          ? (value?.supportedLanguages as string[])
+          : typeof value?.supportedLanguages === "string"
+            ? value.supportedLanguages
+            : DEFAULT_GENERAL_SETTINGS.supportedLanguages
+      ),
+      [DEFAULT_PRIMARY_LANGUAGE, ...DEFAULT_SUPPORTED_LANGUAGES]
+    ),
   };
 }
 
@@ -97,12 +110,17 @@ export async function saveGeneralSettings(
   const normalizedPrimary = normalizeLanguageCode(
     settings.primaryLanguage || DEFAULT_PRIMARY_LANGUAGE
   );
+  const supportedLanguages = ensureLanguageCodes(
+    settings.supportedLanguages,
+    [normalizedPrimary, ...DEFAULT_SUPPORTED_LANGUAGES]
+  );
 
   const supabase = createAdminClient();
   const value = {
     ...settings,
     logoUrl: normalizeSupabaseStorageUrl(settings.logoUrl) || "",
     primaryLanguage: normalizedPrimary,
+    supportedLanguages,
   };
 
   const { data: existing, error: existingError } = await supabase
@@ -155,6 +173,8 @@ export async function saveGeneralSettings(
   });
 
   revalidatePath("/admin/settings/general");
+  revalidatePath("/account");
+  revalidatePath("/login");
 }
 
 export async function saveBrandingSettings(

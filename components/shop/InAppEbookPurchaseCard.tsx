@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import type { UiLanguage } from "@/lib/i18n/runtime";
+import { resolveBaseUiLanguage, type UiLanguage } from "@/lib/i18n/runtime";
 import { purchaseEbookInApp } from "@/app/shop/ebook-actions";
 import type { EbookPurchaseMode } from "@/lib/shop/ebook-purchase-mode";
 import NativeEbookPurchaseButton from "@/components/shop/NativeEbookPurchaseButton";
@@ -104,7 +104,7 @@ export default function InAppEbookPurchaseCard({
   purchaseMode,
   language,
 }: Props) {
-  const t = COPY[language] ?? COPY.nl;
+  const t = COPY[resolveBaseUiLanguage(language)];
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 

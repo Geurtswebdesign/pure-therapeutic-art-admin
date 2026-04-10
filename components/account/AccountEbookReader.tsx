@@ -6,7 +6,7 @@ import { normalizeImages } from "@/lib/content/normalizeHtml";
 import PublicBlockRenderer from "@/components/content/PublicBlockRenderer";
 import RichTextExcerpt from "@/components/content/RichTextExcerpt";
 import type { ThemeItemNavigation } from "@/lib/content/public-queries";
-import type { UiLanguage } from "@/lib/i18n/runtime";
+import { resolveBaseUiLanguage, type UiLanguage } from "@/lib/i18n/runtime";
 
 type Item = {
   title: string | null;
@@ -65,7 +65,7 @@ export default function AccountEbookReader({
   progressCard?: ReactNode;
   language: UiLanguage;
 }) {
-  const t = messagesByLanguage[language] ?? messagesByLanguage.nl;
+  const t = messagesByLanguage[resolveBaseUiLanguage(language)];
 
   return (
     <section className="space-y-5">

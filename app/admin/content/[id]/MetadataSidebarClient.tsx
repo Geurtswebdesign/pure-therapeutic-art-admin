@@ -3,6 +3,8 @@
 import { useState } from "react";
 import MetadataSidebar from "@/components/content/MetadataSidebar";
 import { updateContentItem } from "@/lib/content/actions";
+import { buildLanguageOptions } from "@/lib/i18n/languages";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import type { ContentStatus } from "@/components/content/MetadataSidebar";
 
 export default function MetadataSidebarClient({
@@ -34,10 +36,11 @@ export default function MetadataSidebarClient({
   });
 
   const [dirty, setDirty] = useState(false);
+  const languageOptions = buildLanguageOptions([item.language]);
 
   return (
     <MetadataSidebar
-      language={(item.language as "nl" | "en" | "de") ?? "nl"}
+      language={resolveUiLanguage(item.language)}
       item={item}
       draft={draft}
       dirty={dirty}
@@ -63,6 +66,7 @@ export default function MetadataSidebarClient({
       }}
       categoryTerms={[]}
       tagTerms={[]}
+      languageOptions={languageOptions}
     />
   );
 }

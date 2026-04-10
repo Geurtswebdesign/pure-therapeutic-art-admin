@@ -273,7 +273,7 @@ export async function bulkUpdateUserRole(
 export async function updateUserProfileExtended(input: {
   userId: string;
   display_name?: string | null;
-  language?: "nl" | "en";
+  language?: string;
   timezone?: string;
   profileData?: Record<string, unknown>;
 }) {

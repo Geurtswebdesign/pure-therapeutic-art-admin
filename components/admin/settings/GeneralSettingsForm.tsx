@@ -1,9 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { saveGeneralSettings } from "@/lib/settings/actions";
 import type { GeneralSettings } from "@/lib/settings/types";
-import { LANGUAGE_OPTIONS } from "@/lib/i18n/languages";
+import {
+  buildLanguageOptions,
+  ensureLanguageCodes,
+  normalizeLanguageCode,
+  parseLanguageCodes,
+} from "@/lib/i18n/languages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { trackEvent } from "@/lib/analytics/track";
 
@@ -35,6 +40,10 @@ export default function GeneralSettingsForm({ initialValues }: Props) {
           currencyHint: "Example: EUR",
           primaryLanguage: "Primary language",
           primaryLanguageHint: "Controls admin interface language.",
+          supportedLanguages: "Supported languages",
+          supportedLanguagesHint:
+            "One locale code per line or separated by commas. Example: nl, en, de, fr, es.",
+          supportedLanguagesPreview: "Available language choices",
           saving: "Saving...",
           save: "Save settings",
           success: "Settings saved successfully",
@@ -61,6 +70,10 @@ export default function GeneralSettingsForm({ initialValues }: Props) {
             currencyHint: "Beispiel: EUR",
             primaryLanguage: "Primarsprache",
             primaryLanguageHint: "Steuert die Admin-Oberflaeche.",
+            supportedLanguages: "Unterstutzte Sprachen",
+            supportedLanguagesHint:
+              "Ein Locale-Code pro Zeile oder durch Kommas getrennt. Beispiel: nl, en, de, fr, es.",
+            supportedLanguagesPreview: "Verfugbare Sprachauswahl",
             saving: "Speichern...",
             save: "Einstellungen speichern",
             success: "Einstellungen erfolgreich gespeichert",
@@ -86,6 +99,10 @@ export default function GeneralSettingsForm({ initialValues }: Props) {
             currencyHint: "Voorbeeld: EUR",
             primaryLanguage: "Primaire taal",
             primaryLanguageHint: "Bepaalt de taal van de admin-interface.",
+            supportedLanguages: "Ondersteunde talen",
+            supportedLanguagesHint:
+              "Een locale-code per regel of gescheiden door komma's. Voorbeeld: nl, en, de, fr, es.",
+            supportedLanguagesPreview: "Beschikbare taalkeuzes",
             saving: "Opslaan...",
             save: "Instellingen opslaan",
             success: "Instellingen succesvol opgeslagen",
@@ -93,15 +110,52 @@ export default function GeneralSettingsForm({ initialValues }: Props) {
           };
 
   const [form, setForm] = useState(initialValues);
+  const [supportedLanguagesText, setSupportedLanguagesText] = useState(
+    initialValues.supportedLanguages.join(", ")
+  );
   const [isPending, startTransition] = useTransition();
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const supportedLanguageOptions = useMemo(
+    () => buildLanguageOptions(form.supportedLanguages, language),
+    [form.supportedLanguages, language]
+  );
 
   function handleChange<K extends keyof GeneralSettings>(
     key: K,
     value: GeneralSettings[K]
   ) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function handlePrimaryLanguageChange(value: string) {
+    const normalizedPrimary = normalizeLanguageCode(value);
+    setForm((prev) => ({
+      ...prev,
+      primaryLanguage: normalizedPrimary,
+      supportedLanguages: ensureLanguageCodes(prev.supportedLanguages, [
+        normalizedPrimary,
+      ]),
+    }));
+  }
+
+  function handleSupportedLanguagesChange(value: string) {
+    setSupportedLanguagesText(value);
+
+    setForm((prev) => {
+      const supportedLanguages = ensureLanguageCodes(parseLanguageCodes(value), [
+        prev.primaryLanguage,
+      ]);
+      const primaryLanguage = supportedLanguages.includes(prev.primaryLanguage)
+        ? prev.primaryLanguage
+        : supportedLanguages[0] ?? prev.primaryLanguage;
+
+      return {
+        ...prev,
+        primaryLanguage,
+        supportedLanguages,
+      };
+    });
   }
 
   function handleSubmit(event: React.FormEvent) {
@@ -172,15 +226,29 @@ export default function GeneralSettingsForm({ initialValues }: Props) {
             <select
               className="mt-1 w-full rounded border px-3 py-2 text-sm"
               value={form.primaryLanguage}
-              onChange={(e) => handleChange("primaryLanguage", e.target.value)}
+              onChange={(e) => handlePrimaryLanguageChange(e.target.value)}
             >
-              {LANGUAGE_OPTIONS.map((lang) => (
+              {supportedLanguageOptions.map((lang) => (
                 <option key={lang.code} value={lang.code}>
                   {lang.label}
                 </option>
               ))}
             </select>
             <p className="mt-1 text-xs text-gray-500">{t.primaryLanguageHint}</p>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium">{t.supportedLanguages}</label>
+            <textarea
+              className="mt-1 min-h-24 w-full rounded border px-3 py-2 text-sm"
+              value={supportedLanguagesText}
+              onChange={(e) => handleSupportedLanguagesChange(e.target.value)}
+            />
+            <p className="mt-1 text-xs text-gray-500">{t.supportedLanguagesHint}</p>
+            <p className="mt-2 text-xs text-gray-500">
+              {t.supportedLanguagesPreview}:{" "}
+              {supportedLanguageOptions.map((option) => option.label).join(", ")}
+            </p>
           </div>
         </div>
       </section>

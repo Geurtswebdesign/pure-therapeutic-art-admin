@@ -1,10 +1,13 @@
 import ContentEditorClient from "./ContentEditorClient";
+import ContentTranslationPanel from "@/components/content/ContentTranslationPanel";
 import { getContentBlocks, getContentItem } from "@/lib/content/queries";
 import { extractAccordionSectionsFromBlocks } from "@/lib/content/accordionSections";
+import { getContentTranslationGroup } from "@/lib/content/translation-queries";
 import { parseContentBlocks } from "@/lib/content/renderer";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getSupportedLanguageOptions } from "@/lib/i18n/settings";
 
 export default async function ContentEditorPage({
   params,
@@ -13,10 +16,12 @@ export default async function ContentEditorPage({
 }) {
   const { id } = await params;
   const uiLanguage = resolveUiLanguage(await getPrimaryLanguage());
+  const languageOptions = await getSupportedLanguageOptions(uiLanguage);
 
-  const [item, rawBlocks] = await Promise.all([
+  const [item, rawBlocks, translationGroup] = await Promise.all([
     getContentItem(id),
     getContentBlocks(id),
+    getContentTranslationGroup(id),
   ]);
   const supabase = createAdminClient();
   const accordionSections = extractAccordionSectionsFromBlocks(
@@ -91,14 +96,25 @@ export default async function ContentEditorPage({
   }
 
   return (
-    <ContentEditorClient
-      uiLanguage={uiLanguage}
-      item={item}
-      categoryTerms={categoryTerms}
-      selectedCategoryIds={selectedCategoryIds}
-      tagTerms={tagTerms}
-      selectedTagIds={selectedTagIds}
-      accordionSections={accordionSections}
-    />
+    <div className="space-y-6">
+      <ContentTranslationPanel
+        contentItemId={item.id}
+        currentLanguage={item.language ?? uiLanguage}
+        uiLanguage={uiLanguage}
+        languageOptions={languageOptions}
+        existingTranslations={translationGroup}
+      />
+
+      <ContentEditorClient
+        uiLanguage={uiLanguage}
+        item={item}
+        categoryTerms={categoryTerms}
+        selectedCategoryIds={selectedCategoryIds}
+        tagTerms={tagTerms}
+        selectedTagIds={selectedTagIds}
+        accordionSections={accordionSections}
+        languageOptions={languageOptions}
+      />
+    </div>
   );
 }

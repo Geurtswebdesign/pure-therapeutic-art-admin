@@ -6,7 +6,7 @@ import {
 import ResetPasswordForm from "@/components/login/ResetPasswordForm";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
-import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { resolveBaseUiLanguage, resolveUiLanguage } from "@/lib/i18n/runtime";
 import { isNativeAppUserAgent } from "@/lib/native/isNativeAppRequest";
 import { getPublicBranding } from "@/lib/settings/public";
 import { getAdminLoginUrl, getRequestHost, isAdminHost } from "@/lib/site/urls";
@@ -17,7 +17,7 @@ export default async function ResetPasswordPage() {
   const adminRequestHost = isAdminHost(requestHost);
   const language = resolveUiLanguage(await getAppLanguage());
   const t = getAppMessages(language).login;
-  const frameCopy = AUTH_FRAME_COPY[language];
+  const frameCopy = AUTH_FRAME_COPY[resolveBaseUiLanguage(language)];
   const branding = await getPublicBranding();
   const isNativeApp = isNativeAppUserAgent(requestHeaders.get("user-agent"));
   const loginHref = adminRequestHost

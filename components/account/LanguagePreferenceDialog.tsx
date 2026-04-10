@@ -3,13 +3,14 @@
 import { useMemo, useState, useTransition } from "react";
 import { Globe, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { LANGUAGE_OPTIONS } from "@/lib/i18n/languages";
-import type { UiLanguage } from "@/lib/i18n/runtime";
+import type { LanguageOption } from "@/lib/i18n/languages";
+import { getLanguageDisplayLabel } from "@/lib/i18n/languages";
 import { updateMyPreferredLanguage } from "@/app/account/actions";
 
 type Props = {
   triggerLabel: string;
-  currentLanguage: UiLanguage;
+  currentLanguage: string;
+  languageOptions: LanguageOption[];
   title: string;
   subtitle: string;
   saveLabel: string;
@@ -20,6 +21,7 @@ type Props = {
 export default function LanguagePreferenceDialog({
   triggerLabel,
   currentLanguage,
+  languageOptions,
   title,
   subtitle,
   saveLabel,
@@ -28,13 +30,13 @@ export default function LanguagePreferenceDialog({
 }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<UiLanguage>(currentLanguage);
+  const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
   const [isPending, startTransition] = useTransition();
   const activeLanguageLabel = useMemo(
     () =>
-      LANGUAGE_OPTIONS.find((option) => option.code === currentLanguage)?.label ??
-      "Nederlands",
-    [currentLanguage]
+      languageOptions.find((option) => option.code === currentLanguage)?.label ??
+      getLanguageDisplayLabel(currentLanguage),
+    [currentLanguage, languageOptions]
   );
 
   function handleSave() {
@@ -78,7 +80,7 @@ export default function LanguagePreferenceDialog({
             </div>
 
             <div className="mt-4 space-y-2">
-              {LANGUAGE_OPTIONS.map((option) => (
+              {languageOptions.map((option) => (
                 <label
                   key={option.code}
                   className="flex items-center gap-3 rounded-2xl border border-[#e5dbcf] bg-white px-4 py-3"
@@ -88,7 +90,7 @@ export default function LanguagePreferenceDialog({
                     name="preferred-language"
                     value={option.code}
                     checked={selectedLanguage === option.code}
-                    onChange={() => setSelectedLanguage(option.code as UiLanguage)}
+                    onChange={() => setSelectedLanguage(option.code)}
                     className="h-4 w-4 border-stone-300"
                   />
                   <span className="text-sm text-stone-800">{option.label}</span>

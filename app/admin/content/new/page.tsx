@@ -2,10 +2,12 @@ import NewContentEditorClient from "./NewContentEditorClient";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getSupportedLanguageOptions } from "@/lib/i18n/settings";
 
 export default async function NewContentPage() {
   const primaryLanguage = await getPrimaryLanguage();
   const uiLanguage = resolveUiLanguage(primaryLanguage);
+  const languageOptions = await getSupportedLanguageOptions(uiLanguage);
   const supabase = createAdminClient();
 
   const { data: categoryTaxonomy } = await supabase
@@ -67,6 +69,7 @@ export default async function NewContentPage() {
       initialLanguage={primaryLanguage}
       categoryTerms={categoryTerms}
       tagTerms={tagTerms}
+      languageOptions={languageOptions}
     />
   );
 }

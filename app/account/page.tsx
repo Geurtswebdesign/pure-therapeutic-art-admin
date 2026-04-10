@@ -11,7 +11,12 @@ import { getLegalDocuments } from "@/lib/account/legal-documents";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
-import { resolveUiLanguage, type UiLanguage } from "@/lib/i18n/runtime";
+import {
+  resolveLanguageLocale,
+  resolveUiLanguage,
+  type UiLanguage,
+} from "@/lib/i18n/runtime";
+import { getSupportedLanguageOptions } from "@/lib/i18n/settings";
 import { getUserProgressCollections } from "@/lib/content/progress";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAccountContentProductsData } from "@/lib/account/content-products";
@@ -814,8 +819,7 @@ export default async function AccountPage({
   const creditsT = messages.userCredits;
   const trajectoryT = getTrajectoryMessages(language);
   const contentProductsT = getContentProductsMessages(language);
-  const locale =
-    language === "en" ? "en-US" : language === "de" ? "de-DE" : "nl-NL";
+  const locale = resolveLanguageLocale(language);
   const params = await searchParams;
   const tab = Array.isArray(params?.tab) ? params?.tab[0] : params?.tab;
   const activePanel = normalizeActivePanel(params?.panel);
@@ -846,6 +850,7 @@ export default async function AccountPage({
     { data: therapistEntitlements },
     progressCollections,
     contentProductsData,
+    supportedLanguageOptions,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -873,6 +878,7 @@ export default async function AccountPage({
       userId: user.id,
       email: user.email ?? null,
     }),
+    getSupportedLanguageOptions(language),
   ]);
 
   const firstName = profile?.profile_data?.first_name?.trim() ?? "";
@@ -1214,6 +1220,7 @@ export default async function AccountPage({
                   <LanguagePreferenceDialog
                     triggerLabel={contentProductsT.language}
                     currentLanguage={language}
+                    languageOptions={supportedLanguageOptions}
                     title={contentProductsT.dialogTitle}
                     subtitle={contentProductsT.dialogSubtitle}
                     saveLabel={contentProductsT.dialogSave}

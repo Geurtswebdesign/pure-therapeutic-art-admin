@@ -3,10 +3,10 @@ import Link from "next/link";
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import logo from "@/assets/branding/logo.png";
-import type { UiLanguage } from "@/lib/i18n/runtime";
+import type { BaseUiLanguage } from "@/lib/i18n/runtime";
 
 export const AUTH_FRAME_COPY: Record<
-  UiLanguage,
+  BaseUiLanguage,
   {
     eyebrow: string;
     backHome: string;

@@ -11,7 +11,7 @@ import type {
   ContentProgressSnapshot,
   ContentProgressStatus,
 } from "@/lib/content/progress-types";
-import type { UiLanguage } from "@/lib/i18n/runtime";
+import { resolveBaseUiLanguage, type UiLanguage } from "@/lib/i18n/runtime";
 
 const messagesByLanguage = {
   nl: {
@@ -91,7 +91,7 @@ export default function ContentProgressCard({
   const [noteText, setNoteText] = useState(initialProgress.noteText);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const t = messagesByLanguage[language] ?? messagesByLanguage.nl;
+  const t = messagesByLanguage[resolveBaseUiLanguage(language)];
 
   const noteDirty = useMemo(
     () => noteText.trim() !== progress.noteText.trim(),

@@ -3,10 +3,10 @@ import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import {
-  DEFAULT_PRIMARY_LANGUAGE,
   isKnownLanguage,
   normalizeLanguageCode,
 } from "@/lib/i18n/languages";
+import { getConfiguredLanguageSettings } from "@/lib/i18n/settings";
 import type { AppProfileData } from "@/lib/users/accountTypes";
 
 type ProfileLanguageRow = {
@@ -14,6 +14,7 @@ type ProfileLanguageRow = {
 };
 
 export const getAppLanguage = cache(async (): Promise<string> => {
+  const languageSettings = await getConfiguredLanguageSettings();
   const user = await getCurrentUser();
 
   if (user) {
@@ -31,7 +32,7 @@ export const getAppLanguage = cache(async (): Promise<string> => {
         const preferredLanguage = data?.profile_data?.preferred_language;
         if (typeof preferredLanguage === "string" && preferredLanguage.trim()) {
           const code = normalizeLanguageCode(preferredLanguage);
-          if (isKnownLanguage(code)) {
+          if (isKnownLanguage(code, languageSettings.supportedLanguages)) {
             return code;
           }
         }
@@ -43,5 +44,7 @@ export const getAppLanguage = cache(async (): Promise<string> => {
 
   const primaryLanguage = await getPrimaryLanguage();
   const normalized = normalizeLanguageCode(primaryLanguage);
-  return isKnownLanguage(normalized) ? normalized : DEFAULT_PRIMARY_LANGUAGE;
+  return isKnownLanguage(normalized, languageSettings.supportedLanguages)
+    ? normalized
+    : languageSettings.primaryLanguage;
 });

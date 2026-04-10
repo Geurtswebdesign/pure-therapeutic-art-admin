@@ -9,10 +9,14 @@ import {
   Purchases,
   type PurchasesStoreProduct,
 } from "@revenuecat/purchases-capacitor";
-import type { UiLanguage } from "@/lib/i18n/runtime";
+import {
+  resolveBaseUiLanguage,
+  type BaseUiLanguage,
+  type UiLanguage,
+} from "@/lib/i18n/runtime";
 
 const COPY: Record<
-  UiLanguage,
+  BaseUiLanguage,
   {
     login: string;
     signIn: string;
@@ -61,7 +65,7 @@ export default function NativeCreditPackPurchaseButton({
   isLoggedIn: boolean;
   language: UiLanguage;
 }) {
-  const t = COPY[language] ?? COPY.nl;
+  const t = COPY[resolveBaseUiLanguage(language)];
   const router = useRouter();
   const [product, setProduct] = useState<PurchasesStoreProduct | null>(null);
   const [isLoading, setIsLoading] = useState(false);

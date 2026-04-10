@@ -7,6 +7,7 @@ import MetadataSidebar from "@/components/content/MetadataSidebar";
 import { createContentItem } from "@/lib/content/mutations";
 import { updateContentItem } from "@/lib/content/actions";
 import type { Term } from "@/components/taxonomy/types";
+import type { LanguageOption } from "@/lib/i18n/languages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
@@ -22,6 +23,7 @@ type Props = {
   initialLanguage: string;
   categoryTerms: Term[];
   tagTerms: Term[];
+  languageOptions: LanguageOption[];
 };
 
 export default function NewContentEditorClient({
@@ -29,6 +31,7 @@ export default function NewContentEditorClient({
   initialLanguage,
   categoryTerms,
   tagTerms,
+  languageOptions,
 }: Props) {
   const metaText = getAppMessages(uiLanguage).metadata;
   const router = useRouter();
@@ -237,6 +240,7 @@ export default function NewContentEditorClient({
         }}
         categoryTerms={categoryTerms}
         tagTerms={tagTerms}
+        languageOptions={languageOptions}
       />
     </div>
   );

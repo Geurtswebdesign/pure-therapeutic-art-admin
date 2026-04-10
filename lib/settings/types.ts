@@ -1,3 +1,5 @@
+import { DEFAULT_SUPPORTED_LANGUAGES } from "@/lib/i18n/languages";
+
 export type GeneralSettings = {
   siteName: string;
   logoUrl: string;
@@ -5,6 +7,7 @@ export type GeneralSettings = {
   locale: string;
   currency: string;
   primaryLanguage: string;
+  supportedLanguages: string[];
 };
 
 export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
@@ -14,6 +17,7 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   locale: "nl-NL",
   currency: "EUR",
   primaryLanguage: "nl",
+  supportedLanguages: [...DEFAULT_SUPPORTED_LANGUAGES],
 };
 
 export type CustomizerSettings = {
