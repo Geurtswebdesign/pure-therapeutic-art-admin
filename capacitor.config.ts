@@ -8,7 +8,7 @@ const isCleartext = serverUrl.startsWith("http://");
 
 const config: CapacitorConfig = {
   appId: "com.detroostboom.puretherapeuticart",
-  appName: "Pure Therapeutic ART",
+  appName: "Pure Grief and Therapeutic ART",
   webDir: ".capacitor-shell",
   appendUserAgent: NATIVE_APP_USER_AGENT_TOKEN,
   server: {
