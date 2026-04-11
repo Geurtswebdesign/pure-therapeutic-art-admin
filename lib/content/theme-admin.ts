@@ -417,22 +417,47 @@ async function getCategoryOptions() {
 
 async function getContentOptions() {
   const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("content_items")
-    .select("id, title, slug, status, language, translation_source_id")
-    .neq("status", "trash")
-    .order("title", { ascending: true });
+  const pageSize = 1000;
+  const items: Array<{
+    id: string;
+    title: string | null;
+    slug: string | null;
+    status: string;
+    language: string | null;
+    translation_source_id: string | null;
+  }> = [];
 
-  return (
-    (data ?? []).map((item) => ({
-      id: item.id,
-      title: item.title || "Ongetitelde content",
-      slug: item.slug,
-      status: item.status,
-      language: item.language,
-      translationSourceId: item.translation_source_id ?? null,
-    })) as ThemeContentOption[]
-  );
+  for (let from = 0; ; from += pageSize) {
+    const to = from + pageSize - 1;
+    const { data, error } = await supabase
+      .from("content_items")
+      .select("id, title, slug, status, language, translation_source_id")
+      .neq("status", "trash")
+      .order("title", { ascending: true })
+      .order("slug", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to);
+
+    if (error) {
+      throw new Error(`Content-items laden mislukt: ${error.message}`);
+    }
+
+    const batch = data ?? [];
+    items.push(...batch);
+
+    if (batch.length < pageSize) {
+      break;
+    }
+  }
+
+  return items.map((item) => ({
+    id: item.id,
+    title: item.title || "Ongetitelde content",
+    slug: item.slug,
+    status: item.status,
+    language: item.language,
+    translationSourceId: item.translation_source_id ?? null,
+  })) as ThemeContentOption[];
 }
 
 async function getParentThemeOptions(excludeId?: string) {
