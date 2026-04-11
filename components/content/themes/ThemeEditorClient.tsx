@@ -10,6 +10,7 @@ import {
 } from "@/app/admin/content/themes/actions";
 import ClassicTextEditor from "@/components/content/ClassicTextEditor";
 import ThemeMediaPickerDialog from "@/components/content/themes/ThemeMediaPickerDialog";
+import { getLanguageDisplayLabel } from "@/lib/i18n/languages";
 import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 import type {
   ThemeCategoryOption,
@@ -38,6 +39,121 @@ function normalizeLookupValue(text: string | null | undefined) {
     .replace(/[^\w\s-]/g, "")
     .replace(/\s+/g, "")
     .replace(/-+/g, "");
+}
+
+function getThemeContentFamilyId(option: ThemeContentOption) {
+  return option.translationSourceId ?? option.id;
+}
+
+function compareThemeContentOptions(
+  left: ThemeContentOption,
+  right: ThemeContentOption
+) {
+  const titleComparison = left.title.localeCompare(right.title, "nl");
+  if (titleComparison !== 0) return titleComparison;
+
+  const slugComparison = (left.slug ?? "").localeCompare(right.slug ?? "", "nl");
+  if (slugComparison !== 0) return slugComparison;
+
+  return left.id.localeCompare(right.id, "nl");
+}
+
+function getSelectableThemeContentOptions(
+  contentOptions: ThemeContentOption[],
+  preferredLanguage: string
+) {
+  const preferredLanguageCode = preferredLanguage.trim().toLowerCase();
+  const optionsByFamilyId = new Map<string, ThemeContentOption>();
+
+  for (const option of contentOptions) {
+    if (option.status !== "published") continue;
+    if ((option.language ?? "").trim().toLowerCase() !== preferredLanguageCode) {
+      continue;
+    }
+
+    const familyId = getThemeContentFamilyId(option);
+    const current = optionsByFamilyId.get(familyId);
+
+    if (!current || compareThemeContentOptions(option, current) < 0) {
+      optionsByFamilyId.set(familyId, option);
+    }
+  }
+
+  return Array.from(optionsByFamilyId.values()).sort(compareThemeContentOptions);
+}
+
+function formatThemeContentOptionLabel(option: ThemeContentOption) {
+  const parts = [option.title];
+
+  if (option.language) {
+    parts.push(`(${option.language.toUpperCase()})`);
+  }
+
+  if (option.slug) {
+    parts.push(`- ${option.slug}`);
+  }
+
+  if (option.status !== "published") {
+    parts.push(`[${option.status}]`);
+  }
+
+  return parts.join(" ");
+}
+
+function matchesThemeContentSearch(
+  option: ThemeContentOption,
+  searchValue: string
+) {
+  if (!searchValue) return true;
+
+  const haystack = normalizeLookupValue(
+    [option.title, option.slug, option.language].filter(Boolean).join(" ")
+  );
+
+  return haystack.includes(searchValue);
+}
+
+function getResolvedSelectedContentOption(
+  currentValue: string,
+  contentOptionById: Map<string, ThemeContentOption>,
+  selectableContentOptions: ThemeContentOption[]
+) {
+  if (!currentValue) return null;
+
+  const exactOption = selectableContentOptions.find((option) => option.id === currentValue);
+  if (exactOption) return exactOption;
+
+  const currentOption = contentOptionById.get(currentValue);
+  if (!currentOption) return null;
+
+  const familyMatch = selectableContentOptions.find(
+    (option) =>
+      getThemeContentFamilyId(option) === getThemeContentFamilyId(currentOption)
+  );
+
+  return familyMatch ?? currentOption;
+}
+
+function getUsedContentFamilyIds(
+  items: ThemeSectionItemDraft[],
+  contentOptionById: Map<string, ThemeContentOption>,
+  currentItemIndex: number
+) {
+  const usedFamilyIds = new Set<string>();
+
+  items.forEach((item, itemIndex) => {
+    if (itemIndex === currentItemIndex) return;
+
+    const contentItemId = item.contentItemId.trim();
+    if (!contentItemId) return;
+
+    const contentOption = contentOptionById.get(contentItemId);
+    usedFamilyIds.add(
+      contentOption ? getThemeContentFamilyId(contentOption) : contentItemId
+    );
+  });
+
+  return usedFamilyIds;
 }
 
 function createSection(sortOrder: number): ThemeSectionDraft {
@@ -97,20 +213,25 @@ function getDuplicateItemError(
   contentOptionById: Map<string, ThemeContentOption>
 ) {
   for (const section of draft.sections) {
-    const seenContentItemIds = new Set<string>();
+    const seenContentFamilyIds = new Set<string>();
 
     for (const item of section.items) {
       const contentItemId = item.contentItemId.trim();
       if (!contentItemId) continue;
 
-      if (seenContentItemIds.has(contentItemId)) {
+      const contentOption = contentOptionById.get(contentItemId);
+      const contentFamilyId = contentOption
+        ? getThemeContentFamilyId(contentOption)
+        : contentItemId;
+
+      if (seenContentFamilyIds.has(contentFamilyId)) {
         const contentItemTitle =
-          contentOptionById.get(contentItemId)?.title || item.customTitle || item.sourceTitle;
+          contentOption?.title || item.customTitle || item.sourceTitle;
         const sectionTitle = section.title || section.slug || "zonder titel";
         return `Het content-item "${contentItemTitle}" staat meer dan één keer in de sectie "${sectionTitle}".`;
       }
 
-      seenContentItemIds.add(contentItemId);
+      seenContentFamilyIds.add(contentFamilyId);
     }
   }
 
@@ -170,7 +291,7 @@ function getMatchRank(
 function findBestContentMatch(
   sourceTitle: string,
   contentOptions: ThemeContentOption[],
-  usedIds: Set<string>
+  usedFamilyIds: Set<string>
 ) {
   const sourceValue = normalizeLookupValue(sourceTitle);
   if (!sourceValue) return null;
@@ -179,7 +300,7 @@ function findBestContentMatch(
   let bestRank: number | null = null;
 
   for (const option of contentOptions) {
-    if (usedIds.has(option.id)) continue;
+    if (usedFamilyIds.has(getThemeContentFamilyId(option))) continue;
 
     const rank = getMatchRank(sourceValue, option);
     if (rank === null) continue;
@@ -239,6 +360,77 @@ function ImagePreview({
   );
 }
 
+function ThemeContentItemSelect({
+  contentOptionById,
+  currentValue,
+  onChange,
+  selectableContentOptions,
+  usedContentFamilyIds,
+}: {
+  contentOptionById: Map<string, ThemeContentOption>;
+  currentValue: string;
+  onChange: (value: string) => void;
+  selectableContentOptions: ThemeContentOption[];
+  usedContentFamilyIds: Set<string>;
+}) {
+  const [search, setSearch] = useState("");
+  const normalizedSearch = normalizeLookupValue(search);
+  const selectedOption = getResolvedSelectedContentOption(
+    currentValue,
+    contentOptionById,
+    selectableContentOptions
+  );
+  const selectedFamilyId = selectedOption
+    ? getThemeContentFamilyId(selectedOption)
+    : null;
+
+  const visibleOptions = selectableContentOptions.filter((option) =>
+    matchesThemeContentSearch(option, normalizedSearch)
+  );
+
+  const optionList =
+    selectedOption && !visibleOptions.some((option) => option.id === selectedOption.id)
+      ? [selectedOption, ...visibleOptions]
+      : visibleOptions;
+
+  return (
+    <div className="space-y-2">
+      <input
+        type="search"
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        placeholder="Zoek op titel of slug"
+        className="w-full rounded border border-stone-300 px-3 py-2 text-sm"
+      />
+      <select
+        value={selectedOption?.id ?? ""}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded border border-stone-300 px-3 py-2"
+      >
+        <option value="">Nog niet gekoppeld</option>
+        {optionList.map((contentItem) => {
+          const familyId = getThemeContentFamilyId(contentItem);
+          const isDisabled =
+            usedContentFamilyIds.has(familyId) && familyId !== selectedFamilyId;
+
+          return (
+            <option
+              key={contentItem.id}
+              value={contentItem.id}
+              disabled={isDisabled}
+            >
+              {formatThemeContentOptionLabel(contentItem)}
+            </option>
+          );
+        })}
+      </select>
+      <div className="text-xs text-stone-500">
+        {optionList.length} resultaat{optionList.length === 1 ? "" : "en"}
+      </div>
+    </div>
+  );
+}
+
 export default function ThemeEditorClient({
   initialData,
 }: {
@@ -250,6 +442,9 @@ export default function ThemeEditorClient({
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [contentLanguageFilter, setContentLanguageFilter] = useState(
+    initialData.defaultContentLanguage
+  );
   const [mediaTarget, setMediaTarget] = useState<
     | { kind: "hero" }
     | { kind: "section"; sectionIndex: number }
@@ -259,6 +454,14 @@ export default function ThemeEditorClient({
   const contentOptionById = new Map(
     initialData.contentOptions.map((option) => [option.id, option])
   );
+  const selectableContentOptions = getSelectableThemeContentOptions(
+    initialData.contentOptions,
+    contentLanguageFilter
+  );
+  const activeContentLanguageLabel =
+    initialData.contentLanguageOptions.find(
+      (option) => option.code === contentLanguageFilter
+    )?.label ?? getLanguageDisplayLabel(contentLanguageFilter);
   const selectedCategoryOption =
     initialData.categoryOptions.find(
       (option) => option.id === draft.primaryCategoryTermId
@@ -388,11 +591,17 @@ export default function ThemeEditorClient({
     let matchedCount = 0;
 
     setDraft((prev) => {
-      const usedIds = new Set(
+      const usedFamilyIds = new Set(
         prev.sections.flatMap((section) =>
           section.items
-            .map((item) => item.contentItemId)
+            .map((item) => item.contentItemId.trim())
             .filter((contentItemId): contentItemId is string => Boolean(contentItemId))
+            .map((contentItemId) => {
+              const contentOption = contentOptionById.get(contentItemId);
+              return contentOption
+                ? getThemeContentFamilyId(contentOption)
+                : contentItemId;
+            })
         )
       );
 
@@ -408,15 +617,15 @@ export default function ThemeEditorClient({
 
           const bestMatch = findBestContentMatch(
             item.sourceTitle,
-            initialData.contentOptions,
-            usedIds
+            selectableContentOptions,
+            usedFamilyIds
           );
 
           if (!bestMatch) {
             return item;
           }
 
-          usedIds.add(bestMatch.id);
+          usedFamilyIds.add(getThemeContentFamilyId(bestMatch));
           matchedCount += 1;
 
           return {
@@ -875,6 +1084,33 @@ export default function ThemeEditorClient({
         </div>
       </section>
 
+      <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+        <div className="grid gap-4 md:grid-cols-[minmax(0,260px)_1fr] md:items-end">
+          <div>
+            <FieldLabel>Contenttaal voor koppelingen</FieldLabel>
+            <select
+              value={contentLanguageFilter}
+              onChange={(event) => setContentLanguageFilter(event.target.value)}
+              className="mt-1 w-full rounded border border-stone-300 px-3 py-2"
+            >
+              {initialData.contentLanguageOptions.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="text-sm text-stone-600">
+            Alleen gepubliceerde content-items in{" "}
+            <span className="font-medium text-stone-800">
+              {activeContentLanguageLabel}
+            </span>{" "}
+            worden getoond. Zo voorkom je dat je drafts of vertaalvarianten uit
+            andere talen koppelt.
+          </div>
+        </div>
+      </section>
+
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -1106,18 +1342,17 @@ export default function ThemeEditorClient({
                 {section.items.length ? (
                   section.items.map((item, itemIndex) => {
                     const sourceItem = getSourceItem(section, item, itemIndex);
-                    const usedContentItemIds = new Set(
-                      section.items
-                        .filter((_, candidateIndex) => candidateIndex !== itemIndex)
-                        .map((candidate) => candidate.contentItemId.trim())
-                        .filter((contentItemId): contentItemId is string => Boolean(contentItemId))
+                    const usedContentFamilyIds = getUsedContentFamilyIds(
+                      section.items,
+                      contentOptionById,
+                      itemIndex
                     );
                     const suggestedMatch =
                       !item.contentItemId && sourceItem
                         ? findBestContentMatch(
                             sourceItem.title,
-                            initialData.contentOptions,
-                            new Set()
+                            selectableContentOptions,
+                            usedContentFamilyIds
                           )
                         : null;
                     const linkedContentItem = item.contentItemId
@@ -1185,30 +1420,19 @@ export default function ThemeEditorClient({
                         <div className="mt-4 grid gap-4 md:grid-cols-2">
                           <div className="md:col-span-2">
                             <FieldLabel>Gekoppeld content-item</FieldLabel>
-                            <select
-                              value={item.contentItemId}
-                              onChange={(event) =>
-                                updateItem(sectionIndex, itemIndex, {
-                                  contentItemId: event.target.value,
-                                })
-                              }
-                              className="mt-1 w-full rounded border border-stone-300 px-3 py-2"
-                            >
-                              <option value="">Nog niet gekoppeld</option>
-                              {initialData.contentOptions.map((contentItem) => (
-                                <option
-                                  key={contentItem.id}
-                                  value={contentItem.id}
-                                  disabled={usedContentItemIds.has(contentItem.id)}
-                                >
-                                  {contentItem.title}
-                                  {contentItem.language
-                                    ? ` (${contentItem.language.toUpperCase()})`
-                                    : ""}
-                                  {contentItem.slug ? ` - ${contentItem.slug}` : ""}
-                                </option>
-                              ))}
-                            </select>
+                            <div className="mt-1">
+                              <ThemeContentItemSelect
+                                contentOptionById={contentOptionById}
+                                currentValue={item.contentItemId}
+                                onChange={(value) =>
+                                  updateItem(sectionIndex, itemIndex, {
+                                    contentItemId: value,
+                                  })
+                                }
+                                selectableContentOptions={selectableContentOptions}
+                                usedContentFamilyIds={usedContentFamilyIds}
+                              />
+                            </div>
                             {item.contentItemId ? (
                               <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-stone-500">
                                 <span>

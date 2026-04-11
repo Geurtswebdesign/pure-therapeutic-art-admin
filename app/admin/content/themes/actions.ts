@@ -28,8 +28,18 @@ function slugify(text: string) {
     .replace(/-+/g, "-");
 }
 
-function normalizeSectionItems(section: ThemePageDraft["sections"][number]) {
-  const seenContentItemIds = new Set<string>();
+function getContentItemFamilyId(
+  contentItemId: string,
+  contentItemFamilyIdByItemId: Map<string, string>
+) {
+  return contentItemFamilyIdByItemId.get(contentItemId) ?? contentItemId;
+}
+
+function normalizeSectionItems(
+  section: ThemePageDraft["sections"][number],
+  contentItemFamilyIdByItemId: Map<string, string>
+) {
+  const seenContentFamilyIds = new Set<string>();
 
   return section.items.flatMap((item, itemIndex) => {
     const contentItemId = item.contentItemId.trim();
@@ -38,13 +48,18 @@ function normalizeSectionItems(section: ThemePageDraft["sections"][number]) {
       return [];
     }
 
-    if (seenContentItemIds.has(contentItemId)) {
+    const contentFamilyId = getContentItemFamilyId(
+      contentItemId,
+      contentItemFamilyIdByItemId
+    );
+
+    if (seenContentFamilyIds.has(contentFamilyId)) {
       throw new Error(
         `Een content-item kan maar een keer in dezelfde sectie voorkomen (${section.title || section.slug || "zonder titel"}).`
       );
     }
 
-    seenContentItemIds.add(contentItemId);
+    seenContentFamilyIds.add(contentFamilyId);
 
     return [
       {
@@ -280,6 +295,38 @@ async function saveThemePageInternal(
       .filter((value): value is string => Boolean(value))
   );
 
+  const contentItemIds = Array.from(
+    new Set(
+      input.sections.flatMap((section) =>
+        section.items
+          .map((item) => item.contentItemId.trim())
+          .filter((contentItemId): contentItemId is string => Boolean(contentItemId))
+      )
+    )
+  );
+  const contentItemFamilyIdByItemId = new Map<string, string>();
+
+  if (contentItemIds.length) {
+    const { data: contentItems, error: contentItemsError } = await supabase
+      .from("content_items")
+      .select("id, translation_source_id")
+      .in("id", contentItemIds);
+
+    if (contentItemsError) {
+      throw new Error(
+        `Contentfamilies laden mislukt: ${contentItemsError.message}`
+      );
+    }
+
+    for (const contentItem of contentItems ?? []) {
+      if (!contentItem.id) continue;
+      contentItemFamilyIdByItemId.set(
+        contentItem.id,
+        contentItem.translation_source_id ?? contentItem.id
+      );
+    }
+  }
+
   const keptSectionIds = new Set<string>();
 
   for (const [sectionIndex, section] of input.sections.entries()) {
@@ -329,7 +376,10 @@ async function saveThemePageInternal(
     }
 
     keptSectionIds.add(sectionId);
-    const normalizedItems = normalizeSectionItems(section).map((item) => ({
+    const normalizedItems = normalizeSectionItems(
+      section,
+      contentItemFamilyIdByItemId
+    ).map((item) => ({
       ...item,
       theme_section_id: sectionId,
     }));

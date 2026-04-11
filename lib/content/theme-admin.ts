@@ -3,6 +3,12 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import {
+  buildLanguageOptions,
+  normalizeLanguageCode,
+  type LanguageOption,
+} from "@/lib/i18n/languages";
+import { getConfiguredLanguageSettings } from "@/lib/i18n/settings";
+import {
   getThemeImportedMediaLookup,
   type ThemeImportedMediaEntry,
 } from "@/lib/content/theme-media-manifest";
@@ -33,6 +39,7 @@ export type ThemeContentOption = {
   slug: string | null;
   status: string;
   language: string | null;
+  translationSourceId: string | null;
 };
 
 export type ThemeSectionItemDraft = {
@@ -93,6 +100,8 @@ export type AdminThemeSummary = {
 export type ThemeEditorData = {
   draft: ThemePageDraft;
   contentOptions: ThemeContentOption[];
+  contentLanguageOptions: LanguageOption[];
+  defaultContentLanguage: string;
   parentThemeOptions: ThemeOption[];
   categoryOptions: ThemeCategoryOption[];
   sourceEntry: ThemeSourceEntry | null;
@@ -115,6 +124,44 @@ function normalizeMatchValue(text: string | null | undefined) {
     .replace(/[^\w\s-]/g, "")
     .replace(/\s+/g, "")
     .replace(/-+/g, "");
+}
+
+function getContentOptionFamilyId(option: ThemeContentOption) {
+  return option.translationSourceId ?? option.id;
+}
+
+function compareContentOptions(left: ThemeContentOption, right: ThemeContentOption) {
+  const titleComparison = left.title.localeCompare(right.title, "nl");
+  if (titleComparison !== 0) return titleComparison;
+
+  const slugComparison = (left.slug ?? "").localeCompare(right.slug ?? "", "nl");
+  if (slugComparison !== 0) return slugComparison;
+
+  return left.id.localeCompare(right.id, "nl");
+}
+
+function getSelectableThemeContentOptions(
+  contentOptions: ThemeContentOption[],
+  preferredLanguage: string
+) {
+  const normalizedPreferredLanguage = normalizeLanguageCode(preferredLanguage);
+  const optionsByFamily = new Map<string, ThemeContentOption>();
+
+  for (const option of contentOptions) {
+    if (option.status !== "published") continue;
+    if (normalizeLanguageCode(option.language ?? "") !== normalizedPreferredLanguage) {
+      continue;
+    }
+
+    const familyId = getContentOptionFamilyId(option);
+    const current = optionsByFamily.get(familyId);
+
+    if (!current || compareContentOptions(option, current) < 0) {
+      optionsByFamily.set(familyId, option);
+    }
+  }
+
+  return Array.from(optionsByFamily.values()).sort(compareContentOptions);
 }
 
 function findMatchingSectionIndex(
@@ -372,7 +419,7 @@ async function getContentOptions() {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("content_items")
-    .select("id, title, slug, status, language")
+    .select("id, title, slug, status, language, translation_source_id")
     .neq("status", "trash")
     .order("title", { ascending: true });
 
@@ -383,6 +430,7 @@ async function getContentOptions() {
       slug: item.slug,
       status: item.status,
       language: item.language,
+      translationSourceId: item.translation_source_id ?? null,
     })) as ThemeContentOption[]
   );
 }
@@ -405,15 +453,20 @@ async function getParentThemeOptions(excludeId?: string) {
 function buildMatchedSourceDraft(
   sourceEntry: ThemeSourceEntry,
   contentOptions: ThemeContentOption[],
-  importedMediaBySourcePath: Map<string, ThemeImportedMediaEntry>
+  importedMediaBySourcePath: Map<string, ThemeImportedMediaEntry>,
+  preferredContentLanguage: string
 ): ThemePageDraft {
+  const selectableContentOptions = getSelectableThemeContentOptions(
+    contentOptions,
+    preferredContentLanguage
+  );
   const exactBySlug = new Map(
-    contentOptions
+    selectableContentOptions
       .filter((item) => item.slug)
       .map((item) => [normalizeMatchValue(item.slug), item.id])
   );
   const exactByTitle = new Map(
-    contentOptions.map((item) => [normalizeMatchValue(item.title), item.id])
+    selectableContentOptions.map((item) => [normalizeMatchValue(item.title), item.id])
   );
 
   const sections: ThemeSectionDraft[] = sourceEntry.sections.map((section, sectionIndex) => ({
@@ -489,13 +542,24 @@ export async function getThemeEditorData(input?: {
   themeId?: string;
   sourceKey?: string;
 }): Promise<ThemeEditorData> {
-  const [contentOptions, categoryOptions, sourceManifest, importedMediaBySourcePath] =
-    await Promise.all([
+  const [
+    contentOptions,
+    categoryOptions,
+    sourceManifest,
+    importedMediaBySourcePath,
+    languageSettings,
+  ] = await Promise.all([
     getContentOptions(),
     getCategoryOptions(),
     getThemeSourceManifest(),
     getThemeImportedMediaLookup(),
+    getConfiguredLanguageSettings(),
   ]);
+  const defaultContentLanguage = languageSettings.primaryLanguage;
+  const contentLanguageOptions = buildLanguageOptions(
+    languageSettings.supportedLanguages,
+    languageSettings.primaryLanguage
+  );
 
   if (!input?.themeId) {
     const sourceEntry = input?.sourceKey
@@ -505,7 +569,8 @@ export async function getThemeEditorData(input?: {
       ? buildMatchedSourceDraft(
           sourceEntry,
           contentOptions,
-          importedMediaBySourcePath
+          importedMediaBySourcePath,
+          defaultContentLanguage
         )
       : emptyDraft();
 
@@ -523,6 +588,8 @@ export async function getThemeEditorData(input?: {
     return {
       draft,
       contentOptions,
+      contentLanguageOptions,
+      defaultContentLanguage,
       parentThemeOptions: await getParentThemeOptions(),
       categoryOptions,
       sourceEntry,
@@ -641,7 +708,8 @@ export async function getThemeEditorData(input?: {
       buildMatchedSourceDraft(
         sourceEntry,
         contentOptions,
-        importedMediaBySourcePath
+        importedMediaBySourcePath,
+        defaultContentLanguage
       )
     );
 
@@ -653,6 +721,8 @@ export async function getThemeEditorData(input?: {
   return {
     draft,
     contentOptions,
+    contentLanguageOptions,
+    defaultContentLanguage,
     parentThemeOptions: await getParentThemeOptions(themePage.id),
     categoryOptions,
     sourceEntry,
