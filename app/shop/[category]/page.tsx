@@ -217,7 +217,12 @@ export default async function ShopCategoryPage({
             creditPacks.length || yearSubscriptionPack ? (
               <div className="space-y-4">
                 {yearSubscriptionPack ? (
-                  <YearSubscriptionDetailCard pack={yearSubscriptionPack} />
+                  <YearSubscriptionDetailCard
+                    pack={yearSubscriptionPack}
+                    isLoggedIn={Boolean(user)}
+                    language={language}
+                    purchaseMode={creditPackPurchaseMode}
+                  />
                 ) : null}
                 {creditPacks.length ? (
                   <div className="grid gap-3">
