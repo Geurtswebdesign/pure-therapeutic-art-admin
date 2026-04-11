@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { useState, useTransition } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -373,8 +373,14 @@ function ThemeContentItemSelect({
   selectableContentOptions: ThemeContentOption[];
   usedContentFamilyIds: Set<string>;
 }) {
-  const [search, setSearch] = useState("");
-  const normalizedSearch = normalizeLookupValue(search);
+  const inputId = useId();
+  const listboxId = `${inputId}-listbox`;
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const [query, setQuery] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const selectedOption = getResolvedSelectedContentOption(
     currentValue,
     contentOptionById,
@@ -383,47 +389,248 @@ function ThemeContentItemSelect({
   const selectedFamilyId = selectedOption
     ? getThemeContentFamilyId(selectedOption)
     : null;
+  const selectedLabel = selectedOption
+    ? formatThemeContentOptionLabel(selectedOption)
+    : "";
+  const normalizedQuery = normalizeLookupValue(query);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setQuery(selectedLabel);
+    }
+  }, [isOpen, selectedLabel]);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        event.target instanceof Node &&
+        !containerRef.current.contains(event.target)
+      ) {
+        setIsOpen(false);
+        setActiveIndex(-1);
+        setQuery(selectedLabel);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [selectedLabel]);
 
   const visibleOptions = selectableContentOptions.filter((option) =>
-    matchesThemeContentSearch(option, normalizedSearch)
+    matchesThemeContentSearch(option, normalizedQuery)
   );
+  const shouldIncludeSelectedOption =
+    !normalizedQuery &&
+    Boolean(selectedOption) &&
+    !visibleOptions.some((option) => option.id === selectedOption?.id);
+  const optionList = shouldIncludeSelectedOption && selectedOption
+    ? [selectedOption, ...visibleOptions]
+    : visibleOptions;
 
-  const optionList =
-    selectedOption && !visibleOptions.some((option) => option.id === selectedOption.id)
-      ? [selectedOption, ...visibleOptions]
-      : visibleOptions;
+  function isOptionDisabled(option: ThemeContentOption) {
+    const familyId = getThemeContentFamilyId(option);
+    return usedContentFamilyIds.has(familyId) && familyId !== selectedFamilyId;
+  }
+
+  function getFirstEnabledIndex() {
+    return optionList.findIndex((option) => !isOptionDisabled(option));
+  }
+
+  useEffect(() => {
+    if (!isOpen) {
+      setActiveIndex(-1);
+      return;
+    }
+
+    if (activeIndex >= 0) {
+      const activeOption = optionList[activeIndex];
+      if (activeOption && !isOptionDisabled(activeOption)) {
+        return;
+      }
+    }
+
+    setActiveIndex(getFirstEnabledIndex());
+  }, [activeIndex, isOpen, optionList, selectedFamilyId, usedContentFamilyIds]);
+
+  useEffect(() => {
+    if (!isOpen || activeIndex < 0) return;
+
+    optionRefs.current[activeIndex]?.scrollIntoView({
+      block: "nearest",
+    });
+  }, [activeIndex, isOpen]);
+
+  function selectOption(option: ThemeContentOption | null) {
+    onChange(option?.id ?? "");
+    setQuery(option ? formatThemeContentOptionLabel(option) : "");
+    setIsOpen(false);
+    setActiveIndex(-1);
+  }
+
+  function moveActiveIndex(direction: 1 | -1) {
+    if (!optionList.length) return;
+
+    let nextIndex = activeIndex;
+
+    for (let step = 0; step < optionList.length; step += 1) {
+      nextIndex =
+        nextIndex < 0
+          ? direction === 1
+            ? 0
+            : optionList.length - 1
+          : (nextIndex + direction + optionList.length) % optionList.length;
+
+      if (!isOptionDisabled(optionList[nextIndex])) {
+        setActiveIndex(nextIndex);
+        return;
+      }
+    }
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (!isOpen) {
+        setIsOpen(true);
+        setActiveIndex(getFirstEnabledIndex());
+        return;
+      }
+      moveActiveIndex(1);
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!isOpen) {
+        setIsOpen(true);
+        setActiveIndex(getFirstEnabledIndex());
+        return;
+      }
+      moveActiveIndex(-1);
+      return;
+    }
+
+    if (event.key === "Enter" && isOpen) {
+      event.preventDefault();
+      const activeOption = activeIndex >= 0 ? optionList[activeIndex] : null;
+      if (activeOption && !isOptionDisabled(activeOption)) {
+        selectOption(activeOption);
+      }
+      return;
+    }
+
+    if (event.key === "Escape") {
+      setIsOpen(false);
+      setActiveIndex(-1);
+      setQuery(selectedLabel);
+    }
+  }
 
   return (
-    <div className="space-y-2">
-      <input
-        type="search"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        placeholder="Zoek op titel of slug"
-        className="w-full rounded border border-stone-300 px-3 py-2 text-sm"
-      />
-      <select
-        value={selectedOption?.id ?? ""}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded border border-stone-300 px-3 py-2"
-      >
-        <option value="">Nog niet gekoppeld</option>
-        {optionList.map((contentItem) => {
-          const familyId = getThemeContentFamilyId(contentItem);
-          const isDisabled =
-            usedContentFamilyIds.has(familyId) && familyId !== selectedFamilyId;
+    <div ref={containerRef} className="relative space-y-2">
+      <div className="flex gap-2">
+        <input
+          ref={inputRef}
+          id={inputId}
+          type="search"
+          role="combobox"
+          autoComplete="off"
+          aria-autocomplete="list"
+          aria-controls={listboxId}
+          aria-expanded={isOpen}
+          aria-activedescendant={
+            isOpen && activeIndex >= 0
+              ? `${listboxId}-option-${optionList[activeIndex]?.id ?? activeIndex}`
+              : undefined
+          }
+          value={query}
+          onFocus={() => {
+            setIsOpen(true);
+            if (query === selectedLabel && selectedLabel) {
+              requestAnimationFrame(() => inputRef.current?.select());
+            }
+          }}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setIsOpen(true);
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder="Zoek en kies op titel of slug"
+          className="w-full rounded border border-stone-300 px-3 py-2 text-sm"
+        />
+        {selectedOption ? (
+          <button
+            type="button"
+            onClick={() => selectOption(null)}
+            className="shrink-0 rounded border border-stone-300 px-3 py-2 text-sm text-stone-700"
+          >
+            Loskoppelen
+          </button>
+        ) : null}
+      </div>
+      {isOpen ? (
+        <div
+          id={listboxId}
+          role="listbox"
+          className="absolute left-0 right-0 top-full z-20 mt-1 max-h-80 overflow-y-auto rounded-md border border-stone-300 bg-white shadow-lg"
+        >
+          {optionList.length ? (
+            optionList.map((contentItem, index) => {
+              const familyId = getThemeContentFamilyId(contentItem);
+              const isDisabled =
+                usedContentFamilyIds.has(familyId) && familyId !== selectedFamilyId;
+              const isActive = index === activeIndex;
+              const isSelected = selectedOption?.id === contentItem.id;
 
-          return (
-            <option
-              key={contentItem.id}
-              value={contentItem.id}
-              disabled={isDisabled}
-            >
-              {formatThemeContentOptionLabel(contentItem)}
-            </option>
-          );
-        })}
-      </select>
+              return (
+                <button
+                  key={contentItem.id}
+                  ref={(node) => {
+                    optionRefs.current[index] = node;
+                  }}
+                  id={`${listboxId}-option-${contentItem.id}`}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  disabled={isDisabled}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    if (!isDisabled) {
+                      selectOption(contentItem);
+                    }
+                  }}
+                  onMouseEnter={() => {
+                    if (!isDisabled) {
+                      setActiveIndex(index);
+                    }
+                  }}
+                  className={`flex w-full items-start justify-between gap-3 px-3 py-2 text-left text-sm ${
+                    isDisabled
+                      ? "cursor-not-allowed bg-stone-50 text-stone-400"
+                      : isActive
+                        ? "bg-stone-900 text-white"
+                        : "text-stone-800 hover:bg-stone-100"
+                  }`}
+                >
+                  <span className="min-w-0 flex-1">
+                    {formatThemeContentOptionLabel(contentItem)}
+                  </span>
+                  {isSelected ? (
+                    <span className="shrink-0 text-xs font-medium uppercase tracking-[0.18em]">
+                      Gekozen
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })
+          ) : (
+            <div className="px-3 py-2 text-sm text-stone-500">
+              Geen content-items gevonden voor deze zoekopdracht.
+            </div>
+          )}
+        </div>
+      ) : null}
       <div className="text-xs text-stone-500">
         {optionList.length} resultaat{optionList.length === 1 ? "" : "en"}
       </div>
