@@ -88,6 +88,10 @@ function scopeLabel(
   return t.scopeReferral;
 }
 
+function getDefaultTherapistMonths(plan: TherapistSubscriptionPlan) {
+  return plan === "monthly" ? 1 : 12;
+}
+
 export default function CreditPacksManager({
   packs,
   users,
@@ -115,6 +119,9 @@ export default function CreditPacksManager({
   const [entitlementNote, setEntitlementNote] = useState("");
   const [therapistUserId, setTherapistUserId] = useState<string>("");
   const [therapistPlan, setTherapistPlan] = useState<TherapistSubscriptionPlan>("monthly");
+  const [therapistMonths, setTherapistMonths] = useState<number>(
+    getDefaultTherapistMonths("monthly")
+  );
   const [therapistNote, setTherapistNote] = useState("");
   const [openSection, setOpenSection] = useState<
     "pack" | "purchase" | "entitlement" | "therapistEntitlement"
@@ -279,6 +286,7 @@ export default function CreditPacksManager({
         await grantTherapistDirectoryAccess({
           userId: therapistUserId,
           plan: therapistPlan,
+          months: therapistMonths,
           note: therapistNote,
         });
         setMessage(t.therapistEntitlementGranted);
@@ -735,14 +743,27 @@ export default function CreditPacksManager({
                     <span className="text-sm text-gray-600">{t.therapistPlan}</span>
                     <select
                       value={therapistPlan}
-                      onChange={(e) =>
-                        setTherapistPlan(e.target.value as TherapistSubscriptionPlan)
-                      }
+                      onChange={(e) => {
+                        const nextPlan = e.target.value as TherapistSubscriptionPlan;
+                        setTherapistPlan(nextPlan);
+                        setTherapistMonths(getDefaultTherapistMonths(nextPlan));
+                      }}
                       className="w-full rounded border px-2 py-1.5 text-sm"
                     >
                       <option value="monthly">{t.monthlyPlan}</option>
                       <option value="yearly">{t.yearlyPlan}</option>
                     </select>
+                  </label>
+
+                  <label className="space-y-1">
+                    <span className="text-sm text-gray-600">{t.durationMonths}</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={therapistMonths}
+                      onChange={(e) => setTherapistMonths(Number(e.target.value))}
+                      className="w-full rounded border px-2 py-1.5 text-sm"
+                    />
                   </label>
 
                   <label className="space-y-1">

@@ -332,6 +332,7 @@ export async function grantYearAssignmentsAccess(input: {
 export async function grantTherapistDirectoryAccess(input: {
   userId: string;
   plan: TherapistSubscriptionPlan;
+  months?: number;
   note?: string;
 }) {
   const admin = await requireAdmin();
@@ -339,10 +340,13 @@ export async function grantTherapistDirectoryAccess(input: {
   if (input.plan !== "monthly" && input.plan !== "yearly") {
     throw new Error("plan is ongeldig");
   }
+  const months = input.months ?? getTherapistSubscriptionMonths(input.plan);
+  if (!Number.isInteger(months) || months <= 0) {
+    throw new Error("months moet een positief geheel getal zijn");
+  }
 
   const supabase = createAdminClient();
   const pack = await getTherapistSubscriptionPack(input.plan);
-  const months = getTherapistSubscriptionMonths(input.plan);
   const now = new Date();
   const nowIso = now.toISOString();
 
