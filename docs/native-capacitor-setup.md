@@ -200,6 +200,56 @@ NEXT_PUBLIC_REVENUECAT_GOOGLE_API_KEY=
 7. Voeg testgebruikers toe in Google Play Console
 8. Installeer die testbuild op een Android toestel dat is ingelogd met een testaccount
 
+### RevenueCat service account aanmaken
+
+Als je in Google Cloud bij `Create service account` zit, gebruik dan voor deze repo
+bij voorkeur deze waarden:
+
+- Service account name: `RevenueCat Service Account`
+- Service account ID: `revenuecat-service-account`
+- Description: `Service account for RevenueCat integration`
+
+Na `Create and continue` geef je deze projectrollen:
+
+- `Pub/Sub Editor`
+- `Monitoring Viewer`
+
+Je kunt stap 3 `Principals with access` overslaan en direct op `Done` klikken.
+
+Maak daarna in Google Cloud bij die service account een JSON-key aan:
+
+1. `IAM & Admin`
+2. `Service Accounts`
+3. open `revenuecat-service-account`
+4. `Keys`
+5. `Add key`
+6. `Create new key`
+7. kies `JSON`
+
+Upload die JSON vervolgens in RevenueCat onder je Android app bij
+`Project Settings` -> `Google Play App Settings` -> `Service Account Key`.
+
+Let op: nieuwe Google Play credentials kunnen pas na enkele uren werken. RevenueCat
+meldt dat validatie tot ongeveer 36 uur kan duren.
+
+### Service account toegang in Google Play Console
+
+Alleen de JSON-key uploaden is niet genoeg. Nodig dezelfde service account ook uit in
+Google Play Console via `Users and permissions` en geef minimaal:
+
+- app-toegang tot `com.detroostboom.puretherapeuticart`
+- `View app information and download bulk reports (read-only)`
+- `View financial data, orders, and cancellation survey response`
+- `Manage orders and subscriptions`
+
+Als een van deze permissies ontbreekt, ziet RevenueCat vaak wel de key maar kan het
+abonnementen, producten of orders nog niet uitlezen.
+
+Als je later bij Google Play `Send test notification` gebruikt en die test faalt,
+controleer dan ook of de principal
+`google-play-developer-notifications@system.gserviceaccount.com` op het gebruikte
+Pub/Sub topic de rol `Pub/Sub Publisher` heeft.
+
 Voor de huidige app zijn dit de standaard product-id's voor opdrachtpakketten:
 
 - `credits.assignment.start`
