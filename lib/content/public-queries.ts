@@ -10,6 +10,7 @@ import {
 } from "@/lib/content/language-preference";
 import { getTranslationFamilyIds } from "@/lib/content/translation-family";
 import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
+import { translateCategoryTerm } from "@/lib/i18n/categoryTranslations";
 
 type ThemePageCategoryRow = {
   id: string;
@@ -497,7 +498,7 @@ export async function getHomepageCategories(
   }
 
   const rows = categories.map((category) => ({
-    ...category,
+    ...translateCategoryTerm(category, preferredLanguage),
     featured_image_url: normalizeSupabaseStorageUrl(category.featured_image_url),
     itemCount: itemIdsByCategoryId.get(category.id)?.size ?? 0,
     featuredItem: firstItemByCategory.get(category.id) ?? null,
@@ -943,7 +944,10 @@ export async function getThemeNavigationForContentItem(
   };
 }
 
-export async function getPrimaryCategoryForContentItem(contentItemId: string) {
+export async function getPrimaryCategoryForContentItem(
+  contentItemId: string,
+  preferredLanguage?: string | null
+) {
   const supabase = createAdminClient();
   const categoryTaxonomy = await getTaxonomyId("category");
   if (!categoryTaxonomy) return null;
@@ -978,7 +982,12 @@ export async function getPrimaryCategoryForContentItem(contentItemId: string) {
     .limit(1);
 
   if (termsError) throw termsError;
-  return terms?.[0] ?? null;
+  const category = terms?.[0] ?? null;
+  if (!category) return null;
+
+  const { preferredLanguage: activeLanguage } =
+    await getContentLanguagePreference(preferredLanguage);
+  return translateCategoryTerm(category, activeLanguage);
 }
 
 async function getTaxonomyId(slug: string) {

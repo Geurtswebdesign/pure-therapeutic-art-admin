@@ -4,6 +4,7 @@ import ThemePageView from "@/components/content/ThemePageView";
 import ThemePageCard from "@/components/content/ThemePageCard";
 import HistoryBackButton from "@/components/public/HistoryBackButton";
 import { getHomepageCategories } from "@/lib/content/public-queries";
+import { getCategoryStyle } from "@/lib/content/categoryStyles";
 import {
   getPublishedThemePageBySlug,
   getPublishedThemePages,
@@ -11,69 +12,12 @@ import {
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
+import { getTranslatedCategoryName } from "@/lib/i18n/categoryTranslations";
 
 type SearchParams = {
   category?: string | string[];
 };
-
-type CategoryStyle = {
-  cardClass: string;
-  orbClass: string;
-  badge: string;
-};
-
-const CATEGORY_STYLE_BY_SLUG: Record<string, CategoryStyle> = {
-  gratis: {
-    cardClass: "bg-teal-100",
-    orbClass: "bg-[radial-gradient(circle_at_30%_30%,#e7fffb_0%,#a7efe4_55%,#67d8c8_100%)]",
-    badge: "🎁",
-  },
-  "cognitie-inzicht": {
-    cardClass: "bg-[#e3dbef]",
-    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#2c0838_0%,#0e0818_62%,#07060f_100%)]",
-    badge: "🧠",
-  },
-  "emoties-innerlijke-beleving": {
-    cardClass: "bg-[#ead8e7]",
-    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#f0dede_0%,#d8d8d8_55%,#c2c2c2_100%)]",
-    badge: "❤️",
-  },
-  "gedrag-interactie": {
-    cardClass: "bg-[#f2e3c8]",
-    orbClass: "bg-[radial-gradient(circle_at_30%_30%,#ffb01f_0%,#ef8b00_48%,#d76d00_100%)]",
-    badge: "👥",
-  },
-  "lichaam-zintuigen": {
-    cardClass: "bg-[#cddff0]",
-    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#28a6ff_0%,#0a86da_55%,#0471c2_100%)]",
-    badge: "🧘",
-  },
-  "natuur-symbolische-kracht": {
-    cardClass: "bg-[#cde8d2]",
-    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#cad6c9_0%,#aac2a9_50%,#8faa92_100%)]",
-    badge: "🌿",
-  },
-  "zingeving-ritualen-spiritualiteit": {
-    cardClass: "bg-[#e3dbef]",
-    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#5f9c62_0%,#2f6840_50%,#1f3f2c_100%)]",
-    badge: "🪷",
-  },
-  "specifieke-doelgroepen-context": {
-    cardClass: "bg-[#efe4b8]",
-    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#fafafa_0%,#ededed_52%,#d8d8d8_100%)]",
-    badge: "🧑‍🤝‍🧑",
-  },
-};
-
-function getCategoryStyle(slug: string): CategoryStyle {
-  return (
-    CATEGORY_STYLE_BY_SLUG[slug] ?? {
-      cardClass: "bg-[#e8e3ee]",
-      orbClass: "bg-[radial-gradient(circle_at_35%_30%,#d7d7d7_0%,#bdbdbd_60%,#a0a0a0_100%)]",
-      badge: "✨",
-    }
-  );
-}
 
 function isSeedCategory(category: { is_homepage_seed?: boolean | null }) {
   return Boolean(category.is_homepage_seed);
@@ -103,6 +47,7 @@ export default async function ContentIndexPage({
 }) {
   const language = resolveUiLanguage(await getAppLanguage());
   const app = getAppMessages(language);
+  const publicT = getPublicAppMessages(language);
   const params = await searchParams;
   const categorySlug = Array.isArray(params?.category)
     ? params?.category[0]
@@ -111,7 +56,15 @@ export default async function ContentIndexPage({
   const activeCategory = categorySlug
     ? categories.find((category) => category.slug === categorySlug) ?? null
     : null;
-  const categoryLabel = activeCategory?.name || (categorySlug ? formatCategoryLabel(categorySlug) : null);
+  const categoryLabel =
+    activeCategory?.name ||
+    (categorySlug
+      ? getTranslatedCategoryName(
+          categorySlug,
+          language,
+          formatCategoryLabel(categorySlug)
+        )
+      : null);
   const showingSeedCategory = Boolean(activeCategory && isSeedCategory(activeCategory));
   const showingRegularCategory = Boolean(activeCategory && !isSeedCategory(activeCategory));
   const themes = showingRegularCategory
@@ -137,7 +90,7 @@ export default async function ContentIndexPage({
       : null;
 
   if (inlineTheme) {
-    return <ThemePageView theme={inlineTheme} />;
+    return <ThemePageView language={language} theme={inlineTheme} />;
   }
 
   return (
@@ -151,14 +104,14 @@ export default async function ContentIndexPage({
             {!categorySlug
               ? app.home.subtitle
               : showingSeedCategory
-                ? activeCategory?.description || "Kies een gewone categorie binnen deze seed-categorie."
-                : activeCategory?.description || "Kies een thema binnen deze categorie."}
+                ? activeCategory?.description || publicT.content.chooseRegularCategory
+                : activeCategory?.description || publicT.content.chooseTheme}
           </p>
           {categorySlug ? (
             <HistoryBackButton
               className="inline-flex rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700"
             >
-              Terug
+              {publicT.content.back}
             </HistoryBackButton>
           ) : null}
         </div>
@@ -197,7 +150,7 @@ export default async function ContentIndexPage({
                   </h2>
 
                   <p className="mt-3 line-clamp-3 text-[1.65rem] leading-[1.45] text-[#31445c]">
-                    {category.description || "Verken de gewone categorieen binnen dit domein."}
+                    {category.description || publicT.content.seedFallbackDescription}
                   </p>
                 </Link>
               );
@@ -205,7 +158,7 @@ export default async function ContentIndexPage({
           </section>
         ) : (
           <section className="rounded-[1.75rem] border border-dashed border-stone-300 bg-white/70 p-10 text-center text-stone-600">
-            Er staan nog geen seed-categorieen klaar.
+            {publicT.content.noSeedCategories}
           </section>
         )
       ) : showingSeedCategory && childCategories.length ? (
@@ -247,7 +200,7 @@ export default async function ContentIndexPage({
                     </h2>
 
                     <p className="mt-3 line-clamp-3 text-[1.65rem] leading-[1.45] text-[#31445c]">
-                      {category.description || "Verken thema's en oefeningen binnen deze categorie."}
+                      {category.description || publicT.content.regularFallbackDescription}
                     </p>
                   </>
                 ) : (
@@ -264,22 +217,22 @@ export default async function ContentIndexPage({
           <section className="space-y-4">
             <div>
               <h2 className="text-2xl font-semibold text-stone-900">
-                Thema&apos;s
+                {publicT.content.themesTitle}
               </h2>
               <p className="mt-1 text-sm leading-6 text-stone-600">
-                Kies een thema om de werkvormen in vaste volgorde te openen.
+                {publicT.content.themesSubtitle}
               </p>
             </div>
 
             <div className="grid gap-4">
               {categoryThemes.map((theme) => (
-                <ThemePageCard key={theme.id} theme={theme} />
+                <ThemePageCard key={theme.id} language={language} theme={theme} />
               ))}
             </div>
           </section>
         ) : (
           <section className="rounded-[1.75rem] border border-dashed border-stone-300 bg-white/70 p-10 text-center text-stone-600">
-            Er staan nog geen gepubliceerde thema&apos;s klaar binnen deze categorie.
+            {publicT.content.noThemes}
           </section>
         )
       ) : categorySlug && childCategories.length ? (
@@ -321,7 +274,7 @@ export default async function ContentIndexPage({
                     </h2>
 
                     <p className="mt-3 line-clamp-3 text-[1.65rem] leading-[1.45] text-[#31445c]">
-                      {category.description || "Verken thema's en oefeningen binnen deze categorie."}
+                      {category.description || publicT.content.regularFallbackDescription}
                     </p>
                   </>
                 ) : (
@@ -335,7 +288,7 @@ export default async function ContentIndexPage({
         </section>
       ) : (
         <section className="rounded-[1.75rem] border border-dashed border-stone-300 bg-white/70 p-10 text-center text-stone-600">
-          Er staat nog niets klaar binnen dit niveau.
+          {publicT.content.noLevelContent}
         </section>
       )}
     </div>

@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPreferredPublishedContentMapByIds } from "@/lib/content/language-preference";
 import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
+import { translateCategoryTerm } from "@/lib/i18n/categoryTranslations";
 
 export type ThemePageSummary = {
   id: string;
@@ -200,7 +201,10 @@ async function getThemeRows() {
   return (data ?? []) as ThemePageRow[];
 }
 
-async function getTermMap(categoryIds: string[]) {
+async function getTermMap(
+  categoryIds: string[],
+  preferredLanguage?: string | null
+) {
   if (!categoryIds.length) {
     return new Map<string, TermRow>();
   }
@@ -216,7 +220,12 @@ async function getTermMap(categoryIds: string[]) {
     return new Map<string, TermRow>();
   }
 
-  return new Map(((data ?? []) as TermRow[]).map((term) => [term.id, term]));
+  return new Map(
+    ((data ?? []) as TermRow[]).map((term) => [
+      term.id,
+      translateCategoryTerm(term, preferredLanguage ?? "nl"),
+    ])
+  );
 }
 
 async function getSectionAndItemCounts(pageIds: string[]) {
@@ -340,7 +349,7 @@ export async function getPublishedThemePages(options?: {
   );
 
   const [termById, counts] = await Promise.all([
-    getTermMap(categoryIds),
+    getTermMap(categoryIds, options?.preferredLanguage),
     getSectionAndItemCounts(pages.map((page) => page.id)),
   ]);
 
@@ -376,7 +385,7 @@ export async function getPublishedThemePageBySlug(
         .filter((value): value is string => Boolean(value))
     )
   );
-  const termById = await getTermMap(categoryIds);
+  const termById = await getTermMap(categoryIds, preferredLanguage);
 
   const childPages = pages.filter((row) => row.parent_theme_page_id === page.id);
   const childPageIds = childPages.map((row) => row.id);

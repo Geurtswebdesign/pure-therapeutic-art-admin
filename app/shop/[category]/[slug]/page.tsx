@@ -12,6 +12,8 @@ import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { normalizeImages } from "@/lib/content/normalizeHtml";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
+import { translateShopCatalogSettings } from "@/lib/i18n/shopCatalogTranslations";
 import {
   getPublicCatalogItem,
   getPublicShopCatalog,
@@ -68,13 +70,17 @@ export default async function ShopProductPage({
   const { category, slug } = await params;
   if (!isProductCategory(category)) notFound();
 
-  const catalog = await getPublicShopCatalog();
+  const language = resolveUiLanguage(await getAppLanguage());
+  const t = getPublicAppMessages(language);
+  const catalog = translateShopCatalogSettings(
+    await getPublicShopCatalog(),
+    language
+  );
   const item = getPublicCatalogItem(catalog, category, slug);
   if (!item) notFound();
 
   const config = PRODUCT_CATEGORY_CONFIG[category];
   const isInDevelopment = isCatalogItemInDevelopment(item);
-  const language = resolveUiLanguage(await getAppLanguage());
   const user = category === "ebooks" ? await getCurrentUser() : null;
   const ebookState =
     category === "ebooks"
@@ -89,6 +95,12 @@ export default async function ShopProductPage({
       : false;
   const ebookPurchaseMode =
     category === "ebooks" ? getEbookPurchaseMode() : "disabled";
+  const categoryLabel =
+    category === "boeken"
+      ? t.shop.booksTitle
+      : category === "ebooks"
+        ? t.shop.ebooksTitle
+        : t.shop.gamesTitle;
 
   return (
     <PublicAppShell activeTab="shop" title={item.title}>
@@ -97,10 +109,10 @@ export default async function ShopProductPage({
           fallbackHref={`/shop/${category}`}
           className="inline-flex items-center rounded-full border border-[#decfbe] bg-white/80 px-4 py-2 text-sm text-stone-700 shadow-sm"
         >
-          Terug naar {category}
+          {t.shop.backToCategoryPrefix} {categoryLabel}
         </HistoryBackButton>
 
-        <ProductInfoHero item={item} />
+        <ProductInfoHero item={item} language={language} />
 
         <div className="rounded-[1.5rem] border border-[#e5d8ca] bg-white/85 p-4 shadow-sm">
           <div className="flex items-center gap-2 text-[#6f5949]">
@@ -154,12 +166,12 @@ export default async function ShopProductPage({
               purchaseButtonLabel={item.purchaseButtonLabel}
               developmentPurchaseText={
                 ebookPurchaseMode === "disabled"
-                  ? "De in-app betaalstap voor e-books is nog niet gekoppeld. De aankoopregistratie en readerflow staan wel klaar."
+                  ? t.ebookPurchase.paymentConnectionMissingDescription
                   : item.developmentPurchaseText
               }
               developmentCalloutLabel={
                 ebookPurchaseMode === "disabled"
-                  ? "Betaalkoppeling ontbreekt"
+                  ? t.ebookPurchase.paymentConnectionMissingLabel
                   : item.developmentCalloutLabel
               }
               purchaseMode={ebookPurchaseMode}

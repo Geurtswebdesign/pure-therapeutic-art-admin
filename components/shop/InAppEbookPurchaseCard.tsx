@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { resolveBaseUiLanguage, type UiLanguage } from "@/lib/i18n/runtime";
+import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
 import { purchaseEbookInApp } from "@/app/shop/ebook-actions";
 import type { EbookPurchaseMode } from "@/lib/shop/ebook-purchase-mode";
 import NativeEbookPurchaseButton from "@/components/shop/NativeEbookPurchaseButton";
@@ -88,6 +89,22 @@ const COPY = {
   },
 } as const;
 
+function resolvePurchaseError(
+  errorMessage: string,
+  messages: ReturnType<typeof getPublicAppMessages>["ebookPurchase"]
+) {
+  switch (errorMessage) {
+    case "EBOOK_PURCHASE_DISABLED":
+      return messages.disabledError;
+    case "EBOOK_LOGIN_REQUIRED":
+      return messages.loginRequiredError;
+    case "EBOOK_NOT_FOUND":
+      return messages.notFoundError;
+    default:
+      return messages.fallbackError;
+  }
+}
+
 export default function InAppEbookPurchaseCard({
   productSlug,
   readerHref,
@@ -105,6 +122,7 @@ export default function InAppEbookPurchaseCard({
   language,
 }: Props) {
   const t = COPY[resolveBaseUiLanguage(language)];
+  const purchaseMessages = getPublicAppMessages(language).ebookPurchase;
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -173,9 +191,10 @@ export default function InAppEbookPurchaseCard({
                     await purchaseEbookInApp(productSlug);
                   } catch (nextError) {
                     setError(
-                      nextError instanceof Error
-                        ? nextError.message
-                        : "Aankoop verwerken mislukt."
+                      resolvePurchaseError(
+                        nextError instanceof Error ? nextError.message : "",
+                        purchaseMessages
+                      )
                     );
                   }
                 })

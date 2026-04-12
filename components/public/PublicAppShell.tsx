@@ -3,6 +3,9 @@ import Image from "next/image";
 import logo from "@/assets/branding/logo.png";
 import { getPublicBranding, getPublicHeaderOverride } from "@/lib/settings/public";
 import { isNativeAppRequest } from "@/lib/native/isNativeAppRequest";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
 import AppBottomNav from "@/components/public/AppBottomNav";
 
 type Props = {
@@ -32,6 +35,8 @@ export default async function PublicAppShell({
   const headerLogoAlt = headerOverride?.logoAlt ?? `${branding.siteName} logo`;
   const headerSubtitle = headerOverride?.subtitle || subtitle;
   const isNativeApp = await isNativeAppRequest();
+  const language = resolveUiLanguage(await getAppLanguage());
+  const nav = getPublicAppMessages(language).nav;
 
   const shellClassName = isNativeApp
     ? "h-[100svh] h-[100dvh] overflow-hidden bg-[linear-gradient(180deg,#f3e4d9_0%,#efe5dc_26%,#f7f2ec_64%,#f9f7f3_100%)] px-0 pb-0 pt-0"
@@ -105,7 +110,17 @@ export default async function PublicAppShell({
           {children}
         </div>
 
-        <AppBottomNav active={activeTab} native={isNativeApp} />
+        <AppBottomNav
+          active={activeTab}
+          labels={{
+            home: nav.home,
+            trainingen: nav.trainingen,
+            shop: nav.shop,
+            therapeuten: nav.therapeuten,
+            profiel: nav.profiel,
+          }}
+          native={isNativeApp}
+        />
       </div>
     </div>
   );

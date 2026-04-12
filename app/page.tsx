@@ -3,7 +3,9 @@ import Link from "next/link";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
+import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
 import { getHomepageCategories } from "@/lib/content/public-queries";
+import { getCategoryStyle } from "@/lib/content/categoryStyles";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -16,65 +18,6 @@ type ProfileRow = {
     profile_image?: string | null;
   } | null;
 };
-
-type CategoryStyle = {
-  cardClass: string;
-  orbClass: string;
-  badge: string;
-};
-
-const CATEGORY_STYLE_BY_SLUG: Record<string, CategoryStyle> = {
-  gratis: {
-    cardClass: "bg-teal-100",
-    orbClass: "bg-[radial-gradient(circle_at_30%_30%,#e7fffb_0%,#a7efe4_55%,#67d8c8_100%)]",
-    badge: "🎁",
-  },
-  "cognitie-inzicht": {
-    cardClass: "bg-[#e3dbef]",
-    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#2c0838_0%,#0e0818_62%,#07060f_100%)]",
-    badge: "🧠",
-  },
-  "emoties-innerlijke-beleving": {
-    cardClass: "bg-[#ead8e7]",
-    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#f0dede_0%,#d8d8d8_55%,#c2c2c2_100%)]",
-    badge: "❤️",
-  },
-  "gedrag-interactie": {
-    cardClass: "bg-[#f2e3c8]",
-    orbClass: "bg-[radial-gradient(circle_at_30%_30%,#ffb01f_0%,#ef8b00_48%,#d76d00_100%)]",
-    badge: "👥",
-  },
-  "lichaam-zintuigen": {
-    cardClass: "bg-[#cddff0]",
-    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#28a6ff_0%,#0a86da_55%,#0471c2_100%)]",
-    badge: "🧘",
-  },
-  "natuur-symbolische-kracht": {
-    cardClass: "bg-[#cde8d2]",
-    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#cad6c9_0%,#aac2a9_50%,#8faa92_100%)]",
-    badge: "🌿",
-  },
-  "zingeving-ritualen-spiritualiteit": {
-    cardClass: "bg-[#e3dbef]",
-    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#5f9c62_0%,#2f6840_50%,#1f3f2c_100%)]",
-    badge: "🪷",
-  },
-  "specifieke-doelgroepen-context": {
-    cardClass: "bg-[#efe4b8]",
-    orbClass: "bg-[radial-gradient(circle_at_35%_30%,#fafafa_0%,#ededed_52%,#d8d8d8_100%)]",
-    badge: "🧑‍🤝‍🧑",
-  },
-};
-
-function getCategoryStyle(slug: string): CategoryStyle {
-  return (
-    CATEGORY_STYLE_BY_SLUG[slug] ?? {
-      cardClass: "bg-[#e8e3ee]",
-      orbClass: "bg-[radial-gradient(circle_at_35%_30%,#d7d7d7_0%,#bdbdbd_60%,#a0a0a0_100%)]",
-      badge: "✨",
-    }
-  );
-}
 
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -121,6 +64,7 @@ async function getSafeHomepageCategories(preferredLanguage?: string) {
 export default async function Home() {
   const language = resolveUiLanguage(await getAppLanguage());
   const t = getAppMessages(language).home;
+  const publicT = getPublicAppMessages(language);
   const user = await getCurrentUser();
 
   const [profile, categories] = await Promise.all([
@@ -140,10 +84,9 @@ export default async function Home() {
     user?.user_metadata?.avatar_url ??
     user?.user_metadata?.picture ??
     "";
-  const motivationalText =
-    "Mooi dat je er bent. Pak een moment voor jezelf en zet vandaag een kleine stap.";
+  const motivationalText = publicT.home.signedInMotivation;
   return (
-    <PublicAppShell activeTab="home" subtitle="Rust, groei en troost">
+    <PublicAppShell activeTab="home" subtitle={publicT.home.headerSubtitle}>
       <section className="space-y-4">
         <div className="rounded-[1.75rem] border border-stone-200 bg-white px-4 py-4 shadow-sm">
           {user ? (
@@ -153,7 +96,7 @@ export default async function Home() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={avatarUrl}
-                    alt={displayName || "Gebruiker"}
+                    alt={displayName || publicT.home.userFallback}
                     className="h-[72px] w-[72px] overflow-hidden rounded-full object-cover"
                   />
                 ) : (
@@ -162,13 +105,13 @@ export default async function Home() {
                   </div>
                 )}
                 <span className="max-w-[84px] text-center text-xs leading-4 text-stone-500">
-                  {displayName || "Gebruiker"}
+                  {displayName || publicT.home.userFallback}
                 </span>
               </div>
 
               <div className="space-y-2 pt-1">
                 <h2 className="font-serif text-xl leading-tight text-stone-950 sm:text-2xl">
-                  Welkom terug
+                  {publicT.home.signedInTitle}
                 </h2>
                 <p className="text-sm leading-6 text-stone-600">
                   {motivationalText}
@@ -194,7 +137,7 @@ export default async function Home() {
                   className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white"
                   href="/login?mode=register&next=%2Faccount"
                 >
-                  Aanmelden
+                  {publicT.home.register}
                 </Link>
               </div>
             </div>
@@ -234,11 +177,11 @@ export default async function Home() {
                 </h3>
 
                 <p className="mt-1 min-h-[40px] line-clamp-2 text-sm leading-5 text-[#31445c]">
-                  {category.description || "Verken thema's en oefeningen binnen deze categorie."}
+                  {category.description || publicT.home.categoryFallbackDescription}
                 </p>
                 <div className="mt-auto pt-3">
                   <span className="inline-flex rounded-full border border-[#30445c33] bg-white/70 px-3 py-1 text-xs font-medium text-[#1f2f43]">
-                    Open categorie
+                    {publicT.home.openCategory}
                   </span>
                 </div>
               </Link>
@@ -246,7 +189,7 @@ export default async function Home() {
           })
           ) : (
             <div className="rounded-[1.5rem] border border-dashed border-stone-300 bg-stone-50 p-5 text-sm text-stone-600">
-              Nog geen content beschikbaar.
+              {publicT.home.emptyState}
             </div>
           )}
         </div>

@@ -13,6 +13,7 @@ import {
   type BaseUiLanguage,
   type UiLanguage,
 } from "@/lib/i18n/runtime";
+import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
 
 const COPY: Record<
   BaseUiLanguage,
@@ -79,6 +80,7 @@ export default function NativeEbookPurchaseButton({
   language: UiLanguage;
 }) {
   const t = COPY[resolveBaseUiLanguage(language)];
+  const purchaseMessages = getPublicAppMessages(language).ebookPurchase;
   const router = useRouter();
   const [product, setProduct] = useState<PurchasesStoreProduct | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -165,10 +167,10 @@ export default function NativeEbookPurchaseButton({
               const message =
                 nextError instanceof Error
                   ? nextError.message
-                  : "Aankoop verwerken mislukt.";
+                  : purchaseMessages.fallbackError;
 
               if (!/cancel/i.test(message)) {
-                setError(message);
+                setError(message || purchaseMessages.fallbackError);
               }
             }
           })

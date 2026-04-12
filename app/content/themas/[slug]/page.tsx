@@ -18,7 +18,7 @@ export default async function ThemePage({
     notFound();
   }
 
-  return <ThemePageView theme={theme} />;
+  return <ThemePageView language={language} theme={theme} />;
 }
 
 export async function generateMetadata({

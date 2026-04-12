@@ -1,12 +1,18 @@
 import PublicAppShell from "@/components/public/PublicAppShell";
 import { getEvents } from "@/lib/events/getEvents";
 import type { AppEvent } from "@/lib/events/types";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
+import {
+  resolveLanguageLocale,
+  resolveUiLanguage,
+} from "@/lib/i18n/runtime";
+import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
 
-function formatDateTime(value: string | null) {
-  if (!value) return "Nog geen datum";
+function formatDateTime(value: string | null, locale: string, noDateLabel: string) {
+  if (!value) return noDateLabel;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("nl-NL", {
+  return date.toLocaleString(locale, {
     weekday: "short",
     day: "2-digit",
     month: "short",
@@ -15,7 +21,7 @@ function formatDateTime(value: string | null) {
   });
 }
 
-function formatDateParts(value: string | null) {
+function formatDateParts(value: string | null, locale: string) {
   if (!value) {
     return { day: "--", month: "---", weekday: "---", time: "--:--" };
   }
@@ -26,13 +32,13 @@ function formatDateParts(value: string | null) {
   }
 
   return {
-    day: date.toLocaleDateString("nl-NL", { day: "2-digit" }),
+    day: date.toLocaleDateString(locale, { day: "2-digit" }),
     month: date
-      .toLocaleDateString("nl-NL", { month: "short" })
+      .toLocaleDateString(locale, { month: "short" })
       .replace(".", "")
       .toUpperCase(),
-    weekday: date.toLocaleDateString("nl-NL", { weekday: "short" }),
-    time: date.toLocaleTimeString("nl-NL", {
+    weekday: date.toLocaleDateString(locale, { weekday: "short" }),
+    time: date.toLocaleTimeString(locale, {
       hour: "2-digit",
       minute: "2-digit",
     }),
@@ -60,6 +66,9 @@ function toSafeBookingUrl(event: AppEvent) {
 }
 
 export default async function TrainingenPage() {
+  const language = resolveUiLanguage(await getAppLanguage());
+  const locale = resolveLanguageLocale(language);
+  const t = getPublicAppMessages(language).trainings;
   let events:
     | Awaited<ReturnType<typeof getEvents>>
     | null = null;
@@ -78,21 +87,21 @@ export default async function TrainingenPage() {
       <section className="space-y-4">
         <div className="rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-sm">
           <h2 className="font-serif text-2xl text-stone-950">
-            Pure Therapeutic ART trainingen
+            {t.title}
           </h2>
           <div className="mt-3 h-1 w-24 rounded-full bg-[#b64040]" />
           <p className="mt-2 text-sm leading-6 text-stone-600">
-            Bekijk alle aankomende trainingen en open direct het boekingsvenster.
+            {t.subtitle}
           </p>
         </div>
 
         {loadError ? (
           <article className="rounded-[1.5rem] border border-red-200 bg-red-50 p-4">
             <h3 className="text-base font-medium text-red-800">
-              Trainingen konden niet geladen worden
+              {t.loadErrorTitle}
             </h3>
             <p className="mt-2 text-sm text-red-700">
-              Controleer of de Supabase function `wp-events` gedeployed is.
+              {t.loadErrorBody}
             </p>
             <p className="mt-2 text-xs text-red-700">{loadError}</p>
           </article>
@@ -101,10 +110,10 @@ export default async function TrainingenPage() {
         {!loadError && !events?.length ? (
           <article className="rounded-[1.5rem] border border-stone-200 bg-[#f6f1eb] p-4">
             <h3 className="text-base font-medium text-stone-900">
-              Nog geen trainingen gevonden
+              {t.emptyTitle}
             </h3>
             <p className="mt-1 text-sm text-stone-600">
-              Zodra er events in WordPress/Amelia staan, verschijnen ze hier.
+              {t.emptyBody}
             </p>
           </article>
         ) : null}
@@ -119,7 +128,7 @@ export default async function TrainingenPage() {
               <div className="grid grid-cols-1 gap-0 sm:grid-cols-[84px_1fr]">
                 <div className="flex flex-col items-center justify-center border-b border-[#eee3d8] bg-[#f6eee6] px-2 py-4 text-center sm:border-b-0 sm:border-r">
                   {(() => {
-                    const parts = formatDateParts(event.nextOccurrence);
+                    const parts = formatDateParts(event.nextOccurrence, locale);
                     return (
                       <>
                         <span className="text-[10px] uppercase tracking-[0.2em] text-stone-500">
@@ -145,18 +154,23 @@ export default async function TrainingenPage() {
                       {event.title}
                     </h3>
                     <span className="shrink-0 rounded-full border border-[#e7b8b8] bg-[#fff4f4] px-2.5 py-1 text-xs text-[#9e3a3a]">
-                      {event.price > 0 ? `EUR ${event.price.toFixed(2)}` : "Gratis"}
+                      {event.price > 0 ? `EUR ${event.price.toFixed(2)}` : t.freePrice}
                     </span>
                   </div>
 
                   <p className="text-xs text-stone-600">
-                    Start: {formatDateTime(event.nextOccurrence)}
+                    {t.startLabel}: {formatDateTime(event.nextOccurrence, locale, t.noDate)}
                   </p>
 
                   <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#f1e8de] pt-2">
                     <div className="flex items-center gap-3 text-[11px] text-stone-500">
-                      <span>{event.occurrenceCount} sessies</span>
-                      {event.capacity ? <span>Max {event.capacity}</span> : null}
+                      <span>
+                        {event.occurrenceCount}{" "}
+                        {event.occurrenceCount === 1
+                          ? t.sessionSingular
+                          : t.sessionPlural}
+                      </span>
+                      {event.capacity ? <span>{t.maxPrefix} {event.capacity}</span> : null}
                     </div>
 
                     {event.bookingUrl || event.listUrl ? (
@@ -166,11 +180,11 @@ export default async function TrainingenPage() {
                         rel="noopener noreferrer"
                         className="inline-flex rounded-full border border-[#9e3a3a] bg-[#b64040] px-4 py-1.5 text-xs font-medium text-white transition hover:bg-[#9e3a3a]"
                       >
-                        Boek nu
+                        {t.bookNow}
                       </a>
                     ) : (
                       <span className="inline-flex rounded-full bg-stone-300 px-4 py-1.5 text-xs text-stone-700">
-                        Geen boekingslink
+                        {t.noBookingLink}
                       </span>
                     )}
                   </div>

@@ -15,6 +15,11 @@ import {
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import {
+  getPublicAppMessages,
+  type PublicAppMessages,
+} from "@/lib/i18n/publicAppMessages";
+import { translateShopCatalogSettings } from "@/lib/i18n/shopCatalogTranslations";
 import { getCreditPackPurchaseMode } from "@/lib/iap/credit-pack-purchase-mode";
 import {
   getPublicCatalogItemsByCategory,
@@ -25,31 +30,15 @@ import { getTherapistDirectoryAccessState } from "@/lib/users/therapistDirectory
 
 const CATEGORY_CONFIG = {
   credits: {
-    title: "Opdrachtcredits",
-    intro:
-      "Alle actieve opdrachtpakketten en het jaarabonnement voor opdrachten. Hiermee speel je opdrachten vrij of krijg je twaalf maanden volledige toegang.",
-    listTitle: "Opdrachtopties",
     icon: Coins,
   },
   boeken: {
-    title: "Boeken",
-    intro:
-      "Overzicht van de fysieke en visuele boeken binnen de shop. Gericht op therapie, coaching en thuisgebruik.",
-    listTitle: "Alle boeken",
     icon: BookOpenText,
   },
   ebooks: {
-    title: "E-books",
-    intro:
-      "Overzicht van de app-only e-books. Na aankoop verschijnen ze in je account onder EBooks en lees je ze in de beveiligde app-reader.",
-    listTitle: "Alle e-books",
     icon: Download,
   },
   spellen: {
-    title: "Spellen",
-    intro:
-      "Overzicht van de spelmaterialen binnen de shop, inclusief digitale varianten die nog in ontwikkeling kunnen zijn.",
-    listTitle: "Alle spellen",
     icon: Puzzle,
   },
 } as const;
@@ -75,48 +64,44 @@ function normalizeCreditScope(value: string | undefined): CreditScope {
   return "assignment";
 }
 
-function getCreditScopeConfig(scope: CreditScope): CreditScopeConfig {
+function getCreditScopeConfig(
+  scope: CreditScope,
+  messages: PublicAppMessages
+): CreditScopeConfig {
+  const { shop, shopCatalog } = messages;
   switch (scope) {
     case "book":
       return {
-        title: "Boekcredits",
-        intro:
-          "Koop boekcredits om e-books direct in de app vrij te spelen en veilig te lezen in de reader.",
-        listTitle: "Beschikbare boekcredits",
-        emptyTitle: "Nog geen boekcredits actief",
-        emptyDescription:
-          "Activeer eerst een of meer boekcredit-pakketten in de administratie. Dan verschijnen ze automatisch hier.",
+        title: shop.bookCreditsTitle,
+        intro: shop.bookCreditsDescription,
+        listTitle: shop.bookCreditsListTitle,
+        emptyTitle: shop.bookCreditsEmptyTitle,
+        emptyDescription: shop.bookCreditsEmptyDescription,
       };
     case "game":
       return {
-        title: "Spelcredits",
-        intro:
-          "Koop spelcredits om digitale spellen of spelcontent binnen de app vrij te spelen.",
-        listTitle: "Beschikbare spelcredits",
-        emptyTitle: "Nog geen spelcredits actief",
-        emptyDescription:
-          "Activeer eerst een of meer spelcredit-pakketten in de administratie. Dan verschijnen ze automatisch hier.",
+        title: shop.gameCreditsTitle,
+        intro: shop.gameCreditsDescription,
+        listTitle: shop.gameCreditsListTitle,
+        emptyTitle: shop.gameCreditsEmptyTitle,
+        emptyDescription: shop.gameCreditsEmptyDescription,
       };
     case "referral":
       return {
-        title: "Verwijscredits",
-        intro:
-          "Koop verwijscredits om beschermde verwijscontent binnen de app vrij te spelen.",
-        listTitle: "Beschikbare verwijscredits",
-        emptyTitle: "Nog geen verwijscredits actief",
-        emptyDescription:
-          "Activeer eerst een of meer verwijscredit-pakketten in de administratie. Dan verschijnen ze automatisch hier.",
+        title: shop.referralCreditsTitle,
+        intro: shop.referralCreditsDescription,
+        listTitle: shop.referralCreditsListTitle,
+        emptyTitle: shop.referralCreditsEmptyTitle,
+        emptyDescription: shop.referralCreditsEmptyDescription,
       };
     case "assignment":
     default:
       return {
-        title: "Opdrachtcredits",
-        intro:
-          "Alle actieve opdrachtpakketten en het jaarabonnement voor opdrachten. Hiermee speel je opdrachten vrij of krijg je twaalf maanden volledige toegang.",
-        listTitle: "Opdrachtopties",
-        emptyTitle: "Nog geen opdrachtpakketten actief",
-        emptyDescription:
-          "Activeer eerst een of meer assignment credit packs of het jaarabonnement in de administratie. Dan verschijnen ze automatisch hier.",
+        title: shop.assignmentCreditsTitle,
+        intro: shop.assignmentCreditsDescription,
+        listTitle: shop.assignmentCreditsListTitle,
+        emptyTitle: shopCatalog.noAssignmentPacksTitle,
+        emptyDescription: shopCatalog.noAssignmentPacksDescription,
       };
   }
 }
@@ -136,7 +121,9 @@ export default async function ShopCategoryPage({
     ? rawSearchParams.scope[0]
     : rawSearchParams.scope;
   const creditScope = normalizeCreditScope(requestedScope);
-  const creditScopeConfig = getCreditScopeConfig(creditScope);
+  const language = resolveUiLanguage(await getAppLanguage());
+  const t = getPublicAppMessages(language);
+  const creditScopeConfig = getCreditScopeConfig(creditScope, t);
   const config =
     category === "credits"
       ? {
@@ -145,7 +132,26 @@ export default async function ShopCategoryPage({
           intro: creditScopeConfig.intro,
           listTitle: creditScopeConfig.listTitle,
         }
-      : CATEGORY_CONFIG[category];
+      : category === "boeken"
+        ? {
+            ...CATEGORY_CONFIG.boeken,
+            title: t.shop.booksTitle,
+            intro: t.shop.booksDescription,
+            listTitle: t.shop.booksListTitle,
+          }
+        : category === "ebooks"
+          ? {
+              ...CATEGORY_CONFIG.ebooks,
+              title: t.shop.ebooksTitle,
+              intro: t.shop.ebooksDescription,
+              listTitle: t.shop.ebooksListTitle,
+            }
+          : {
+              ...CATEGORY_CONFIG.spellen,
+              title: t.shop.gamesTitle,
+              intro: t.shop.gamesDescription,
+              listTitle: t.shop.gamesListTitle,
+            };
   const creditShopData =
     category === "credits"
       ? await getCreditShopData(creditScope)
@@ -159,13 +165,13 @@ export default async function ShopCategoryPage({
     therapistDirectoryAccess?.shouldShowTherapistSubscriptionShopOption
       ? await getActiveTherapistSubscriptionPacks()
       : [];
-  const language = resolveUiLanguage(
-    category === "credits" ? await getAppLanguage() : "nl"
-  );
   const creditPackPurchaseMode =
     category === "credits" ? getCreditPackPurchaseMode() : "disabled";
   const { creditPacks, yearSubscriptionPack } = creditShopData;
-  const catalog = await getPublicShopCatalog();
+  const catalog = translateShopCatalogSettings(
+    await getPublicShopCatalog(),
+    language
+  );
   const categoryItems =
     category === "boeken" || category === "ebooks" || category === "spellen"
       ? getPublicCatalogItemsByCategory(catalog, category)
@@ -178,14 +184,14 @@ export default async function ShopCategoryPage({
           fallbackHref="/shop"
           className="inline-flex items-center rounded-full border border-[#decfbe] bg-white/80 px-4 py-2 text-sm text-stone-700 shadow-sm"
         >
-          Terug naar shop
+          {t.shop.backToShop}
         </HistoryBackButton>
 
         <div className="rounded-[1.6rem] border border-[#e5d8ca] bg-[linear-gradient(180deg,#fffaf6_0%,#f8f1e8_100%)] p-5 shadow-[0_18px_36px_rgba(59,40,28,0.07)]">
           <div className="flex items-center gap-2 text-[#6f5949]">
             <config.icon size={18} strokeWidth={1.8} />
             <span className="text-xs font-medium uppercase tracking-[0.22em]">
-              Shop categorie
+              {t.shop.categoryEyebrow}
             </span>
           </div>
           <p className="mt-3 max-w-sm text-sm leading-6 text-[#6b5d50]">
@@ -195,16 +201,18 @@ export default async function ShopCategoryPage({
 
         {category === "credits" && therapistSubscriptionPacks.length ? (
           <div id="therapeut-abonnement">
-            <DetailList icon={Stethoscope} title="Therapeutenabonnement">
+            <DetailList icon={Stethoscope} title={t.shop.therapistSubscriptionTitle}>
               <div className="space-y-4">
                 <p className="max-w-sm text-sm leading-6 text-[#6b5d50]">
-                  Met dit abonnement kun je je gratis therapeut-account
-                  uitbreiden zodat je profiel zichtbaar kan worden in de
-                  therapeutenlijst.
+                  {t.shop.therapistSubscriptionDetailDescription}
                 </p>
                 <div className="grid gap-3">
                   {therapistSubscriptionPacks.map((pack) => (
-                    <TherapistSubscriptionDetailCard key={pack.id} pack={pack} />
+                    <TherapistSubscriptionDetailCard
+                      key={pack.id}
+                      language={language}
+                      pack={pack}
+                    />
                   ))}
                 </div>
               </div>
@@ -240,6 +248,7 @@ export default async function ShopCategoryPage({
               </div>
             ) : (
               <AssignmentCreditsEmptyState
+                language={language}
                 title={creditScopeConfig.emptyTitle}
                 description={creditScopeConfig.emptyDescription}
               />
@@ -247,7 +256,7 @@ export default async function ShopCategoryPage({
           ) : (
             <div className="grid gap-3">
               {categoryItems.map((item) => (
-                <ProductDetailCard key={item.id} item={item} />
+                <ProductDetailCard key={item.id} item={item} language={language} />
               ))}
             </div>
           )}

@@ -10,17 +10,17 @@ import { getEbookPurchaseMode } from "@/lib/shop/ebook-purchase-mode";
 
 export async function purchaseEbookInApp(productSlug: string) {
   if (getEbookPurchaseMode() !== "direct_grant") {
-    throw new Error("De in-app betaalkoppeling is nog niet actief.");
+    throw new Error("EBOOK_PURCHASE_DISABLED");
   }
 
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("Log eerst in om een e-book te kopen.");
+    throw new Error("EBOOK_LOGIN_REQUIRED");
   }
 
   const item = await getPublicEbookProductBySlug(productSlug);
   if (!item) {
-    throw new Error("E-book niet gevonden.");
+    throw new Error("EBOOK_NOT_FOUND");
   }
 
   await grantDirectEbookPurchase(user.id, item);

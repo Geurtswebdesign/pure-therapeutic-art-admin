@@ -2,13 +2,18 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ThemePageSummary } from "@/lib/content/theme-queries";
 import { stripRichText } from "@/lib/content/stripRichText";
+import type { UiLanguage } from "@/lib/i18n/runtime";
+import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
 
 export default function ThemePageCard({
   theme,
+  language = "nl",
 }: {
   theme: ThemePageSummary;
+  language?: UiLanguage;
 }) {
   const description = stripRichText(theme.description);
+  const t = getPublicAppMessages(language).themeCard;
 
   return (
     <Link
@@ -25,17 +30,17 @@ export default function ThemePageCard({
             unoptimized
             className="h-20 w-20 shrink-0 rounded-[1.25rem] object-cover sm:h-24 sm:w-24"
           />
-        ) : (
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.25rem] bg-[#f3ece4] text-[11px] uppercase tracking-[0.22em] text-stone-500 sm:h-24 sm:w-24">
-            Thema
+          ) : (
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.25rem] bg-[#f3ece4] text-[11px] uppercase tracking-[0.22em] text-stone-500 sm:h-24 sm:w-24">
+            {t.themeLabel}
           </div>
         )}
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-stone-500">
-            <span>{theme.eyebrow || "Thema"}</span>
+            <span>{theme.eyebrow || t.themeLabel}</span>
             {theme.primaryCategory ? <span>{theme.primaryCategory.name}</span> : null}
-            {theme.childThemeCount ? <span>{theme.childThemeCount} subthema&apos;s</span> : null}
+            {theme.childThemeCount ? <span>{theme.childThemeCount} {t.childThemes}</span> : null}
           </div>
 
           <h2 className="mt-2 font-serif text-2xl leading-tight text-stone-950">
@@ -50,10 +55,10 @@ export default function ThemePageCard({
 
           <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-stone-600">
             <span className="rounded-full bg-stone-100 px-3 py-1">
-              {theme.sectionCount} secties
+              {theme.sectionCount} {t.sections}
             </span>
             <span className="rounded-full bg-stone-100 px-3 py-1">
-              {theme.itemCount} items
+              {theme.itemCount} {t.items}
             </span>
           </div>
         </div>

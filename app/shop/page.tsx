@@ -11,6 +11,10 @@ import {
   YearSubscriptionPreviewCard,
 } from "@/components/shop/ShopCatalog";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
+import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
+import { translateShopCatalogSettings } from "@/lib/i18n/shopCatalogTranslations";
 import {
   getPublicCatalogItemsByCategory,
   getPublicShopCatalog,
@@ -21,6 +25,8 @@ import { getTherapistDirectoryAccessState } from "@/lib/users/therapistDirectory
 export const dynamic = "force-dynamic";
 
 export default async function ShopPage() {
+  const language = resolveUiLanguage(await getAppLanguage());
+  const t = getPublicAppMessages(language);
   const { creditPacks, yearSubscriptionPack } =
     await getAssignmentCreditShopData();
   const user = await getCurrentUser();
@@ -31,7 +37,10 @@ export default async function ShopPage() {
     therapistDirectoryAccess?.shouldShowTherapistSubscriptionShopOption
       ? await getActiveTherapistSubscriptionPacks()
       : [];
-  const catalog = await getPublicShopCatalog();
+  const catalog = translateShopCatalogSettings(
+    await getPublicShopCatalog(),
+    language
+  );
   const books = getPublicCatalogItemsByCategory(catalog, "boeken");
   const ebooks = getPublicCatalogItemsByCategory(catalog, "ebooks");
   const games = getPublicCatalogItemsByCategory(catalog, "spellen");
@@ -43,82 +52,105 @@ export default async function ShopPage() {
         <section className="space-y-4">
           <SectionHeader
             icon={Coins}
-            title="Opdrachtcredits"
+            language={language}
+            title={t.shop.assignmentCreditsTitle}
             href="/shop/credits"
           />
           <p className="max-w-sm text-sm leading-6 text-[#6b5d50]">
-            Hier tonen we de actieve opdrachtpakketten en het jaarabonnement
-            voor opdrachten. Daarmee speel je opdrachten vrij of krijg je een
-            jaar lang volledige toegang.
+            {t.shop.assignmentCreditsDescription}
           </p>
           {previewCreditPacks.length || yearSubscriptionPack ? (
             <div className="space-y-3">
               {previewCreditPacks.length ? (
                 <div className="grid grid-cols-3 gap-3">
                   {previewCreditPacks.map((pack) => (
-                    <CreditPreviewCard key={pack.id} pack={pack} />
+                    <CreditPreviewCard key={pack.id} language={language} pack={pack} />
                   ))}
                 </div>
               ) : null}
               {yearSubscriptionPack ? (
-                <YearSubscriptionPreviewCard pack={yearSubscriptionPack} />
+                <YearSubscriptionPreviewCard
+                  language={language}
+                  pack={yearSubscriptionPack}
+                />
               ) : null}
             </div>
           ) : (
-            <AssignmentCreditsEmptyState compact />
+            <AssignmentCreditsEmptyState compact language={language} />
           )}
-          <SectionFooterLink href="/shop/credits" />
+          <SectionFooterLink href="/shop/credits" language={language} />
         </section>
 
         {therapistSubscriptionPacks.length ? (
           <section className="space-y-4">
             <SectionHeader
               icon={Stethoscope}
-              title="Therapeutenabonnement"
+              language={language}
+              title={t.shop.therapistSubscriptionTitle}
               href="/shop/credits#therapeut-abonnement"
             />
             <p className="max-w-sm text-sm leading-6 text-[#6b5d50]">
-              Voor therapeuten met een gratis account die hun profiel zichtbaar
-              willen maken in de therapeutenlijst. Zodra het abonnement actief
-              is, kun je in je profiel kiezen om openbaar te worden.
+              {t.shop.therapistSubscriptionDescription}
             </p>
             <div className="grid grid-cols-2 gap-3">
               {therapistSubscriptionPacks.map((pack) => (
-                <TherapistSubscriptionPreviewCard key={pack.id} pack={pack} />
+                <TherapistSubscriptionPreviewCard
+                  key={pack.id}
+                  language={language}
+                  pack={pack}
+                />
               ))}
             </div>
-            <SectionFooterLink href="/shop/credits#therapeut-abonnement" />
+            <SectionFooterLink
+              href="/shop/credits#therapeut-abonnement"
+              language={language}
+            />
           </section>
         ) : null}
 
         <section className="space-y-4">
-          <SectionHeader icon={BookOpenText} title="Boeken" href="/shop/boeken" />
+          <SectionHeader
+            href="/shop/boeken"
+            icon={BookOpenText}
+            language={language}
+            title={t.shop.booksTitle}
+          />
           <div className="grid grid-cols-3 gap-3">
             {books.map((item) => (
-              <ProductPreviewCard key={item.id} item={item} />
+              <ProductPreviewCard key={item.id} item={item} language={language} />
             ))}
           </div>
-          <SectionFooterLink href="/shop/boeken" />
+          <SectionFooterLink href="/shop/boeken" language={language} />
         </section>
 
         <section className="space-y-4">
-          <SectionHeader icon={Download} title="E-books" href="/shop/ebooks" />
+          <SectionHeader
+            href="/shop/ebooks"
+            icon={Download}
+            language={language}
+            title={t.shop.ebooksTitle}
+          />
           <div className="grid grid-cols-3 gap-3">
             {ebooks.map((item) => (
-              <ProductPreviewCard key={item.id} item={item} />
+              <ProductPreviewCard key={item.id} item={item} language={language} />
             ))}
           </div>
-          <SectionFooterLink href="/shop/ebooks" />
+          <SectionFooterLink href="/shop/ebooks" language={language} />
         </section>
 
         <section className="space-y-4">
-          <SectionHeader icon={Puzzle} title="Spellen" href="/shop/spellen" />
+          <SectionHeader
+            href="/shop/spellen"
+            icon={Puzzle}
+            language={language}
+            title={t.shop.gamesTitle}
+          />
           <div className="grid grid-cols-3 gap-3">
             {games.map((item) => (
-              <ProductPreviewCard key={item.id} item={item} />
+              <ProductPreviewCard key={item.id} item={item} language={language} />
             ))}
           </div>
-          <SectionFooterLink href="/shop/spellen" />
+          <SectionFooterLink href="/shop/spellen" language={language} />
         </section>
       </section>
     </PublicAppShell>

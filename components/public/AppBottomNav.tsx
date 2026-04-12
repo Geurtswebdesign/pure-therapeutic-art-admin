@@ -10,33 +10,35 @@ type TabKey = "home" | "trainingen" | "shop" | "therapeuten" | "profiel";
 
 type Props = {
   active: TabKey;
+  labels: Record<TabKey, string>;
   native?: boolean;
 };
 
 const tabs: Array<{
   key: TabKey;
-  label: string;
   href: string;
   icon: typeof Home;
 }> = [
-  { key: "home", label: "Home", href: "/", icon: Home },
+  { key: "home", href: "/", icon: Home },
   {
     key: "trainingen",
-    label: "Trainingen",
     href: "/trainingen",
     icon: CalendarDays,
   },
-  { key: "shop", label: "Shop", href: "/shop", icon: ShoppingBag },
+  { key: "shop", href: "/shop", icon: ShoppingBag },
   {
     key: "therapeuten",
-    label: "Therapeuten",
     href: "/therapeuten",
     icon: Users,
   },
-  { key: "profiel", label: "Profiel", href: "/account", icon: UserRound },
+  { key: "profiel", href: "/account", icon: UserRound },
 ];
 
-export default function AppBottomNav({ active, native = false }: Props) {
+export default function AppBottomNav({
+  active,
+  labels,
+  native = false,
+}: Props) {
   const navClassName = native
     ? "absolute inset-x-0 bottom-0 z-30 border-t border-stone-200/90 bg-[rgba(250,247,243,0.98)] px-2 pb-[calc(env(safe-area-inset-bottom,0px)+5px)] pt-1.5 shadow-[0_-12px_28px_rgba(49,34,25,0.1)] backdrop-blur-xl"
     : "absolute inset-x-0 bottom-0 z-30 border-t border-stone-200/90 bg-white/95 px-2 pb-[calc(env(safe-area-inset-bottom,0px)+10px)] pt-2 shadow-[0_-14px_34px_rgba(49,34,25,0.12)] backdrop-blur";
@@ -63,7 +65,7 @@ export default function AppBottomNav({ active, native = false }: Props) {
                 }`}
               >
                 <Icon size={17} strokeWidth={1.8} />
-                <span>{tab.label}</span>
+                <span>{labels[tab.key]}</span>
               </a>
             </li>
           );

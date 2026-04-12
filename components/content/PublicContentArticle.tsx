@@ -7,6 +7,8 @@ import PublicBlockRenderer from "@/components/content/PublicBlockRenderer";
 import type { ThemeItemNavigation } from "@/lib/content/public-queries";
 import HistoryBackButton from "@/components/public/HistoryBackButton";
 import RichTextExcerpt from "@/components/content/RichTextExcerpt";
+import type { UiLanguage } from "@/lib/i18n/runtime";
+import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
 
 type Item = {
   title: string | null;
@@ -20,14 +22,16 @@ type Item = {
 export default function PublicContentArticle({
   item,
   blocks,
+  language,
   isSeedCategory,
   themeNavigation,
   progressCard,
   backHref = "/content",
-  backLabel = "Terug",
+  backLabel,
 }: {
   item: Item;
   blocks: ContentBlock[];
+  language: UiLanguage;
   isSeedCategory: boolean;
   themeNavigation?: ThemeItemNavigation | null;
   progressCard?: ReactNode;
@@ -36,6 +40,7 @@ export default function PublicContentArticle({
   languageLabel: string;
   statusLabel?: string | null;
 }) {
+  const t = getPublicAppMessages(language).article;
   return (
     <article
       className={
@@ -49,7 +54,7 @@ export default function PublicContentArticle({
           fallbackHref={backHref}
           className="inline-flex rounded-full border border-stone-300 bg-white/85 px-4 py-2 text-sm text-stone-800"
         >
-          {backLabel}
+          {backLabel ?? t.back}
         </HistoryBackButton>
       </div>
 
@@ -79,7 +84,7 @@ export default function PublicContentArticle({
       {item.featured_image_url ? (
         <Image
           src={item.featured_image_url}
-          alt={item.featured_image_alt || item.title || "Afbeelding"}
+          alt={item.featured_image_alt || item.title || t.imageFallbackAlt}
           width={1200}
           height={630}
           unoptimized
@@ -111,7 +116,7 @@ export default function PublicContentArticle({
       {themeNavigation ? (
         <section className="mt-8 rounded-[1.25rem] border border-[#ddcfbf] bg-white/80 p-4 sm:p-5">
           <div className="text-[11px] uppercase tracking-[0.24em] text-stone-500">
-            Onderdeel van thema
+            {t.partOfTheme}
           </div>
           <div className="mt-2">
             <Link
@@ -129,7 +134,7 @@ export default function PublicContentArticle({
                 className="rounded-[1rem] border border-stone-200 bg-[#f8f3ed] px-4 py-3"
               >
                 <div className="text-[11px] uppercase tracking-[0.2em] text-stone-500">
-                  Vorige
+                  {t.previous}
                 </div>
                 <div className="mt-1 text-base font-medium leading-6 text-stone-900">
                   {themeNavigation.previous.title}
@@ -137,7 +142,7 @@ export default function PublicContentArticle({
               </Link>
             ) : (
               <div className="rounded-[1rem] border border-dashed border-stone-200 px-4 py-3 text-sm text-stone-400">
-                Geen vorig onderdeel
+                {t.noPrevious}
               </div>
             )}
 
@@ -147,7 +152,7 @@ export default function PublicContentArticle({
                 className="rounded-[1rem] border border-stone-200 bg-[#f8f3ed] px-4 py-3"
               >
                 <div className="text-[11px] uppercase tracking-[0.2em] text-stone-500">
-                  Volgende
+                  {t.next}
                 </div>
                 <div className="mt-1 text-base font-medium leading-6 text-stone-900">
                   {themeNavigation.next.title}
@@ -155,7 +160,7 @@ export default function PublicContentArticle({
               </Link>
             ) : (
               <div className="rounded-[1rem] border border-dashed border-stone-200 px-4 py-3 text-sm text-stone-400">
-                Geen volgend onderdeel
+                {t.noNext}
               </div>
             )}
           </div>

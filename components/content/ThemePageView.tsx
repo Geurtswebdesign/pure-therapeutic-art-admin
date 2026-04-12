@@ -2,16 +2,21 @@ import Link from "next/link";
 import RichTextExcerpt from "@/components/content/RichTextExcerpt";
 import HistoryBackButton from "@/components/public/HistoryBackButton";
 import type { ThemePageDetail } from "@/lib/content/theme-queries";
+import type { UiLanguage } from "@/lib/i18n/runtime";
+import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
 
 export default function ThemePageView({
   theme,
+  language = "nl",
   backHref,
-  backLabel = "Terug",
+  backLabel,
 }: {
   theme: ThemePageDetail;
+  language?: UiLanguage;
   backHref?: string;
   backLabel?: string;
 }) {
+  const t = getPublicAppMessages(language).themePage;
   const resolvedBackHref =
     backHref ??
     (theme.parentTheme
@@ -39,13 +44,13 @@ export default function ThemePageView({
             fallbackHref={resolvedBackHref}
             className="inline-flex rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700"
           >
-            {backLabel}
+            {backLabel ?? t.back}
           </HistoryBackButton>
         </div>
         {theme.childThemes.length ? (
           <div className="mt-6 border-t border-[#ddd0c4] pt-5">
             <div className="text-[11px] uppercase tracking-[0.24em] text-stone-500">
-              Subthema&apos;s
+              {t.subthemes}
             </div>
             <ol className="mt-3 space-y-2 text-stone-900">
               {theme.childThemes.map((childTheme, index) => (
@@ -90,7 +95,7 @@ export default function ThemePageView({
                   </ol>
                 ) : (
                   <p className="mt-3 pl-5 text-sm leading-6 text-stone-500">
-                    Aan deze sectie zijn nog geen gepubliceerde items gekoppeld.
+                    {t.noItemsInSection}
                   </p>
                 )}
               </li>
@@ -98,7 +103,7 @@ export default function ThemePageView({
           </ol>
         ) : (
           <div className="text-sm leading-6 text-stone-600">
-            Dit thema heeft nog geen gepubliceerde secties.
+            {t.noSections}
           </div>
         )}
       </section>

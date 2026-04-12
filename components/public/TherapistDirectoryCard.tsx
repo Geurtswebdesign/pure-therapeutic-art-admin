@@ -13,6 +13,9 @@ type Props = {
     targetGroups: string;
     languages: string;
     intakeNote: string;
+    email: string;
+    call: string;
+    website: string;
     showMore: string;
     showLess: string;
     yearsExperienceSuffix: string;
@@ -147,7 +150,7 @@ export default function TherapistDirectoryCard({ therapist, labels }: Props) {
                   href={`mailto:${therapist.publicEmail}`}
                   className="inline-flex rounded-full border border-stone-300 px-3 py-1.5 text-xs text-stone-700"
                 >
-                  E-mail
+                  {labels.email}
                 </a>
               ) : null}
               {therapist.phone ? (
@@ -155,7 +158,7 @@ export default function TherapistDirectoryCard({ therapist, labels }: Props) {
                   href={`tel:${therapist.phone}`}
                   className="inline-flex rounded-full border border-stone-300 px-3 py-1.5 text-xs text-stone-700"
                 >
-                  Bel
+                  {labels.call}
                 </a>
               ) : null}
             </div>
@@ -236,7 +239,7 @@ export default function TherapistDirectoryCard({ therapist, labels }: Props) {
                     rel="noreferrer"
                     className="inline-flex rounded-full bg-stone-900 px-3 py-1.5 text-xs text-white"
                   >
-                    Website
+                    {labels.website}
                   </a>
                 ) : null}
               </div>

@@ -112,7 +112,7 @@ export default async function ContentPage({
 
   if (!isPreview && requiresUnlock && !hasUserAccess) {
     const [category, themeNavigation] = await Promise.all([
-      getPrimaryCategoryForContentItem(item.id),
+      getPrimaryCategoryForContentItem(item.id, language),
       getThemeNavigationForContentItem(item.id, language),
     ]);
     const balance = user ? await getBalanceByScope(user.id, scope) : 0;
@@ -149,7 +149,7 @@ export default async function ContentPage({
   const rawBlocks = await getPublishedBlocks(item.id);
   const blocks = parseContentBlocks(rawBlocks ?? []);
   const [category, themeNavigation] = await Promise.all([
-    getPrimaryCategoryForContentItem(item.id),
+    getPrimaryCategoryForContentItem(item.id, language),
     getThemeNavigationForContentItem(item.id, language),
   ]);
   const isSeedCategory = Boolean(category?.is_homepage_seed);
@@ -179,6 +179,7 @@ export default async function ContentPage({
       <PublicContentArticle
         item={item}
         blocks={blocks}
+        language={language}
         isSeedCategory={isSeedCategory}
         themeNavigation={themeNavigation}
         backHref={backHref}

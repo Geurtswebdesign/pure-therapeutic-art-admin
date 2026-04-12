@@ -4,6 +4,7 @@ import TherapistDirectoryCard from "@/components/public/TherapistDirectoryCard";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
+import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
 import { getPublicTherapistDirectoryData } from "@/lib/users/therapists";
 
 export const dynamic = "force-dynamic";
@@ -31,24 +32,7 @@ export default async function TherapeutenPage({
 }) {
   const language = resolveUiLanguage(await getAppLanguage());
   const generalT = getAppMessages(language).userGeneral;
-  const cardLabels =
-    language === "en"
-      ? {
-          showMore: "More info",
-          showLess: "Less info",
-          yearsExperienceSuffix: "years experience",
-        }
-      : language === "de"
-        ? {
-            showMore: "Mehr Info",
-            showLess: "Weniger Info",
-            yearsExperienceSuffix: "Jahre Erfahrung",
-          }
-        : {
-            showMore: "Meer info",
-            showLess: "Minder info",
-            yearsExperienceSuffix: "jaar ervaring",
-          };
+  const t = getPublicAppMessages(language).therapists;
   const params = await searchParams;
   const q = getParam(params?.q);
   const city = getParam(params?.city);
@@ -84,16 +68,16 @@ export default async function TherapeutenPage({
     <PublicAppShell activeTab="therapeuten">
       <section className="space-y-4">
         <div className="rounded-[1.75rem] border border-stone-200 bg-white p-5 shadow-sm">
-          <h2 className="font-serif text-3xl text-stone-950">Vind een therapeut</h2>
+          <h2 className="font-serif text-3xl text-stone-950">{t.title}</h2>
         </div>
 
         <form className="space-y-3 rounded-[1.5rem] border border-[#e2d7c9] bg-[#f6efe8] p-4 shadow-sm">
           <div>
-            <label className="mb-1 block text-sm text-stone-700">Zoeken</label>
+            <label className="mb-1 block text-sm text-stone-700">{t.searchLabel}</label>
             <input
               name="q"
               defaultValue={q}
-              placeholder="Bijvoorbeeld rouw, trauma of beeldend"
+              placeholder={t.searchPlaceholder}
               className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
             />
           </div>
@@ -106,7 +90,7 @@ export default async function TherapeutenPage({
                 defaultValue={city}
                 className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
               >
-                <option value="">Alle plaatsen</option>
+                <option value="">{t.allCities}</option>
                 {cities.map((entry) => (
                   <option key={entry} value={entry}>
                     {entry}
@@ -124,7 +108,7 @@ export default async function TherapeutenPage({
                 defaultValue={specialization}
                 className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
               >
-                <option value="">Alle specialisaties</option>
+                <option value="">{t.allSpecializations}</option>
                 {specializations.map((entry) => (
                   <option key={entry} value={entry}>
                     {entry}
@@ -142,7 +126,7 @@ export default async function TherapeutenPage({
                 defaultValue={targetGroup}
                 className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
               >
-                <option value="">Alle doelgroepen</option>
+                <option value="">{t.allTargetGroups}</option>
                 {targetGroups.map((entry) => (
                   <option key={entry} value={entry}>
                     {entry}
@@ -158,7 +142,7 @@ export default async function TherapeutenPage({
                 defaultValue={directoryLanguage}
                 className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
               >
-                <option value="">Alle talen</option>
+                <option value="">{t.allLanguages}</option>
                 {languages.map((entry) => (
                   <option key={entry} value={entry}>
                     {entry}
@@ -174,7 +158,7 @@ export default async function TherapeutenPage({
                 defaultValue={method}
                 className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
               >
-                <option value="">Alle methodieken</option>
+                <option value="">{t.allMethods}</option>
                 {methods.map((entry) => (
                   <option key={entry} value={entry}>
                     {entry}
@@ -224,19 +208,20 @@ export default async function TherapeutenPage({
               type="submit"
               className="inline-flex rounded-full bg-stone-900 px-4 py-2 text-sm text-white"
             >
-              Filteren
+              {t.filter}
             </button>
             <Link
               href="/therapeuten"
               className="inline-flex rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700"
             >
-              Reset
+              {t.reset}
             </Link>
           </div>
         </form>
 
         <div className="px-1 text-sm text-stone-500">
-          {therapists.length} therapeut{therapists.length === 1 ? "" : "en"} gevonden
+          {therapists.length}{" "}
+          {therapists.length === 1 ? t.resultSingular : t.resultPlural}
         </div>
 
         <div className="space-y-3">
@@ -252,9 +237,12 @@ export default async function TherapeutenPage({
                   targetGroups: generalT.targetGroups,
                   languages: generalT.languages,
                   intakeNote: generalT.intakeNote,
-                  showMore: cardLabels.showMore,
-                  showLess: cardLabels.showLess,
-                  yearsExperienceSuffix: cardLabels.yearsExperienceSuffix,
+                  email: t.email,
+                  call: t.call,
+                  website: t.website,
+                  showMore: t.showMore,
+                  showLess: t.showLess,
+                  yearsExperienceSuffix: t.yearsExperienceSuffix,
                 }}
               />
             ))
