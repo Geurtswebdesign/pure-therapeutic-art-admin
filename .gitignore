@@ -25,6 +25,8 @@ pnpm-debug.log*
 
 # zip files
 *.zip
+*.jks
+*.keystore
 
 # uploads
 uploads/

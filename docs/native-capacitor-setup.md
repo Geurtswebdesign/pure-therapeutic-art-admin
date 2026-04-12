@@ -215,3 +215,78 @@ Belangrijk bij testen op Android:
 - producten worden meestal pas fetchbaar nadat er een testbuild via Google Play is geïnstalleerd
 - lokaal sideloaden buiten Play om is voor Billing-tests meestal niet genoeg
 - de tester moet toegang hebben tot de interne of closed test track
+
+### Android testbetalingen checklist
+
+Alleen een app uploaden naar `Internal testing` is niet genoeg om aankopen goed te testen.
+Voor deze repo moeten ook de app-env, Play Console en RevenueCat tegelijk kloppen.
+
+Zet op de server waar de native app naartoe wijst minimaal dit:
+
+```env
+NEXT_PUBLIC_REVENUECAT_GOOGLE_API_KEY=
+REVENUECAT_WEBHOOK_AUTH=
+EBOOK_PURCHASE_MODE=native_store
+CREDIT_PACK_PURCHASE_MODE=native_store
+```
+
+Controleer daarnaast:
+
+1. de Android tester is toegevoegd aan de interne of closed test track
+2. diezelfde gebruiker staat ook in Play Console als `license tester`
+3. de tester heeft via de opt-in link de testtrack geactiveerd
+4. de Google Play producten bestaan en zijn actief
+5. de product-id's matchen exact met:
+   - de RevenueCat productconfig
+   - de shopadmin / `shop_catalog`
+   - de credit-pack fallback ids uit [lib/iap/credit-pack-products.ts](/Users/dannygeurts/Documents/pure-therapeutic-art/lib/iap/credit-pack-products.ts)
+6. RevenueCat heeft een werkende Google Play koppeling
+7. de webhook in RevenueCat wijst naar:
+   - `https://pure-therapeutic-art-therapy.com/api/revenuecat/webhooks`
+8. de `Authorization` header in RevenueCat is exact gelijk aan `REVENUECAT_WEBHOOK_AUTH`
+
+Voor credit packs zijn dit op dit moment de standaard Google product-id's:
+
+- `credits.assignment.start`
+- `credits.assignment.basis`
+- `credits.assignment.standaard`
+- `credits.assignment.plus`
+- `credits.assignment.voordeel`
+
+Belangrijke nuance:
+
+- `jaarabonnement` wordt in de huidige code niet als standaard RevenueCat credit-pack fallback behandeld
+- als je die via Google Play wilt verkopen, map hem expliciet via `public.iap_products`
+- hetzelfde geldt voor therapeut-abonnementen en afwijkende slug/product-id combinaties
+
+### Juiste Android App Bundle uploaden
+
+Voor Google Play moet je een **signed release** bundle uploaden.
+
+Gebruik bij voorkeur Android Studio:
+
+1. `Build`
+2. `Generate Signed Bundle / APK`
+3. kies `Android App Bundle`
+4. kies je release keystore
+5. kies `release`
+
+De signed bundle staat daarna normaal hier:
+
+- `/Users/dannygeurts/Documents/pure-therapeutic-art/android/app/release/app-release.aab`
+
+Let op:
+
+- de bundle in `android/app/build/outputs/bundle/release/app-release.aab` kan unsigned zijn als je alleen `./gradlew bundleRelease` draait zonder vaste Gradle signing config
+- upload in Play Console dus de signed Android Studio output uit `android/app/release/`
+
+### Waarom betalingen soms niet testbaar lijken
+
+Dat gevoel klopt meestal in een van deze situaties:
+
+- de app is wel via Internal testing verspreid, maar de tester is geen `license tester`
+- `NEXT_PUBLIC_REVENUECAT_GOOGLE_API_KEY` ontbreekt op de server
+- `CREDIT_PACK_PURCHASE_MODE` of `EBOOK_PURCHASE_MODE` staat nog op `disabled`
+- het product bestaat nog niet in Google Play
+- het product-id in Play wijkt af van RevenueCat of de app
+- de app is buiten Play om geïnstalleerd in plaats van via de testtrack
