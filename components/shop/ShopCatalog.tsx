@@ -9,6 +9,7 @@ import {
   getCreditPackStoreProducts,
   getDefaultCreditPackStoreProductId,
 } from "@/lib/iap/credit-pack-products";
+import { getDefaultSubscriptionStoreProductIds } from "@/lib/iap/subscription-products";
 import { isTherapistSubscriptionPackSlug } from "@/lib/users/entitlements";
 import type { TherapistSubscriptionPackOption } from "@/lib/users/therapistSubscriptionPacks";
 import {
@@ -23,6 +24,7 @@ import {
 } from "@/lib/i18n/runtime";
 import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
 import NativeCreditPackPurchaseSurface from "@/components/shop/NativeCreditPackPurchaseSurface";
+import NativeSubscriptionPurchaseSurface from "@/components/shop/NativeSubscriptionPurchaseSurface";
 
 export type CreditScope = "assignment" | "book" | "game" | "referral";
 
@@ -81,13 +83,21 @@ export async function getCreditShopData(
     const rowsWithStoreProducts = rows.map((pack) => {
       const mappedProducts = storeProducts.get(pack.id);
       const fallbackStoreProductId = getDefaultCreditPackStoreProductId(pack);
+      const fallbackSubscriptionProductIds =
+        getDefaultSubscriptionStoreProductIds(pack);
 
       return {
         ...pack,
         appleStoreProductId:
-          mappedProducts?.appleStoreProductId ?? fallbackStoreProductId ?? "",
+          mappedProducts?.appleStoreProductId ??
+          fallbackSubscriptionProductIds?.appleStoreProductId ??
+          fallbackStoreProductId ??
+          "",
         googleStoreProductId:
-          mappedProducts?.googleStoreProductId ?? fallbackStoreProductId ?? "",
+          mappedProducts?.googleStoreProductId ??
+          fallbackSubscriptionProductIds?.googleStoreProductId ??
+          fallbackStoreProductId ??
+          "",
       } satisfies CreditPack;
     });
 
@@ -879,7 +889,7 @@ export function YearSubscriptionDetailCard({
 
   if (purchaseMode === "native_store") {
     return (
-      <NativeCreditPackPurchaseSurface
+      <NativeSubscriptionPurchaseSurface
         appleStoreProductId={pack.appleStoreProductId ?? ""}
         className={cardClassName}
         googleStoreProductId={pack.googleStoreProductId ?? ""}
@@ -888,7 +898,7 @@ export function YearSubscriptionDetailCard({
         loginHref="/login?next=%2Fshop%2Fcredits"
       >
         {cardContent}
-      </NativeCreditPackPurchaseSurface>
+      </NativeSubscriptionPurchaseSurface>
     );
   }
 
@@ -943,16 +953,21 @@ export function TherapistSubscriptionPreviewCard({
 
 export function TherapistSubscriptionDetailCard({
   pack,
+  isLoggedIn = false,
   language = "nl",
+  purchaseMode = "disabled",
 }: {
   pack: TherapistSubscriptionPackOption;
+  isLoggedIn?: boolean;
   language?: UiLanguage;
+  purchaseMode?: CreditPackPurchaseMode;
 }) {
   const t = getPublicAppMessages(language).shopCatalog;
   const months = getTherapistSubscriptionMonths(pack);
-
-  return (
-    <article className="rounded-[1.5rem] border border-[#e5d8ca] bg-[linear-gradient(135deg,#f7f1ea_0%,#efe6db_52%,#fcf8f4_100%)] p-4 shadow-[0_16px_30px_rgba(57,41,28,0.08)]">
+  const cardClassName =
+    "rounded-[1.5rem] border border-[#e5d8ca] bg-[linear-gradient(135deg,#f7f1ea_0%,#efe6db_52%,#fcf8f4_100%)] p-4 shadow-[0_16px_30px_rgba(57,41,28,0.08)]";
+  const cardContent = (
+    <>
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7b6e61]">
@@ -990,8 +1005,25 @@ export function TherapistSubscriptionDetailCard({
           </p>
         </div>
       </div>
-    </article>
+    </>
   );
+
+  if (purchaseMode === "native_store") {
+    return (
+      <NativeSubscriptionPurchaseSurface
+        appleStoreProductId={pack.appleStoreProductId}
+        className={cardClassName}
+        googleStoreProductId={pack.googleStoreProductId}
+        isLoggedIn={isLoggedIn}
+        language={language}
+        loginHref="/login?next=%2Fshop%2Fcredits%23therapeut-abonnement"
+      >
+        {cardContent}
+      </NativeSubscriptionPurchaseSurface>
+    );
+  }
+
+  return <article className={cardClassName}>{cardContent}</article>;
 }
 
 export function DetailList({

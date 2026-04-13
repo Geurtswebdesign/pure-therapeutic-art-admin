@@ -210,8 +210,10 @@ export default async function ShopCategoryPage({
                   {therapistSubscriptionPacks.map((pack) => (
                     <TherapistSubscriptionDetailCard
                       key={pack.id}
+                      isLoggedIn={Boolean(user)}
                       language={language}
                       pack={pack}
+                      purchaseMode={creditPackPurchaseMode}
                     />
                   ))}
                 </div>

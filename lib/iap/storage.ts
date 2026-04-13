@@ -10,14 +10,18 @@ type IapTransactionInput = {
   amountCents?: number | null;
   currency?: string | null;
   rawPayload?: unknown;
+  packId?: string | null;
 };
 
 export async function recordIapTransaction(input: IapTransactionInput) {
   const supabase = createAdminClient();
-  const packId = await resolveCreditPackIdByStoreProductId(
-    input.platform,
-    input.storeProductId
-  );
+  const packId =
+    input.packId !== undefined
+      ? input.packId
+      : await resolveCreditPackIdByStoreProductId(
+          input.platform,
+          input.storeProductId
+        );
 
   const { data: existing } = await supabase
     .from("iap_transactions")
