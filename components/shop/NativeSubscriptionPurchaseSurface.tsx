@@ -20,26 +20,16 @@ import {
 const COPY: Record<
   BaseUiLanguage,
   {
-    login: string;
-    buy: string;
     loading: string;
   }
 > = {
   nl: {
-    login:
-      "Tik op deze kaart om in te loggen en dit abonnement in de app te activeren.",
-    buy: "Tik op deze kaart om dit abonnement in de app te activeren.",
     loading: "Abonnement laden...",
   },
   en: {
-    login: "Tap this card to sign in and activate this subscription in the app.",
-    buy: "Tap this card to activate this subscription in the app.",
     loading: "Loading subscription...",
   },
   de: {
-    login:
-      "Tippe auf diese Karte, um dich anzumelden und dieses Abonnement in der App zu aktivieren.",
-    buy: "Tippe auf diese Karte, um dieses Abonnement in der App zu aktivieren.",
     loading: "Abonnement wird geladen...",
   },
 };
@@ -155,18 +145,7 @@ export default function NativeSubscriptionPurchaseSurface({
     return <div className={className}>{children}</div>;
   }
 
-  const actionHint = isLoggedIn
-    ? isLoading || isPending || !product
-      ? t.loading
-      : t.buy
-    : t.login;
-
-  const content = (
-    <div className="space-y-3">
-      {children}
-      <div className="text-xs font-medium text-[#8a5f49]">{actionHint}</div>
-    </div>
-  );
+  const content = children;
 
   if (!isLoggedIn) {
     return (
@@ -206,6 +185,7 @@ export default function NativeSubscriptionPurchaseSurface({
           ? "cursor-not-allowed opacity-80"
           : "cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_18px_32px_rgba(57,41,28,0.12)]"
       }`}
+      aria-label={isLoading || isPending || !product ? t.loading : undefined}
     >
       {content}
     </button>

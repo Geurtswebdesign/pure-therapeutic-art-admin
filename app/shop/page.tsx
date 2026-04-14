@@ -11,6 +11,7 @@ import {
   YearSubscriptionPreviewCard,
 } from "@/components/shop/ShopCatalog";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
+import { getCreditPackPurchaseMode } from "@/lib/iap/credit-pack-purchase-mode";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
@@ -30,6 +31,7 @@ export default async function ShopPage() {
   const { creditPacks, yearSubscriptionPack } =
     await getAssignmentCreditShopData();
   const user = await getCurrentUser();
+  const creditPackPurchaseMode = getCreditPackPurchaseMode();
   const therapistDirectoryAccess = user
     ? await getTherapistDirectoryAccessState(user.id)
     : null;
@@ -64,14 +66,22 @@ export default async function ShopPage() {
               {previewCreditPacks.length ? (
                 <div className="grid grid-cols-3 gap-3">
                   {previewCreditPacks.map((pack) => (
-                    <CreditPreviewCard key={pack.id} language={language} pack={pack} />
+                    <CreditPreviewCard
+                      key={pack.id}
+                      isLoggedIn={Boolean(user)}
+                      language={language}
+                      pack={pack}
+                      purchaseMode={creditPackPurchaseMode}
+                    />
                   ))}
                 </div>
               ) : null}
               {yearSubscriptionPack ? (
                 <YearSubscriptionPreviewCard
+                  isLoggedIn={Boolean(user)}
                   language={language}
                   pack={yearSubscriptionPack}
+                  purchaseMode={creditPackPurchaseMode}
                 />
               ) : null}
             </div>
@@ -96,8 +106,10 @@ export default async function ShopPage() {
               {therapistSubscriptionPacks.map((pack) => (
                 <TherapistSubscriptionPreviewCard
                   key={pack.id}
+                  isLoggedIn={Boolean(user)}
                   language={language}
                   pack={pack}
+                  purchaseMode={creditPackPurchaseMode}
                 />
               ))}
             </div>

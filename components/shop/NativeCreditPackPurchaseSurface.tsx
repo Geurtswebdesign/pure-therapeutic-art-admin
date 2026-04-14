@@ -19,24 +19,16 @@ import {
 const COPY: Record<
   BaseUiLanguage,
   {
-    login: string;
-    buy: string;
     loading: string;
   }
 > = {
   nl: {
-    login: "Tik op deze kaart om in te loggen en dit pakket in de app te kopen.",
-    buy: "Tik op deze kaart om dit pakket in de app te kopen.",
     loading: "Pakket laden...",
   },
   en: {
-    login: "Tap this card to sign in and buy this pack in the app.",
-    buy: "Tap this card to buy this pack in the app.",
     loading: "Loading pack...",
   },
   de: {
-    login: "Tippe auf diese Karte, um dich anzumelden und dieses Paket in der App zu kaufen.",
-    buy: "Tippe auf diese Karte, um dieses Paket in der App zu kaufen.",
     loading: "Paket wird geladen...",
   },
 };
@@ -130,18 +122,7 @@ export default function NativeCreditPackPurchaseSurface({
     return <div className={className}>{children}</div>;
   }
 
-  const actionHint = isLoggedIn
-    ? isLoading || isPending || !product
-      ? t.loading
-      : t.buy
-    : t.login;
-
-  const content = (
-    <div className="space-y-3">
-      {children}
-      <div className="text-xs font-medium text-[#8a5f49]">{actionHint}</div>
-    </div>
-  );
+  const content = children;
 
   if (!isLoggedIn) {
     return (
@@ -181,6 +162,7 @@ export default function NativeCreditPackPurchaseSurface({
           ? "cursor-not-allowed opacity-80"
           : "cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_18px_32px_rgba(57,41,28,0.12)]"
       }`}
+      aria-label={isLoading || isPending || !product ? t.loading : undefined}
     >
       {content}
     </button>

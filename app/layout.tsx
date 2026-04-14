@@ -11,6 +11,7 @@ import TrackPageView from "@/components/analytics/TrackPageView";
 import { SplashGate } from "@/app/features/splash";
 import { SPLASH_SEEN_COOKIE_NAME } from "@/app/features/splash/constants";
 import { RevenueCatBootstrap } from "@/components/native/RevenueCatBootstrap";
+import { NativeLaunchController } from "@/components/native/NativeLaunchController";
 import { getPublicSplashSettings } from "@/lib/settings/public";
 import { isNativeAppUserAgent } from "@/lib/native/isNativeAppRequest";
 import { getRequestHost, isAdminHost } from "@/lib/site/urls";
@@ -53,7 +54,7 @@ export default async function RootLayout({
   const requestHost = getRequestHost(requestHeaders);
   const isNativeApp = isNativeAppUserAgent(requestHeaders.get("user-agent"));
   const splashSeen = cookieStore.get(SPLASH_SEEN_COOKIE_NAME)?.value === "1";
-  const disableSplash = isAdminHost(requestHost);
+  const disableSplash = isAdminHost(requestHost) || isNativeApp;
 
   let balance = 0;
 
@@ -68,6 +69,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${isNativeApp ? "native-app" : ""} antialiased`}
       >
         <WalletProvider initialBalance={balance}>
+          <NativeLaunchController enabled={isNativeApp} />
           <RevenueCatBootstrap
             disabled={disableSplash}
             userId={user?.id ?? null}

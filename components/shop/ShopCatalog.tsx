@@ -664,14 +664,19 @@ export function ProductPurchaseCard({
 
 export function CreditPreviewCard({
   pack,
+  isLoggedIn = false,
   language = "nl",
+  purchaseMode = "disabled",
 }: {
   pack: CreditPack;
+  isLoggedIn?: boolean;
   language?: UiLanguage;
+  purchaseMode?: CreditPackPurchaseMode;
 }) {
   const t = getPublicAppMessages(language).shopCatalog;
   const total = getPackCount(pack);
   const isMostChosen = isMostChosenPack(pack);
+  const cardClassName = "block transition hover:-translate-y-0.5";
   const content = (
     <article
       className={`relative aspect-square rounded-[1.35rem] px-3 py-4 text-center shadow-[0_14px_26px_rgba(57,41,28,0.08)] ${
@@ -701,10 +706,25 @@ export function CreditPreviewCard({
     </article>
   );
 
+  if (purchaseMode === "native_store") {
+    return (
+      <NativeCreditPackPurchaseSurface
+        appleStoreProductId={pack.appleStoreProductId ?? ""}
+        className={cardClassName}
+        googleStoreProductId={pack.googleStoreProductId ?? ""}
+        isLoggedIn={isLoggedIn}
+        language={language}
+        loginHref="/login?next=%2Fshop"
+      >
+        {content}
+      </NativeCreditPackPurchaseSurface>
+    );
+  }
+
   return (
     <Link
       href="/shop/credits"
-      className="group block transition hover:-translate-y-0.5"
+      className={cardClassName}
     >
       {content}
     </Link>
@@ -722,52 +742,57 @@ export function CreditPackDetailCard({
   language?: UiLanguage;
   purchaseMode?: CreditPackPurchaseMode;
 }) {
+  const t = getPublicAppMessages(language).shopCatalog;
   const total = getPackCount(pack);
   const isMostChosen = isMostChosenPack(pack);
   const cardClassName =
-    "grid grid-cols-[92px_1fr] gap-3 rounded-[1.4rem] border border-[#eadfce] bg-white/90 p-3 shadow-sm";
+    "rounded-[1.5rem] border border-[#e5d8ca] bg-[linear-gradient(135deg,#f7f1ea_0%,#efe6db_52%,#fcf8f4_100%)] p-4 shadow-[0_16px_30px_rgba(57,41,28,0.08)]";
   const cardContent = (
     <>
-      <div
-        className={`rounded-[1.1rem] px-2 py-3 text-center ${
-          isMostChosen
-            ? "bg-[linear-gradient(180deg,#fff2e3_0%,#f3dfcb_100%)]"
-            : "bg-[linear-gradient(180deg,#ede8e1_0%,#dfd8ce_100%)]"
-        }`}
-      >
-        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#7d6e63]">
-          {pack.name}
-        </div>
-        <div className="mt-2 text-xl font-semibold leading-none text-stone-950">
-          {total}
-        </div>
-        <div className="mt-1 text-[11px] text-stone-600">
-          {getPackUnitLabel(pack.credit_scope, total, language)}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              {isMostChosen ? (
-                getPackSupportLabel(pack, language)
-              ) : (
-                <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8b6c5c]">
-                  {getPackSupportLabel(pack, language)}
-                </div>
-              )}
-            </div>
-            <h4 className="text-sm font-semibold text-stone-950">
-              {pack.name}
-            </h4>
-            <p className="text-xs leading-5 text-[#6f6154]">
-              {getPackDescription(pack, language)}
-            </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7b6e61]">
+            {t.assignmentPack}
           </div>
-          <span className="shrink-0 rounded-full border border-[#ead6c6] bg-[#fcf6f1] px-2.5 py-1 text-xs font-medium text-[#8a5f49]">
-            {formatPackPrice(pack, language)}
-          </span>
+          <h4 className="mt-2 font-serif text-[1.8rem] leading-none text-stone-950">
+            {pack.name}
+          </h4>
+        </div>
+        <span className="shrink-0 rounded-full border border-[#ead6c6] bg-white/90 px-2.5 py-1 text-xs font-medium text-[#8a5f49]">
+          {formatPackPrice(pack, language)}
+        </span>
+      </div>
+      <div className="mt-4 grid grid-cols-[96px_1fr] gap-3">
+        <div
+          className={`rounded-[1.1rem] px-2 py-3 text-center ${
+            isMostChosen
+              ? "bg-[linear-gradient(180deg,#fff2e3_0%,#f3dfcb_100%)]"
+              : "bg-white/75"
+          }`}
+        >
+          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#7d6e63]">
+            {t.assignmentPack}
+          </div>
+          <div className="mt-2 text-xl font-semibold leading-none text-stone-950">
+            {total}
+          </div>
+          <div className="mt-1 text-[11px] text-stone-600">
+            {getPackUnitLabel(pack.credit_scope, total, language)}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {isMostChosen ? (
+              getPackSupportLabel(pack, language)
+            ) : (
+              <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8b6c5c]">
+                {getPackSupportLabel(pack, language)}
+              </div>
+            )}
+          </div>
+          <p className="text-xs leading-5 text-[#6f6154]">
+            {getPackDescription(pack, language)}
+          </p>
         </div>
       </div>
     </>
@@ -793,12 +818,17 @@ export function CreditPackDetailCard({
 
 export function YearSubscriptionPreviewCard({
   pack,
+  isLoggedIn = false,
   language = "nl",
+  purchaseMode = "disabled",
 }: {
   pack: CreditPack;
+  isLoggedIn?: boolean;
   language?: UiLanguage;
+  purchaseMode?: CreditPackPurchaseMode;
 }) {
   const t = getPublicAppMessages(language).shopCatalog;
+  const cardClassName = "block transition hover:-translate-y-0.5";
   const content = (
     <article className="rounded-[1.45rem] border border-[#e5d8ca] bg-[linear-gradient(135deg,#f5eee6_0%,#efe3d4_52%,#f8f3ed_100%)] p-4 shadow-[0_16px_30px_rgba(57,41,28,0.08)]">
       <div className="flex items-start justify-between gap-3">
@@ -826,10 +856,25 @@ export function YearSubscriptionPreviewCard({
     </article>
   );
 
+  if (purchaseMode === "native_store") {
+    return (
+      <NativeSubscriptionPurchaseSurface
+        appleStoreProductId={pack.appleStoreProductId ?? ""}
+        className={cardClassName}
+        googleStoreProductId={pack.googleStoreProductId ?? ""}
+        isLoggedIn={isLoggedIn}
+        language={language}
+        loginHref="/login?next=%2Fshop"
+      >
+        {content}
+      </NativeSubscriptionPurchaseSurface>
+    );
+  }
+
   return (
     <Link
       href="/shop/credits"
-      className="group block transition hover:-translate-y-0.5"
+      className={cardClassName}
     >
       {content}
     </Link>
@@ -907,13 +952,18 @@ export function YearSubscriptionDetailCard({
 
 export function TherapistSubscriptionPreviewCard({
   pack,
+  isLoggedIn = false,
   language = "nl",
+  purchaseMode = "disabled",
 }: {
   pack: TherapistSubscriptionPackOption;
+  isLoggedIn?: boolean;
   language?: UiLanguage;
+  purchaseMode?: CreditPackPurchaseMode;
 }) {
   const t = getPublicAppMessages(language).shopCatalog;
   const months = getTherapistSubscriptionMonths(pack);
+  const cardClassName = "block transition hover:-translate-y-0.5";
   const content = (
     <article className="rounded-[1.45rem] border border-[#e5d8ca] bg-[linear-gradient(135deg,#f7f1ea_0%,#efe6db_52%,#fcf8f4_100%)] p-4 shadow-[0_16px_30px_rgba(57,41,28,0.08)]">
       <div className="flex items-start justify-between gap-3">
@@ -941,10 +991,25 @@ export function TherapistSubscriptionPreviewCard({
     </article>
   );
 
+  if (purchaseMode === "native_store") {
+    return (
+      <NativeSubscriptionPurchaseSurface
+        appleStoreProductId={pack.appleStoreProductId}
+        className={cardClassName}
+        googleStoreProductId={pack.googleStoreProductId}
+        isLoggedIn={isLoggedIn}
+        language={language}
+        loginHref="/login?next=%2Fshop%23therapeut-abonnement"
+      >
+        {content}
+      </NativeSubscriptionPurchaseSurface>
+    );
+  }
+
   return (
     <Link
       href="/shop/credits#therapeut-abonnement"
-      className="group block transition hover:-translate-y-0.5"
+      className={cardClassName}
     >
       {content}
     </Link>
