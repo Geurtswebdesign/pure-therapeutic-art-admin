@@ -139,6 +139,7 @@ Deze native shell is de basis voor:
 De verdere storearchitectuur staat uitgewerkt in:
 
 - [native-ebook-iap-architecture.md](/Users/dannygeurts/Documents/pure-therapeutic-art/docs/native-ebook-iap-architecture.md)
+- [android-internal-testing-plan.md](/Users/dannygeurts/Documents/pure-therapeutic-art/docs/android-internal-testing-plan.md)
 
 ## RevenueCat setup
 
