@@ -68,45 +68,54 @@ export default function ThemePageView({
         ) : null}
       </section>
 
-      <section className="rounded-[1.75rem] border border-[#e4d8cb] bg-white p-5 shadow-sm sm:p-7">
-        {theme.sections.length ? (
-          <ol className="space-y-7">
-            {theme.sections.map((section) => (
-              <li key={section.id}>
-                {section.description ? (
-                  <RichTextExcerpt
-                    html={section.description}
-                    className="mt-1 text-sm leading-6 text-stone-600 [&_p]:m-0 [&_p+p]:mt-3 [&_strong]:text-stone-800 [&_em]:text-stone-600 [&_a]:text-stone-800 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mt-1"
-                  />
-                ) : null}
+      {theme.sections.length ? (
+        <div className="space-y-4">
+          {theme.sections.map((section) => (
+            <section
+              key={section.id}
+              className="rounded-[1.75rem] border border-[#e4d8cb] bg-white p-5 shadow-sm sm:p-7"
+            >
+              {section.title ? (
+                <header className="border-b border-[#efe3d8] pb-4">
+                  <h2 className="font-serif text-2xl leading-tight text-stone-950 sm:text-3xl">
+                    {section.title}
+                  </h2>
+                </header>
+              ) : null}
 
-                {section.items.length ? (
-                  <ol
-                    type="a"
-                    className="mt-4 list-outside space-y-2.5 pl-6 text-lg leading-8 text-stone-900 marker:font-semibold"
-                  >
-                    {section.items.map((item) => (
-                      <li key={item.id}>
-                        <Link href={item.href} className="block py-1 hover:underline">
-                          {item.title}
-                        </Link>
-                      </li>
-                    ))}
-                  </ol>
-                ) : (
-                  <p className="mt-3 pl-5 text-sm leading-6 text-stone-500">
-                    {t.noItemsInSection}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <div className="text-sm leading-6 text-stone-600">
-            {t.noSections}
-          </div>
-        )}
-      </section>
+              {section.description ? (
+                <RichTextExcerpt
+                  html={section.description}
+                  className={`${section.title ? "mt-4" : ""} text-sm leading-6 text-stone-600 [&_p]:m-0 [&_p+p]:mt-3 [&_strong]:text-stone-800 [&_em]:text-stone-600 [&_a]:text-stone-800 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mt-1`}
+                />
+              ) : null}
+
+              {section.items.length ? (
+                <ol
+                  type="a"
+                  className="mt-4 list-outside space-y-2.5 pl-6 text-lg leading-8 text-stone-900 marker:font-semibold"
+                >
+                  {section.items.map((item) => (
+                    <li key={item.id}>
+                      <Link href={item.href} className="block py-1 hover:underline">
+                        {item.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="mt-4 text-sm leading-6 text-stone-500">
+                  {t.noItemsInSection}
+                </p>
+              )}
+            </section>
+          ))}
+        </div>
+      ) : (
+        <section className="rounded-[1.75rem] border border-[#e4d8cb] bg-white p-5 shadow-sm sm:p-7">
+          <div className="text-sm leading-6 text-stone-600">{t.noSections}</div>
+        </section>
+      )}
     </div>
   );
 }
