@@ -92,6 +92,8 @@ export type AdminThemeSummary = {
   sourceKey: string | null;
   isPublished: boolean;
   sortOrder: number;
+  createdAt: string | null;
+  updatedAt: string | null;
   parentTheme: ThemeOption | null;
   sectionCount: number;
   itemCount: number;
@@ -285,28 +287,51 @@ function emptyDraft(): ThemePageDraft {
 
 export async function getAdminThemeSummaries(): Promise<AdminThemeSummary[]> {
   const supabase = createAdminClient();
-  const { data: pages, error } = await supabase
+  const selectWithDates =
+    "id, slug, title, source_key, is_published, sort_order, parent_theme_page_id, created_at, updated_at";
+  const { data: pagesWithDates, error } = await supabase
     .from("content_theme_pages")
-    .select(
-      "id, slug, title, source_key, is_published, sort_order, parent_theme_page_id"
-    )
+    .select(selectWithDates)
     .order("sort_order", { ascending: true })
     .order("title", { ascending: true });
 
-  if (error) {
-    throw new Error(`Themes laden mislukt: ${error.message}`);
-  }
+  let pageRows:
+    | Array<{
+        id: string;
+        slug: string;
+        title: string;
+        source_key: string | null;
+        is_published: boolean;
+        sort_order: number;
+        parent_theme_page_id: string | null;
+        created_at?: string | null;
+        updated_at?: string | null;
+      }>
+    | null = null;
 
-  const pageRows =
-    pages as Array<{
-      id: string;
-      slug: string;
-      title: string;
-      source_key: string | null;
-      is_published: boolean;
-      sort_order: number;
-      parent_theme_page_id: string | null;
-    }> | null;
+  if (error?.code === "42703") {
+    const { data: fallbackPages, error: fallbackError } = await supabase
+      .from("content_theme_pages")
+      .select(
+        "id, slug, title, source_key, is_published, sort_order, parent_theme_page_id"
+      )
+      .order("sort_order", { ascending: true })
+      .order("title", { ascending: true });
+
+    if (fallbackError) {
+      throw new Error(`Themes laden mislukt: ${fallbackError.message}`);
+    }
+
+    pageRows = (fallbackPages ?? []).map((page) => ({
+      ...page,
+      created_at: null,
+      updated_at: null,
+    }));
+  } else if (error) {
+    throw new Error(`Themes laden mislukt: ${error.message}`);
+  } else {
+    pageRows = pagesWithDates ?? [];
+  }
 
   if (!pageRows?.length) return [];
 
@@ -368,6 +393,8 @@ export async function getAdminThemeSummaries(): Promise<AdminThemeSummary[]> {
     sourceKey: page.source_key,
     isPublished: page.is_published,
     sortOrder: page.sort_order,
+    createdAt: page.created_at ?? null,
+    updatedAt: page.updated_at ?? null,
     parentTheme: page.parent_theme_page_id
       ? pageById.get(page.parent_theme_page_id) ?? null
       : null,

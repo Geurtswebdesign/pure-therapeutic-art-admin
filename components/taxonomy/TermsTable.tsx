@@ -15,9 +15,79 @@ import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 type Props = {
   taxonomy: Taxonomy;
   terms: Term[];
+  sort:
+    | "custom_asc"
+    | "name_asc"
+    | "name_desc"
+    | "updated_desc"
+    | "updated_asc"
+    | "created_desc"
+    | "created_asc";
 };
 
 type FlatRow = { node: TermNode; depth: number };
+
+function parseTimestamp(value: string | null | undefined) {
+  if (!value) return null;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function compareTerms(
+  left: TermNode,
+  right: TermNode,
+  sort:
+    | "custom_asc"
+    | "name_asc"
+    | "name_desc"
+    | "updated_desc"
+    | "updated_asc"
+    | "created_desc"
+    | "created_asc"
+) {
+  switch (sort) {
+    case "name_asc":
+      return left.name.localeCompare(right.name, "nl");
+    case "name_desc":
+      return right.name.localeCompare(left.name, "nl");
+    case "updated_desc":
+    case "updated_asc": {
+      const leftTimestamp = parseTimestamp(left.updated_at);
+      const rightTimestamp = parseTimestamp(right.updated_at);
+
+      if (leftTimestamp !== rightTimestamp) {
+        if (leftTimestamp === null) return 1;
+        if (rightTimestamp === null) return -1;
+        return sort === "updated_asc"
+          ? leftTimestamp - rightTimestamp
+          : rightTimestamp - leftTimestamp;
+      }
+
+      return sort === "updated_asc"
+        ? left.name.localeCompare(right.name, "nl")
+        : right.name.localeCompare(left.name, "nl");
+    }
+    case "created_desc":
+    case "created_asc": {
+      const leftTimestamp = parseTimestamp(left.created_at);
+      const rightTimestamp = parseTimestamp(right.created_at);
+
+      if (leftTimestamp !== rightTimestamp) {
+        if (leftTimestamp === null) return 1;
+        if (rightTimestamp === null) return -1;
+        return sort === "created_asc"
+          ? leftTimestamp - rightTimestamp
+          : rightTimestamp - leftTimestamp;
+      }
+
+      return sort === "created_asc"
+        ? left.name.localeCompare(right.name, "nl")
+        : right.name.localeCompare(left.name, "nl");
+    }
+    default:
+      return left.sort_order - right.sort_order;
+  }
+}
 
 /**
  * Simpele, betrouwbare DnD:
@@ -27,10 +97,11 @@ type FlatRow = { node: TermNode; depth: number };
  * Wil je écht “drop to nest” op horizontale drag: kan, maar is veel complexer (collision + offset tree rules).
  * Dit is 1-op-1 WP: nesting beheer je primair via Parent.
  */
-export default function TermsTable({ taxonomy, terms }: Props) {
+export default function TermsTable({ taxonomy, terms, sort }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const localTerms = terms;
+  const enableReorder = sort === "custom_asc";
 
   // selection
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -43,7 +114,10 @@ export default function TermsTable({ taxonomy, terms }: Props) {
   // dnd
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
-  const tree = useMemo(() => buildTermTree(terms), [terms]);
+  const tree = useMemo(
+    () => buildTermTree(terms, (left, right) => compareTerms(left, right, sort)),
+    [terms, sort]
+  );
   const flat = useMemo<FlatRow[]>(() => flattenTree(tree), [tree]);
 
   // For reorder we only reorder within same parent group, so we need a stable list per parent.
@@ -139,6 +213,8 @@ export default function TermsTable({ taxonomy, terms }: Props) {
 
   // DnD reorder (same parent)
   async function onDragEnd(e: DragEndEvent) {
+    if (!enableReorder) return;
+
     const active = String(e.active.id);
     const over = e.over ? String(e.over.id) : null;
     if (!over || active === over) return;
@@ -273,6 +349,7 @@ export default function TermsTable({ taxonomy, terms }: Props) {
                 {flat.map(({ node, depth }) => (
                   <SortableRow
                     key={node.id}
+                    enableReorder={enableReorder}
                     pathname={pathname}
                     taxonomySlug={taxonomy.slug}
                     node={node}
@@ -290,13 +367,16 @@ export default function TermsTable({ taxonomy, terms }: Props) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Drag & drop reorders within the same parent. Changing hierarchy is done via Parent (Edit / Bulk Set Parent).
+        {enableReorder
+          ? "Drag & drop reorders within the same parent. Changing hierarchy is done via Parent (Edit / Bulk Set Parent)."
+          : "Drag & drop is alleen actief in handmatige volgorde. In alfabetische of datum-sortering blijft de hiërarchie wel intact."}
       </p>
     </div>
   );
 }
 
 function SortableRow(props: {
+  enableReorder: boolean;
   pathname: string;
   taxonomySlug: string;
   node: Term;
@@ -306,7 +386,8 @@ function SortableRow(props: {
   onToggleActive: () => void;
   onDelete: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.node.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: props.node.id, disabled: !props.enableReorder });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -327,10 +408,16 @@ function SortableRow(props: {
       <td className="p-3 align-top">
         <div className="flex items-start gap-2" style={{ paddingLeft: props.depth * 18 }}>
           <button
-            className="cursor-grab select-none text-muted-foreground"
-            title="Drag to reorder"
-            {...attributes}
-            {...listeners}
+            className={`select-none text-muted-foreground ${
+              props.enableReorder ? "cursor-grab" : "cursor-default opacity-40"
+            }`}
+            title={
+              props.enableReorder
+                ? "Drag to reorder"
+                : "Reorder is alleen beschikbaar in handmatige volgorde"
+            }
+            {...(props.enableReorder ? attributes : {})}
+            {...(props.enableReorder ? listeners : {})}
           >
             ⋮⋮
           </button>

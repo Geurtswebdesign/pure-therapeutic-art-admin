@@ -17,7 +17,7 @@ export default async function TermsPage(props: Props) {
 
   if (!tax) return <div>Taxonomy not found</div>;
 
-  const { data: terms } = await supabase
+  const { data: termsWithDates, error: termsError } = await supabase
     .from("content_terms")
     .select(`
       *,
@@ -25,6 +25,42 @@ export default async function TermsPage(props: Props) {
     `)
     .eq("taxonomy_id", tax.id)
     .order("sort_order", { ascending: true });
+
+  let terms = termsWithDates;
+
+  if (termsError?.code === "42703") {
+    const { data: fallbackTerms, error: fallbackError } = await supabase
+      .from("content_terms")
+      .select(`
+        id,
+        taxonomy_id,
+        parent_id,
+        is_homepage_seed,
+        homepage_sort_order,
+        name,
+        slug,
+        description,
+        featured_image_url,
+        featured_image_alt,
+        sort_order,
+        is_active,
+        content_term_relationships(count)
+      `)
+      .eq("taxonomy_id", tax.id)
+      .order("sort_order", { ascending: true });
+
+    if (fallbackError) {
+      throw fallbackError;
+    }
+
+    terms = (fallbackTerms ?? []).map((term) => ({
+      ...term,
+      created_at: null,
+      updated_at: null,
+    }));
+  } else if (termsError) {
+    throw termsError;
+  }
 
   return (
     <div className="space-y-8">
