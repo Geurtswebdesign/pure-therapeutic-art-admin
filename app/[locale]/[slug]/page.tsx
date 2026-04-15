@@ -58,6 +58,22 @@ export default async function ContentPage({
 
   const isPreview = preview === "1" && isAdmin;
 
+  async function loadSupplementaryContext(contentItemId: string) {
+    const [categoryResult, themeNavigationResult] = await Promise.allSettled([
+      getPrimaryCategoryForContentItem(contentItemId, language),
+      getThemeNavigationForContentItem(contentItemId, language),
+    ]);
+
+    return {
+      category:
+        categoryResult.status === "fulfilled" ? categoryResult.value : null,
+      themeNavigation:
+        themeNavigationResult.status === "fulfilled"
+          ? themeNavigationResult.value
+          : null,
+    };
+  }
+
   /* -------------------------------------------------
    * 2️⃣ Content item ophalen (incl. body)
    * ------------------------------------------------- */
@@ -111,10 +127,7 @@ export default async function ContentPage({
   }
 
   if (!isPreview && requiresUnlock && !hasUserAccess) {
-    const [category, themeNavigation] = await Promise.all([
-      getPrimaryCategoryForContentItem(item.id, language),
-      getThemeNavigationForContentItem(item.id, language),
-    ]);
+    const { category, themeNavigation } = await loadSupplementaryContext(item.id);
     const balance = user ? await getBalanceByScope(user.id, scope) : 0;
     const backHref = themeNavigation
       ? `/content/themas/${themeNavigation.theme.slug}`
@@ -148,10 +161,7 @@ export default async function ContentPage({
    * ------------------------------------------------- */
   const rawBlocks = await getPublishedBlocks(item.id);
   const blocks = parseContentBlocks(rawBlocks ?? []);
-  const [category, themeNavigation] = await Promise.all([
-    getPrimaryCategoryForContentItem(item.id, language),
-    getThemeNavigationForContentItem(item.id, language),
-  ]);
+  const { category, themeNavigation } = await loadSupplementaryContext(item.id);
   const isSeedCategory = Boolean(category?.is_homepage_seed);
   const isLegalContent = isLegalContentMetadata({
     slug: item.slug,

@@ -19,6 +19,11 @@ const ANDROID_SPLASH_FOREGROUND = path.join(
   "drawable-nodpi",
   "splash_foreground.png"
 );
+const ANDROID_SPLASH_BRANDING = path.join(
+  ANDROID_RES,
+  "drawable-nodpi",
+  "splash_branding.png"
+);
 
 const IOS_SPLASH_FILES = [
   "splash-2732x2732-2.png",
@@ -244,19 +249,38 @@ async function writeAndroidSplashForeground(imageBuffer) {
     .composite([
       {
         input: await sharp(imageBuffer)
-          .resize(760, 760, {
+          .resize(860, 860, {
             fit: "contain",
             background: { r: 0, g: 0, b: 0, alpha: 0 },
           })
           .png()
           .toBuffer(),
-        gravity: "center",
-      },
+        top: 50,
+        left: 50,
+      }
     ])
     .png()
     .toBuffer();
 
   await sharp(foreground).toFile(ANDROID_SPLASH_FOREGROUND);
+}
+
+async function writeAndroidSplashBranding(slogan) {
+  await fs.mkdir(path.dirname(ANDROID_SPLASH_BRANDING), { recursive: true });
+
+  const safeSlogan = escapeXml(`“${slogan}”`);
+  const branding = Buffer.from(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="720" viewBox="0 0 1400 720">
+      <text x="50%" y="140" text-anchor="middle" fill="#5a514d" font-family="Georgia, 'Times New Roman', serif" font-size="124" font-weight="400">Pure Grief</text>
+      <text x="50%" y="275" text-anchor="middle" fill="#5a514d" font-family="Georgia, 'Times New Roman', serif" font-size="124" font-weight="400">and Therapeutic ART</text>
+      <circle cx="700" cy="405" r="58" fill="none" stroke="#d8c8c2" stroke-width="12" />
+      <path d="M 700 347 A 58 58 0 0 1 758 405" fill="none" stroke="#8f372f" stroke-width="12" stroke-linecap="round" />
+      <path d="M 700 463 A 58 58 0 0 1 662 445" fill="none" stroke="#8fae96" stroke-width="12" stroke-linecap="round" />
+      <text x="50%" y="600" text-anchor="middle" fill="#756c68" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="62" font-weight="500">${safeSlogan}</text>
+    </svg>
+  `);
+
+  await sharp(branding).png().toFile(ANDROID_SPLASH_BRANDING);
 }
 
 async function main() {
@@ -265,6 +289,7 @@ async function main() {
   await writeIosSplash(imageBuffer, config.slogan);
   await writeAndroidSplash(imageBuffer, config.slogan);
   await writeAndroidSplashForeground(imageBuffer);
+  await writeAndroidSplashBranding(config.slogan);
   console.log("Native splash assets generated from current splash settings");
 }
 

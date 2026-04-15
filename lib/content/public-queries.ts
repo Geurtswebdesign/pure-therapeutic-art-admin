@@ -5,6 +5,7 @@ import {
   collapseToPreferredTranslations,
   getContentLanguagePreference,
   getPreferredPublishedContentMapByIds,
+  getResilientPreferredPublishedContentMapByIds,
   getTranslationRootId,
   pickPreferredTranslation,
 } from "@/lib/content/language-preference";
@@ -49,6 +50,90 @@ type PublicContentRow = {
   body?: string | null;
   status?: string | null;
 };
+
+function isMissingTranslationSourceColumnError(error: {
+  code?: string;
+  message?: string;
+} | null) {
+  return (
+    error?.code === "42703" &&
+    error.message?.includes("translation_source_id") === true
+  );
+}
+
+function stripTranslationSourceIdFromSelect(select: string) {
+  return select
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part && part !== "translation_source_id")
+    .join(", ");
+}
+
+async function getPublishedContentItemsWithTranslationFallback(
+  select: string
+) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("content_items")
+    .select(select)
+    .eq("status", "published")
+    .order("published_at", { ascending: false })
+    .returns<PublicContentRow[]>();
+
+  if (!error) {
+    return (data ?? []) as PublicContentRow[];
+  }
+
+  if (!isMissingTranslationSourceColumnError(error)) {
+    throw error;
+  }
+
+  const { data: fallbackData, error: fallbackError } = await supabase
+    .from("content_items")
+    .select(stripTranslationSourceIdFromSelect(select))
+    .eq("status", "published")
+    .order("published_at", { ascending: false })
+    .returns<PublicContentRow[]>();
+
+  if (fallbackError) {
+    throw fallbackError;
+  }
+
+  return (fallbackData ?? []) as PublicContentRow[];
+}
+
+async function getPublishedContentFamilyRows(rootId: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("content_items")
+    .select("*")
+    .eq("status", "published")
+    .or(`id.eq.${rootId},translation_source_id.eq.${rootId}`)
+    .returns<PublicContentRow[]>();
+
+  if (!error) {
+    return data ?? [];
+  }
+
+  if (!isMissingTranslationSourceColumnError(error)) {
+    console.error("getPublishedContentFamilyRows", error);
+    return [];
+  }
+
+  const { data: fallbackData, error: fallbackError } = await supabase
+    .from("content_items")
+    .select("*")
+    .eq("status", "published")
+    .eq("id", rootId)
+    .returns<PublicContentRow[]>();
+
+  if (fallbackError) {
+    console.error("getPublishedContentFamilyRows:fallback", fallbackError);
+    return [];
+  }
+
+  return fallbackData ?? [];
+}
 
 export type ThemeItemNavigation = {
   theme: {
@@ -302,23 +387,16 @@ export async function getPublishedContent(
     if (!categoryContentIds.length) return [];
   }
 
-  let query = supabase
-    .from("content_items")
-    .select(
-      "id, title, slug, excerpt, published_at, language, credit_cost, featured_image_url, featured_image_alt, translation_source_id"
-    )
-    .eq("status", "published")
-    .order("published_at", { ascending: false });
+  const contentSelect =
+    "id, title, slug, excerpt, published_at, language, credit_cost, featured_image_url, featured_image_alt, translation_source_id";
+  const data = categoryContentIds
+    ? (
+        await getPublishedContentItemsWithTranslationFallback(contentSelect)
+      ).filter((item) => categoryContentIds.includes(item.id))
+    : await getPublishedContentItemsWithTranslationFallback(contentSelect);
 
-  if (categoryContentIds) {
-    query = query.in("id", categoryContentIds);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw error;
   return collapseToPreferredTranslations(
-    (data ?? []) as PublicContentRow[],
+    data,
     activeLanguage,
     fallbackLanguage
   ).map((item) => ({
@@ -416,15 +494,9 @@ export async function getHomepageCategories(
     categories.map((category) => category.id)
   );
 
-  const { data: items, error: itemsError } = await supabase
-    .from("content_items")
-    .select(
-      "id, title, slug, excerpt, language, credit_cost, published_at, translation_source_id"
-    )
-    .eq("status", "published")
-    .order("published_at", { ascending: false });
-
-  if (itemsError) throw itemsError;
+  const items = await getPublishedContentItemsWithTranslationFallback(
+    "id, title, slug, excerpt, language, credit_cost, published_at, translation_source_id"
+  );
 
   const { data: relationships, error: relationshipsError } = await supabase
     .from("content_term_relationships")
@@ -437,11 +509,11 @@ export async function getHomepageCategories(
   if (relationshipsError) throw relationshipsError;
 
   const itemById = new Map(
-    (items ?? []).map((item) => [item.id, item as PublicContentRow])
+    items.map((item) => [item.id, item as PublicContentRow])
   );
   const preferredItemByFamilyId = new Map(
     collapseToPreferredTranslations(
-      (items ?? []) as PublicContentRow[],
+      items,
       preferredLanguage,
       fallbackLanguage
     ).map((item) => [getTranslationRootId(item), item])
@@ -482,7 +554,7 @@ export async function getHomepageCategories(
     >
   >();
 
-  for (const item of items ?? []) {
+  for (const item of items) {
     const categoryIds = categoryIdsByContentItemId.get(item.id) ?? new Set<string>();
     if (!categoryIds.size) continue;
 
@@ -531,16 +603,7 @@ export async function getPublishedContentBySlug(
   }
 
   const rootId = getTranslationRootId(data);
-  const { data: familyRows, error: familyError } = await supabase
-    .from("content_items")
-    .select("*")
-    .eq("status", "published")
-    .or(`id.eq.${rootId},translation_source_id.eq.${rootId}`)
-    .returns<PublicContentRow[]>();
-
-  if (familyError) {
-    console.error("getPublishedContentBySlug:family", familyError);
-  }
+  const familyRows = await getPublishedContentFamilyRows(rootId);
 
   const preferredRow =
     pickPreferredTranslation(
@@ -617,16 +680,7 @@ export async function getPublishedContentByReference(
 
   if (bestSlugMatch) {
     const rootId = getTranslationRootId(bestSlugMatch as PublicContentRow);
-    const { data: familyRows, error: familyError } = await supabase
-      .from("content_items")
-      .select("*")
-      .eq("status", "published")
-      .or(`id.eq.${rootId},translation_source_id.eq.${rootId}`)
-      .returns<PublicContentRow[]>();
-
-    if (familyError) {
-      console.error("getPublishedContentByReference:family", familyError);
-    }
+    const familyRows = await getPublishedContentFamilyRows(rootId);
 
     const preferredRow =
       pickPreferredTranslation(
@@ -660,16 +714,7 @@ export async function getPublishedContentByReference(
   }
 
   const rootId = getTranslationRootId(titleMatch as PublicContentRow);
-  const { data: familyRows, error: familyError } = await supabase
-    .from("content_items")
-    .select("*")
-    .eq("status", "published")
-    .or(`id.eq.${rootId},translation_source_id.eq.${rootId}`)
-    .returns<PublicContentRow[]>();
-
-  if (familyError) {
-    console.error("getPublishedContentByReference:titleFamily", familyError);
-  }
+  const familyRows = await getPublishedContentFamilyRows(rootId);
 
   const preferredRow =
     pickPreferredTranslation(
@@ -861,7 +906,7 @@ export async function getThemeNavigationForContentItem(
     return null;
   }
 
-  const contentById = await getPreferredPublishedContentMapByIds<{
+  const contentById = await getResilientPreferredPublishedContentMapByIds<{
     id: string;
     title: string | null;
     slug: string | null;

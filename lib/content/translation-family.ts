@@ -5,6 +5,16 @@ type TranslationFamilyRow = {
   translation_source_id?: string | null;
 };
 
+function isMissingTranslationSourceColumnError(error: {
+  code?: string;
+  message?: string;
+} | null) {
+  return (
+    error?.code === "42703" &&
+    error.message?.includes("translation_source_id") === true
+  );
+}
+
 export async function getTranslationFamilyIds(
   contentItemId: string
 ): Promise<string[]> {
@@ -20,6 +30,10 @@ export async function getTranslationFamilyIds(
     .maybeSingle<TranslationFamilyRow>();
 
   if (currentItemError) {
+    if (isMissingTranslationSourceColumnError(currentItemError)) {
+      return [contentItemId];
+    }
+
     console.error("[getTranslationFamilyIds:currentItem]", currentItemError);
     return [contentItemId];
   }
@@ -38,6 +52,10 @@ export async function getTranslationFamilyIds(
     .returns<Array<Pick<TranslationFamilyRow, "id">>>();
 
   if (siblingRowsError) {
+    if (isMissingTranslationSourceColumnError(siblingRowsError)) {
+      return Array.from(familyIds);
+    }
+
     console.error("[getTranslationFamilyIds:siblings]", siblingRowsError);
     return Array.from(familyIds);
   }

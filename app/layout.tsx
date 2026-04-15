@@ -54,7 +54,7 @@ export default async function RootLayout({
   const requestHost = getRequestHost(requestHeaders);
   const isNativeApp = isNativeAppUserAgent(requestHeaders.get("user-agent"));
   const splashSeen = cookieStore.get(SPLASH_SEEN_COOKIE_NAME)?.value === "1";
-  const disableSplash = isAdminHost(requestHost);
+  const disableSplash = isAdminHost(requestHost) || isNativeApp;
   const initiallySeen = isNativeApp ? false : splashSeen;
 
   let balance = 0;
@@ -79,6 +79,7 @@ export default async function RootLayout({
             disableSplash={disableSplash}
             imageUrl={splashSettings.imageUrl}
             initiallySeen={initiallySeen}
+            preferBundledImage={isNativeApp}
             slogan={splashSettings.slogan}
           >
             <TrackPageView />

@@ -18,6 +18,7 @@ type SplashGateProps = {
   durationMs?: number;
   imageUrl?: string | null;
   initiallySeen?: boolean;
+  preferBundledImage?: boolean;
   slogan?: string;
 };
 
@@ -34,6 +35,7 @@ export default function SplashGate({
   durationMs = DEFAULT_SPLASH_DURATION_MS,
   imageUrl = null,
   initiallySeen = false,
+  preferBundledImage = false,
   slogan,
 }: SplashGateProps) {
   const pathname = usePathname();
@@ -105,8 +107,10 @@ export default function SplashGate({
       {children}
       {phase === "hidden" ? null : (
         <SplashScreen
+          autoDismissMs={durationMs + EXIT_ANIMATION_MS}
           imageUrl={imageUrl}
           isClosing={phase === "closing"}
+          preferBundledImage={preferBundledImage}
           slogan={slogan}
         />
       )}

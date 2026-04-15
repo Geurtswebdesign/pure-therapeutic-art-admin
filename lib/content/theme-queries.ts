@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getPreferredPublishedContentMapByIds } from "@/lib/content/language-preference";
+import { getResilientPreferredPublishedContentMapByIds } from "@/lib/content/language-preference";
 import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import { translateCategoryTerm } from "@/lib/i18n/categoryTranslations";
 
@@ -454,16 +454,12 @@ export async function getPublishedThemePageBySlug(
 
   let contentById = new Map<string, ThemeContentRow>();
   if (contentIds.length) {
-    try {
-      contentById = await getPreferredPublishedContentMapByIds<ThemeContentRow>({
-        contentIds,
-        preferredLanguage,
-        select:
-          "id, title, slug, excerpt, language, credit_cost, featured_image_url, featured_image_alt, translation_source_id",
-      });
-    } catch (error) {
-      console.error("getPublishedThemePageBySlug:content", error);
-    }
+    contentById = await getResilientPreferredPublishedContentMapByIds<ThemeContentRow>({
+      contentIds,
+      preferredLanguage,
+      select:
+        "id, title, slug, excerpt, language, credit_cost, featured_image_url, featured_image_alt, translation_source_id",
+    });
   }
 
   const itemsBySectionId = new Map<string, ThemePageItem[]>();

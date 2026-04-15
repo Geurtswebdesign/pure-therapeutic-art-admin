@@ -170,6 +170,27 @@ select {
   font-size: 24px;
 }
 
+.splash-auto-dismiss {
+  animation: splash-auto-dismiss var(--splash-auto-dismiss-ms, 5500ms) ease-out
+    forwards;
+}
+
+@keyframes splash-auto-dismiss {
+  0%,
+  88% {
+    opacity: 1;
+    filter: blur(0);
+    visibility: visible;
+  }
+
+  100% {
+    opacity: 0;
+    filter: blur(2px);
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
 .prose figure {
   margin: 2rem auto;
   text-align: center;

@@ -1,37 +1,49 @@
 "use client";
 
 import Image from "next/image";
+import type { CSSProperties } from "react";
 import logo from "@/assets/branding/logo.png";
+import logoStacked from "@/assets/branding/logo2.png";
 import { DEFAULT_CUSTOMIZER_SETTINGS } from "@/lib/settings/types";
 
 type SplashScreenProps = {
+  autoDismissMs?: number;
   isClosing?: boolean;
   imageUrl?: string | null;
+  preferBundledImage?: boolean;
   slogan?: string;
 };
 
 export default function SplashScreen({
+  autoDismissMs = 0,
   isClosing = false,
   imageUrl = null,
+  preferBundledImage = false,
   slogan,
 }: SplashScreenProps) {
   const splashImageUrl = imageUrl?.trim() || null;
   const splashSlogan =
     slogan?.trim() || DEFAULT_CUSTOMIZER_SETTINGS.splashSlogan;
+  const bundledSplashImage = preferBundledImage ? logoStacked : logo;
+  const splashStyle =
+    !isClosing && autoDismissMs > 0
+      ? ({ "--splash-auto-dismiss-ms": `${autoDismissMs}ms` } as CSSProperties)
+      : undefined;
 
   return (
     <div
       className={`fixed inset-0 z-[100] overflow-hidden bg-[radial-gradient(circle_at_top,#faf3ea_0%,#f2e6dc_45%,#ebddd6_100%)] px-0 py-0 text-stone-900 transition-all duration-500 ease-out motion-reduce:transition-none sm:px-4 sm:py-5 ${
         isClosing
           ? "pointer-events-none opacity-0 blur-[2px]"
-          : "opacity-100 blur-0"
+          : "splash-auto-dismiss opacity-100 blur-0"
       }`}
+      style={splashStyle}
     >
       <div className="mx-auto flex h-full w-full max-w-md items-stretch justify-center">
         <div className="flex h-full w-full flex-col overflow-hidden border-0 bg-[linear-gradient(180deg,#fbf3e7_0%,#faf5ef_58%,#edd7d2_100%)] px-6 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] pt-[calc(env(safe-area-inset-top,0px)+1rem)] text-center shadow-none sm:rounded-[2.25rem] sm:border sm:border-[#e7d9cf] sm:px-8 sm:pb-10 sm:pt-5 sm:shadow-[0_32px_90px_rgba(61,42,33,0.18)]">
           <div className="mx-auto flex w-full max-w-[18rem] flex-1 flex-col items-center justify-center">
             <div className="flex w-full justify-center">
-              {splashImageUrl ? (
+              {splashImageUrl && !preferBundledImage ? (
                 <Image
                   src={splashImageUrl}
                   alt="Splash afbeelding"
@@ -44,7 +56,7 @@ export default function SplashScreen({
                 />
               ) : (
                 <Image
-                  src={logo}
+                  src={bundledSplashImage}
                   alt="Pure Therapeutic Art logo"
                   className="h-auto max-h-[min(36vh,17rem)] w-full max-w-[min(65vw,15rem)] object-contain sm:max-h-[31.5rem] sm:max-w-[16rem]"
                   priority

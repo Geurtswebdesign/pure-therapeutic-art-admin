@@ -14,6 +14,24 @@ export type TranslatableContentRow = {
   translation_source_id?: string | null;
 };
 
+function isMissingTranslationSourceColumnError(error: {
+  code?: string;
+  message?: string;
+} | null) {
+  return (
+    error?.code === "42703" &&
+    error.message?.includes("translation_source_id") === true
+  );
+}
+
+function stripTranslationSourceIdFromSelect(select: string) {
+  return select
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part && part !== "translation_source_id")
+    .join(", ");
+}
+
 export function getTranslationRootId(row: Pick<TranslatableContentRow, "id" | "translation_source_id">) {
   return row.translation_source_id ?? row.id;
 }
@@ -129,11 +147,15 @@ export async function getPreferredPublishedContentMapByIds<
     .in("id", uniqueIds)
     .returns<Array<Pick<TranslatableContentRow, "id" | "translation_source_id">>>();
 
-  if (baseRowsError) {
+  if (baseRowsError && !isMissingTranslationSourceColumnError(baseRowsError)) {
     throw baseRowsError;
   }
 
-  const requestedRows = (baseRows ?? []).filter((row) => Boolean(row.id));
+  const requestedRows = (
+    isMissingTranslationSourceColumnError(baseRowsError)
+      ? uniqueIds.map((id) => ({ id, translation_source_id: null }))
+      : (baseRows ?? [])
+  ).filter((row) => Boolean(row.id));
   if (!requestedRows.length) {
     return new Map<string, T>();
   }
@@ -152,12 +174,30 @@ export async function getPreferredPublishedContentMapByIds<
     .or(familyFilter)
     .returns<T[]>();
 
-  if (familyRowsError) {
+  if (familyRowsError && !isMissingTranslationSourceColumnError(familyRowsError)) {
     throw familyRowsError;
   }
 
+  let resolvedFamilyRows = familyRows ?? [];
+
+  if (isMissingTranslationSourceColumnError(familyRowsError)) {
+    const fallbackSelect = stripTranslationSourceIdFromSelect(input.select);
+    const { data: fallbackRows, error: fallbackRowsError } = await supabase
+      .from("content_items")
+      .select(fallbackSelect)
+      .eq("status", "published")
+      .in("id", rootIds)
+      .returns<T[]>();
+
+    if (fallbackRowsError) {
+      throw fallbackRowsError;
+    }
+
+    resolvedFamilyRows = fallbackRows ?? [];
+  }
+
   const rowsByRootId = new Map<string, T[]>();
-  for (const row of familyRows ?? []) {
+  for (const row of resolvedFamilyRows) {
     const familyId = getTranslationRootId(row);
     const currentRows = rowsByRootId.get(familyId) ?? [];
     currentRows.push(row);
@@ -180,4 +220,92 @@ export async function getPreferredPublishedContentMapByIds<
   }
 
   return result;
+}
+
+async function getDirectPublishedContentMapByIds<
+  T extends { id: string },
+>(input: {
+  contentIds: string[];
+  select: string;
+}): Promise<Map<string, T>> {
+  const uniqueIds = Array.from(new Set(input.contentIds.filter(Boolean)));
+  if (!uniqueIds.length) {
+    return new Map<string, T>();
+  }
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("content_items")
+    .select(input.select)
+    .eq("status", "published")
+    .in("id", uniqueIds)
+    .returns<T[]>();
+
+  if (!error) {
+    return new Map(
+      (data ?? [])
+        .filter((row): row is T => Boolean(row?.id))
+        .map((row) => [row.id, row])
+    );
+  }
+
+  if (!isMissingTranslationSourceColumnError(error)) {
+    throw error;
+  }
+
+  const { data: fallbackData, error: fallbackError } = await supabase
+    .from("content_items")
+    .select(stripTranslationSourceIdFromSelect(input.select))
+    .eq("status", "published")
+    .in("id", uniqueIds)
+    .returns<T[]>();
+
+  if (fallbackError) {
+    throw fallbackError;
+  }
+
+  return new Map(
+    (fallbackData ?? [])
+      .filter((row): row is T => Boolean(row?.id))
+      .map((row) => [row.id, row])
+  );
+}
+
+export async function getResilientPreferredPublishedContentMapByIds<
+  T extends TranslatableContentRow,
+>(input: {
+  contentIds: string[];
+  preferredLanguage?: string | null;
+  select: string;
+}): Promise<Map<string, T>> {
+  const uniqueIds = Array.from(new Set(input.contentIds.filter(Boolean)));
+  if (!uniqueIds.length) {
+    return new Map<string, T>();
+  }
+
+  try {
+    const preferredMap = await getPreferredPublishedContentMapByIds<T>(input);
+
+    if (preferredMap.size === uniqueIds.length) {
+      return preferredMap;
+    }
+
+    const directMap = await getDirectPublishedContentMapByIds<T>(input);
+    for (const contentId of uniqueIds) {
+      if (!preferredMap.has(contentId)) {
+        const directRow = directMap.get(contentId);
+        if (directRow) {
+          preferredMap.set(contentId, directRow);
+        }
+      }
+    }
+
+    return preferredMap;
+  } catch (error) {
+    console.error(
+      "[getResilientPreferredPublishedContentMapByIds] fallback to direct items",
+      error
+    );
+    return getDirectPublishedContentMapByIds<T>(input);
+  }
 }
