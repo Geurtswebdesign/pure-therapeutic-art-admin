@@ -58,6 +58,36 @@ export async function recordIapTransaction(input: IapTransactionInput) {
   return { ok: true, transactionId: inserted.id, packId };
 }
 
+export async function hasRecordedCreditPackPurchaseByExternalRef(input: {
+  userId: string;
+  externalRef: string;
+}) {
+  const normalizedUserId = input.userId.trim();
+  const normalizedExternalRef = input.externalRef.trim();
+
+  if (!normalizedUserId || !normalizedExternalRef) {
+    return false;
+  }
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("credit_pack_purchases")
+    .select("id")
+    .eq("user_id", normalizedUserId)
+    .eq("external_ref", normalizedExternalRef)
+    .maybeSingle<{ id: string }>();
+
+  if (error) {
+    if (error.code === "42703") {
+      return false;
+    }
+
+    throw error;
+  }
+
+  return Boolean(data?.id);
+}
+
 export async function recordIapNotification(input: {
   platform: "apple" | "google";
   notificationType?: string | null;

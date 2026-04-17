@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { recordIapTransaction } from "@/lib/iap/storage";
+import {
+  hasRecordedCreditPackPurchaseByExternalRef,
+  recordIapTransaction,
+} from "@/lib/iap/storage";
 import {
   resolveSubscriptionPackByStoreProductId,
   type ResolvedSubscriptionPack,
@@ -686,10 +689,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, ignored: "no_product_mapping" });
     }
 
-    if (record.alreadyRecorded) {
+    const alreadyGranted = await hasRecordedCreditPackPurchaseByExternalRef({
+      userId,
+      externalRef: transactionId,
+    });
+
+    if (alreadyGranted) {
       return NextResponse.json({
         ok: true,
         action: "credit_pack_already_processed",
+        packId: record.packId,
       });
     }
 
@@ -699,6 +708,7 @@ export async function POST(request: Request) {
       p_pack_id: record.packId,
       p_quantity: 1,
       p_note: `${platform} revenuecat ${transactionId}`,
+      p_external_ref: transactionId,
     });
 
     if (error) {
@@ -707,7 +717,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      action: "credit_pack_credited",
+      action: record.alreadyRecorded
+        ? "credit_pack_credited_after_retry"
+        : "credit_pack_credited",
       packId: record.packId,
     });
   }

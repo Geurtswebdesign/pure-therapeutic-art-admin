@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { recordIapTransaction } from "@/lib/iap/storage";
+import {
+  hasRecordedCreditPackPurchaseByExternalRef,
+  recordIapTransaction,
+} from "@/lib/iap/storage";
 import { logServerEvent } from "@/lib/analytics/server";
 
 const INTERNAL_SECRET = process.env.IAP_INTERNAL_SECRET;
@@ -59,16 +62,27 @@ export async function POST(request: Request) {
     });
   }
 
-  if (record.alreadyRecorded) {
-    return NextResponse.json({ ok: true, recorded: false, mapped: true });
-  }
-
   if (!payload.userId) {
     return NextResponse.json({
       ok: true,
-      recorded: true,
+      recorded: !record.alreadyRecorded,
       mapped: true,
       message: "Transaction recorded but no user id provided for credit grant.",
+    });
+  }
+
+  const alreadyGranted = await hasRecordedCreditPackPurchaseByExternalRef({
+    userId: payload.userId,
+    externalRef: payload.storeTransactionId,
+  });
+
+  if (alreadyGranted) {
+    return NextResponse.json({
+      ok: true,
+      recorded: !record.alreadyRecorded,
+      mapped: true,
+      credited: false,
+      message: "Credits already granted for this store transaction.",
     });
   }
 
@@ -78,6 +92,7 @@ export async function POST(request: Request) {
     p_pack_id: record.packId,
     p_quantity: Math.max(1, payload.quantity ?? 1),
     p_note: `${payload.platform} iap ${payload.storeTransactionId}`,
+    p_external_ref: payload.storeTransactionId,
   });
 
   if (error) {
