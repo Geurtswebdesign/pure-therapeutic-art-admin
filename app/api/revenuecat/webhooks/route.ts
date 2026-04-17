@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   hasRecordedCreditPackPurchaseByExternalRef,
+  recordCreditPackPurchase,
   recordIapTransaction,
 } from "@/lib/iap/storage";
 import {
@@ -702,13 +703,12 @@ export async function POST(request: Request) {
       });
     }
 
-    const supabase = createAdminClient();
-    const { error } = await supabase.rpc("admin_record_credit_pack_purchase", {
-      p_user_id: userId,
-      p_pack_id: record.packId,
-      p_quantity: 1,
-      p_note: `${platform} revenuecat ${transactionId}`,
-      p_external_ref: transactionId,
+    const { error } = await recordCreditPackPurchase({
+      userId,
+      packId: record.packId,
+      quantity: 1,
+      note: `${platform} revenuecat ${transactionId}`,
+      externalRef: transactionId,
     });
 
     if (error) {

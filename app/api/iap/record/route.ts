@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import {
   hasRecordedCreditPackPurchaseByExternalRef,
+  recordCreditPackPurchase,
   recordIapTransaction,
 } from "@/lib/iap/storage";
 import { logServerEvent } from "@/lib/analytics/server";
@@ -86,13 +86,12 @@ export async function POST(request: Request) {
     });
   }
 
-  const supabase = createAdminClient();
-  const { error } = await supabase.rpc("admin_record_credit_pack_purchase", {
-    p_user_id: payload.userId,
-    p_pack_id: record.packId,
-    p_quantity: Math.max(1, payload.quantity ?? 1),
-    p_note: `${payload.platform} iap ${payload.storeTransactionId}`,
-    p_external_ref: payload.storeTransactionId,
+  const { error } = await recordCreditPackPurchase({
+    userId: payload.userId,
+    packId: record.packId,
+    quantity: Math.max(1, payload.quantity ?? 1),
+    note: `${payload.platform} iap ${payload.storeTransactionId}`,
+    externalRef: payload.storeTransactionId,
   });
 
   if (error) {

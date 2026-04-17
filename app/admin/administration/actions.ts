@@ -7,6 +7,7 @@ import {
   getDeletedCreditPackIds,
   markCreditPackDeleted,
 } from "@/lib/credits/deletedPacks";
+import { recordCreditPackPurchase } from "@/lib/iap/storage";
 import {
   getTherapistSubscriptionMonths,
   getTherapistSubscriptionPackSlug,
@@ -247,14 +248,13 @@ export async function purchaseCreditPack(input: {
     throw new Error("Dit creditpack is verwijderd en kan niet meer gekocht worden.");
   }
 
-  const supabase = createAdminClient();
-  const { data, error } = await supabase.rpc("admin_record_credit_pack_purchase", {
-    p_user_id: input.userId,
-    p_pack_id: input.packId,
-    p_quantity: input.quantity,
-    p_admin_id: admin.id,
-    p_note: input.note?.trim() || null,
-    p_external_ref: input.externalRef?.trim() || null,
+  const { data, error } = await recordCreditPackPurchase({
+    userId: input.userId,
+    packId: input.packId,
+    quantity: input.quantity,
+    adminId: admin.id,
+    note: input.note?.trim() || null,
+    externalRef: input.externalRef?.trim() || null,
   });
 
   if (error) {
