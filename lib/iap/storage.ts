@@ -30,6 +30,14 @@ function isMissingExternalRefRpc(error: { message?: string | null } | null | und
   );
 }
 
+function isMissingAdminIdRpc(error: { message?: string | null } | null | undefined) {
+  const message = error?.message ?? "";
+  return (
+    message.includes("admin_record_credit_pack_purchase") &&
+    message.includes("p_admin_id")
+  );
+}
+
 export async function recordIapTransaction(input: IapTransactionInput) {
   const supabase = createAdminClient();
   const packId =
@@ -112,20 +120,34 @@ export async function recordCreditPackPurchase(input: CreditPackPurchaseRpcInput
     p_pack_id: input.packId,
     p_quantity: input.quantity,
     p_note: input.note?.trim() || null,
-    ...(input.adminId ? { p_admin_id: input.adminId } : {}),
   };
 
   const externalRef = input.externalRef?.trim() || null;
+  const adminId = input.adminId?.trim() || null;
+
+  const payloadWithAdmin = {
+    ...basePayload,
+    p_admin_id: adminId,
+  };
 
   if (externalRef) {
     const result = await supabase.rpc("admin_record_credit_pack_purchase", {
-      ...basePayload,
+      ...(adminId ? payloadWithAdmin : basePayload),
       p_external_ref: externalRef,
     });
 
     if (!result.error || !isMissingExternalRefRpc(result.error)) {
       return result;
     }
+  }
+
+  const withAdminResult = await supabase.rpc(
+    "admin_record_credit_pack_purchase",
+    payloadWithAdmin
+  );
+
+  if (!withAdminResult.error || !isMissingAdminIdRpc(withAdminResult.error)) {
+    return withAdminResult;
   }
 
   return supabase.rpc("admin_record_credit_pack_purchase", basePayload);
