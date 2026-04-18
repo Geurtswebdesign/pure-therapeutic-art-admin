@@ -65,6 +65,10 @@ function getInitials(name: string) {
     .join("");
 }
 
+function safeText(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function accountCardClassName() {
   return "rounded-2xl border border-[#e5dbcf] bg-[#f7f0e9] p-3";
 }
@@ -881,20 +885,20 @@ export default async function AccountPage({
     getSupportedLanguageOptions(language),
   ]);
 
-  const firstName = profile?.profile_data?.first_name?.trim() ?? "";
-  const lastName = profile?.profile_data?.last_name?.trim() ?? "";
-  const website = profile?.profile_data?.website?.trim() ?? "";
+  const firstName = safeText(profile?.profile_data?.first_name);
+  const lastName = safeText(profile?.profile_data?.last_name);
+  const website = safeText(profile?.profile_data?.website);
   const fullName = [firstName, lastName].filter(Boolean).join(" ");
   const displayName =
-    profile?.display_name?.trim() ||
+    safeText(profile?.display_name) ||
     fullName ||
     firstName ||
     (typeof user.user_metadata?.name === "string" ? user.user_metadata.name : "") ||
     user.email?.split("@")[0] ||
     "Gebruiker";
   const avatarUrl =
-    profile?.profile_data?.avatar_url?.trim() ||
-    profile?.profile_data?.profile_image ||
+    safeText(profile?.profile_data?.avatar_url) ||
+    safeText(profile?.profile_data?.profile_image) ||
     (typeof user.user_metadata?.avatar_url === "string"
       ? user.user_metadata.avatar_url
       : "") ||
@@ -902,7 +906,7 @@ export default async function AccountPage({
       ? user.user_metadata.picture
       : "") ||
     "";
-  const bio = profile?.profile_data?.bio?.trim() ?? "";
+  const bio = safeText(profile?.profile_data?.bio);
   const userAccountType = getProfileAccountType(profile?.profile_data ?? null);
   const therapistProfile = getTherapistProfileData(profile?.profile_data ?? null);
   const accountType = getEffectiveAccountType(

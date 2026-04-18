@@ -41,6 +41,10 @@ type Props = {
 
 type Tab = "overview" | "profile" | "credits" | "unlocked" | "therapist";
 
+function safeText(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function labelForAccountType(
   accountType: "admin" | "user" | "client" | "therapist",
   t: ReturnType<typeof getAppMessages>["accountTabs"]
@@ -126,10 +130,10 @@ export default function AccountTabs({
           hasTherapistDirectoryAccess={false}
           initialDisplayName={displayName}
           initialBio={bio}
-          initialFirstName={profileData?.first_name ?? ""}
-          initialLastName={profileData?.last_name ?? ""}
-          initialWebsite={profileData?.website ?? ""}
-          initialAvatarUrl={profileData?.avatar_url ?? ""}
+          initialFirstName={safeText(profileData?.first_name)}
+          initialLastName={safeText(profileData?.last_name)}
+          initialWebsite={safeText(profileData?.website)}
+          initialAvatarUrl={safeText(profileData?.avatar_url)}
           initialTherapistProfile={therapistProfile}
           email={email}
           language={language}
