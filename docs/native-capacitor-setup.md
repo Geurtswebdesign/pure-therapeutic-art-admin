@@ -51,6 +51,7 @@ npm run native:prepare
 npm run native:add:ios
 npm run native:add:android
 npm run native:sync
+npm run native:sync:production
 npm run native:open:ios
 npm run native:open:android
 npm run native:doctor
@@ -82,6 +83,16 @@ npm run native:add:android
 ```bash
 npm run native:sync
 ```
+
+Voor een echte release-build moet je expliciet de productie-URL terugzetten:
+
+```bash
+npm run native:sync:production
+```
+
+Gebruik `native:sync:android-emulator` alleen voor lokale emulator-tests. Als je
+daarna direct een release bundle maakt zonder opnieuw productie te syncen, wijst de
+Android app nog naar `10.0.2.2:3000` en krijg je buiten je lokale machine een wit scherm.
 
 ## Native projecten
 

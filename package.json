@@ -20,6 +20,7 @@
     "native:add:android": "npm run native:prepare && cap add android",
     "native:copy": "npm run native:prepare && cap copy",
     "native:sync": "npm run native:prepare && cap sync",
+    "native:sync:production": "npm run native:sync",
     "native:sync:android-emulator": "CAPACITOR_SERVER_URL=http://10.0.2.2:3000 npm run native:sync",
     "native:sync:ios-sim": "CAPACITOR_SERVER_URL=http://localhost:3000 npm run native:sync",
     "native:sync:ios-device": "node scripts/sync_ios_device_dev.mjs",

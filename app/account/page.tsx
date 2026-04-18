@@ -1146,7 +1146,7 @@ export default async function AccountPage({
       ? creditsT.active
       : therapistSubscription.status === "planned"
         ? creditsT.planned
-        : creditsT.ended;
+        : creditsT.free;
   const therapistSubscriptionStart =
     therapistSubscription.current?.starts_at ??
     therapistSubscription.next?.starts_at ??

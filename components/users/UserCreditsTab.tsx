@@ -65,7 +65,7 @@ export default function UserCreditsTab({
       ? t.active
       : therapistSubscription.status === "planned"
         ? t.planned
-        : t.ended;
+        : t.free;
   const therapistSubscriptionStart =
     therapistSubscription.current?.starts_at ??
     therapistSubscription.next?.starts_at ??

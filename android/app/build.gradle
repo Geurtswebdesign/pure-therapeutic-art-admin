@@ -1,5 +1,58 @@
 apply plugin: 'com.android.application'
 
+import groovy.json.JsonSlurper
+
+def capacitorConfigFile = file('src/main/assets/capacitor.config.json')
+
+def getCapacitorServerUrl = {
+    if (!capacitorConfigFile.exists()) {
+        return null
+    }
+
+    try {
+        def config = new JsonSlurper().parse(capacitorConfigFile)
+        return config?.server?.url
+    } catch (Exception ignored) {
+        return null
+    }
+}
+
+gradle.taskGraph.whenReady { graph ->
+    def isReleaseBuild = graph.allTasks.any { task ->
+        def taskName = task.name.toLowerCase()
+        return taskName.contains('release') && (taskName.contains('bundle') || taskName.contains('assemble'))
+    }
+
+    if (!isReleaseBuild) {
+        return
+    }
+
+    def serverUrl = getCapacitorServerUrl()
+    if (!serverUrl) {
+        return
+    }
+
+    def lowerServerUrl = serverUrl.toLowerCase()
+    def localPrefixes = [
+        'http://10.0.2.2',
+        'http://localhost',
+        'https://localhost',
+        'http://127.0.0.1',
+        'https://127.0.0.1',
+        'http://192.168.',
+        'https://192.168.',
+        'http://172.',
+        'https://172.'
+    ]
+
+    if (localPrefixes.any { lowerServerUrl.startsWith(it) }) {
+        throw new GradleException(
+            "Refusing to build an Android release with a local Capacitor server URL (${serverUrl}). " +
+            "Run 'npm run native:sync' without CAPACITOR_SERVER_URL before creating a release build."
+        )
+    }
+}
+
 android {
     namespace = "com.detroostboom.puretherapeuticart"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +60,8 @@ android {
         applicationId "com.detroostboom.puretherapeuticart"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "6.68"
+        versionCode 8
+        versionName "8.68"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
