@@ -281,6 +281,11 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
     statusFilter
   );
 
+  const filteredIdsQuery = applyContentFilters(
+    supabase.from("content_items").select("id"),
+    statusFilter
+  );
+
   let itemRows: Array<{
     id: string;
     title: string;
@@ -324,6 +329,24 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
       ...item,
       credit_cost: item.credit_cost ?? 0,
     }));
+  }
+
+  let allFilteredIds: string[] = [];
+
+  if (filteredIdsQuery) {
+    const { data: filteredItems, error: filteredIdsError } = await filteredIdsQuery;
+
+    if (filteredIdsError) {
+      throw new Error(t.loadError);
+    }
+
+    allFilteredIds = Array.from(
+      new Set(
+        (filteredItems ?? [])
+          .map((item) => item.id)
+          .filter((value): value is string => Boolean(value))
+      )
+    );
   }
 
   const itemsWithTerms = itemRows.map((item) => ({
@@ -413,6 +436,7 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
          ========================= */}
       {/* Header + zoekveld zit in client */}
       <ContentTableClient
+        allFilteredIds={allFilteredIds}
         items={itemsWithTerms}
         allCategories={allCategories}
         language={language}

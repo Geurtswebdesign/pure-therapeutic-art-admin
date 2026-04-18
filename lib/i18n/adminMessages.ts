@@ -245,15 +245,14 @@ type AdminMessages = {
     published: string;
     trash: string;
     bulkActions: string;
-    publish: string;
-    publishAllDrafts: string;
-    publishingAllDrafts: string;
-    publishAllDraftsConfirm: string;
     quickEdit: string;
     restore: string;
     deletePermanent: string;
     moveToTrash: string;
     apply: string;
+    selectAllFiltered: string;
+    clearSelection: string;
+    selectedCount: string;
     searchPlaceholder: string;
     title: string;
     status: string;
@@ -579,15 +578,14 @@ const nl: AdminMessages = {
     published: "Gepubliceerd",
     trash: "Prullenbak",
     bulkActions: "Bulkacties",
-    publish: "Publiceren",
-    publishAllDrafts: "Alle concepten publiceren",
-    publishingAllDrafts: "Concepten publiceren...",
-    publishAllDraftsConfirm: "Weet je zeker dat je alle concept-content wilt publiceren?",
     quickEdit: "Snel bewerken",
     restore: "Herstellen",
     deletePermanent: "Permanent verwijderen",
     moveToTrash: "Verplaatsen naar prullenbak",
     apply: "Toepassen",
+    selectAllFiltered: "Alles selecteren",
+    clearSelection: "Selectie wissen",
+    selectedCount: "{count} geselecteerd",
     searchPlaceholder: "Berichten zoeken",
     title: "Titel",
     status: "Status",
@@ -892,15 +890,14 @@ const en: AdminMessages = {
     published: "Published",
     trash: "Trash",
     bulkActions: "Bulk actions",
-    publish: "Publish",
-    publishAllDrafts: "Publish all drafts",
-    publishingAllDrafts: "Publishing drafts...",
-    publishAllDraftsConfirm: "Are you sure you want to publish all draft content?",
     quickEdit: "Quick edit",
     restore: "Restore",
     deletePermanent: "Delete permanently",
     moveToTrash: "Move to trash",
     apply: "Apply",
+    selectAllFiltered: "Select all",
+    clearSelection: "Clear selection",
+    selectedCount: "{count} selected",
     searchPlaceholder: "Search posts",
     title: "Title",
     status: "Status",
@@ -1206,15 +1203,14 @@ const de: AdminMessages = {
     published: "Veroffentlicht",
     trash: "Papierkorb",
     bulkActions: "Sammelaktionen",
-    publish: "Veroffentlichen",
-    publishAllDrafts: "Alle Entwurfe veroffentlichen",
-    publishingAllDrafts: "Entwurfe werden veroffentlicht...",
-    publishAllDraftsConfirm: "Mochtest du wirklich alle Entwurfsinhalte veroffentlichen?",
     quickEdit: "Schnell bearbeiten",
     restore: "Wiederherstellen",
     deletePermanent: "Endgultig loschen",
     moveToTrash: "In Papierkorb verschieben",
     apply: "Anwenden",
+    selectAllFiltered: "Alle auswahlen",
+    clearSelection: "Auswahl aufheben",
+    selectedCount: "{count} ausgewahlt",
     searchPlaceholder: "Inhalte suchen",
     title: "Titel",
     status: "Status",

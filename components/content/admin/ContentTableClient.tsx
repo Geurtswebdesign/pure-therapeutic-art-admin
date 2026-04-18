@@ -12,11 +12,9 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import ContentRowActions from "@/components/content/admin/ContentRowActions";
 import {
-  bulkPublishContent,
   bulkTrashContent,
   bulkRestoreContent,
   bulkDeleteContent,
-  publishAllDraftContent,
 } from "@/components/content/admin/actions";
 import BulkDeleteModal from "@/components/content/admin/BulkDeleteModal";
 import BulkQuickEditForm from "./BulkQuickEditForm";
@@ -77,6 +75,7 @@ type ColumnKey = "status" | "language" | "categories" | "tags" | "date";
 const DEFAULT_SORT: SortOption = "updated_desc";
 
 export default function ContentTableClient({
+  allFilteredIds,
   items,
   allCategories = [],
   language,
@@ -87,6 +86,7 @@ export default function ContentTableClient({
   totalPages,
   statusCounts,
 }: {
+  allFilteredIds: string[];
   items: ContentItem[];
   allCategories?: { id: string; name: string }[];
   language: UiLanguage;
@@ -216,6 +216,16 @@ export default function ContentTableClient({
     setSelected(checked ? items.map((item) => item.id) : []);
   }
 
+  function selectAllFiltered() {
+    setSelected(allFilteredIds);
+  }
+
+  function clearSelection() {
+    setSelected([]);
+    setShowBulkQuickEdit(false);
+    setQuickEditId(null);
+  }
+
   function toggleOne(id: string) {
     setSelected((prev) =>
       prev.includes(id)
@@ -226,13 +236,6 @@ export default function ContentTableClient({
 
   async function applyBulkAction() {
     if (selected.length === 0) return;
-
-    if (bulkAction === "publish") {
-      setLoading(true);
-      await bulkPublishContent(selected);
-      location.reload();
-      return;
-    }
 
     if (bulkAction === "restore") {
       setLoading(true);
@@ -249,21 +252,6 @@ export default function ContentTableClient({
 
     if (bulkAction === "trash" || bulkAction === "delete-permanent") {
       setShowConfirmModal(true);
-    }
-  }
-
-  async function handlePublishAllDrafts() {
-    if (!window.confirm(t.publishAllDraftsConfirm)) {
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      await publishAllDraftContent();
-      location.reload();
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -290,6 +278,8 @@ export default function ContentTableClient({
   const rangeStart = totalItems === 0 ? 0 : (filters.currentPage - 1) * pageSize + 1;
   const rangeEnd = totalItems === 0 ? 0 : Math.min(filters.currentPage * pageSize, totalItems);
   const paginationItems = buildPagination(filters.currentPage, totalPages);
+  const allFilteredSelected =
+    allFilteredIds.length > 0 && selected.length === allFilteredIds.length;
   const tableColumnCount =
     2 +
     Number(visibleColumns.status) +
@@ -358,7 +348,6 @@ export default function ContentTableClient({
               </>
             ) : (
               <>
-                <option value="publish">{t.publish}</option>
                 <option value="quick-edit">{t.quickEdit}</option>
                 <option value="trash">{t.moveToTrash}</option>
               </>
@@ -373,15 +362,22 @@ export default function ContentTableClient({
             {t.apply}
           </button>
 
-          {filters.status === "draft" && statusCounts.draft > 0 ? (
+          {allFilteredIds.length > items.length ? (
             <button
               type="button"
-              onClick={handlePublishAllDrafts}
-              disabled={loading}
-              className="border px-3 py-1 text-sm disabled:opacity-50"
+              onClick={allFilteredSelected ? clearSelection : selectAllFiltered}
+              className="border px-3 py-1 text-sm"
             >
-              {loading ? t.publishingAllDrafts : `${t.publishAllDrafts} (${statusCounts.draft})`}
+              {allFilteredSelected
+                ? t.clearSelection
+                : `${t.selectAllFiltered} (${allFilteredIds.length})`}
             </button>
+          ) : null}
+
+          {selected.length > 0 ? (
+            <span className="text-sm text-gray-600">
+              {t.selectedCount.replace("{count}", String(selected.length))}
+            </span>
           ) : null}
 
           <select
