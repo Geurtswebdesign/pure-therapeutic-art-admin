@@ -49,7 +49,8 @@ export default function AccountProfileForm({
   const general = messages.userGeneral;
   const therapist = initialTherapistProfile;
   const baseLanguage = resolveBaseUiLanguage(language);
-  const directoryAccessCopy = {
+  const directoryAccessCopy =
+    ({
     nl: {
       description:
         "Je gratis therapeut-account blijft verborgen in de therapeutenlijst. Neem in de shop eerst een therapeut-abonnement als je dit profiel zichtbaar wilt kunnen maken.",
@@ -65,7 +66,12 @@ export default function AccountProfileForm({
         "Dein kostenloses Therapeutenkonto bleibt im Therapeutenverzeichnis verborgen. Schliesse zuerst im Shop ein Therapeuten-Abo ab, wenn du dieses Profil sichtbar machen moechtest.",
       cta: "Therapeuten-Abos ansehen",
     },
-  }[baseLanguage];
+    }[baseLanguage] ??
+    {
+      description:
+        "Je gratis therapeut-account blijft verborgen in de therapeutenlijst. Neem in de shop eerst een therapeut-abonnement als je dit profiel zichtbaar wilt kunnen maken.",
+      cta: "Bekijk therapeut-abonnementen",
+    });
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
   const [displayName, setDisplayName] = useState(initialDisplayName);

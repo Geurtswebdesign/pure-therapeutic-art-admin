@@ -11,6 +11,16 @@ type Props = {
   onChange: (values: string[]) => void;
 };
 
+function normalizeStringList(values: unknown) {
+  if (!Array.isArray(values)) {
+    return [] as string[];
+  }
+
+  return values
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter(Boolean);
+}
+
 function summarizeSelection(values: string[], label: string) {
   if (!values.length) return label;
   if (values.length <= 2) return values.join(", ");
@@ -25,9 +35,13 @@ export default function MultiSelectDropdown({
 }: Props) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const safeSelectedValues = useMemo(
+    () => normalizeStringList(selectedValues),
+    [selectedValues]
+  );
   const mergedOptions = useMemo(
-    () => mergeTherapistOptions(options, selectedValues),
-    [options, selectedValues]
+    () => mergeTherapistOptions(normalizeStringList(options), safeSelectedValues),
+    [options, safeSelectedValues]
   );
 
   useEffect(() => {
@@ -42,13 +56,13 @@ export default function MultiSelectDropdown({
   }, []);
 
   function toggleValue(value: string) {
-    const exists = selectedValues.includes(value);
+    const exists = safeSelectedValues.includes(value);
     if (exists) {
-      onChange(selectedValues.filter((entry) => entry !== value));
+      onChange(safeSelectedValues.filter((entry) => entry !== value));
       return;
     }
 
-    onChange([...selectedValues, value]);
+    onChange([...safeSelectedValues, value]);
   }
 
   return (
@@ -58,7 +72,7 @@ export default function MultiSelectDropdown({
         onClick={() => setIsOpen((current) => !current)}
         className="flex w-full items-center justify-between rounded-xl border border-stone-300 bg-white px-3 py-2 text-left text-sm text-stone-900"
       >
-        <span className="truncate">{summarizeSelection(selectedValues, label)}</span>
+        <span className="truncate">{summarizeSelection(safeSelectedValues, label)}</span>
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-stone-500 transition-transform ${
             isOpen ? "rotate-180" : ""
@@ -66,9 +80,9 @@ export default function MultiSelectDropdown({
         />
       </button>
 
-      {selectedValues.length ? (
+      {safeSelectedValues.length ? (
         <div className="flex flex-wrap gap-2">
-          {selectedValues.map((value) => (
+          {safeSelectedValues.map((value) => (
             <button
               key={value}
               type="button"
@@ -86,7 +100,7 @@ export default function MultiSelectDropdown({
         <div className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-2xl border border-stone-200 bg-white p-2 shadow-lg">
           <div className="space-y-1">
             {mergedOptions.map((option) => {
-              const checked = selectedValues.includes(option);
+              const checked = safeSelectedValues.includes(option);
               return (
                 <label
                   key={option}
