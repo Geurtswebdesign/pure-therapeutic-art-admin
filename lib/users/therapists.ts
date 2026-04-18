@@ -232,18 +232,8 @@ export async function getPublicTherapistDirectoryData(
     cities: Array.from(
       new Set(allTherapists.map((item) => item.city).filter(Boolean))
     ).sort((a, b) => a.localeCompare(b, "nl")),
-    specializations: mergeTherapistOptions(
-      THERAPIST_PROFILE_OPTION_SETS.specializations,
-      Array.from(new Set(allTherapists.flatMap((item) => item.specializations))).sort(
-        (a, b) => a.localeCompare(b, "nl")
-      )
-    ),
-    targetGroups: mergeTherapistOptions(
-      THERAPIST_PROFILE_OPTION_SETS.targetGroups,
-      Array.from(new Set(allTherapists.flatMap((item) => item.targetGroups))).sort(
-        (a, b) => a.localeCompare(b, "nl")
-      )
-    ),
+    specializations: THERAPIST_PROFILE_OPTION_SETS.specializations,
+    targetGroups: THERAPIST_PROFILE_OPTION_SETS.targetGroups,
     languages: mergeTherapistOptions(
       THERAPIST_PROFILE_OPTION_SETS.languages,
       Array.from(new Set(allTherapists.flatMap((item) => item.languages))).sort(

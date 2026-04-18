@@ -1,3 +1,8 @@
+import {
+  filterAllowedTherapistSpecializations,
+  filterAllowedTherapistTargetGroups,
+} from "@/lib/users/therapistProfileOptions";
+
 export type AccessRole = "admin" | "user";
 export type UserAccountType = "user" | "client" | "therapist";
 export type EffectiveAccountType = AccessRole | "client" | "therapist";
@@ -158,8 +163,12 @@ export function getTherapistProfileData(
     online_available: asBoolean(therapist?.online_available),
     in_person_available: asBoolean(therapist?.in_person_available),
     accepting_new_clients: asBoolean(therapist?.accepting_new_clients),
-    specializations: asStringArray(therapist?.specializations),
-    target_groups: asStringArray(therapist?.target_groups),
+    specializations: filterAllowedTherapistSpecializations(
+      asStringArray(therapist?.specializations)
+    ),
+    target_groups: filterAllowedTherapistTargetGroups(
+      asStringArray(therapist?.target_groups)
+    ),
     languages: asStringArray(therapist?.languages),
     methods: asStringArray(therapist?.methods),
     years_experience: asNumber(therapist?.years_experience),
@@ -181,12 +190,16 @@ export function normalizeTherapistProfileData(
     city: asString(input?.city) || null,
     region: asString(input?.region) || null,
     location: asString(input?.location) || null,
-    specializations: (input?.specializations ?? [])
-      .map((value) => asString(value))
-      .filter(Boolean),
-    target_groups: (input?.target_groups ?? [])
-      .map((value) => asString(value))
-      .filter(Boolean),
+    specializations: filterAllowedTherapistSpecializations(
+      (input?.specializations ?? [])
+        .map((value) => asString(value))
+        .filter(Boolean)
+    ),
+    target_groups: filterAllowedTherapistTargetGroups(
+      (input?.target_groups ?? [])
+        .map((value) => asString(value))
+        .filter(Boolean)
+    ),
     languages: (input?.languages ?? [])
       .map((value) => asString(value))
       .filter(Boolean),

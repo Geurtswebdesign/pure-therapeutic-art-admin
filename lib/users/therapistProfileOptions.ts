@@ -119,6 +119,47 @@ function normalizeOption(value: string) {
   return value.trim();
 }
 
+export function filterTherapistOptionsToAllowed(
+  values: string[] = [],
+  allowedOptions: string[] = []
+) {
+  const allowedByKey = new Map(
+    allowedOptions
+      .map((value) => normalizeOption(value))
+      .filter(Boolean)
+      .map((value) => [value.toLocaleLowerCase("nl-NL"), value] as const)
+  );
+
+  const filtered: string[] = [];
+  const seen = new Set<string>();
+
+  for (const value of values) {
+    const normalized = normalizeOption(value);
+    if (!normalized) continue;
+    const key = normalized.toLocaleLowerCase("nl-NL");
+    const allowed = allowedByKey.get(key);
+    if (!allowed || seen.has(key)) continue;
+    seen.add(key);
+    filtered.push(allowed);
+  }
+
+  return filtered;
+}
+
+export function filterAllowedTherapistSpecializations(values: string[] = []) {
+  return filterTherapistOptionsToAllowed(
+    values,
+    THERAPIST_PROFILE_OPTION_SETS.specializations
+  );
+}
+
+export function filterAllowedTherapistTargetGroups(values: string[] = []) {
+  return filterTherapistOptionsToAllowed(
+    values,
+    THERAPIST_PROFILE_OPTION_SETS.targetGroups
+  );
+}
+
 export function mergeTherapistOptions(
   baseOptions: string[],
   extraOptions: string[] = []
