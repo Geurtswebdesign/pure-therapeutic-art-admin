@@ -669,10 +669,6 @@ export default function ThemeEditorClient({
     initialData.contentLanguageOptions.find(
       (option) => option.code === contentLanguageFilter
     )?.label ?? getLanguageDisplayLabel(contentLanguageFilter);
-  const selectedCategoryOption =
-    initialData.categoryOptions.find(
-      (option) => option.id === draft.primaryCategoryTermId
-    ) ?? null;
   const themeEditorUploadScope = draft.id
     ? `theme-pages/${draft.id}`
     : "theme-pages/draft";
@@ -1179,23 +1175,13 @@ export default function ThemeEditorClient({
             >
               <option value="">Geen categorie</option>
               {initialData.categoryOptions.map((option: ThemeCategoryOption) => (
-                <option
-                  key={option.id}
-                  value={option.id}
-                  disabled={
-                    option.isHomepageSeed &&
-                    option.id !== draft.primaryCategoryTermId
-                  }
-                >
+                <option key={option.id} value={option.id}>
                   {option.label}
                 </option>
               ))}
             </select>
             <p className="mt-1 text-xs leading-5 text-stone-500">
-              Koppel thema&apos;s aan een gewone categorie. Seed-categorieën blijven geblokkeerd.
-              {selectedCategoryOption?.isHomepageSeed
-                ? " De huidige keuze staat nog op seed-niveau en moet worden omgezet."
-                : ""}
+              Je kunt hier zowel gewone categorieën als seed-categorieën koppelen.
             </p>
           </div>
           <div>
