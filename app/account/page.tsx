@@ -56,6 +56,22 @@ type TherapistEntitlementRow = {
   created_at: string;
 };
 
+const EMPTY_PROGRESS_COLLECTIONS = {
+  storageReady: false,
+  themes: [],
+  unlocked: [],
+  inProgress: [],
+  completed: [],
+  recent: [],
+};
+
+const EMPTY_CONTENT_PRODUCTS_DATA = {
+  purchases: [],
+  ebooks: [],
+  subscriptions: [],
+  websiteSyncReady: false,
+};
+
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return "U";
@@ -67,6 +83,19 @@ function getInitials(name: string) {
 
 function safeText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+async function withAccountFallback<T>(
+  label: string,
+  task: Promise<T>,
+  fallback: T
+) {
+  try {
+    return await task;
+  } catch (error) {
+    console.error(`[Account] ${label}`, error);
+    return fallback;
+  }
 }
 
 function accountCardClassName() {
@@ -877,12 +906,24 @@ export default async function AccountPage({
       .eq("entitlement_key", THERAPIST_DIRECTORY_ENTITLEMENT_KEY)
       .order("created_at", { ascending: false })
       .returns<TherapistEntitlementRow[]>(),
-    getUserProgressCollections(user.id, language),
-    getAccountContentProductsData({
-      userId: user.id,
-      email: user.email ?? null,
-    }),
-    getSupportedLanguageOptions(language),
+    withAccountFallback(
+      "progress collections",
+      getUserProgressCollections(user.id, language),
+      EMPTY_PROGRESS_COLLECTIONS
+    ),
+    withAccountFallback(
+      "content products",
+      getAccountContentProductsData({
+        userId: user.id,
+        email: user.email ?? null,
+      }),
+      EMPTY_CONTENT_PRODUCTS_DATA
+    ),
+    withAccountFallback(
+      "supported language options",
+      getSupportedLanguageOptions(language),
+      []
+    ),
   ]);
 
   const firstName = safeText(profile?.profile_data?.first_name);
@@ -1033,7 +1074,11 @@ export default async function AccountPage({
   const purchaseGroups = buildPurchaseGroups(contentProductsData.purchases, contentProductsT);
   const ebookGroups = buildEbookGroups(contentProductsData.ebooks, contentProductsT);
   const currentYear = new Date().getFullYear();
-  const legalDocuments = await getLegalDocuments(language, currentYear);
+  const legalDocuments = await withAccountFallback(
+    "legal documents",
+    getLegalDocuments(language, currentYear),
+    []
+  );
 
   return (
     <PublicAppShell activeTab="profiel">
