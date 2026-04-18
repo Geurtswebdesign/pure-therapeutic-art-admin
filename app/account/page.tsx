@@ -697,6 +697,93 @@ function MetaChip({
   );
 }
 
+function TrajectoryChapterList({
+  title,
+  emptyText,
+  items,
+  locale,
+  labels,
+}: {
+  title: string;
+  emptyText: string;
+  items: Array<{
+    contentItemId: string;
+    title: string;
+    slug: string | null;
+    categories: string[];
+    progressStatus: "not_started" | "in_progress" | "completed";
+    unlockedAt: string | null;
+    lastViewedAt: string | null;
+    completedAt: string | null;
+    startedAt: string | null;
+  }>;
+  locale: string;
+  labels: {
+    noCategory: string;
+    statusNotStarted: string;
+    statusInProgress: string;
+    statusCompleted: string;
+    completedAt: string;
+    lastViewed: string;
+    unlockedAt: string;
+  };
+}) {
+  return (
+    <div className="rounded-xl bg-white px-4 py-4">
+      <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-stone-500">
+        {title}
+      </h4>
+
+      {items.length ? (
+        <div className="mt-4 space-y-2">
+          {items.map((item) => {
+            const href = buildContentHref(item.slug);
+            const metaText = item.completedAt
+              ? `${labels.completedAt} ${formatDate(item.completedAt, locale)}`
+              : item.lastViewedAt
+                ? `${labels.lastViewed} ${formatDate(item.lastViewedAt, locale)}`
+                : item.startedAt
+                  ? `${labels.statusInProgress} ${formatDate(item.startedAt, locale)}`
+                  : `${labels.unlockedAt} ${formatDate(item.unlockedAt, locale)}`;
+            const categoryLabel = item.categories.length
+              ? item.categories.join(", ")
+              : labels.noCategory;
+            const statusLabel =
+              item.progressStatus === "completed"
+                ? labels.statusCompleted
+                : item.progressStatus === "in_progress"
+                  ? labels.statusInProgress
+                  : labels.statusNotStarted;
+
+            const content = (
+              <div className="flex items-start justify-between gap-3 rounded-xl border border-[#eadfd4] bg-[#fcf8f4] px-4 py-3 transition hover:border-[#d8c6b8]">
+                <div className="min-w-0">
+                  <div className="font-medium text-stone-900">{item.title}</div>
+                  <div className="mt-1 text-xs text-stone-500">{categoryLabel}</div>
+                  <div className="mt-1 text-xs text-stone-500">{metaText}</div>
+                </div>
+                <span className="shrink-0 rounded-full bg-[#f7f0e9] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-stone-700">
+                  {statusLabel}
+                </span>
+              </div>
+            );
+
+            return href ? (
+              <Link key={item.contentItemId} href={href}>
+                {content}
+              </Link>
+            ) : (
+              <div key={item.contentItemId}>{content}</div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm leading-6 text-stone-500">{emptyText}</p>
+      )}
+    </div>
+  );
+}
+
 function buildPurchaseGroups(
   items: Awaited<ReturnType<typeof getAccountContentProductsData>>["purchases"],
   t: ContentProductsMessages
@@ -1248,6 +1335,22 @@ export default async function AccountPage({
                   title={trajectoryT.themes}
                   emptyText={trajectoryT.noThemes}
                   items={themeItems}
+                />
+
+                <TrajectoryChapterList
+                  title={trajectoryT.unlocked}
+                  emptyText={trajectoryT.noUnlocked}
+                  items={progressCollections.unlocked}
+                  locale={locale}
+                  labels={{
+                    noCategory: trajectoryT.noCategory,
+                    statusNotStarted: trajectoryT.statusNotStarted,
+                    statusInProgress: trajectoryT.statusInProgress,
+                    statusCompleted: trajectoryT.statusCompleted,
+                    completedAt: trajectoryT.completedAt,
+                    lastViewed: trajectoryT.lastViewed,
+                    unlockedAt: trajectoryT.unlockedAt,
+                  }}
                 />
               </div>
             </div>
