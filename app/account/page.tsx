@@ -711,6 +711,10 @@ function TrajectoryChapterList({
     title: string;
     slug: string | null;
     categories: string[];
+    themeTitle: string | null;
+    themeSortOrder: number | null;
+    themeSectionSortOrder: number | null;
+    themeItemSortOrder: number | null;
     progressStatus: "not_started" | "in_progress" | "completed";
     unlockedAt: string | null;
     lastViewedAt: string | null;
@@ -720,6 +724,7 @@ function TrajectoryChapterList({
   locale: string;
   labels: {
     noCategory: string;
+    noTheme: string;
     statusNotStarted: string;
     statusInProgress: string;
     statusCompleted: string;
@@ -735,47 +740,134 @@ function TrajectoryChapterList({
       </h4>
 
       {items.length ? (
-        <div className="mt-4 space-y-2">
-          {items.map((item) => {
-            const href = buildContentHref(item.slug);
-            const metaText = item.completedAt
-              ? `${labels.completedAt} ${formatDate(item.completedAt, locale)}`
-              : item.lastViewedAt
-                ? `${labels.lastViewed} ${formatDate(item.lastViewedAt, locale)}`
-                : item.startedAt
-                  ? `${labels.statusInProgress} ${formatDate(item.startedAt, locale)}`
-                  : `${labels.unlockedAt} ${formatDate(item.unlockedAt, locale)}`;
-            const categoryLabel = item.categories.length
-              ? item.categories.join(", ")
-              : labels.noCategory;
-            const statusLabel =
-              item.progressStatus === "completed"
-                ? labels.statusCompleted
-                : item.progressStatus === "in_progress"
-                  ? labels.statusInProgress
-                  : labels.statusNotStarted;
+        <div className="mt-4 space-y-4">
+          {Array.from(
+            items.reduce(
+              (groups, item) => {
+                const groupKey = item.themeTitle
+                  ? `theme:${item.themeTitle}`
+                  : item.categories[0]
+                    ? `category:${item.categories[0]}`
+                    : "other";
+                const groupTitle = item.themeTitle || item.categories[0] || labels.noTheme;
+                const groupOrder = item.themeTitle
+                  ? item.themeSortOrder ?? Number.MAX_SAFE_INTEGER
+                  : Number.MAX_SAFE_INTEGER + 1;
+                const groupType = item.themeTitle ? 0 : item.categories[0] ? 1 : 2;
+                const current = groups.get(groupKey);
+                if (current) {
+                  current.items.push(item);
+                  return groups;
+                }
 
-            const content = (
-              <div className="flex items-start justify-between gap-3 rounded-xl border border-[#eadfd4] bg-[#fcf8f4] px-4 py-3 transition hover:border-[#d8c6b8]">
-                <div className="min-w-0">
-                  <div className="font-medium text-stone-900">{item.title}</div>
-                  <div className="mt-1 text-xs text-stone-500">{categoryLabel}</div>
-                  <div className="mt-1 text-xs text-stone-500">{metaText}</div>
+                groups.set(groupKey, {
+                  key: groupKey,
+                  title: groupTitle,
+                  type: groupType,
+                  order: groupOrder,
+                  items: [item],
+                });
+
+                return groups;
+              },
+              new Map<
+                string,
+                {
+                  key: string;
+                  title: string;
+                  type: number;
+                  order: number;
+                  items: typeof items;
+                }
+              >()
+            ).values()
+          )
+            .sort((left, right) => {
+              if (left.type !== right.type) {
+                return left.type - right.type;
+              }
+
+              if (left.order !== right.order) {
+                return left.order - right.order;
+              }
+
+              return left.title.localeCompare(right.title, "nl");
+            })
+            .map((group) => (
+              <div
+                key={group.key}
+                className="rounded-xl border border-[#eadfd4] bg-[#fcf8f4] p-3"
+              >
+                <div className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-stone-500">
+                  {group.title}
                 </div>
-                <span className="shrink-0 rounded-full bg-[#f7f0e9] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-stone-700">
-                  {statusLabel}
-                </span>
-              </div>
-            );
 
-            return href ? (
-              <Link key={item.contentItemId} href={href}>
-                {content}
-              </Link>
-            ) : (
-              <div key={item.contentItemId}>{content}</div>
-            );
-          })}
+                <div className="space-y-2">
+                  {[...group.items]
+                    .sort((left, right) => {
+                      const leftSectionOrder =
+                        left.themeSectionSortOrder ?? Number.MAX_SAFE_INTEGER;
+                      const rightSectionOrder =
+                        right.themeSectionSortOrder ?? Number.MAX_SAFE_INTEGER;
+
+                      if (leftSectionOrder !== rightSectionOrder) {
+                        return leftSectionOrder - rightSectionOrder;
+                      }
+
+                      const leftItemOrder =
+                        left.themeItemSortOrder ?? Number.MAX_SAFE_INTEGER;
+                      const rightItemOrder =
+                        right.themeItemSortOrder ?? Number.MAX_SAFE_INTEGER;
+
+                      if (leftItemOrder !== rightItemOrder) {
+                        return leftItemOrder - rightItemOrder;
+                      }
+
+                      return left.title.localeCompare(right.title, "nl");
+                    })
+                    .map((item) => {
+                      const href = buildContentHref(item.slug);
+                      const metaText = item.completedAt
+                        ? `${labels.completedAt} ${formatDate(item.completedAt, locale)}`
+                        : item.lastViewedAt
+                          ? `${labels.lastViewed} ${formatDate(item.lastViewedAt, locale)}`
+                          : item.startedAt
+                            ? `${labels.statusInProgress} ${formatDate(item.startedAt, locale)}`
+                            : `${labels.unlockedAt} ${formatDate(item.unlockedAt, locale)}`;
+                      const categoryLabel = item.categories.length
+                        ? item.categories.join(", ")
+                        : labels.noCategory;
+                      const statusLabel =
+                        item.progressStatus === "completed"
+                          ? labels.statusCompleted
+                          : item.progressStatus === "in_progress"
+                            ? labels.statusInProgress
+                            : labels.statusNotStarted;
+
+                      const content = (
+                        <div className="flex items-start justify-between gap-3 rounded-xl border border-[#eadfd4] bg-white px-4 py-3 transition hover:border-[#d8c6b8]">
+                          <div className="min-w-0">
+                            <div className="font-medium text-stone-900">{item.title}</div>
+                            <div className="mt-1 text-xs text-stone-500">{categoryLabel}</div>
+                            <div className="mt-1 text-xs text-stone-500">{metaText}</div>
+                          </div>
+                          <span className="shrink-0 rounded-full bg-[#f7f0e9] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-stone-700">
+                            {statusLabel}
+                          </span>
+                        </div>
+                      );
+
+                      return href ? (
+                        <Link key={item.contentItemId} href={href}>
+                          {content}
+                        </Link>
+                      ) : (
+                        <div key={item.contentItemId}>{content}</div>
+                      );
+                    })}
+                </div>
+              </div>
+            ))}
         </div>
       ) : (
         <p className="mt-3 text-sm leading-6 text-stone-500">{emptyText}</p>
@@ -1344,6 +1436,7 @@ export default async function AccountPage({
                   locale={locale}
                   labels={{
                     noCategory: trajectoryT.noCategory,
+                    noTheme: trajectoryT.noCategory,
                     statusNotStarted: trajectoryT.statusNotStarted,
                     statusInProgress: trajectoryT.statusInProgress,
                     statusCompleted: trajectoryT.statusCompleted,
