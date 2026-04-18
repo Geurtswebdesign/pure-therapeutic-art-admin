@@ -1423,12 +1423,6 @@ export default async function AccountPage({
               ) : null}
 
               <div className="space-y-3">
-                <ThemeProgressGrid
-                  title={trajectoryT.themes}
-                  emptyText={trajectoryT.noThemes}
-                  items={themeItems}
-                />
-
                 <TrajectoryChapterList
                   title={trajectoryT.unlocked}
                   emptyText={trajectoryT.noUnlocked}
