@@ -520,6 +520,34 @@ function pickSourceItem(items, primaryLanguage) {
   })[0] ?? null;
 }
 
+function getPrimaryLanguageSourceItems(familyMap, primaryLanguage) {
+  const normalizedPrimaryLanguage = normalizeLanguageCode(primaryLanguage);
+  const sourceItems = [];
+
+  for (const [familyId, familyItems] of familyMap.entries()) {
+    const primaryLanguageItems = familyItems.filter(
+      (item) => normalizeLanguageCode(item.language) === normalizedPrimaryLanguage
+    );
+
+    if (!primaryLanguageItems.length) {
+      continue;
+    }
+
+    const sourceItem = pickSourceItem(primaryLanguageItems, normalizedPrimaryLanguage);
+    if (!sourceItem) {
+      continue;
+    }
+
+    sourceItems.push({
+      familyId,
+      familyItems,
+      sourceItem,
+    });
+  }
+
+  return sourceItems;
+}
+
 async function buildUniqueSlug(supabase, preferredSlug, targetLanguage) {
   const normalizedTarget = normalizeLanguageCode(targetLanguage);
   const baseSlug = slugify(preferredSlug) || `content-${normalizedTarget}`;
@@ -721,6 +749,8 @@ async function main() {
     supportedLanguages,
     targetLanguages,
     families: familyMap.size,
+    primaryLanguageFamilies: 0,
+    orphanFamiliesWithoutPrimaryLanguage: 0,
     inspectedFamilies: 0,
     created: 0,
     planned: 0,
@@ -729,10 +759,13 @@ async function main() {
     errors: 0,
   };
 
-  for (const [familyId, familyItems] of familyMap.entries()) {
-    summary.inspectedFamilies += 1;
+  const sourceFamilies = getPrimaryLanguageSourceItems(familyMap, primaryLanguage);
+  summary.primaryLanguageFamilies = sourceFamilies.length;
+  summary.orphanFamiliesWithoutPrimaryLanguage =
+    familyMap.size - sourceFamilies.length;
 
-    const sourceItem = pickSourceItem(familyItems, primaryLanguage);
+  for (const { familyId, familyItems, sourceItem } of sourceFamilies) {
+    summary.inspectedFamilies += 1;
     const sourceLanguage = normalizeLanguageCode(sourceItem?.language);
 
     if (!sourceItem || !sourceLanguage) {
@@ -747,7 +780,8 @@ async function main() {
         .filter(Boolean)
     );
     const missingLanguages = targetLanguages.filter(
-      (language) => !existingLanguages.has(language)
+      (language) =>
+        language !== sourceLanguage && !existingLanguages.has(language)
     );
 
     if (!missingLanguages.length) {
