@@ -73,6 +73,15 @@ type ThemeLinkCandidate = {
   themeItemSortOrder: number;
 };
 
+const EMPTY_PROGRESS_COLLECTIONS: ProgressCollectionResult = {
+  storageReady: false,
+  themes: [],
+  unlocked: [],
+  inProgress: [],
+  completed: [],
+  recent: [],
+};
+
 function isMissingProgressTableError(error: {
   code?: string;
   message?: string;
@@ -269,149 +278,157 @@ async function getUnlockedContentBase(
   });
 
   const categoriesByContentId = new Map<string, string[]>();
-  const { data: categoryTaxonomy, error: categoryTaxonomyError } = await supabase
-    .from("content_taxonomies")
-    .select("id")
-    .eq("slug", "category")
-    .maybeSingle<{ id: string }>();
+  try {
+    const { data: categoryTaxonomy, error: categoryTaxonomyError } = await supabase
+      .from("content_taxonomies")
+      .select("id")
+      .eq("slug", "category")
+      .maybeSingle<{ id: string }>();
 
-  if (categoryTaxonomyError) {
-    throw categoryTaxonomyError;
-  }
-
-  if (categoryTaxonomy?.id) {
-    const { data: relationships, error: relationshipsError } = await supabase
-      .from("content_term_relationships")
-      .select("content_item_id, term_id")
-      .in("content_item_id", contentIds);
-
-    if (relationshipsError) {
-      throw relationshipsError;
+    if (categoryTaxonomyError) {
+      throw categoryTaxonomyError;
     }
 
-    const categoryTermIds = Array.from(
-      new Set(
-        ((relationships ?? []) as ProgressRelationshipRow[])
-          .map((relationship) => relationship.term_id)
-          .filter((value): value is string => Boolean(value))
-      )
-    );
+    if (categoryTaxonomy?.id) {
+      const { data: relationships, error: relationshipsError } = await supabase
+        .from("content_term_relationships")
+        .select("content_item_id, term_id")
+        .in("content_item_id", contentIds);
 
-    if (categoryTermIds.length) {
-      const { data: terms, error: termsError } = await supabase
-        .from("content_terms")
-        .select("id, name, taxonomy_id")
-        .in("id", categoryTermIds)
-        .eq("taxonomy_id", categoryTaxonomy.id);
-
-      if (termsError) {
-        throw termsError;
+      if (relationshipsError) {
+        throw relationshipsError;
       }
 
-      const termById = new Map(
-        ((terms ?? []) as ProgressTermRow[]).map((term) => [term.id, term])
+      const categoryTermIds = Array.from(
+        new Set(
+          ((relationships ?? []) as ProgressRelationshipRow[])
+            .map((relationship) => relationship.term_id)
+            .filter((value): value is string => Boolean(value))
+        )
       );
 
-      for (const relationship of (relationships ?? []) as ProgressRelationshipRow[]) {
-        const term = termById.get(relationship.term_id);
-        if (!term) continue;
+      if (categoryTermIds.length) {
+        const { data: terms, error: termsError } = await supabase
+          .from("content_terms")
+          .select("id, name, taxonomy_id")
+          .in("id", categoryTermIds)
+          .eq("taxonomy_id", categoryTaxonomy.id);
 
-        const currentCategories =
-          categoriesByContentId.get(relationship.content_item_id) ?? [];
-        currentCategories.push(term.name);
-        categoriesByContentId.set(relationship.content_item_id, currentCategories);
-      }
-    }
-  }
+        if (termsError) {
+          throw termsError;
+        }
 
-  const themeByContentId = new Map<string, ThemeLinkCandidate>();
-  const { data: themeSectionLinks, error: themeSectionLinksError } = await supabase
-    .from("content_theme_section_items")
-    .select("theme_section_id, content_item_id, sort_order")
-    .in("content_item_id", contentIds);
+        const termById = new Map(
+          ((terms ?? []) as ProgressTermRow[]).map((term) => [term.id, term])
+        );
 
-  if (themeSectionLinksError) {
-    throw themeSectionLinksError;
-  }
+        for (const relationship of (relationships ?? []) as ProgressRelationshipRow[]) {
+          const term = termById.get(relationship.term_id);
+          if (!term) continue;
 
-  const themeSectionIds = Array.from(
-    new Set(
-      ((themeSectionLinks ?? []) as ThemeSectionItemRow[])
-        .map((row) => row.theme_section_id)
-        .filter((value): value is string => Boolean(value))
-    )
-  );
-
-  if (themeSectionIds.length) {
-    const { data: themeSections, error: themeSectionsError } = await supabase
-      .from("content_theme_sections")
-      .select("id, theme_page_id, sort_order")
-      .in("id", themeSectionIds);
-
-    if (themeSectionsError) {
-      throw themeSectionsError;
-    }
-
-    const themePageIds = Array.from(
-      new Set(
-        ((themeSections ?? []) as ThemeSectionRow[])
-          .map((row) => row.theme_page_id)
-          .filter((value): value is string => Boolean(value))
-      )
-    );
-
-    if (themePageIds.length) {
-      const { data: themePages, error: themePagesError } = await supabase
-        .from("content_theme_pages")
-        .select("id, slug, title, sort_order")
-        .in("id", themePageIds)
-        .eq("is_published", true);
-
-      if (themePagesError) {
-        throw themePagesError;
-      }
-
-      const sectionById = new Map(
-        ((themeSections ?? []) as ThemeSectionRow[]).map((section) => [
-          section.id,
-          section,
-        ])
-      );
-      const pageById = new Map(
-        ((themePages ?? []) as ThemePageRow[]).map((page) => [page.id, page])
-      );
-      const candidatesByContentId = new Map<string, ThemeLinkCandidate[]>();
-
-      for (const link of (themeSectionLinks ?? []) as ThemeSectionItemRow[]) {
-        if (!link.content_item_id || !link.theme_section_id) continue;
-
-        const section = sectionById.get(link.theme_section_id);
-        const page = section?.theme_page_id
-          ? pageById.get(section.theme_page_id) ?? null
-          : null;
-
-        if (!section || !page) continue;
-
-        const candidates = candidatesByContentId.get(link.content_item_id) ?? [];
-        candidates.push({
-          themeId: page.id,
-          themeTitle: page.title?.trim() || "Ongetiteld thema",
-          themeSlug: page.slug,
-          themeSortOrder: page.sort_order ?? 0,
-          themeSectionSortOrder: section.sort_order ?? 0,
-          themeItemSortOrder: link.sort_order ?? 0,
-        });
-        candidatesByContentId.set(link.content_item_id, candidates);
-      }
-
-      for (const [contentItemId, candidates] of candidatesByContentId.entries()) {
-        candidates.sort(compareThemeLinkCandidates);
-        const primaryTheme = candidates[0];
-        if (primaryTheme) {
-          themeByContentId.set(contentItemId, primaryTheme);
+          const currentCategories =
+            categoriesByContentId.get(relationship.content_item_id) ?? [];
+          currentCategories.push(term.name);
+          categoriesByContentId.set(relationship.content_item_id, currentCategories);
         }
       }
     }
+  } catch (error) {
+    console.error("getUnlockedContentBase:categories", error);
+  }
+
+  const themeByContentId = new Map<string, ThemeLinkCandidate>();
+  try {
+    const { data: themeSectionLinks, error: themeSectionLinksError } = await supabase
+      .from("content_theme_section_items")
+      .select("theme_section_id, content_item_id, sort_order")
+      .in("content_item_id", contentIds);
+
+    if (themeSectionLinksError) {
+      throw themeSectionLinksError;
+    }
+
+    const themeSectionIds = Array.from(
+      new Set(
+        ((themeSectionLinks ?? []) as ThemeSectionItemRow[])
+          .map((row) => row.theme_section_id)
+          .filter((value): value is string => Boolean(value))
+      )
+    );
+
+    if (themeSectionIds.length) {
+      const { data: themeSections, error: themeSectionsError } = await supabase
+        .from("content_theme_sections")
+        .select("id, theme_page_id, sort_order")
+        .in("id", themeSectionIds);
+
+      if (themeSectionsError) {
+        throw themeSectionsError;
+      }
+
+      const themePageIds = Array.from(
+        new Set(
+          ((themeSections ?? []) as ThemeSectionRow[])
+            .map((row) => row.theme_page_id)
+            .filter((value): value is string => Boolean(value))
+        )
+      );
+
+      if (themePageIds.length) {
+        const { data: themePages, error: themePagesError } = await supabase
+          .from("content_theme_pages")
+          .select("id, slug, title, sort_order")
+          .in("id", themePageIds)
+          .eq("is_published", true);
+
+        if (themePagesError) {
+          throw themePagesError;
+        }
+
+        const sectionById = new Map(
+          ((themeSections ?? []) as ThemeSectionRow[]).map((section) => [
+            section.id,
+            section,
+          ])
+        );
+        const pageById = new Map(
+          ((themePages ?? []) as ThemePageRow[]).map((page) => [page.id, page])
+        );
+        const candidatesByContentId = new Map<string, ThemeLinkCandidate[]>();
+
+        for (const link of (themeSectionLinks ?? []) as ThemeSectionItemRow[]) {
+          if (!link.content_item_id || !link.theme_section_id) continue;
+
+          const section = sectionById.get(link.theme_section_id);
+          const page = section?.theme_page_id
+            ? pageById.get(section.theme_page_id) ?? null
+            : null;
+
+          if (!section || !page) continue;
+
+          const candidates = candidatesByContentId.get(link.content_item_id) ?? [];
+          candidates.push({
+            themeId: page.id,
+            themeTitle: page.title?.trim() || "Ongetiteld thema",
+            themeSlug: page.slug,
+            themeSortOrder: page.sort_order ?? 0,
+            themeSectionSortOrder: section.sort_order ?? 0,
+            themeItemSortOrder: link.sort_order ?? 0,
+          });
+          candidatesByContentId.set(link.content_item_id, candidates);
+        }
+
+        for (const [contentItemId, candidates] of candidatesByContentId.entries()) {
+          candidates.sort(compareThemeLinkCandidates);
+          const primaryTheme = candidates[0];
+          if (primaryTheme) {
+            themeByContentId.set(contentItemId, primaryTheme);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error("getUnlockedContentBase:themes", error);
   }
 
   return contentIds
@@ -733,45 +750,61 @@ export async function getUserProgressCollections(
   preferredLanguage?: string | null
 ): Promise<ProgressCollectionResult> {
   const storageReady = await isContentProgressStorageReady();
-  const items = await buildUserProgressItems(userId, preferredLanguage);
-  const themes = await buildThemeProgressSummaries(items);
+  try {
+    const items = await buildUserProgressItems(userId, preferredLanguage);
+    let themes: UserThemeProgressSummary[] = [];
 
-  const unlocked = [...items]
-    .sort((left, right) => compareByDateDesc(left.unlockedAt, right.unlockedAt))
-    .slice(0, 6);
+    try {
+      themes = await buildThemeProgressSummaries(items);
+    } catch (error) {
+      console.error("getUserProgressCollections:themes", error);
+    }
 
-  const inProgress = items
-    .filter(
-      (item) =>
-        item.progressStatus !== "completed" &&
-        (item.progressStatus === "in_progress" || Boolean(item.lastViewedAt))
-    )
-    .sort((left, right) =>
-      compareByDateDesc(
-        left.lastViewedAt ?? left.startedAt ?? left.unlockedAt,
-        right.lastViewedAt ?? right.startedAt ?? right.unlockedAt
+    const unlocked = [...items]
+      .sort((left, right) => compareByDateDesc(left.unlockedAt, right.unlockedAt))
+      .slice(0, 6);
+
+    const inProgress = items
+      .filter(
+        (item) =>
+          item.progressStatus !== "completed" &&
+          (item.progressStatus === "in_progress" || Boolean(item.lastViewedAt))
       )
-    )
-    .slice(0, 6);
+      .sort((left, right) =>
+        compareByDateDesc(
+          left.lastViewedAt ?? left.startedAt ?? left.unlockedAt,
+          right.lastViewedAt ?? right.startedAt ?? right.unlockedAt
+        )
+      )
+      .slice(0, 6);
 
-  const completed = items
-    .filter((item) => item.progressStatus === "completed")
-    .sort((left, right) => compareByDateDesc(left.completedAt, right.completedAt))
-    .slice(0, 6);
+    const completed = items
+      .filter((item) => item.progressStatus === "completed")
+      .sort((left, right) => compareByDateDesc(left.completedAt, right.completedAt))
+      .slice(0, 6);
 
-  const recent = items
-    .filter((item) => Boolean(item.lastViewedAt))
-    .sort((left, right) => compareByDateDesc(left.lastViewedAt, right.lastViewedAt))
-    .slice(0, 6);
+    const recent = items
+      .filter((item) => Boolean(item.lastViewedAt))
+      .sort((left, right) =>
+        compareByDateDesc(left.lastViewedAt, right.lastViewedAt)
+      )
+      .slice(0, 6);
 
-  return {
-    storageReady,
-    themes,
-    unlocked,
-    inProgress,
-    completed,
-    recent,
-  };
+    return {
+      storageReady,
+      themes,
+      unlocked,
+      inProgress,
+      completed,
+      recent,
+    };
+  } catch (error) {
+    console.error("getUserProgressCollections:items", error);
+    return {
+      ...EMPTY_PROGRESS_COLLECTIONS,
+      storageReady,
+    };
+  }
 }
 
 export async function listUserUnlockedContent(userId: string) {
