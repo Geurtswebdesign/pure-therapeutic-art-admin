@@ -17,6 +17,7 @@ export default function ThemePageView({
   backLabel?: string;
 }) {
   const t = getPublicAppMessages(language).themePage;
+  const visibleSections = theme.sections.filter((section) => section.items.length > 0);
   const resolvedBackHref =
     backHref ??
     (theme.parentTheme
@@ -68,9 +69,9 @@ export default function ThemePageView({
         ) : null}
       </section>
 
-      {theme.sections.length ? (
+      {visibleSections.length ? (
         <div className="space-y-4">
-          {theme.sections.map((section) => (
+          {visibleSections.map((section) => (
             <section
               key={section.id}
               className="rounded-[1.75rem] border border-[#e4d8cb] bg-white p-5 shadow-sm sm:p-7"
@@ -90,32 +91,22 @@ export default function ThemePageView({
                 />
               ) : null}
 
-              {section.items.length ? (
-                <ol
-                  type="a"
-                  className="mt-4 list-outside space-y-2.5 pl-6 text-lg leading-8 text-stone-900 marker:font-semibold"
-                >
-                  {section.items.map((item) => (
-                    <li key={item.id}>
-                      <Link href={item.href} className="block py-1 hover:underline">
-                        {item.title}
-                      </Link>
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <p className="mt-4 text-sm leading-6 text-stone-500">
-                  {t.noItemsInSection}
-                </p>
-              )}
+              <ol
+                type="a"
+                className="mt-4 list-outside space-y-2.5 pl-6 text-lg leading-8 text-stone-900 marker:font-semibold"
+              >
+                {section.items.map((item) => (
+                  <li key={item.id}>
+                    <Link href={item.href} className="block py-1 hover:underline">
+                      {item.title}
+                    </Link>
+                  </li>
+                ))}
+              </ol>
             </section>
           ))}
         </div>
-      ) : (
-        <section className="rounded-[1.75rem] border border-[#e4d8cb] bg-white p-5 shadow-sm sm:p-7">
-          <div className="text-sm leading-6 text-stone-600">{t.noSections}</div>
-        </section>
-      )}
+      ) : null}
     </div>
   );
 }
