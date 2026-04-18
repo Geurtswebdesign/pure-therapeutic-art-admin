@@ -206,9 +206,9 @@ async function validatePrimaryCategoryTerm(
     throw new Error("De gekozen themacategorie bestaat niet meer.");
   }
 
-  if (data.is_homepage_seed || !data.parent_id) {
+  if (data.is_homepage_seed) {
     throw new Error(
-      `Koppel een thema aan een gewone categorie onder een seed-categorie. "${data.name}" is geen geldige themacategorie.`
+      `Koppel een thema niet direct aan een seed-categorie. "${data.name}" is geen geldige themacategorie.`
     );
   }
 }

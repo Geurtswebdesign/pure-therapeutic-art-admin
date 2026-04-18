@@ -1183,7 +1183,7 @@ export default function ThemeEditorClient({
                   key={option.id}
                   value={option.id}
                   disabled={
-                    (option.isHomepageSeed || !option.parentId) &&
+                    option.isHomepageSeed &&
                     option.id !== draft.primaryCategoryTermId
                   }
                 >
@@ -1192,8 +1192,8 @@ export default function ThemeEditorClient({
               ))}
             </select>
             <p className="mt-1 text-xs leading-5 text-stone-500">
-              Koppel thema&apos;s aan een gewone categorie onder een seed-categorie.
-              {selectedCategoryOption?.isHomepageSeed || !selectedCategoryOption?.parentId
+              Koppel thema&apos;s aan een gewone categorie. Seed-categorieën blijven geblokkeerd.
+              {selectedCategoryOption?.isHomepageSeed
                 ? " De huidige keuze staat nog op seed-niveau en moet worden omgezet."
                 : ""}
             </p>
