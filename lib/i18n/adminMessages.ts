@@ -245,6 +245,10 @@ type AdminMessages = {
     published: string;
     trash: string;
     bulkActions: string;
+    publish: string;
+    publishAllDrafts: string;
+    publishingAllDrafts: string;
+    publishAllDraftsConfirm: string;
     quickEdit: string;
     restore: string;
     deletePermanent: string;
@@ -575,6 +579,10 @@ const nl: AdminMessages = {
     published: "Gepubliceerd",
     trash: "Prullenbak",
     bulkActions: "Bulkacties",
+    publish: "Publiceren",
+    publishAllDrafts: "Alle concepten publiceren",
+    publishingAllDrafts: "Concepten publiceren...",
+    publishAllDraftsConfirm: "Weet je zeker dat je alle concept-content wilt publiceren?",
     quickEdit: "Snel bewerken",
     restore: "Herstellen",
     deletePermanent: "Permanent verwijderen",
@@ -884,6 +892,10 @@ const en: AdminMessages = {
     published: "Published",
     trash: "Trash",
     bulkActions: "Bulk actions",
+    publish: "Publish",
+    publishAllDrafts: "Publish all drafts",
+    publishingAllDrafts: "Publishing drafts...",
+    publishAllDraftsConfirm: "Are you sure you want to publish all draft content?",
     quickEdit: "Quick edit",
     restore: "Restore",
     deletePermanent: "Delete permanently",
@@ -1194,6 +1206,10 @@ const de: AdminMessages = {
     published: "Veroffentlicht",
     trash: "Papierkorb",
     bulkActions: "Sammelaktionen",
+    publish: "Veroffentlichen",
+    publishAllDrafts: "Alle Entwurfe veroffentlichen",
+    publishingAllDrafts: "Entwurfe werden veroffentlicht...",
+    publishAllDraftsConfirm: "Mochtest du wirklich alle Entwurfsinhalte veroffentlichen?",
     quickEdit: "Schnell bearbeiten",
     restore: "Wiederherstellen",
     deletePermanent: "Endgultig loschen",

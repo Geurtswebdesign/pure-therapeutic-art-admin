@@ -12,9 +12,11 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import ContentRowActions from "@/components/content/admin/ContentRowActions";
 import {
+  bulkPublishContent,
   bulkTrashContent,
   bulkRestoreContent,
   bulkDeleteContent,
+  publishAllDraftContent,
 } from "@/components/content/admin/actions";
 import BulkDeleteModal from "@/components/content/admin/BulkDeleteModal";
 import BulkQuickEditForm from "./BulkQuickEditForm";
@@ -225,6 +227,13 @@ export default function ContentTableClient({
   async function applyBulkAction() {
     if (selected.length === 0) return;
 
+    if (bulkAction === "publish") {
+      setLoading(true);
+      await bulkPublishContent(selected);
+      location.reload();
+      return;
+    }
+
     if (bulkAction === "restore") {
       setLoading(true);
       await bulkRestoreContent(selected);
@@ -240,6 +249,21 @@ export default function ContentTableClient({
 
     if (bulkAction === "trash" || bulkAction === "delete-permanent") {
       setShowConfirmModal(true);
+    }
+  }
+
+  async function handlePublishAllDrafts() {
+    if (!window.confirm(t.publishAllDraftsConfirm)) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await publishAllDraftContent();
+      location.reload();
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -334,6 +358,7 @@ export default function ContentTableClient({
               </>
             ) : (
               <>
+                <option value="publish">{t.publish}</option>
                 <option value="quick-edit">{t.quickEdit}</option>
                 <option value="trash">{t.moveToTrash}</option>
               </>
@@ -347,6 +372,17 @@ export default function ContentTableClient({
           >
             {t.apply}
           </button>
+
+          {filters.status === "draft" && statusCounts.draft > 0 ? (
+            <button
+              type="button"
+              onClick={handlePublishAllDrafts}
+              disabled={loading}
+              className="border px-3 py-1 text-sm disabled:opacity-50"
+            >
+              {loading ? t.publishingAllDrafts : `${t.publishAllDrafts} (${statusCounts.draft})`}
+            </button>
+          ) : null}
 
           <select
             value={filters.contentLanguage}
