@@ -40,4 +40,6 @@ jobs:
         run: |
           APP_DIR="${PROD_APP_DIR:-/var/www/vhosts/pure-therapeutic-art-therapy.com/pure-therapeutic-art/current}"
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -p "${PROD_PORT:-22}" "${PROD_USER}@${PROD_HOST}" \
-            "export APP_DIR='${APP_DIR}'; export DEPLOY_BRANCH='production'; export REPO_REMOTE='origin'; bash '${APP_DIR}/deploy/update-server-from-git.sh'"
+            "export APP_DIR='${APP_DIR}'; \
+             cd '${APP_DIR}' && git restore --staged --worktree --source=HEAD -- next-env.d.ts >/dev/null 2>&1 || true; \
+             export DEPLOY_BRANCH='production'; export REPO_REMOTE='origin'; bash '${APP_DIR}/deploy/update-server-from-git.sh'"
