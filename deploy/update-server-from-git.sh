@@ -22,6 +22,10 @@ if ! git remote get-url "${REPO_REMOTE}" >/dev/null 2>&1; then
   exit 1
 fi
 
+# Reset generated Next.js metadata that may legitimately differ after local/server builds.
+# If there are any other modifications left afterwards, the deploy should still abort.
+git restore --staged --worktree --source=HEAD -- next-env.d.ts >/dev/null 2>&1 || true
+
 if [[ -n "$(git status --porcelain)" ]]; then
   echo "De server worktree is niet schoon. Deploy afgebroken."
   git status --short
