@@ -2,6 +2,8 @@ import "server-only";
 import { JSDOM } from "jsdom";
 import { normalizeLegacyOfficeListsInBody } from "@/lib/content/legacyOfficeLists";
 
+const IN_APP_PDF_VIEWER_PATH = "/pdf";
+
 function hasVisibleNodeContent(element: Element): boolean {
   if (element.querySelector("img")) {
     return true;
@@ -12,6 +14,31 @@ function hasVisibleNodeContent(element: Element): boolean {
     .trim();
 
   return normalizedText.length > 0;
+}
+
+function isPdfHref(href: string): boolean {
+  const normalizedHref = href.trim().toLowerCase();
+
+  if (!normalizedHref) return false;
+  if (
+    normalizedHref.startsWith("#") ||
+    normalizedHref.startsWith("mailto:") ||
+    normalizedHref.startsWith("tel:") ||
+    normalizedHref.startsWith("javascript:")
+  ) {
+    return false;
+  }
+
+  if (normalizedHref.startsWith(`${IN_APP_PDF_VIEWER_PATH}?`)) {
+    return false;
+  }
+
+  return /\.pdf(?:$|[?#])/i.test(normalizedHref);
+}
+
+function buildInAppPdfViewerHref(href: string): string {
+  const params = new URLSearchParams({ src: href });
+  return `${IN_APP_PDF_VIEWER_PATH}?${params.toString()}`;
 }
 
 /**
@@ -114,6 +141,23 @@ export function normalizeHtml(input: string): string {
         });
 
         gallery.replaceWith(figure);
+      });
+
+    /**
+     * 4️⃣ Rewrite PDF links to the internal viewer route
+     */
+    body
+      .querySelectorAll<HTMLAnchorElement>("a[href]")
+      .forEach((link: HTMLAnchorElement) => {
+        const href = link.getAttribute("href")?.trim();
+        if (!href || !isPdfHref(href)) {
+          return;
+        }
+
+        link.setAttribute("href", buildInAppPdfViewerHref(href));
+        link.removeAttribute("target");
+        link.removeAttribute("download");
+        link.removeAttribute("rel");
       });
 
     return body.innerHTML;

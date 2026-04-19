@@ -58,6 +58,13 @@ export type PublicAppMessages = {
     noPrevious: string;
     noNext: string;
   };
+  pdfViewer: {
+    back: string;
+    openExternal: string;
+    inlineHint: string;
+    fallbackPrefix: string;
+    fallbackLink: string;
+  };
   trainings: {
     title: string;
     subtitle: string;
@@ -231,6 +238,13 @@ const nl: PublicAppMessages = {
     next: "Volgende",
     noPrevious: "Geen vorig onderdeel",
     noNext: "Geen volgend onderdeel",
+  },
+  pdfViewer: {
+    back: "Terug",
+    openExternal: "Open in browser",
+    inlineHint: "Deze PDF wordt direct in de app weergegeven.",
+    fallbackPrefix: "Zie je geen PDF?",
+    fallbackLink: "Open het bestand hier",
   },
   trainings: {
     title: "Pure Therapeutic ART trainingen",
@@ -421,6 +435,13 @@ const en: PublicAppMessages = {
     next: "Next",
     noPrevious: "No previous item",
     noNext: "No next item",
+  },
+  pdfViewer: {
+    back: "Back",
+    openExternal: "Open in browser",
+    inlineHint: "This PDF is displayed directly inside the app.",
+    fallbackPrefix: "If the PDF does not appear,",
+    fallbackLink: "open the file here",
   },
   trainings: {
     title: "Pure Therapeutic ART trainings",
@@ -613,6 +634,13 @@ const de: PublicAppMessages = {
     next: "Nachste",
     noPrevious: "Kein vorheriger Teil",
     noNext: "Kein nachster Teil",
+  },
+  pdfViewer: {
+    back: "Zuruck",
+    openExternal: "Im Browser offnen",
+    inlineHint: "Diese PDF wird direkt in der App angezeigt.",
+    fallbackPrefix: "Falls die PDF nicht erscheint,",
+    fallbackLink: "offne die Datei hier",
   },
   trainings: {
     title: "Pure Therapeutic ART Trainings",
