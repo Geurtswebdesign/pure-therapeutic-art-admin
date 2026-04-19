@@ -8,6 +8,10 @@ import {
   type ThemeSourceEntry,
 } from "@/lib/content/theme-source-manifest";
 import { getAdminAreaUrl } from "@/lib/site/urls";
+import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { normalizeLanguageCode } from "@/lib/i18n/languages";
+import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { getSupportedLanguageOptions } from "@/lib/i18n/settings";
 
 type ThemeSortOption =
   | "updated_desc"
@@ -16,6 +20,12 @@ type ThemeSortOption =
   | "created_asc"
   | "title_asc"
   | "title_desc";
+
+type SearchParamValue = string | string[] | undefined;
+
+function takeFirst(value: SearchParamValue) {
+  return Array.isArray(value) ? value[0] : value;
+}
 
 function normalizeThemeSortOption(value: string | undefined): ThemeSortOption {
   switch (value) {
@@ -130,20 +140,44 @@ function SourceRow({
 export default async function AdminThemesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string | string[] | undefined }>;
+  searchParams: Promise<{
+    sort?: SearchParamValue;
+    language?: SearchParamValue;
+  }>;
 }) {
+  const primaryLanguage = await getPrimaryLanguage();
+  const uiLanguage = resolveUiLanguage(primaryLanguage);
+  const themeLanguageOptions = await getSupportedLanguageOptions(uiLanguage);
   const params = await searchParams;
-  const sort = normalizeThemeSortOption(
-    Array.isArray(params.sort) ? params.sort[0] : params.sort
+  const sort = normalizeThemeSortOption(takeFirst(params.sort));
+  const requestedThemeLanguage = normalizeLanguageCode(
+    takeFirst(params.language) ?? ""
   );
-  const [themes, manifest] = await Promise.all([
-    getAdminThemeSummaries(),
+  const activeThemeLanguage = themeLanguageOptions.some(
+    (option) => option.code === requestedThemeLanguage
+  )
+    ? requestedThemeLanguage
+    : "";
+  const isPrimaryThemeLanguage =
+    !activeThemeLanguage ||
+    normalizeLanguageCode(activeThemeLanguage) ===
+      normalizeLanguageCode(primaryLanguage);
+
+  const [allThemes, manifest] = await Promise.all([
+    getAdminThemeSummaries({
+      preferredLanguage: activeThemeLanguage || primaryLanguage,
+    }),
     getThemeSourceManifest(),
   ]);
-  const sortedThemes = sortThemes(themes, sort);
+  const visibleThemes = isPrimaryThemeLanguage
+    ? allThemes
+    : allThemes.filter((theme) =>
+        theme.availableLanguages.includes(activeThemeLanguage)
+      );
+  const sortedThemes = sortThemes(visibleThemes, sort);
 
   const importedBySourceKey = new Map(
-    themes
+    allThemes
       .filter((theme) => theme.sourceKey)
       .map((theme) => [theme.sourceKey!, theme])
   );
@@ -170,6 +204,22 @@ export default async function AdminThemesPage({
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
           <h2 className="text-lg font-semibold text-stone-900">Bestaande themapagina&apos;s</h2>
           <form method="get" className="flex items-center gap-2 text-sm">
+            <label htmlFor="theme-language" className="text-stone-600">
+              Taal
+            </label>
+            <select
+              id="theme-language"
+              name="language"
+              defaultValue={activeThemeLanguage}
+              className="rounded border border-stone-300 px-2 py-1 text-sm"
+            >
+              <option value="">Alle talen</option>
+              {themeLanguageOptions.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
             <label htmlFor="theme-sort" className="text-stone-600">
               Sorteren op
             </label>
@@ -207,7 +257,7 @@ export default async function AdminThemesPage({
               </tr>
             </thead>
             <tbody>
-              {themes.length ? (
+              {sortedThemes.length ? (
                 sortedThemes.map((theme) => (
                   <tr key={theme.id} className="border-t border-stone-200">
                     <td className="px-3 py-3 align-top">
@@ -250,7 +300,9 @@ export default async function AdminThemesPage({
                     colSpan={6}
                     className="px-3 py-6 text-center text-sm text-stone-500"
                   >
-                    Er zijn nog geen themapagina&apos;s opgeslagen.
+                    {allThemes.length
+                      ? "Geen themapagina's gevonden voor deze taalfilter."
+                      : "Er zijn nog geen themapagina's opgeslagen."}
                   </td>
                 </tr>
               )}

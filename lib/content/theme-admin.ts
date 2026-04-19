@@ -17,6 +17,10 @@ import {
   getThemeSourceManifest,
   type ThemeSourceEntry,
 } from "@/lib/content/theme-source-manifest";
+import {
+  applyThemePageTranslation,
+  getPreferredThemePageTranslationMap,
+} from "@/lib/content/theme-translation-queries";
 
 export type ThemeOption = {
   id: string;
@@ -97,6 +101,7 @@ export type AdminThemeSummary = {
   parentTheme: ThemeOption | null;
   sectionCount: number;
   itemCount: number;
+  availableLanguages: string[];
 };
 
 export type ThemeEditorData = {
@@ -285,7 +290,9 @@ function emptyDraft(): ThemePageDraft {
   };
 }
 
-export async function getAdminThemeSummaries(): Promise<AdminThemeSummary[]> {
+export async function getAdminThemeSummaries(input?: {
+  preferredLanguage?: string | null;
+}): Promise<AdminThemeSummary[]> {
   const supabase = createAdminClient();
   const selectWithDates =
     "id, slug, title, source_key, is_published, sort_order, parent_theme_page_id, created_at, updated_at";
@@ -336,6 +343,52 @@ export async function getAdminThemeSummaries(): Promise<AdminThemeSummary[]> {
   if (!pageRows?.length) return [];
 
   const ids = pageRows.map((page) => page.id);
+  const normalizedPreferredLanguage = normalizeLanguageCode(
+    input?.preferredLanguage ?? ""
+  );
+  const preferredTranslationsByPageId = await getPreferredThemePageTranslationMap(
+    ids,
+    normalizedPreferredLanguage
+  );
+  const availableLanguagesByPageId = new Map<string, Set<string>>();
+
+  const { data: pageTranslationRows, error: pageTranslationError } = await supabase
+    .from("content_theme_page_translations")
+    .select("theme_page_id, language")
+    .in("theme_page_id", ids);
+
+  if (!pageTranslationError) {
+    for (const row of
+      (pageTranslationRows as Array<{
+        theme_page_id: string;
+        language: string | null;
+      }> | null) ?? []) {
+      const normalizedLanguage = normalizeLanguageCode(row.language ?? "");
+      if (!row.theme_page_id || !normalizedLanguage) continue;
+
+      const currentLanguages =
+        availableLanguagesByPageId.get(row.theme_page_id) ?? new Set<string>();
+      currentLanguages.add(normalizedLanguage);
+      availableLanguagesByPageId.set(row.theme_page_id, currentLanguages);
+    }
+  }
+
+  const translatedPages = pageRows.map((page) => {
+    const translated = applyThemePageTranslation(
+      {
+        eyebrow: null,
+        title: page.title,
+        description: null,
+        hero_image_alt: null,
+      },
+      preferredTranslationsByPageId.get(page.id) ?? null
+    );
+
+    return {
+      ...page,
+      title: translated.title,
+    };
+  });
 
   const [{ data: sections }, { data: sectionItems }] = await Promise.all([
     supabase
@@ -357,7 +410,7 @@ export async function getAdminThemeSummaries(): Promise<AdminThemeSummary[]> {
   ]);
 
   const pageById = new Map(
-    pageRows.map((page) => [
+    translatedPages.map((page) => [
       page.id,
       {
         id: page.id,
@@ -386,7 +439,7 @@ export async function getAdminThemeSummaries(): Promise<AdminThemeSummary[]> {
     itemCountByPageId.set(pageId, (itemCountByPageId.get(pageId) ?? 0) + 1);
   }
 
-  return pageRows.map((page) => ({
+  return translatedPages.map((page) => ({
     id: page.id,
     slug: page.slug,
     title: page.title,
@@ -400,6 +453,9 @@ export async function getAdminThemeSummaries(): Promise<AdminThemeSummary[]> {
       : null,
     sectionCount: sectionCountByPageId.get(page.id) ?? 0,
     itemCount: itemCountByPageId.get(page.id) ?? 0,
+    availableLanguages: Array.from(
+      availableLanguagesByPageId.get(page.id) ?? []
+    ).sort((left, right) => left.localeCompare(right, "nl")),
   }));
 }
 
