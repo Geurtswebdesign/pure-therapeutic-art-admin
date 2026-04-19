@@ -7,6 +7,8 @@ const serverUrl =
 const isCleartext = serverUrl.startsWith("http://");
 
 const config: CapacitorConfig = {
+  // Keep the shared Capacitor appId aligned with Android.
+  // The iOS bundle identifier is overridden in ios/App/App.xcodeproj.
   appId: "com.detroostboom.puretherapeuticart",
   appName: "Pure Grief and Therapeutic ART",
   webDir: ".capacitor-shell",

@@ -112,8 +112,10 @@ npm run native:open:android
 
 De native shell gebruikt nu standaard:
 
-- iOS bundle identifier: `com.detroostboom.puretherapeuticart`
+- iOS bundle identifier: `com.detroostboom.puretherapeuticartapple`
 - Android application id: `com.detroostboom.puretherapeuticart`
+
+Deze repo gebruikt dus bewust verschillende native identifiers voor iOS en Android.
 
 Controleer voor release:
 
@@ -168,8 +170,8 @@ CREDIT_PACK_PURCHASE_MODE=native_store
 
 En configureer daarna in RevenueCat:
 
-1. iOS app koppelen met hetzelfde bundle id
-2. Android app koppelen met dezelfde application id
+1. iOS app koppelen met bundle id `com.detroostboom.puretherapeuticartapple`
+2. Android app koppelen met application id `com.detroostboom.puretherapeuticart`
 3. Apple en Google storeconnecties leggen
 4. per e-book product-id's aanmaken die matchen met de shopadmin
 5. voor credit packs dezelfde store product-id's gebruiken als in de app-logica of expliciet mappen via `public.iap_products`
@@ -187,7 +189,7 @@ En configureer daarna in RevenueCat:
 
 ## Google Play koppeling
 
-De Android app gebruikt dezelfde app-id als iOS:
+De Android app gebruikt een andere app-id dan iOS:
 
 - package name / application id: `com.detroostboom.puretherapeuticart`
 
