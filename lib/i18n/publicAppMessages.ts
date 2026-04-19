@@ -61,7 +61,8 @@ export type PublicAppMessages = {
   pdfViewer: {
     back: string;
     openExternal: string;
-    inlineHint: string;
+    loading: string;
+    loadError: string;
     fallbackPrefix: string;
     fallbackLink: string;
   };
@@ -242,7 +243,8 @@ const nl: PublicAppMessages = {
   pdfViewer: {
     back: "Terug",
     openExternal: "Open in browser",
-    inlineHint: "Deze PDF wordt direct in de app weergegeven.",
+    loading: "PDF wordt geladen...",
+    loadError: "PDF laden in de app is mislukt. Open het bestand in de browser.",
     fallbackPrefix: "Zie je geen PDF?",
     fallbackLink: "Open het bestand hier",
   },
@@ -439,7 +441,8 @@ const en: PublicAppMessages = {
   pdfViewer: {
     back: "Back",
     openExternal: "Open in browser",
-    inlineHint: "This PDF is displayed directly inside the app.",
+    loading: "Loading PDF...",
+    loadError: "Loading the PDF inside the app failed. Open the file in the browser.",
     fallbackPrefix: "If the PDF does not appear,",
     fallbackLink: "open the file here",
   },
@@ -638,7 +641,8 @@ const de: PublicAppMessages = {
   pdfViewer: {
     back: "Zuruck",
     openExternal: "Im Browser offnen",
-    inlineHint: "Diese PDF wird direkt in der App angezeigt.",
+    loading: "PDF wird geladen...",
+    loadError: "Die PDF konnte in der App nicht geladen werden. Offne die Datei im Browser.",
     fallbackPrefix: "Falls die PDF nicht erscheint,",
     fallbackLink: "offne die Datei hier",
   },
