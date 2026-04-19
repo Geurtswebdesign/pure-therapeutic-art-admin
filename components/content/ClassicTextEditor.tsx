@@ -14,11 +14,16 @@ import {
   containsLegacyOfficeListMarkup,
   normalizeLegacyOfficeListsInBody,
 } from "@/lib/content/legacyOfficeLists";
-import { uploadImageClient } from "@/lib/content/uploadClient";
+import { uploadMediaAssetClient } from "@/lib/content/uploadClient";
 
 type UploadedImage = {
   alt: string;
   src: string;
+};
+
+type UploadedDocument = {
+  href: string;
+  label: string;
 };
 
 type Props = {
@@ -85,6 +90,21 @@ function buildGalleryHtml(images: UploadedImage[], columns = 3) {
     .join("");
 
   return `<figure class="gallery" data-columns="${columns}">${imageHtml}</figure><p></p>`;
+}
+
+function buildDocumentHtml(document: UploadedDocument) {
+  return `<p><a href="${escapeAttribute(document.href)}">${escapeHtml(document.label)}</a></p><p></p>`;
+}
+
+function isImageFile(file: File) {
+  return (
+    file.type.startsWith("image/") ||
+    /\.(avif|bmp|gif|heic|heif|jpe?g|png|svg|webp)$/i.test(file.name)
+  );
+}
+
+function isPdfFile(file: File) {
+  return file.type === "application/pdf" || /\.pdf$/i.test(file.name);
 }
 
 const FigureImage = Node.create({
@@ -469,10 +489,10 @@ export default function ClassicTextEditor({
       .run();
   }
 
-  async function pickFiles(options: { multiple: boolean }) {
+  async function pickFiles(options: { accept: string; multiple: boolean }) {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = options.accept;
     input.multiple = options.multiple;
 
     return new Promise<File[]>((resolve) => {
@@ -488,7 +508,7 @@ export default function ClassicTextEditor({
     const uploaded: UploadedImage[] = [];
 
     for (const file of files) {
-      const src = await uploadImageClient(file, contentItemId);
+      const src = await uploadMediaAssetClient(file, contentItemId);
       uploaded.push({
         src,
         alt: "",
@@ -496,6 +516,15 @@ export default function ClassicTextEditor({
     }
 
     return uploaded;
+  }
+
+  async function uploadDocument(file: File) {
+    const href = await uploadMediaAssetClient(file, contentItemId);
+
+    return {
+      href,
+      label: file.name.trim() || "PDF-bestand",
+    };
   }
 
   function insertImageMarkup(image: UploadedImage, caption = "") {
@@ -552,20 +581,69 @@ export default function ClassicTextEditor({
       .run();
   }
 
-  async function handleSingleImageUpload() {
+  function insertDocumentMarkup(document: UploadedDocument) {
+    if (isSourceMode || !editor) {
+      updateSourceValue(`${sourceValue}${buildDocumentHtml(document)}`);
+      return;
+    }
+
+    editor
+      .chain()
+      .focus()
+      .insertContent([
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text: document.label,
+              marks: [
+                {
+                  type: "link",
+                  attrs: {
+                    href: document.href,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: "paragraph",
+        },
+      ])
+      .run();
+  }
+
+  async function handleSingleMediaUpload() {
     setError(null);
 
     try {
       setIsUploading(true);
-      const files = await pickFiles({ multiple: false });
+      const files = await pickFiles({
+        accept: "image/*,application/pdf",
+        multiple: false,
+      });
       if (!files.length) return;
 
-      const [image] = await uploadImages(files);
+      const [file] = files;
+
+      if (isPdfFile(file)) {
+        const document = await uploadDocument(file);
+        insertDocumentMarkup(document);
+        return;
+      }
+
+      if (!isImageFile(file)) {
+        throw new Error("Alleen afbeeldingen en PDF-bestanden zijn toegestaan.");
+      }
+
+      const [image] = await uploadImages([file]);
       const caption = window.prompt("Bijschrift (optioneel)", "") ?? "";
       insertImageMarkup(image, caption);
     } catch (uploadError) {
-      console.error("Single image upload failed", uploadError);
-      setError("Afbeelding uploaden mislukt.");
+      console.error("Single media upload failed", uploadError);
+      setError("Media uploaden mislukt.");
     } finally {
       setIsUploading(false);
     }
@@ -576,8 +654,12 @@ export default function ClassicTextEditor({
 
     try {
       setIsUploading(true);
-      const files = await pickFiles({ multiple: true });
+      const files = await pickFiles({ accept: "image/*", multiple: true });
       if (!files.length) return;
+
+      if (files.some((file) => !isImageFile(file))) {
+        throw new Error("Alleen afbeeldingen kunnen in een galerij worden geplaatst.");
+      }
 
       const uploadedImages = await uploadImages(files);
       insertGalleryMarkup(uploadedImages);
@@ -685,7 +767,7 @@ export default function ClassicTextEditor({
         <div className="classic-text-editor__group">
           <ToolbarButton
             disabled={isUploading}
-            onClick={handleSingleImageUpload}
+            onClick={handleSingleMediaUpload}
           >
             {isUploading ? "Uploaden..." : "Media toevoegen"}
           </ToolbarButton>

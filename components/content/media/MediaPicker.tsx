@@ -8,7 +8,16 @@ type MediaAsset = {
   id: string;
   file_path: string;
   alt_text: string | null;
+  mime_type: string | null;
 };
+
+function hasImageFileExtension(filePath: string) {
+  return /\.(avif|bmp|gif|heic|heif|jpe?g|png|svg|webp)$/i.test(filePath);
+}
+
+function isImageAsset(asset: MediaAsset) {
+  return asset.mime_type?.startsWith("image/") || hasImageFileExtension(asset.file_path);
+}
 
 export default function MediaPicker({
   onSelect,
@@ -23,9 +32,11 @@ export default function MediaPicker({
   useEffect(() => {
     supabase
       .from("media_assets")
-      .select("*")
+      .select("id, file_path, alt_text, mime_type")
       .order("created_at", { ascending: false })
-      .then(({ data }) => setMedia(data || []));
+      .then(({ data }) =>
+        setMedia(((data as MediaAsset[] | null) ?? []).filter(isImageAsset))
+      );
   }, []);
 
   function handleSelect(id: string) {

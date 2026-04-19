@@ -10,6 +10,7 @@ type MediaAsset = {
   id: string;
   file_path: string;
   alt_text: string | null;
+  mime_type: string | null;
   created_at?: string | null;
 };
 
@@ -42,6 +43,22 @@ function friendlyUploadError(error: unknown) {
 function resolvePublicUrl(filePath: string) {
   if (filePath.startsWith("http")) return filePath;
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${filePath}`;
+}
+
+function hasImageFileExtension(filePath: string) {
+  return /\.(avif|bmp|gif|heic|heif|jpe?g|png|svg|webp)$/i.test(filePath);
+}
+
+function hasPdfFileExtension(filePath: string) {
+  return /\.pdf$/i.test(filePath);
+}
+
+function isImageAsset(asset: MediaAsset) {
+  return asset.mime_type?.startsWith("image/") || hasImageFileExtension(asset.file_path);
+}
+
+function isPdfAsset(asset: MediaAsset) {
+  return asset.mime_type === "application/pdf" || hasPdfFileExtension(asset.file_path);
 }
 
 function toStoragePath(filePath: string) {
@@ -84,6 +101,44 @@ function folderPathFromAsset(filePath: string) {
   const parts = rel.split("/").filter(Boolean);
   if (parts.length <= 1) return "library";
   return parts.slice(0, -1).join("/");
+}
+
+function assetDisplayName(filePath: string) {
+  return relativePath(filePath).split("/").filter(Boolean).pop() ?? filePath;
+}
+
+function AssetPreview({
+  asset,
+  className,
+}: {
+  asset: MediaAsset;
+  className: string;
+}) {
+  if (isImageAsset(asset)) {
+    return (
+      <Image
+        src={resolvePublicUrl(asset.file_path)}
+        alt={asset.alt_text ?? ""}
+        width={420}
+        height={240}
+        unoptimized
+        className={className}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${className} flex flex-col items-center justify-center gap-2 border border-dashed border-stone-300 bg-stone-50 px-4 text-center text-stone-600`}
+    >
+      <div className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
+        {isPdfAsset(asset) ? "PDF" : "Bestand"}
+      </div>
+      <div className="max-w-full break-all text-sm font-medium text-stone-700">
+        {assetDisplayName(asset.file_path)}
+      </div>
+    </div>
+  );
 }
 
 export default function MediaLibraryClient({ initialTab = "library" }: Props) {
@@ -156,7 +211,7 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
     setLoading(true);
     const { data } = await supabase
       .from("media_assets")
-      .select("id, file_path, alt_text, created_at")
+      .select("id, file_path, alt_text, mime_type, created_at")
       .order("created_at", { ascending: false });
 
     setAssets((data ?? []) as MediaAsset[]);
@@ -703,12 +758,8 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
                         onClick={() => setSelectedId(asset.id)}
                         className="block w-full text-left"
                       >
-                        <Image
-                          src={resolvePublicUrl(asset.file_path)}
-                          alt={asset.alt_text ?? ""}
-                          width={320}
-                          height={220}
-                          unoptimized
+                        <AssetPreview
+                          asset={asset}
                           className="h-28 w-full rounded object-cover"
                         />
                       </button>
@@ -725,13 +776,9 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
               <p className="text-sm text-gray-500">{t.selectToEdit}</p>
             ) : (
               <>
-                <Image
-                  src={resolvePublicUrl(selectedAsset.file_path)}
-                  alt={selectedAsset.alt_text ?? ""}
-                  width={420}
-                  height={240}
-                  unoptimized
-                  className="h-auto w-full rounded border object-cover"
+                <AssetPreview
+                  asset={selectedAsset}
+                  className="h-auto min-h-52 w-full rounded object-cover"
                 />
 
                 <div className="space-y-1 text-xs text-gray-600">
