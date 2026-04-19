@@ -9,6 +9,10 @@ import type { LanguageOption } from "@/lib/i18n/languages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import type { AccordionSection } from "@/lib/content/accordionSections";
+import {
+  normalizeContentItemType,
+  type ContentItemType,
+} from "@/lib/content/item-types";
 
 type ContentStatus = "all" | "draft" | "published" | "archived";
 type SaveMode = "save_draft" | "publish_or_update";
@@ -26,6 +30,7 @@ type Props = {
     featured_image_alt: string | null;
     language: string;
     credit_cost: number | null;
+    item_type?: string | null;
   };
   categoryTerms: Term[];
   selectedCategoryIds: string[];
@@ -90,6 +95,7 @@ export default function ContentEditorClient({
     featured_image_alt: item.featured_image_alt ?? "",
     language: item.language ?? "nl",
     credit_cost: item.credit_cost ?? 0,
+    item_type: normalizeContentItemType(item.item_type),
     category_term_ids: selectedCategoryIds,
     tag_term_ids: selectedTagIds,
     accordion_sections: accordionSections,
@@ -114,6 +120,7 @@ export default function ContentEditorClient({
       featured_image_alt: string;
       language: string;
       credit_cost: number;
+      item_type: ContentItemType;
       category_term_ids: string[];
       tag_term_ids: string[];
       accordion_sections: AccordionSection[];
@@ -172,6 +179,7 @@ export default function ContentEditorClient({
         featured_image_alt: draft.featured_image_alt || null,
         language: draft.language,
         credit_cost: draft.credit_cost,
+        item_type: draft.item_type,
         category_term_ids: draft.category_term_ids,
         tag_term_ids: draft.tag_term_ids,
         accordion_sections: draft.accordion_sections,

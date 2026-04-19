@@ -1,6 +1,3 @@
-// Public localized content page renderer
-// Supports published content + admin-only preview mode (Optie A)
-
 import { notFound } from "next/navigation";
 import ContentLayout from "@/components/content/ContentLayout";
 import PublicContentArticle from "@/components/content/PublicContentArticle";
@@ -27,6 +24,9 @@ import {
   isContentProgressStorageReady,
 } from "@/lib/content/progress";
 import { toContentProgressSnapshot } from "@/lib/content/progress-types";
+import { extractFirstPdfSourceFromHtml } from "@/lib/content/pdf-links";
+import { isPdfContentItem } from "@/lib/content/item-types";
+import PdfViewerScreen from "@/components/content/PdfViewerScreen";
 
 type PageProps = {
   params: Promise<{
@@ -81,9 +81,7 @@ export default async function ContentPage({
     ? await (async () => {
         const { data } = await supabase
           .from("content_items")
-          .select(
-            "id, slug, title, body, status, language, credit_cost, excerpt, featured_image_url, featured_image_alt"
-          )
+          .select("*")
           .eq("slug", slug)
           .maybeSingle();
 
@@ -156,11 +154,6 @@ export default async function ContentPage({
       ? await getUserContentProgress(user.id, item.id)
       : null;
 
-  /* -------------------------------------------------
-   * 4️⃣ Blocks ophalen
-   * ------------------------------------------------- */
-  const rawBlocks = await getPublishedBlocks(item.id);
-  const blocks = parseContentBlocks(rawBlocks ?? []);
   const { category, themeNavigation } = await loadSupplementaryContext(item.id);
   const isSeedCategory = Boolean(category?.is_homepage_seed);
   const isLegalContent = isLegalContentMetadata({
@@ -173,6 +166,47 @@ export default async function ContentPage({
     : category
       ? `/content?category=${category.slug}`
       : "/content";
+
+  if (isPdfContentItem(item.item_type)) {
+    const pdfSrc =
+      extractFirstPdfSourceFromHtml(item.body) ??
+      extractFirstPdfSourceFromHtml(item.excerpt);
+
+    if (pdfSrc) {
+      void logServerEvent({
+        eventName: isPreview ? "content_preview_opened" : "content_viewed",
+        eventCategory: "content",
+        eventLabel: item.id,
+        path: `/${locale}/${slug}`,
+      });
+
+      const viewer = (
+        <ContentLayout isPreview={isPreview}>
+          <PdfViewerScreen
+            pdfSrc={pdfSrc}
+            language={language}
+            backHref={backHref}
+          />
+        </ContentLayout>
+      );
+
+      if (!isPreview && scope === "book" && user) {
+        return (
+          <ProtectedReaderShell watermarkText={user.email ?? user.id}>
+            {viewer}
+          </ProtectedReaderShell>
+        );
+      }
+
+      return viewer;
+    }
+  }
+
+  /* -------------------------------------------------
+   * 4️⃣ Blocks ophalen
+   * ------------------------------------------------- */
+  const rawBlocks = await getPublishedBlocks(item.id);
+  const blocks = parseContentBlocks(rawBlocks ?? []);
 
   /* -------------------------------------------------
    * 5️⃣ Render (IDENTIEK aan live)

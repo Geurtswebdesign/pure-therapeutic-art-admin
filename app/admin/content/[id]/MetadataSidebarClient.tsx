@@ -6,6 +6,7 @@ import { updateContentItem } from "@/lib/content/actions";
 import { buildLanguageOptions } from "@/lib/i18n/languages";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import type { ContentStatus } from "@/components/content/MetadataSidebar";
+import { normalizeContentItemType } from "@/lib/content/item-types";
 
 export default function MetadataSidebarClient({
   item,
@@ -15,6 +16,7 @@ export default function MetadataSidebarClient({
     status: ContentStatus;
     slug: string | null;
     language: string;
+    item_type?: string | null;
     credit_cost?: number | null;
     excerpt?: string | null;
     published_at?: string | null;
@@ -31,6 +33,7 @@ export default function MetadataSidebarClient({
     featured_image_alt: item.featured_image_alt ?? "",
     language: item.language ?? "nl",
     credit_cost: item.credit_cost ?? 0,
+    item_type: normalizeContentItemType(item.item_type),
     category_term_ids: [] as string[],
     tag_term_ids: [] as string[],
   });
@@ -59,6 +62,7 @@ export default function MetadataSidebarClient({
           featured_image_alt: draft.featured_image_alt || null,
           language: draft.language,
           credit_cost: draft.credit_cost,
+          item_type: draft.item_type,
           category_term_ids: draft.category_term_ids,
           tag_term_ids: draft.tag_term_ids,
         });

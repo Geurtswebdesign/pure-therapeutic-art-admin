@@ -12,6 +12,7 @@ import type { UiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 import type { AccordionSection } from "@/lib/content/accordionSections";
+import type { ContentItemType } from "@/lib/content/item-types";
 
 type ContentStatus = "all" | "draft" | "published" | "archived";
 type SaveMode = "save_draft" | "publish_or_update";
@@ -73,6 +74,7 @@ export default function NewContentEditorClient({
     featured_image_alt: "",
     language: initialLanguage,
     credit_cost: 0,
+    item_type: "article" as ContentItemType,
     category_term_ids: [] as string[],
     tag_term_ids: [] as string[],
     accordion_sections: [] as AccordionSection[],
@@ -96,6 +98,7 @@ export default function NewContentEditorClient({
       featured_image_alt: string;
       language: string;
       credit_cost: number;
+      item_type: ContentItemType;
       category_term_ids: string[];
       tag_term_ids: string[];
       accordion_sections: AccordionSection[];
@@ -163,6 +166,7 @@ export default function NewContentEditorClient({
         featured_image_alt: draft.featured_image_alt || null,
         language: draft.language,
         credit_cost: draft.credit_cost,
+        item_type: draft.item_type,
         category_term_ids: draft.category_term_ids,
         tag_term_ids: draft.tag_term_ids,
         accordion_sections: draft.accordion_sections,
@@ -230,6 +234,7 @@ export default function NewContentEditorClient({
           status: draft.status,
           slug: draft.slug,
           language: draft.language,
+          item_type: draft.item_type,
         }}
         draft={draft}
         dirty={dirty}

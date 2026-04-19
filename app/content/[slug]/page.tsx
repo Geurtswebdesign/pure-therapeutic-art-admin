@@ -22,6 +22,9 @@ import {
 } from "@/lib/content/progress";
 import { toContentProgressSnapshot } from "@/lib/content/progress-types";
 import { stripRichText } from "@/lib/content/stripRichText";
+import { extractFirstPdfSourceFromHtml } from "@/lib/content/pdf-links";
+import { isPdfContentItem } from "@/lib/content/item-types";
+import PdfViewerScreen from "@/components/content/PdfViewerScreen";
 
 export default async function ContentDetailPage({
   params,
@@ -90,7 +93,6 @@ export default async function ContentDetailPage({
       ? await getUserContentProgress(user.id, item.id)
       : null;
 
-  const blocks = await getPublishedBlocks(item.id);
   const { category, themeNavigation } = await loadSupplementaryContext(item.id);
   const isSeedCategory = Boolean(category?.is_homepage_seed);
   const isLegalContent = isLegalContentMetadata({
@@ -103,6 +105,34 @@ export default async function ContentDetailPage({
     : category
       ? `/content?category=${category.slug}`
       : "/content";
+
+  if (isPdfContentItem(item.item_type)) {
+    const pdfSrc =
+      extractFirstPdfSourceFromHtml(item.body) ??
+      extractFirstPdfSourceFromHtml(item.excerpt);
+
+    if (pdfSrc) {
+      const viewer = (
+        <PdfViewerScreen
+          pdfSrc={pdfSrc}
+          language={language}
+          backHref={backHref}
+        />
+      );
+
+      if (scope === "book" && user) {
+        return (
+          <ProtectedReaderShell watermarkText={user.email ?? user.id}>
+            {viewer}
+          </ProtectedReaderShell>
+        );
+      }
+
+      return viewer;
+    }
+  }
+
+  const blocks = await getPublishedBlocks(item.id);
 
   const article = (
     <PublicContentArticle

@@ -12,6 +12,7 @@ import {
 } from "@/lib/content/accordionSections";
 import { parseContentBlocks } from "@/lib/content/renderer";
 import { translateContentPayload } from "@/lib/content/translation-service";
+import { normalizeContentItemType } from "@/lib/content/item-types";
 
 type ContentItemRow = {
   id: string;
@@ -23,6 +24,7 @@ type ContentItemRow = {
   featured_image_url: string | null;
   credit_cost: number | null;
   language: string | null;
+  item_type?: string | null;
   translation_source_id?: string | null;
 };
 
@@ -118,7 +120,7 @@ export async function translateContentItemToLanguage(input: {
   const { data: sourceItem, error: sourceError } = await supabase
     .from("content_items")
     .select(
-      "id, title, body, slug, excerpt, featured_image_alt, featured_image_url, credit_cost, language, translation_source_id"
+      "id, title, body, slug, excerpt, featured_image_alt, featured_image_url, credit_cost, language, item_type, translation_source_id"
     )
     .eq("id", input.contentItemId)
     .maybeSingle<ContentItemRow>();
@@ -204,6 +206,7 @@ export async function translateContentItemToLanguage(input: {
       featured_image_alt: translated.featuredImageAlt,
       featured_image_url: sourceItem.featured_image_url,
       credit_cost: sourceItem.credit_cost ?? 0,
+      item_type: normalizeContentItemType(sourceItem.item_type),
       language: normalizedTargetLanguage,
       status: "draft",
       translation_source_id: translationRootId,

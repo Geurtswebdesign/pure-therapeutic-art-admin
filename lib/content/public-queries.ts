@@ -53,6 +53,7 @@ type PublicContentRow = {
   credit_cost: number | null;
   featured_image_url: string | null;
   featured_image_alt: string | null;
+  item_type?: string | null;
   translation_source_id?: string | null;
   body?: string | null;
   status?: string | null;

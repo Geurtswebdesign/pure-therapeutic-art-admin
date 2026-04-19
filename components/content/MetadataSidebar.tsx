@@ -16,6 +16,10 @@ import { getAppMessages } from "@/lib/i18n/appMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { resolveAdminBrowserHref } from "@/lib/site/admin-client-paths";
 import { getPublicAreaUrl } from "@/lib/site/urls";
+import {
+  CONTENT_ITEM_TYPES,
+  type ContentItemType,
+} from "@/lib/content/item-types";
 
 export type ContentStatus = "all" | "draft" | "published" | "archived";
 
@@ -28,6 +32,7 @@ type DraftState = {
   featured_image_alt: string;
   language: string;
   credit_cost: number;
+  item_type: ContentItemType;
   category_term_ids: string[];
   tag_term_ids: string[];
 };
@@ -39,6 +44,7 @@ type MetadataSidebarProps = {
     status: ContentStatus;
     slug: string | null;
     language: string;
+    item_type?: string | null;
   };
   draft: DraftState;
   dirty: boolean;
@@ -430,6 +436,24 @@ export default function MetadataSidebar({
               {languageOptions.map((lang) => (
                 <option key={lang.code} value={lang.code}>
                   {lang.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block space-y-1">
+            <span className="block text-xs text-gray-600">{t.contentType}</span>
+            <select
+              value={draft.item_type}
+              onChange={(e) =>
+                onDraftChange({
+                  item_type: e.target.value as ContentItemType,
+                })
+              }
+              className="w-full rounded border px-2 py-1 text-sm"
+            >
+              {CONTENT_ITEM_TYPES.map((itemType) => (
+                <option key={itemType} value={itemType}>
+                  {itemType === "pdf" ? t.contentTypePdf : t.contentTypeArticle}
                 </option>
               ))}
             </select>

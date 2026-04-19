@@ -7,6 +7,10 @@ import {
 } from "@/lib/content/accordionSections";
 import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import {
+  normalizeContentItemType,
+  type ContentItemType,
+} from "@/lib/content/item-types";
+import {
   DEFAULT_PRIMARY_LANGUAGE,
   getLanguageBaseCode,
   normalizeLanguageCode,
@@ -77,6 +81,7 @@ export async function updateContentItem({
   featured_image_url,
   featured_image_alt,
   credit_cost,
+  item_type,
   language,
   category_term_ids,
   tag_term_ids,
@@ -92,6 +97,7 @@ export async function updateContentItem({
   featured_image_url?: string | null;
   featured_image_alt?: string | null;
   credit_cost?: number;
+  item_type?: ContentItemType;
   language?: string;
   category_term_ids?: string[];
   tag_term_ids?: string[];
@@ -124,6 +130,7 @@ export async function updateContentItem({
     featured_image_url: string | null;
     featured_image_alt: string | null;
     credit_cost: number;
+    item_type: ContentItemType;
     language: string;
   }> = {};
 
@@ -144,6 +151,9 @@ export async function updateContentItem({
   }
   if (featured_image_alt !== undefined) update.featured_image_alt = featured_image_alt;
   if (credit_cost !== undefined) update.credit_cost = credit_cost;
+  if (item_type !== undefined) {
+    update.item_type = normalizeContentItemType(item_type);
+  }
   if (language !== undefined) update.language = language;
 
   const hasItemChanges = Object.keys(update).length > 0;
