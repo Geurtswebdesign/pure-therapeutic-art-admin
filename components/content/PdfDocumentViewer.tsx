@@ -35,6 +35,13 @@ const PDF_JS_SCRIPT_SRC =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
 const PDF_JS_WORKER_SRC =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const MIN_ZOOM_LEVEL = 0.75;
+const MAX_ZOOM_LEVEL = 3;
+const ZOOM_STEP = 0.25;
+
+function clampZoomLevel(value: number) {
+  return Math.min(MAX_ZOOM_LEVEL, Math.max(MIN_ZOOM_LEVEL, value));
+}
 
 function loadPdfJs() {
   return new Promise<PdfJsLibrary>((resolve, reject) => {
@@ -85,10 +92,16 @@ export default function PdfDocumentViewer({
   src,
   loadingLabel,
   errorLabel,
+  zoomOutLabel,
+  zoomInLabel,
+  zoomResetLabel,
 }: {
   src: string;
   loadingLabel: string;
   errorLabel: string;
+  zoomOutLabel: string;
+  zoomInLabel: string;
+  zoomResetLabel: string;
 }) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const canvasRefs = useRef<Array<HTMLCanvasElement | null>>([]);
@@ -100,6 +113,7 @@ export default function PdfDocumentViewer({
   const [pageCount, setPageCount] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   useEffect(() => {
     const element = wrapperRef.current;
@@ -196,7 +210,7 @@ export default function PdfDocumentViewer({
 
           const page = await activeDocument.getPage(pageIndex + 1);
           const baseViewport = page.getViewport({ scale: 1 });
-          const cssScale = containerWidth / baseViewport.width;
+          const cssScale = (containerWidth / baseViewport.width) * zoomLevel;
           const viewport = page.getViewport({ scale: cssScale });
           const outputScale = window.devicePixelRatio || 1;
           const canvas = canvasRefs.current[pageIndex];
@@ -240,10 +254,40 @@ export default function PdfDocumentViewer({
     return () => {
       cancelled = true;
     };
-  }, [containerWidth, pageCount]);
+  }, [containerWidth, pageCount, zoomLevel]);
 
   return (
     <div ref={wrapperRef} className="w-full">
+      <div className="mb-4 flex items-center justify-end gap-2">
+        <button
+          type="button"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-stone-300 bg-white text-lg text-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={() => setZoomLevel((current) => clampZoomLevel(current - ZOOM_STEP))}
+          aria-label={zoomOutLabel}
+          disabled={zoomLevel <= MIN_ZOOM_LEVEL}
+        >
+          -
+        </button>
+        <button
+          type="button"
+          className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={() => setZoomLevel(1)}
+          aria-label={zoomResetLabel}
+          disabled={Math.abs(zoomLevel - 1) < 0.01}
+        >
+          {Math.round(zoomLevel * 100)}%
+        </button>
+        <button
+          type="button"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-stone-300 bg-white text-lg text-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={() => setZoomLevel((current) => clampZoomLevel(current + ZOOM_STEP))}
+          aria-label={zoomInLabel}
+          disabled={zoomLevel >= MAX_ZOOM_LEVEL}
+        >
+          +
+        </button>
+      </div>
+
       {status === "loading" ? (
         <div className="rounded-[1.25rem] border border-stone-200 bg-white px-5 py-6 text-sm text-stone-600">
           {loadingLabel}
@@ -257,19 +301,20 @@ export default function PdfDocumentViewer({
       ) : null}
 
       <div
-        className={`space-y-4 ${status === "ready" ? "block" : "hidden"}`}
+        className={`space-y-4 overflow-x-auto pb-1 ${status === "ready" ? "block" : "hidden"}`}
         aria-live="polite"
+        style={{ touchAction: "pan-x pan-y pinch-zoom" }}
       >
         {Array.from({ length: pageCount }).map((_, pageIndex) => (
           <div
             key={`pdf-page-${pageIndex + 1}`}
-            className="overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm"
+            className="min-w-fit overflow-hidden rounded-[1.25rem] border border-stone-200 bg-white shadow-sm"
           >
             <canvas
               ref={(node) => {
                 canvasRefs.current[pageIndex] = node;
               }}
-              className="block h-auto w-full"
+              className="block h-auto max-w-none"
             />
           </div>
         ))}

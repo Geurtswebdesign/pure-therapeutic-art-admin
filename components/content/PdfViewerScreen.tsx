@@ -41,6 +41,9 @@ export default function PdfViewerScreen({
             src={pdfSrc}
             loadingLabel={t.loading}
             errorLabel={t.loadError}
+            zoomOutLabel={t.zoomOut}
+            zoomInLabel={t.zoomIn}
+            zoomResetLabel={t.zoomReset}
           />
 
           <div className="text-center text-sm leading-6 text-stone-600">

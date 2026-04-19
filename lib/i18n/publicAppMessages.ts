@@ -63,6 +63,9 @@ export type PublicAppMessages = {
     openExternal: string;
     loading: string;
     loadError: string;
+    zoomOut: string;
+    zoomIn: string;
+    zoomReset: string;
     fallbackPrefix: string;
     fallbackLink: string;
   };
@@ -245,6 +248,9 @@ const nl: PublicAppMessages = {
     openExternal: "Open in browser",
     loading: "PDF wordt geladen...",
     loadError: "PDF laden in de app is mislukt. Open het bestand in de browser.",
+    zoomOut: "Uitzoomen",
+    zoomIn: "Inzoomen",
+    zoomReset: "Zoom resetten",
     fallbackPrefix: "Zie je geen PDF?",
     fallbackLink: "Open het bestand hier",
   },
@@ -443,6 +449,9 @@ const en: PublicAppMessages = {
     openExternal: "Open in browser",
     loading: "Loading PDF...",
     loadError: "Loading the PDF inside the app failed. Open the file in the browser.",
+    zoomOut: "Zoom out",
+    zoomIn: "Zoom in",
+    zoomReset: "Reset zoom",
     fallbackPrefix: "If the PDF does not appear,",
     fallbackLink: "open the file here",
   },
@@ -643,6 +652,9 @@ const de: PublicAppMessages = {
     openExternal: "Im Browser offnen",
     loading: "PDF wird geladen...",
     loadError: "Die PDF konnte in der App nicht geladen werden. Offne die Datei im Browser.",
+    zoomOut: "Herauszoomen",
+    zoomIn: "Hineinzoomen",
+    zoomReset: "Zoom zurucksetzen",
     fallbackPrefix: "Falls die PDF nicht erscheint,",
     fallbackLink: "offne die Datei hier",
   },
