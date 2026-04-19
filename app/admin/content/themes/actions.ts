@@ -114,6 +114,10 @@ function validateSectionSlugs(sections: ThemePageDraft["sections"]) {
   }
 }
 
+function buildTemporarySectionSlug(sectionId: string) {
+  return `tmp-${sectionId}-${crypto.randomUUID()}`;
+}
+
 async function validateThemeUniqueness(
   input: ThemePageDraft,
   supabase: ReturnType<typeof createAdminClient>,
@@ -218,7 +222,11 @@ async function saveThemePageInternal(
     throw new Error("Geef het thema een slug.");
   }
 
-  validateSectionSlugs(input.sections);
+  const sectionsToPersist = input.sections.filter((section) =>
+    section.title.trim()
+  );
+
+  validateSectionSlugs(sectionsToPersist);
   await validatePrimaryCategoryTerm(input.primaryCategoryTermId || null, supabase);
   await validateThemeUniqueness(input, supabase, themeSlug);
 
@@ -274,7 +282,7 @@ async function saveThemePageInternal(
 
   const { data: existingSections, error: existingSectionsError } = await supabase
     .from("content_theme_sections")
-    .select("id")
+    .select("id, slug")
     .eq("theme_page_id", themeId);
 
   if (existingSectionsError) {
@@ -283,10 +291,19 @@ async function saveThemePageInternal(
     );
   }
 
-  const existingSectionIds = new Set(
-    (existingSections ?? [])
-      .map((section) => section.id)
-      .filter((value): value is string => Boolean(value))
+  const existingSectionRows =
+    (existingSections ?? []).filter(
+      (
+        section
+      ): section is {
+        id: string;
+        slug: string;
+      } => Boolean(section.id && section.slug)
+    ) ?? [];
+
+  const existingSectionIds = new Set(existingSectionRows.map((section) => section.id));
+  const existingSectionSlugById = new Map(
+    existingSectionRows.map((section) => [section.id, section.slug])
   );
 
   const contentItemIds = Array.from(
@@ -321,90 +338,15 @@ async function saveThemePageInternal(
     }
   }
 
-  const keptSectionIds = new Set<string>();
-
-  for (const [sectionIndex, section] of input.sections.entries()) {
-    if (!section.title.trim()) continue;
-
-    const sectionSlug = getNormalizedSectionSlug(section);
-
-    const sectionPayload = {
-      theme_page_id: themeId,
-      slug: sectionSlug,
-      title: section.title,
-      description: normalizeOptionalText(section.description),
-      layout_style: section.layoutStyle,
-      section_image_url: normalizeSupabaseStorageUrl(
-        normalizeOptionalText(section.sectionImageUrl)
-      ),
-      section_image_alt: normalizeOptionalText(section.sectionImageAlt),
-      section_image_position: section.sectionImagePosition,
-      sort_order: Number.isFinite(section.sortOrder)
-        ? section.sortOrder
-        : (sectionIndex + 1) * 10,
-    };
-
-    let sectionId = section.id;
-
-    if (sectionId) {
-      const { error } = await supabase
-        .from("content_theme_sections")
-        .update(sectionPayload)
-        .eq("id", sectionId);
-
-      if (error) {
-        throw new Error(`Sectie opslaan mislukt: ${error.message}`);
-      }
-    } else {
-      const { data, error } = await supabase
-        .from("content_theme_sections")
-        .insert(sectionPayload)
-        .select("id")
-        .single<{ id: string }>();
-
-      if (error || !data) {
-        throw new Error(`Sectie aanmaken mislukt: ${error?.message || "onbekende fout"}`);
-      }
-
-      sectionId = data.id;
-    }
-
-    keptSectionIds.add(sectionId);
-    const normalizedItems = normalizeSectionItems(
-      section,
-      contentItemFamilyIdByItemId
-    ).map((item) => ({
-      ...item,
-      theme_section_id: sectionId,
-    }));
-
-    const { error: deleteItemsError } = await supabase
-      .from("content_theme_section_items")
-      .delete()
-      .eq("theme_section_id", sectionId);
-
-    if (deleteItemsError) {
-      throw new Error(
-        `Bestaande sectie-items verwijderen mislukt: ${deleteItemsError.message}`
-      );
-    }
-
-    if (normalizedItems.length) {
-      const { error: insertItemsError } = await supabase
-        .from("content_theme_section_items")
-        .insert(normalizedItems);
-
-      if (insertItemsError) {
-        throw new Error(
-          `Sectie-items opslaan mislukt: ${insertItemsError.message}`
-        );
-      }
-    }
-  }
-
+  const keptSectionIds = new Set(
+    sectionsToPersist
+      .map((section) => section.id)
+      .filter((value): value is string => Boolean(value))
+  );
   const removableSectionIds = Array.from(existingSectionIds).filter(
     (id) => !keptSectionIds.has(id)
   );
+
   if (removableSectionIds.length) {
     const { error } = await supabase
       .from("content_theme_sections")
@@ -414,6 +356,144 @@ async function saveThemePageInternal(
     if (error) {
       throw new Error(`Oude secties verwijderen mislukt: ${error.message}`);
     }
+  }
+
+  const sectionsNeedingTemporarySlug = sectionsToPersist.flatMap((section) => {
+    if (!section.id) {
+      return [];
+    }
+
+    const currentSlug = existingSectionSlugById.get(section.id);
+    const finalSlug = getNormalizedSectionSlug(section);
+
+    if (!currentSlug || currentSlug === finalSlug) {
+      return [];
+    }
+
+    return [
+      {
+        id: section.id,
+        originalSlug: currentSlug,
+        temporarySlug: buildTemporarySectionSlug(section.id),
+      },
+    ];
+  });
+
+  const sectionsPendingRestore = new Map(
+    sectionsNeedingTemporarySlug.map((section) => [section.id, section])
+  );
+
+  for (const section of sectionsNeedingTemporarySlug) {
+    const { error } = await supabase
+      .from("content_theme_sections")
+      .update({ slug: section.temporarySlug })
+      .eq("id", section.id);
+
+    if (error) {
+      throw new Error(`Tijdelijke sectie-slug opslaan mislukt: ${error.message}`);
+    }
+  }
+
+  try {
+    for (const [sectionIndex, section] of input.sections.entries()) {
+      if (!section.title.trim()) continue;
+
+      const sectionSlug = getNormalizedSectionSlug(section);
+
+      const sectionPayload = {
+        theme_page_id: themeId,
+        slug: sectionSlug,
+        title: section.title,
+        description: normalizeOptionalText(section.description),
+        layout_style: section.layoutStyle,
+        section_image_url: normalizeSupabaseStorageUrl(
+          normalizeOptionalText(section.sectionImageUrl)
+        ),
+        section_image_alt: normalizeOptionalText(section.sectionImageAlt),
+        section_image_position: section.sectionImagePosition,
+        sort_order: Number.isFinite(section.sortOrder)
+          ? section.sortOrder
+          : (sectionIndex + 1) * 10,
+      };
+
+      let sectionId = section.id;
+
+      if (sectionId) {
+        const { error } = await supabase
+          .from("content_theme_sections")
+          .update(sectionPayload)
+          .eq("id", sectionId);
+
+        if (error) {
+          throw new Error(`Sectie opslaan mislukt: ${error.message}`);
+        }
+
+        sectionsPendingRestore.delete(sectionId);
+      } else {
+        const { data, error } = await supabase
+          .from("content_theme_sections")
+          .insert(sectionPayload)
+          .select("id")
+          .single<{ id: string }>();
+
+        if (error || !data) {
+          throw new Error(
+            `Sectie aanmaken mislukt: ${error?.message || "onbekende fout"}`
+          );
+        }
+
+        sectionId = data.id;
+      }
+
+      const normalizedItems = normalizeSectionItems(
+        section,
+        contentItemFamilyIdByItemId
+      ).map((item) => ({
+        ...item,
+        theme_section_id: sectionId,
+      }));
+
+      const { error: deleteItemsError } = await supabase
+        .from("content_theme_section_items")
+        .delete()
+        .eq("theme_section_id", sectionId);
+
+      if (deleteItemsError) {
+        throw new Error(
+          `Bestaande sectie-items verwijderen mislukt: ${deleteItemsError.message}`
+        );
+      }
+
+      if (normalizedItems.length) {
+        const { error: insertItemsError } = await supabase
+          .from("content_theme_section_items")
+          .insert(normalizedItems);
+
+        if (insertItemsError) {
+          throw new Error(
+            `Sectie-items opslaan mislukt: ${insertItemsError.message}`
+          );
+        }
+      }
+    }
+  } catch (error) {
+    for (const section of sectionsPendingRestore.values()) {
+      const { error: restoreError } = await supabase
+        .from("content_theme_sections")
+        .update({ slug: section.originalSlug })
+        .eq("id", section.id)
+        .eq("slug", section.temporarySlug);
+
+      if (restoreError) {
+        console.error(
+          "theme section slug restore failed",
+          section.id,
+          restoreError.message
+        );
+      }
+    }
+
+    throw error;
   }
 
   revalidatePath("/admin/content/themes");
