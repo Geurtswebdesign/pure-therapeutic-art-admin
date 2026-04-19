@@ -8,6 +8,7 @@ const DEFAULT_ENV_FILES = [".env.local", ".env.production", ".env"];
 const DEFAULT_PRIMARY_LANGUAGE = "nl";
 const DEFAULT_SUPPORTED_LANGUAGES = ["nl", "en", "de"];
 const DEFAULT_TIMEOUT_MS = 180_000;
+const DEFAULT_CONCURRENCY = 3;
 
 function normalizeLanguageCode(value) {
   return String(value ?? "").trim().replace(/_/g, "-").toLowerCase();
@@ -69,6 +70,7 @@ function parseArgs(argv) {
   const args = {
     dryRun: false,
     limit: null,
+    concurrency: null,
     envFiles: [],
     languages: [],
   };
@@ -82,6 +84,12 @@ function parseArgs(argv) {
     if (token === "--limit") {
       const next = Number.parseInt(argv[index + 1] ?? "", 10);
       args.limit = Number.isFinite(next) && next > 0 ? next : null;
+      index += 1;
+      continue;
+    }
+    if (token === "--concurrency") {
+      const next = Number.parseInt(argv[index + 1] ?? "", 10);
+      args.concurrency = Number.isFinite(next) && next > 0 ? next : null;
       index += 1;
       continue;
     }
@@ -115,11 +123,27 @@ function printHelp() {
       "Opties:",
       "  --dry-run           Laat zien welke vertalingen ontbreken zonder writes",
       "  --limit <aantal>    Stop na dit aantal nieuw aan te maken vertalingen",
+      `  --concurrency <n>  Aantal parallelle vertalingen tegelijk (standaard: ${DEFAULT_CONCURRENCY})`,
       "  --language <code>   Alleen deze doeltaal meenemen, mag meerdere keren",
       "  --env-file <pad>    Gebruik expliciet dit env-bestand in plaats van de defaults",
       "  --help              Toon deze hulptekst",
     ].join("\n")
   );
+}
+
+function getTranslationConcurrency(argsConcurrency) {
+  if (Number.isFinite(argsConcurrency) && argsConcurrency > 0) {
+    return argsConcurrency;
+  }
+
+  const envValue = process.env.CONTENT_TRANSLATION_CONCURRENCY?.trim();
+  const parsedValue = envValue ? Number.parseInt(envValue, 10) : NaN;
+
+  if (Number.isFinite(parsedValue) && parsedValue > 0) {
+    return parsedValue;
+  }
+
+  return DEFAULT_CONCURRENCY;
 }
 
 async function loadEnvFiles(fileNames = DEFAULT_ENV_FILES) {
@@ -576,6 +600,28 @@ async function buildUniqueSlug(supabase, preferredSlug, targetLanguage) {
   throw new Error("Kon geen unieke slug genereren voor de vertaling.");
 }
 
+async function findExistingTranslationId(supabase, translationRootId, targetLanguage) {
+  const { data, error } = await supabase
+    .from("content_items")
+    .select("id")
+    .eq("translation_source_id", translationRootId)
+    .eq("language", normalizeLanguageCode(targetLanguage))
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Bestaande vertaling controleren mislukt: ${error.message}`);
+  }
+
+  return data?.id ?? null;
+}
+
+function isTranslationDuplicateError(message) {
+  return (
+    /duplicate key value violates unique constraint/i.test(message) &&
+    /content_items_translation_source_language_uidx/i.test(message)
+  );
+}
+
 async function fetchSourceDependencies(supabase, contentItemId) {
   const [{ data: rawBlocks, error: blocksError }, { data: relationships, error: relError }] =
     await Promise.all([
@@ -682,6 +728,98 @@ async function createTranslatedContentItem(supabase, sourceItem, targetLanguage,
   return createdItem.id;
 }
 
+function getSourceDependenciesPromise(cache, supabase, contentItemId) {
+  const cached = cache.get(contentItemId);
+  if (cached) {
+    return cached;
+  }
+
+  const promise = fetchSourceDependencies(supabase, contentItemId);
+  cache.set(contentItemId, promise);
+  return promise;
+}
+
+async function ensureTranslatedContentItem(
+  supabase,
+  sourceItem,
+  targetLanguage,
+  dependenciesPromise
+) {
+  const translationRootId = getTranslationRootId(sourceItem);
+  const existingId = await findExistingTranslationId(
+    supabase,
+    translationRootId,
+    targetLanguage
+  );
+
+  if (existingId) {
+    return {
+      id: existingId,
+      created: false,
+    };
+  }
+
+  const dependencies = await dependenciesPromise;
+
+  try {
+    const createdId = await createTranslatedContentItem(
+      supabase,
+      sourceItem,
+      targetLanguage,
+      dependencies
+    );
+
+    return {
+      id: createdId,
+      created: true,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!isTranslationDuplicateError(message)) {
+      throw error;
+    }
+
+    const duplicateId = await findExistingTranslationId(
+      supabase,
+      translationRootId,
+      targetLanguage
+    );
+
+    if (duplicateId) {
+      return {
+        id: duplicateId,
+        created: false,
+      };
+    }
+
+    throw error;
+  }
+}
+
+async function runWithConcurrency(items, concurrency, worker) {
+  if (!items.length) {
+    return;
+  }
+
+  let nextIndex = 0;
+  const workerCount = Math.max(1, Math.min(concurrency, items.length));
+
+  async function runWorker() {
+    while (true) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+
+      if (currentIndex >= items.length) {
+        return;
+      }
+
+      await worker(items[currentIndex], currentIndex);
+    }
+  }
+
+  await Promise.all(Array.from({ length: workerCount }, () => runWorker()));
+}
+
 function shouldStopAtLimit(limit, createdCount) {
   return Number.isFinite(limit) && limit !== null && createdCount >= limit;
 }
@@ -749,6 +887,7 @@ async function main() {
     supportedLanguages,
     targetLanguages,
     families: familyMap.size,
+    concurrency: getTranslationConcurrency(args.concurrency),
     primaryLanguageFamilies: 0,
     orphanFamiliesWithoutPrimaryLanguage: 0,
     inspectedFamilies: 0,
@@ -756,6 +895,7 @@ async function main() {
     planned: 0,
     skippedNoMissing: 0,
     skippedNoSourceLanguage: 0,
+    skippedExisting: 0,
     errors: 0,
   };
 
@@ -764,7 +904,9 @@ async function main() {
   summary.orphanFamiliesWithoutPrimaryLanguage =
     familyMap.size - sourceFamilies.length;
 
-  for (const { familyId, familyItems, sourceItem } of sourceFamilies) {
+  const translationTasks = [];
+
+  familyLoop: for (const { familyId, familyItems, sourceItem } of sourceFamilies) {
     summary.inspectedFamilies += 1;
     const sourceLanguage = normalizeLanguageCode(sourceItem?.language);
 
@@ -789,60 +931,70 @@ async function main() {
       continue;
     }
 
-    if (args.dryRun) {
-      for (const targetLanguage of missingLanguages) {
-        if (shouldStopAtLimit(args.limit, summary.planned)) {
-          break;
-        }
-
-        summary.planned += 1;
-        console.log(
-          `[dry-run] ${sourceItem.title || sourceItem.slug || sourceItem.id} :: ${sourceLanguage} -> ${targetLanguage}`
-        );
-      }
-
-      if (shouldStopAtLimit(args.limit, summary.planned)) {
-        break;
-      }
-
-      continue;
-    }
-
-    const dependencies = await fetchSourceDependencies(supabase, sourceItem.id);
-
     for (const targetLanguage of missingLanguages) {
-      if (shouldStopAtLimit(args.limit, summary.created)) {
-        break;
+      translationTasks.push({
+        familyId,
+        familyItems,
+        sourceItem,
+        sourceLanguage,
+        targetLanguage,
+      });
+
+      if (shouldStopAtLimit(args.limit, translationTasks.length)) {
+        break familyLoop;
       }
+    }
+  }
 
-      try {
-        const createdId = await createTranslatedContentItem(
-          supabase,
-          sourceItem,
-          targetLanguage,
-          dependencies
-        );
-        summary.created += 1;
-        console.log(
-          `[created] ${sourceItem.title || sourceItem.slug || sourceItem.id} :: ${sourceLanguage} -> ${targetLanguage} (${createdId})`
-        );
-      } catch (error) {
-        summary.errors += 1;
-        const message = error instanceof Error ? error.message : String(error);
-        console.error(
-          `[error] family ${familyId} :: ${sourceLanguage} -> ${targetLanguage} :: ${message}`
-        );
+  summary.planned = translationTasks.length;
 
-        if (/beschikbare quota/i.test(message)) {
-          console.error("Stoppen omdat OpenAI quota op is.");
-          throw error;
+  if (args.dryRun) {
+    for (const task of translationTasks) {
+      console.log(
+        `[dry-run] ${task.sourceItem.title || task.sourceItem.slug || task.sourceItem.id} :: ${task.sourceLanguage} -> ${task.targetLanguage}`
+      );
+    }
+  } else {
+    const dependencyCache = new Map();
+
+    await runWithConcurrency(
+      translationTasks,
+      summary.concurrency,
+      async ({ familyId, sourceItem, sourceLanguage, targetLanguage }) => {
+        try {
+          const result = await ensureTranslatedContentItem(
+            supabase,
+            sourceItem,
+            targetLanguage,
+            getSourceDependenciesPromise(dependencyCache, supabase, sourceItem.id)
+          );
+
+          if (result.created) {
+            summary.created += 1;
+            console.log(
+              `[created] ${sourceItem.title || sourceItem.slug || sourceItem.id} :: ${sourceLanguage} -> ${targetLanguage} (${result.id})`
+            );
+            return;
+          }
+
+          summary.skippedExisting += 1;
+          console.log(
+            `[skip-existing] ${sourceItem.title || sourceItem.slug || sourceItem.id} :: ${sourceLanguage} -> ${targetLanguage} (${result.id})`
+          );
+        } catch (error) {
+          summary.errors += 1;
+          const message = error instanceof Error ? error.message : String(error);
+          console.error(
+            `[error] family ${familyId} :: ${sourceLanguage} -> ${targetLanguage} :: ${message}`
+          );
+
+          if (/beschikbare quota/i.test(message)) {
+            console.error("Stoppen omdat OpenAI quota op is.");
+            throw error;
+          }
         }
       }
-    }
-
-    if (shouldStopAtLimit(args.limit, args.dryRun ? summary.planned : summary.created)) {
-      break;
-    }
+    );
   }
 
   console.log("");
