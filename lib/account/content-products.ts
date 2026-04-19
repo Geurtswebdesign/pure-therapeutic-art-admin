@@ -2,6 +2,10 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  applyThemePageTranslation,
+  getPreferredThemePageTranslationMap,
+} from "@/lib/content/theme-translation-queries";
+import {
   THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
   YEAR_ASSIGNMENTS_ENTITLEMENT_KEY,
   getTimedEntitlementSummary,
@@ -277,7 +281,8 @@ function compareThemeLinkCandidates(
 
 async function getContentGroupingDetails(
   supabase: ReturnType<typeof createAdminClient>,
-  contentIds: string[]
+  contentIds: string[],
+  preferredLanguage?: string | null
 ) {
   const categoryByContentId = new Map<string, string>();
   const themeByContentId = new Map<string, string>();
@@ -386,6 +391,10 @@ async function getContentGroupingDetails(
     return { categoryByContentId, themeByContentId };
   }
 
+  const pageTranslationsById = await getPreferredThemePageTranslationMap(
+    themePageIds,
+    preferredLanguage
+  );
   const { data: themePages, error: themePagesError } = await supabase
     .from("content_theme_pages")
     .select("id, slug, title, sort_order")
@@ -398,7 +407,21 @@ async function getContentGroupingDetails(
   }
 
   const sectionById = new Map((themeSections ?? []).map((section) => [section.id, section]));
-  const pageById = new Map((themePages ?? []).map((page) => [page.id, page]));
+  const pageById = new Map(
+    ((themePages ?? []) as ThemePageRow[]).map((page) => [
+      page.id,
+      applyThemePageTranslation(
+        {
+          ...page,
+          title: page.title ?? "",
+          eyebrow: null,
+          description: null,
+          hero_image_alt: null,
+        },
+        pageTranslationsById.get(page.id) ?? null
+      ),
+    ])
+  );
   const candidatesByContentId = new Map<string, ThemeLinkCandidate[]>();
 
   for (const link of themeSectionLinks ?? []) {
@@ -436,6 +459,7 @@ export async function getAccountContentProductsData(
   input: {
     userId: string;
     email?: string | null;
+    preferredLanguage?: string | null;
   }
 ): Promise<AccountContentProductsData> {
   const supabase = createAdminClient();
@@ -488,7 +512,8 @@ export async function getAccountContentProductsData(
   );
   const { categoryByContentId, themeByContentId } = await getContentGroupingDetails(
     supabase,
-    contentIds
+    contentIds,
+    input.preferredLanguage
   );
 
   const packIds = Array.from(

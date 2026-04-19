@@ -9,6 +9,12 @@ import {
   getTranslationRootId,
   pickPreferredTranslation,
 } from "@/lib/content/language-preference";
+import {
+  applyThemePageTranslation,
+  applyThemeSectionItemTranslation,
+  getPreferredThemePageTranslationMap,
+  getPreferredThemeSectionItemTranslationMap,
+} from "@/lib/content/theme-translation-queries";
 import { getTranslationFamilyIds } from "@/lib/content/translation-family";
 import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import { translateCategoryTerm } from "@/lib/i18n/categoryTranslations";
@@ -25,6 +31,7 @@ type ThemeSectionRow = {
 };
 
 type ThemeSectionItemRow = {
+  id?: string | null;
   theme_section_id: string;
   content_item_id: string;
   custom_title?: string | null;
@@ -802,8 +809,29 @@ export async function getThemeNavigationForContentItem(
     throw currentPagesError;
   }
 
+  const pageTranslationsById = await getPreferredThemePageTranslationMap(
+    currentPageIds,
+    preferredLanguage
+  );
+  const translatedCurrentPages = ((currentPages ?? []) as Array<{
+    id: string;
+    slug: string;
+    title: string;
+    sort_order: number;
+  }>).map((page) =>
+    applyThemePageTranslation(
+      {
+        ...page,
+        eyebrow: null,
+        description: null,
+        hero_image_alt: null,
+      },
+      pageTranslationsById.get(page.id) ?? null
+    )
+  );
+  type CurrentThemePageRow = (typeof translatedCurrentPages)[number];
   const pageById = new Map(
-    (currentPages ?? []).map((page) => [page.id, page])
+    translatedCurrentPages.map((page) => [page.id, page])
   );
 
   const candidateRows = (currentLinks ?? [])
@@ -827,7 +855,7 @@ export async function getThemeNavigationForContentItem(
       (
         row
       ): row is {
-        page: { id: string; slug: string; title: string; sort_order: number };
+        page: CurrentThemePageRow;
         section: { id: string; theme_page_id: string; sort_order: number };
         itemSortOrder: number;
       } => Boolean(row)
@@ -869,12 +897,19 @@ export async function getThemeNavigationForContentItem(
 
   const { data: themeSectionItems, error: themeSectionItemsError } = await supabase
     .from("content_theme_section_items")
-    .select("theme_section_id, content_item_id, custom_title, sort_order")
+    .select("id, theme_section_id, content_item_id, custom_title, sort_order")
     .in("theme_section_id", themeSectionIds);
 
   if (themeSectionItemsError) {
     throw themeSectionItemsError;
   }
+
+  const sectionItemTranslationsById = await getPreferredThemeSectionItemTranslationMap(
+    ((themeSectionItems ?? []) as ThemeSectionItemRow[])
+      .map((row) => row.id)
+      .filter((value): value is string => Boolean(value)),
+    preferredLanguage
+  );
 
   const orderedThemeSectionItems =
     ((themeSectionItems ?? []) as ThemeSectionItemRow[])
@@ -926,10 +961,22 @@ export async function getThemeNavigationForContentItem(
         return null;
       }
 
+      const translatedRow = applyThemeSectionItemTranslation(
+        {
+          custom_title: row.custom_title ?? null,
+          custom_excerpt: null,
+          override_image_alt: null,
+        },
+        row.id ? sectionItemTranslationsById.get(row.id) ?? null : null
+      );
+
       return {
         id: content.id,
         href: buildContentHref(content),
-        title: row.custom_title || content.title || "Ongetitelde content",
+        title:
+          translatedRow.custom_title ||
+          content.title ||
+          "Ongetitelde content",
       };
     })
     .filter((row) => {

@@ -2,6 +2,10 @@
 
 import { isLegalContentMetadata } from "@/lib/content/legal-content";
 import { getPreferredPublishedContentMapByIds } from "@/lib/content/language-preference";
+import {
+  applyThemePageTranslation,
+  getPreferredThemePageTranslationMap,
+} from "@/lib/content/theme-translation-queries";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type {
   ContentProgressStatus,
@@ -375,6 +379,10 @@ async function getUnlockedContentBase(
       );
 
       if (themePageIds.length) {
+        const pageTranslationsById = await getPreferredThemePageTranslationMap(
+          themePageIds,
+          preferredLanguage
+        );
         const { data: themePages, error: themePagesError } = await supabase
           .from("content_theme_pages")
           .select("id, slug, title, sort_order")
@@ -392,7 +400,19 @@ async function getUnlockedContentBase(
           ])
         );
         const pageById = new Map(
-          ((themePages ?? []) as ThemePageRow[]).map((page) => [page.id, page])
+          ((themePages ?? []) as ThemePageRow[]).map((page) => [
+            page.id,
+            applyThemePageTranslation(
+              {
+                ...page,
+                title: page.title ?? "",
+                eyebrow: null,
+                description: null,
+                hero_image_alt: null,
+              },
+              pageTranslationsById.get(page.id) ?? null
+            ),
+          ])
         );
         const candidatesByContentId = new Map<string, ThemeLinkCandidate[]>();
 

@@ -1095,6 +1095,7 @@ export default async function AccountPage({
       getAccountContentProductsData({
         userId: user.id,
         email: user.email ?? null,
+        preferredLanguage: language,
       }),
       EMPTY_CONTENT_PRODUCTS_DATA
     ),

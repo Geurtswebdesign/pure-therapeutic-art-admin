@@ -2,6 +2,14 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getResilientPreferredPublishedContentMapByIds } from "@/lib/content/language-preference";
+import {
+  applyThemePageTranslation,
+  applyThemeSectionItemTranslation,
+  applyThemeSectionTranslation,
+  getPreferredThemePageTranslationMap,
+  getPreferredThemeSectionItemTranslationMap,
+  getPreferredThemeSectionTranslationMap,
+} from "@/lib/content/theme-translation-queries";
 import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import { translateCategoryTerm } from "@/lib/i18n/categoryTranslations";
 
@@ -89,6 +97,7 @@ type ThemeSectionRow = {
 };
 
 type ThemeSectionItemRow = {
+  id: string;
   theme_section_id: string;
   content_item_id: string;
   custom_title: string | null;
@@ -182,7 +191,7 @@ function mapThemeSummary(
   };
 }
 
-async function getThemeRows() {
+async function getThemeRows(preferredLanguage?: string | null) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("content_theme_pages")
@@ -198,7 +207,19 @@ async function getThemeRows() {
     return [];
   }
 
-  return (data ?? []) as ThemePageRow[];
+  const pageRows = (data ?? []) as ThemePageRow[];
+  if (!pageRows.length) {
+    return [];
+  }
+
+  const translationsByPageId = await getPreferredThemePageTranslationMap(
+    pageRows.map((page) => page.id),
+    preferredLanguage
+  );
+
+  return pageRows.map((page) =>
+    applyThemePageTranslation(page, translationsByPageId.get(page.id) ?? null)
+  );
 }
 
 async function getTermMap(
@@ -327,7 +348,7 @@ export async function getPublishedThemePages(options?: {
   includeChildren?: boolean;
   preferredLanguage?: string | null;
 }): Promise<ThemePageSummary[]> {
-  const pages = await getThemeRows();
+  const pages = await getThemeRows(options?.preferredLanguage);
   if (!pages.length) return [];
 
   const pageById = new Map(pages.map((page) => [page.id, page]));
@@ -372,7 +393,7 @@ export async function getPublishedThemePageBySlug(
   preferredLanguage?: string | null
 ): Promise<ThemePageDetail | null> {
   const supabase = createAdminClient();
-  const pages = await getThemeRows();
+  const pages = await getThemeRows(preferredLanguage);
   const page = pages.find((row) => row.slug === slug) ?? null;
 
   if (!page) return null;
@@ -432,7 +453,7 @@ export async function getPublishedThemePageBySlug(
     const { data: sectionItems, error: sectionItemsError } = await supabase
       .from("content_theme_section_items")
       .select(
-        "theme_section_id, content_item_id, custom_title, custom_excerpt, featured, override_image_url, override_image_alt, override_image_position, sort_order"
+        "id, theme_section_id, content_item_id, custom_title, custom_excerpt, featured, override_image_url, override_image_alt, override_image_position, sort_order"
       )
       .in("theme_section_id", sectionIds)
       .order("sort_order", { ascending: true });
@@ -443,6 +464,15 @@ export async function getPublishedThemePageBySlug(
       sectionItemRows = (sectionItems ?? []) as ThemeSectionItemRow[];
     }
   }
+
+  const [sectionTranslationsById, sectionItemTranslationsById] =
+    await Promise.all([
+      getPreferredThemeSectionTranslationMap(sectionIds, preferredLanguage),
+      getPreferredThemeSectionItemTranslationMap(
+        sectionItemRows.map((row) => row.id).filter(Boolean),
+        preferredLanguage
+      ),
+    ]);
 
   const contentIds = Array.from(
     new Set(
@@ -467,6 +497,10 @@ export async function getPublishedThemePageBySlug(
   for (const row of sectionItemRows) {
     const content = contentById.get(row.content_item_id);
     if (!content) continue;
+    const translatedRow = applyThemeSectionItemTranslation(
+      row,
+      sectionItemTranslationsById.get(row.id) ?? null
+    );
 
     const seenContentIds =
       seenContentIdsBySectionId.get(row.theme_section_id) ?? new Set<string>();
@@ -479,38 +513,48 @@ export async function getPublishedThemePageBySlug(
     const items = itemsBySectionId.get(row.theme_section_id) ?? [];
     items.push({
       id: content.id,
-      title: row.custom_title || content.title || "Ongetitelde content",
-      excerpt: row.custom_excerpt ?? content.excerpt,
+      title:
+        translatedRow.custom_title || content.title || "Ongetitelde content",
+      excerpt: translatedRow.custom_excerpt ?? content.excerpt,
       href: buildContentHref(content),
       language: content.language,
       creditCost: content.credit_cost,
-      featured: row.featured,
+      featured: translatedRow.featured,
       imageUrl: normalizeSupabaseStorageUrl(
-        row.override_image_url || content.featured_image_url
+        translatedRow.override_image_url || content.featured_image_url
       ),
       imageAlt:
-        row.override_image_alt ||
+        translatedRow.override_image_alt ||
         content.featured_image_alt ||
-        row.custom_title ||
+        translatedRow.custom_title ||
         content.title ||
         "Thema-afbeelding",
-      imagePosition: row.override_image_position,
+      imagePosition: translatedRow.override_image_position,
     });
     itemsBySectionId.set(row.theme_section_id, items);
   }
 
-  const mappedSections = sectionRows.map((section) => ({
-    id: section.id,
-    slug: section.slug,
-    title: section.title,
-    description: section.description,
-    layoutStyle: section.layout_style,
-    sectionImageUrl: normalizeSupabaseStorageUrl(section.section_image_url),
-    sectionImageAlt: section.section_image_alt,
-    sectionImagePosition: section.section_image_position,
-    sortOrder: section.sort_order,
-    items: itemsBySectionId.get(section.id) ?? [],
-  }));
+  const mappedSections = sectionRows.map((section) => {
+    const translatedSection = applyThemeSectionTranslation(
+      section,
+      sectionTranslationsById.get(section.id) ?? null
+    );
+
+    return {
+      id: translatedSection.id,
+      slug: translatedSection.slug,
+      title: translatedSection.title,
+      description: translatedSection.description,
+      layoutStyle: translatedSection.layout_style,
+      sectionImageUrl: normalizeSupabaseStorageUrl(
+        translatedSection.section_image_url
+      ),
+      sectionImageAlt: translatedSection.section_image_alt,
+      sectionImagePosition: translatedSection.section_image_position,
+      sortOrder: translatedSection.sort_order,
+      items: itemsBySectionId.get(translatedSection.id) ?? [],
+    };
+  });
 
   const itemCount = mappedSections.reduce(
     (count, section) => count + section.items.length,
