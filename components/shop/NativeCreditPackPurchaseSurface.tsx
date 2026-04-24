@@ -20,18 +20,58 @@ const COPY: Record<
   BaseUiLanguage,
   {
     loading: string;
+    initializing: string;
+    setupUnavailable: string;
+    missingStoreProduct: string;
+    productUnavailable: string;
   }
 > = {
   nl: {
     loading: "Pakket laden...",
+    initializing: "Apple of Google wordt nog gekoppeld voor dit pakket...",
+    setupUnavailable:
+      "De store-koppeling is in deze build nog niet actief. Controleer RevenueCat en maak daarna zo nodig een nieuwe build.",
+    missingStoreProduct:
+      "Voor dit pakket ontbreekt nog de store product-id voor dit platform.",
+    productUnavailable:
+      "Dit store-product is nog niet beschikbaar op dit apparaat.",
   },
   en: {
     loading: "Loading pack...",
+    initializing: "Apple or Google is still being connected for this pack...",
+    setupUnavailable:
+      "The store connection is not active in this build yet. Check RevenueCat and create a new build if needed.",
+    missingStoreProduct:
+      "This pack is still missing the store product ID for this platform.",
+    productUnavailable:
+      "This store product is not available on this device yet.",
   },
   de: {
     loading: "Paket wird geladen...",
+    initializing: "Apple oder Google wird fur dieses Paket noch verbunden...",
+    setupUnavailable:
+      "Die Store-Anbindung ist in diesem Build noch nicht aktiv. Prufe RevenueCat und erstelle notfalls einen neuen Build.",
+    missingStoreProduct:
+      "Fur dieses Paket fehlt noch die Store-Produkt-ID fur diese Plattform.",
+    productUnavailable:
+      "Dieses Store-Produkt ist auf diesem Gerat noch nicht verfugbar.",
   },
 };
+
+const MAX_BOOTSTRAP_RETRIES = 5;
+
+function shouldRetryRevenueCatLoad(message: string) {
+  return /singleton|configure|configured|not initialized|not set up/i.test(message);
+}
+
+function getStoreProductIssueMessage(
+  platform: string,
+  storeProductId: string,
+  t: (typeof COPY)[BaseUiLanguage]
+) {
+  const storeLabel = platform === "ios" ? "Apple" : platform === "android" ? "Google" : "Store";
+  return `${t.productUnavailable} ${storeLabel} product-id: ${storeProductId}.`;
+}
 
 function getStoreProductId(appleStoreProductId: string, googleStoreProductId: string) {
   const platform = Capacitor.getPlatform();
@@ -67,7 +107,9 @@ export default function NativeCreditPackPurchaseSurface({
   const t = COPY[resolveBaseUiLanguage(language)];
   const router = useRouter();
   const [product, setProduct] = useState<PurchasesStoreProduct | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [isPending, startTransition] = useTransition();
 
   const storeProductId = useMemo(
@@ -75,6 +117,11 @@ export default function NativeCreditPackPurchaseSurface({
     [appleStoreProductId, googleStoreProductId]
   );
   const isNativePlatform = Capacitor.isNativePlatform();
+  const platform = Capacitor.getPlatform();
+
+  useEffect(() => {
+    setRetryCount(0);
+  }, [storeProductId]);
 
   useEffect(() => {
     if (!isNativePlatform) {
@@ -83,26 +130,84 @@ export default function NativeCreditPackPurchaseSurface({
 
     if (!storeProductId) {
       setProduct(null);
+      setLoadError(t.missingStoreProduct);
       return;
     }
 
     let cancelled = false;
+    let retryTimer: number | null = null;
+
+    const scheduleRetry = () => {
+      if (retryCount >= MAX_BOOTSTRAP_RETRIES) {
+        setLoadError(t.setupUnavailable);
+        return;
+      }
+
+      retryTimer = window.setTimeout(() => {
+        if (!cancelled) {
+          setRetryCount((current) => current + 1);
+        }
+      }, 1200);
+    };
 
     const loadProduct = async () => {
       setIsLoading(true);
+      setLoadError(null);
 
       try {
+        const { isConfigured } = await Purchases.isConfigured().catch(() => ({
+          isConfigured: false,
+        }));
+
+        if (!isConfigured) {
+          if (!cancelled) {
+            setProduct(null);
+            setLoadError(
+              retryCount >= MAX_BOOTSTRAP_RETRIES
+                ? t.setupUnavailable
+                : t.initializing
+            );
+            scheduleRetry();
+          }
+          return;
+        }
+
         const { products } = await Purchases.getProducts({
           productIdentifiers: [storeProductId],
           type: PRODUCT_CATEGORY.NON_SUBSCRIPTION,
         });
 
         if (!cancelled) {
-          setProduct(products[0] ?? null);
+          const nextProduct = products[0] ?? null;
+          setProduct(nextProduct);
+          setLoadError(
+            nextProduct
+              ? null
+              : getStoreProductIssueMessage(platform, storeProductId, t)
+          );
         }
       } catch (nextError) {
-        if (!cancelled && nextError instanceof Error) {
-          console.error("Native credit pack product load failed", nextError);
+        if (!cancelled) {
+          const message = nextError instanceof Error ? nextError.message : "";
+
+          if (shouldRetryRevenueCatLoad(message)) {
+            setProduct(null);
+            setLoadError(
+              retryCount >= MAX_BOOTSTRAP_RETRIES
+                ? t.setupUnavailable
+                : t.initializing
+            );
+            scheduleRetry();
+          } else {
+            setProduct(null);
+            setLoadError(
+              message || getStoreProductIssueMessage(platform, storeProductId, t)
+            );
+          }
+
+          if (nextError instanceof Error) {
+            console.error("Native credit pack product load failed", nextError);
+          }
         }
       } finally {
         if (!cancelled) {
@@ -115,8 +220,11 @@ export default function NativeCreditPackPurchaseSurface({
 
     return () => {
       cancelled = true;
+      if (retryTimer) {
+        window.clearTimeout(retryTimer);
+      }
     };
-  }, [isNativePlatform, storeProductId]);
+  }, [isNativePlatform, platform, retryCount, storeProductId, t]);
 
   if (!isNativePlatform) {
     return <div className={className}>{children}</div>;
@@ -147,11 +255,13 @@ export default function NativeCreditPackPurchaseSurface({
 
           try {
             await Purchases.purchaseStoreProduct({ product });
+            setLoadError(null);
             setTimeout(() => {
               router.refresh();
             }, 2500);
           } catch (nextError) {
             if (nextError instanceof Error && !/cancel/i.test(nextError.message)) {
+              setLoadError(nextError.message);
               console.error("Native credit pack purchase failed", nextError);
             }
           }
@@ -165,6 +275,11 @@ export default function NativeCreditPackPurchaseSurface({
       aria-label={isLoading || isPending || !product ? t.loading : undefined}
     >
       {content}
+      {loadError ? (
+        <span className="mt-3 block rounded-[1rem] border border-[#ead6c6] bg-white/90 px-3 py-2 text-xs leading-5 text-[#8a5f49]">
+          {loadError}
+        </span>
+      ) : null}
     </button>
   );
 }

@@ -22,6 +22,18 @@ function getRevenueCatApiKey() {
   return null;
 }
 
+function getMissingApiKeyMessage(platform: string) {
+  if (platform === "ios") {
+    return "RevenueCat bootstrap skipped: missing NEXT_PUBLIC_REVENUECAT_APPLE_API_KEY.";
+  }
+
+  if (platform === "android") {
+    return "RevenueCat bootstrap skipped: missing NEXT_PUBLIC_REVENUECAT_GOOGLE_API_KEY.";
+  }
+
+  return "RevenueCat bootstrap skipped: missing native RevenueCat API key.";
+}
+
 export function RevenueCatBootstrap({
   disabled,
   userId,
@@ -37,8 +49,10 @@ export function RevenueCatBootstrap({
     let cancelled = false;
 
     const bootstrap = async () => {
+      const platform = Capacitor.getPlatform();
       const apiKey = getRevenueCatApiKey();
       if (!apiKey) {
+        console.error(getMissingApiKeyMessage(platform));
         return;
       }
 
