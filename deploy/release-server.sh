@@ -54,6 +54,8 @@ resolve_pm2_bin() {
   local npm_prefix=""
   local npm_root=""
 
+  candidates+=("${APP_DIR}/node_modules/.bin/pm2")
+
   current_path="$(command -v pm2 2>/dev/null || true)"
   if [[ -n "${current_path}" ]]; then
     candidates+=("${current_path}")
@@ -95,15 +97,6 @@ fi
 
 export PATH="${PLESK_NODE_BIN}:$PATH"
 
-PM2_BIN="$(resolve_pm2_bin || true)"
-
-if [[ -z "${PM2_BIN}" ]]; then
-  echo "PM2 niet gevonden. Controleer PATH, npm global prefix of nodenv shims."
-  exit 1
-fi
-
-export PATH="$(dirname "${PM2_BIN}"):${PATH}"
-
 cd "${APP_DIR}"
 
 if [[ ! -f "${ENV_FILE}" ]]; then
@@ -115,6 +108,15 @@ load_env_file "./${ENV_FILE}"
 
 npm ci --include=dev
 npm run build:standalone
+
+PM2_BIN="$(resolve_pm2_bin || true)"
+
+if [[ -z "${PM2_BIN}" ]]; then
+  echo "PM2 niet gevonden. Controleer node_modules/.bin, PATH, npm global prefix of nodenv shims."
+  exit 1
+fi
+
+export PATH="$(dirname "${PM2_BIN}"):${PATH}"
 
 if "${PM2_BIN}" describe "${PM2_APP_NAME}" >/dev/null 2>&1; then
   "${PM2_BIN}" restart "${PM2_APP_NAME}" --update-env
