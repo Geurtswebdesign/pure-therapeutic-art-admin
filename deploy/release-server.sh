@@ -99,6 +99,10 @@ export PATH="${PLESK_NODE_BIN}:$PATH"
 
 cd "${APP_DIR}"
 
+PM2_HOME="${PM2_HOME:-${APP_DIR}/.pm2}"
+export PM2_HOME
+mkdir -p "${PM2_HOME}"
+
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "Environment file ontbreekt: ${APP_DIR}/${ENV_FILE}"
   exit 1
