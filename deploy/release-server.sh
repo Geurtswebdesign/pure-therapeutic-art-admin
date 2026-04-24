@@ -79,7 +79,7 @@ resolve_pm2_bin() {
 
   local candidate
   for candidate in "${candidates[@]}"; do
-    if [[ -n "${candidate}" && -x "${candidate}" ]]; then
+    if [[ -n "${candidate}" && -x "${candidate}" ]] && "${candidate}" --version >/dev/null 2>&1; then
       printf '%s\n' "${candidate}"
       return 0
     fi
