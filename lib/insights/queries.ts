@@ -17,6 +17,7 @@ type RevenueInput = {
   createdAt: string | null | undefined;
   source?: string | null;
   note?: string | null;
+  environment?: string | null;
 };
 
 type RevenueSummary = {
@@ -25,7 +26,9 @@ type RevenueSummary = {
     string,
     { appleAmountCents: number; googleAmountCents: number; otherAmountCents: number }
   >;
+  sandboxRevenueByCurrency: Map<string, number>;
   transactions: number;
+  sandboxTransactions: number;
 };
 
 type IapRevenueRow = {
@@ -35,6 +38,7 @@ type IapRevenueRow = {
   currency: string | null;
   created_at?: string | null;
   pack_id?: string | null;
+  raw_payload?: unknown;
 };
 
 type CreditPackRevenueRow = {
@@ -70,8 +74,14 @@ function createRevenueSummary(): RevenueSummary {
   return {
     revenueByCurrency: new Map(),
     storeRevenueByCurrency: new Map(),
+    sandboxRevenueByCurrency: new Map(),
     transactions: 0,
+    sandboxTransactions: 0,
   };
+}
+
+function isSandboxEnvironment(environment: string | null | undefined) {
+  return environment?.trim().toUpperCase() === "SANDBOX";
 }
 
 function addRevenue(summary: RevenueSummary, input: RevenueInput) {
@@ -80,9 +90,18 @@ function addRevenue(summary: RevenueSummary, input: RevenueInput) {
     return;
   }
 
+  const currency = normalizeCurrency(input.currency);
+  if (isSandboxEnvironment(input.environment)) {
+    summary.sandboxTransactions += 1;
+    summary.sandboxRevenueByCurrency.set(
+      currency,
+      (summary.sandboxRevenueByCurrency.get(currency) ?? 0) + amountCents
+    );
+    return;
+  }
+
   summary.transactions += 1;
 
-  const currency = normalizeCurrency(input.currency);
   summary.revenueByCurrency.set(
     currency,
     (summary.revenueByCurrency.get(currency) ?? 0) + amountCents
@@ -102,6 +121,19 @@ function addRevenue(summary: RevenueSummary, input: RevenueInput) {
     storeRevenue.otherAmountCents += amountCents;
   }
   summary.storeRevenueByCurrency.set(currency, storeRevenue);
+}
+
+function asObject(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function getRevenueCatEnvironment(rawPayload: unknown) {
+  const payload = asObject(rawPayload);
+  const event = asObject(payload?.event);
+  const environment = event?.environment ?? payload?.environment;
+  return typeof environment === "string" ? environment : null;
 }
 
 function getIapRevenueByTransactionId(rows: IapRevenueRow[] | null | undefined) {
@@ -126,6 +158,7 @@ function getCreditPackRevenueInput(
     createdAt: row.created_at,
     source: iapRevenue?.platform ?? row.source,
     note: row.note,
+    environment: getRevenueCatEnvironment(iapRevenue?.raw_payload),
   };
 }
 
@@ -135,7 +168,7 @@ async function getSubscriptionIapRevenueRows(
 ) {
   const { data: iapRows } = await supabase
     .from("iap_transactions")
-    .select("platform, store_transaction_id, amount_cents, currency, created_at, pack_id")
+    .select("platform, store_transaction_id, amount_cents, currency, created_at, pack_id, raw_payload")
     .gte("created_at", range.from.toISOString())
     .lte("created_at", range.to.toISOString())
     .not("pack_id", "is", null)
@@ -422,7 +455,7 @@ export async function getEcommerceOverview(range: DateRange) {
   const { data: iapRevenueRows } = creditPackExternalRefs.length
     ? await supabase
         .from("iap_transactions")
-        .select("platform, store_transaction_id, amount_cents, currency")
+        .select("platform, store_transaction_id, amount_cents, currency, raw_payload")
         .in("store_transaction_id", creditPackExternalRefs)
         .returns<IapRevenueRow[]>()
     : { data: [] as IapRevenueRow[] };
@@ -447,6 +480,7 @@ export async function getEcommerceOverview(range: DateRange) {
       createdAt: row.purchased_at,
       source: row.source,
       note: row.external_reference,
+      environment: null,
     });
   }
 
@@ -457,6 +491,7 @@ export async function getEcommerceOverview(range: DateRange) {
       createdAt: row.occurred_at,
       source: row.source,
       note: row.external_order_id,
+      environment: null,
     });
   }
 
@@ -467,6 +502,7 @@ export async function getEcommerceOverview(range: DateRange) {
       createdAt: row.created_at,
       source: row.platform,
       note: row.store_transaction_id,
+      environment: getRevenueCatEnvironment(row.raw_payload),
     });
   }
 
@@ -482,12 +518,20 @@ export async function getEcommerceOverview(range: DateRange) {
     currency,
     ...amounts,
   }));
+  const sandboxRevenueEntries = Array.from(
+    summary.sandboxRevenueByCurrency.entries()
+  ).map(([currency, amountCents]) => ({
+    currency,
+    amountCents,
+  }));
 
   return {
     revenueEntries,
     storeRevenueEntries,
+    sandboxRevenueEntries,
     creditsSold,
     transactions: summary.transactions,
+    sandboxTransactions: summary.sandboxTransactions,
   };
 }
 
@@ -528,7 +572,7 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
   const { data: iapRevenueRows } = creditPackExternalRefs.length
     ? await supabase
         .from("iap_transactions")
-        .select("platform, store_transaction_id, amount_cents, currency")
+        .select("platform, store_transaction_id, amount_cents, currency, raw_payload")
         .in("store_transaction_id", creditPackExternalRefs)
         .returns<IapRevenueRow[]>()
     : { data: [] as IapRevenueRow[] };
@@ -549,6 +593,10 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
       return;
     }
 
+    if (isSandboxEnvironment(input.environment)) {
+      return;
+    }
+
     const day = new Date(input.createdAt).toISOString().slice(0, 10);
     dailyMap.set(day, (dailyMap.get(day) ?? 0) + amountCents);
   };
@@ -562,6 +610,7 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
       amountCents: row.amount_cents,
       currency: row.currency,
       createdAt: row.purchased_at,
+      environment: null,
     });
   }
 
@@ -570,6 +619,7 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
       amountCents: row.amount_cents,
       currency: row.currency,
       createdAt: row.occurred_at,
+      environment: null,
     });
   }
 
@@ -580,6 +630,7 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
       createdAt: row.created_at,
       source: row.platform,
       note: row.store_transaction_id,
+      environment: getRevenueCatEnvironment(row.raw_payload),
     });
   }
 
