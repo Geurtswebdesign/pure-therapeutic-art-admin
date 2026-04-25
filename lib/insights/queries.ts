@@ -10,6 +10,40 @@ type EcommercePurchaseStore = "apple" | "google" | "other";
 const APPLE_SOURCES = new Set(["apple", "app_store", "appstore", "ios"]);
 const GOOGLE_SOURCES = new Set(["google", "play_store", "playstore", "android"]);
 
+type RevenueInput = {
+  amountCents: number | null | undefined;
+  currency: string | null | undefined;
+  createdAt: string | null | undefined;
+  source?: string | null;
+  note?: string | null;
+};
+
+type RevenueSummary = {
+  revenueByCurrency: Map<string, number>;
+  storeRevenueByCurrency: Map<
+    string,
+    { appleAmountCents: number; googleAmountCents: number; otherAmountCents: number }
+  >;
+  transactions: number;
+};
+
+type IapRevenueRow = {
+  platform: string | null;
+  store_transaction_id: string | null;
+  amount_cents: number | null;
+  currency: string | null;
+};
+
+type CreditPackRevenueRow = {
+  amount_cents: number | null;
+  credits_total?: number | null;
+  currency: string | null;
+  created_at: string | null;
+  source: string | null;
+  note: string | null;
+  external_ref?: string | null;
+};
+
 function detectPurchaseStore(
   source: string | null | undefined,
   note: string | null | undefined
@@ -19,10 +53,77 @@ function detectPurchaseStore(
   if (GOOGLE_SOURCES.has(normalizedSource)) return "google";
 
   const normalizedNote = note?.trim().toLowerCase() ?? "";
-  if (/\bapple\s+iap\b/.test(normalizedNote)) return "apple";
-  if (/\bgoogle\s+iap\b/.test(normalizedNote)) return "google";
+  if (/\bapple\s+(iap|revenuecat)\b/.test(normalizedNote)) return "apple";
+  if (/\bgoogle\s+(iap|revenuecat)\b/.test(normalizedNote)) return "google";
 
   return "other";
+}
+
+function normalizeCurrency(currency: string | null | undefined) {
+  return currency?.trim().toUpperCase() || "EUR";
+}
+
+function createRevenueSummary(): RevenueSummary {
+  return {
+    revenueByCurrency: new Map(),
+    storeRevenueByCurrency: new Map(),
+    transactions: 0,
+  };
+}
+
+function addRevenue(summary: RevenueSummary, input: RevenueInput) {
+  const amountCents = Number(input.amountCents ?? 0);
+  if (!Number.isFinite(amountCents)) {
+    return;
+  }
+
+  summary.transactions += 1;
+
+  const currency = normalizeCurrency(input.currency);
+  summary.revenueByCurrency.set(
+    currency,
+    (summary.revenueByCurrency.get(currency) ?? 0) + amountCents
+  );
+
+  const storeRevenue = summary.storeRevenueByCurrency.get(currency) ?? {
+    appleAmountCents: 0,
+    googleAmountCents: 0,
+    otherAmountCents: 0,
+  };
+  const purchaseStore = detectPurchaseStore(input.source, input.note);
+  if (purchaseStore === "apple") {
+    storeRevenue.appleAmountCents += amountCents;
+  } else if (purchaseStore === "google") {
+    storeRevenue.googleAmountCents += amountCents;
+  } else {
+    storeRevenue.otherAmountCents += amountCents;
+  }
+  summary.storeRevenueByCurrency.set(currency, storeRevenue);
+}
+
+function getIapRevenueByTransactionId(rows: IapRevenueRow[] | null | undefined) {
+  return new Map(
+    (rows ?? [])
+      .filter((row) => row.store_transaction_id)
+      .map((row) => [row.store_transaction_id as string, row])
+  );
+}
+
+function getCreditPackRevenueInput(
+  row: CreditPackRevenueRow,
+  iapRevenueByTransactionId: Map<string, IapRevenueRow>
+): RevenueInput {
+  const iapRevenue = row.external_ref
+    ? iapRevenueByTransactionId.get(row.external_ref)
+    : null;
+
+  return {
+    amountCents: iapRevenue?.amount_cents ?? row.amount_cents,
+    currency: iapRevenue?.currency ?? row.currency,
+    createdAt: row.created_at,
+    source: iapRevenue?.platform ?? row.source,
+    note: row.note,
+  };
 }
 
 export function resolveMonthRange(month: string | undefined): DateRange | null {
@@ -241,78 +342,169 @@ export async function getBrowserBreakdown(range: DateRange) {
 
 export async function getEcommerceOverview(range: DateRange) {
   const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("credit_pack_purchases")
-    .select("amount_cents, credits_total, currency, created_at, source, note")
-    .gte("created_at", range.from.toISOString())
-    .lte("created_at", range.to.toISOString());
+  const [
+    { data: creditPackPurchases },
+    { data: ebookPurchases },
+    { data: websiteOrderItems },
+  ] = await Promise.all([
+    supabase
+      .from("credit_pack_purchases")
+      .select("amount_cents, credits_total, currency, created_at, source, note, external_ref")
+      .gte("created_at", range.from.toISOString())
+      .lte("created_at", range.to.toISOString()),
+    supabase
+      .from("app_ebook_purchases")
+      .select("amount_cents, currency, source, external_reference, purchased_at, purchase_status")
+      .eq("purchase_status", "paid")
+      .gte("purchased_at", range.from.toISOString())
+      .lte("purchased_at", range.to.toISOString()),
+    supabase
+      .from("website_order_items")
+      .select("amount_cents, currency, source, external_order_id, occurred_at")
+      .gte("occurred_at", range.from.toISOString())
+      .lte("occurred_at", range.to.toISOString()),
+  ]);
+  const creditPackExternalRefs = Array.from(
+    new Set(
+      (creditPackPurchases ?? [])
+        .map((row) => row.external_ref?.trim())
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+  const { data: iapRevenueRows } = creditPackExternalRefs.length
+    ? await supabase
+        .from("iap_transactions")
+        .select("platform, store_transaction_id, amount_cents, currency")
+        .in("store_transaction_id", creditPackExternalRefs)
+        .returns<IapRevenueRow[]>()
+    : { data: [] as IapRevenueRow[] };
+  const iapRevenueByTransactionId = getIapRevenueByTransactionId(iapRevenueRows);
 
-  const revenueByCurrency = new Map<string, number>();
-  const storeRevenueByCurrency = new Map<
-    string,
-    { appleAmountCents: number; googleAmountCents: number; otherAmountCents: number }
-  >();
+  const summary = createRevenueSummary();
   let creditsSold = 0;
-  let transactions = 0;
 
-  for (const row of data ?? []) {
-    transactions += 1;
+  for (const row of creditPackPurchases ?? []) {
     creditsSold += Number(row.credits_total ?? 0);
-    const currency = row.currency ?? "EUR";
-    const amountCents = Number(row.amount_cents ?? 0);
-    const next = (revenueByCurrency.get(currency) ?? 0) + amountCents;
-    revenueByCurrency.set(currency, next);
-
-    const storeRevenue = storeRevenueByCurrency.get(currency) ?? {
-      appleAmountCents: 0,
-      googleAmountCents: 0,
-      otherAmountCents: 0,
-    };
-    const purchaseStore = detectPurchaseStore(row.source, row.note);
-    if (purchaseStore === "apple") {
-      storeRevenue.appleAmountCents += amountCents;
-    } else if (purchaseStore === "google") {
-      storeRevenue.googleAmountCents += amountCents;
-    } else {
-      storeRevenue.otherAmountCents += amountCents;
-    }
-    storeRevenueByCurrency.set(currency, storeRevenue);
+    addRevenue(summary, getCreditPackRevenueInput(row, iapRevenueByTransactionId));
   }
 
-  const revenueEntries = Array.from(revenueByCurrency.entries()).map(
+  for (const row of ebookPurchases ?? []) {
+    addRevenue(summary, {
+      amountCents: row.amount_cents,
+      currency: row.currency,
+      createdAt: row.purchased_at,
+      source: row.source,
+      note: row.external_reference,
+    });
+  }
+
+  for (const row of websiteOrderItems ?? []) {
+    addRevenue(summary, {
+      amountCents: row.amount_cents,
+      currency: row.currency,
+      createdAt: row.occurred_at,
+      source: row.source,
+      note: row.external_order_id,
+    });
+  }
+
+  const revenueEntries = Array.from(summary.revenueByCurrency.entries()).map(
     ([currency, amountCents]) => ({
       currency,
       amountCents,
     })
   );
-  const storeRevenueEntries = Array.from(storeRevenueByCurrency.entries()).map(
-    ([currency, amounts]) => ({
-      currency,
-      ...amounts,
-    })
-  );
+  const storeRevenueEntries = Array.from(
+    summary.storeRevenueByCurrency.entries()
+  ).map(([currency, amounts]) => ({
+    currency,
+    ...amounts,
+  }));
 
   return {
     revenueEntries,
     storeRevenueEntries,
     creditsSold,
-    transactions,
+    transactions: summary.transactions,
   };
 }
 
 export async function getEcommerceDailyRevenue(range: DateRange) {
   const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("credit_pack_purchases")
-    .select("amount_cents, currency, created_at")
-    .gte("created_at", range.from.toISOString())
-    .lte("created_at", range.to.toISOString())
-    .order("created_at", { ascending: true });
+  const [
+    { data: creditPackPurchases },
+    { data: ebookPurchases },
+    { data: websiteOrderItems },
+  ] = await Promise.all([
+    supabase
+      .from("credit_pack_purchases")
+      .select("amount_cents, currency, created_at, source, note, external_ref")
+      .gte("created_at", range.from.toISOString())
+      .lte("created_at", range.to.toISOString())
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("app_ebook_purchases")
+      .select("amount_cents, currency, purchased_at, purchase_status")
+      .eq("purchase_status", "paid")
+      .gte("purchased_at", range.from.toISOString())
+      .lte("purchased_at", range.to.toISOString())
+      .order("purchased_at", { ascending: true }),
+    supabase
+      .from("website_order_items")
+      .select("amount_cents, currency, occurred_at")
+      .gte("occurred_at", range.from.toISOString())
+      .lte("occurred_at", range.to.toISOString())
+      .order("occurred_at", { ascending: true }),
+  ]);
+  const creditPackExternalRefs = Array.from(
+    new Set(
+      (creditPackPurchases ?? [])
+        .map((row) => row.external_ref?.trim())
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+  const { data: iapRevenueRows } = creditPackExternalRefs.length
+    ? await supabase
+        .from("iap_transactions")
+        .select("platform, store_transaction_id, amount_cents, currency")
+        .in("store_transaction_id", creditPackExternalRefs)
+        .returns<IapRevenueRow[]>()
+    : { data: [] as IapRevenueRow[] };
+  const iapRevenueByTransactionId = getIapRevenueByTransactionId(iapRevenueRows);
 
   const dailyMap = new Map<string, number>();
-  for (const row of data ?? []) {
-    const day = new Date(row.created_at as string).toISOString().slice(0, 10);
-    dailyMap.set(day, (dailyMap.get(day) ?? 0) + Number(row.amount_cents ?? 0));
+  const addDailyRevenue = (input: RevenueInput) => {
+    if (!input.createdAt) {
+      return;
+    }
+
+    const amountCents = Number(input.amountCents ?? 0);
+    if (!Number.isFinite(amountCents)) {
+      return;
+    }
+
+    const day = new Date(input.createdAt).toISOString().slice(0, 10);
+    dailyMap.set(day, (dailyMap.get(day) ?? 0) + amountCents);
+  };
+
+  for (const row of creditPackPurchases ?? []) {
+    addDailyRevenue(getCreditPackRevenueInput(row, iapRevenueByTransactionId));
+  }
+
+  for (const row of ebookPurchases ?? []) {
+    addDailyRevenue({
+      amountCents: row.amount_cents,
+      currency: row.currency,
+      createdAt: row.purchased_at,
+    });
+  }
+
+  for (const row of websiteOrderItems ?? []) {
+    addDailyRevenue({
+      amountCents: row.amount_cents,
+      currency: row.currency,
+      createdAt: row.occurred_at,
+    });
   }
 
   return Array.from(dailyMap.entries()).map(([day, amountCents]) => ({
