@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getSubscriptionPackKind } from "@/lib/iap/subscription-products";
 
 export type DateRange = {
   from: Date;
@@ -32,6 +33,8 @@ type IapRevenueRow = {
   store_transaction_id: string | null;
   amount_cents: number | null;
   currency: string | null;
+  created_at?: string | null;
+  pack_id?: string | null;
 };
 
 type CreditPackRevenueRow = {
@@ -124,6 +127,50 @@ function getCreditPackRevenueInput(
     source: iapRevenue?.platform ?? row.source,
     note: row.note,
   };
+}
+
+async function getSubscriptionIapRevenueRows(
+  supabase: ReturnType<typeof createAdminClient>,
+  range: DateRange
+) {
+  const { data: iapRows } = await supabase
+    .from("iap_transactions")
+    .select("platform, store_transaction_id, amount_cents, currency, created_at, pack_id")
+    .gte("created_at", range.from.toISOString())
+    .lte("created_at", range.to.toISOString())
+    .not("pack_id", "is", null)
+    .returns<IapRevenueRow[]>();
+
+  const packIds = Array.from(
+    new Set(
+      (iapRows ?? [])
+        .map((row) => row.pack_id)
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+
+  if (!packIds.length) {
+    return [] as IapRevenueRow[];
+  }
+
+  const { data: packs } = await supabase
+    .from("credit_packs")
+    .select("id, slug")
+    .in("id", packIds)
+    .returns<Array<{ id: string; slug: string | null }>>();
+  const subscriptionPackIds = new Set(
+    (packs ?? [])
+      .filter((pack) => getSubscriptionPackKind(pack.slug))
+      .map((pack) => pack.id)
+  );
+
+  if (!subscriptionPackIds.size) {
+    return [] as IapRevenueRow[];
+  }
+
+  return (iapRows ?? []).filter(
+    (row) => row.pack_id && subscriptionPackIds.has(row.pack_id)
+  );
 }
 
 export function resolveMonthRange(month: string | undefined): DateRange | null {
@@ -380,6 +427,10 @@ export async function getEcommerceOverview(range: DateRange) {
         .returns<IapRevenueRow[]>()
     : { data: [] as IapRevenueRow[] };
   const iapRevenueByTransactionId = getIapRevenueByTransactionId(iapRevenueRows);
+  const subscriptionIapRevenueRows = await getSubscriptionIapRevenueRows(
+    supabase,
+    range
+  );
 
   const summary = createRevenueSummary();
   let creditsSold = 0;
@@ -406,6 +457,16 @@ export async function getEcommerceOverview(range: DateRange) {
       createdAt: row.occurred_at,
       source: row.source,
       note: row.external_order_id,
+    });
+  }
+
+  for (const row of subscriptionIapRevenueRows) {
+    addRevenue(summary, {
+      amountCents: row.amount_cents,
+      currency: row.currency,
+      createdAt: row.created_at,
+      source: row.platform,
+      note: row.store_transaction_id,
     });
   }
 
@@ -472,6 +533,10 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
         .returns<IapRevenueRow[]>()
     : { data: [] as IapRevenueRow[] };
   const iapRevenueByTransactionId = getIapRevenueByTransactionId(iapRevenueRows);
+  const subscriptionIapRevenueRows = await getSubscriptionIapRevenueRows(
+    supabase,
+    range
+  );
 
   const dailyMap = new Map<string, number>();
   const addDailyRevenue = (input: RevenueInput) => {
@@ -505,6 +570,16 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
       amountCents: row.amount_cents,
       currency: row.currency,
       createdAt: row.occurred_at,
+    });
+  }
+
+  for (const row of subscriptionIapRevenueRows) {
+    addDailyRevenue({
+      amountCents: row.amount_cents,
+      currency: row.currency,
+      createdAt: row.created_at,
+      source: row.platform,
+      note: row.store_transaction_id,
     });
   }
 
