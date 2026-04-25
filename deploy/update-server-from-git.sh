@@ -26,9 +26,10 @@ fi
 # If there are any other modifications left afterwards, the deploy should still abort.
 git restore --staged --worktree --source=HEAD -- next-env.d.ts >/dev/null 2>&1 || true
 
-if [[ -n "$(git status --porcelain)" ]]; then
+dirty_status="$(git status --porcelain -- . ':(exclude).pm2')"
+if [[ -n "${dirty_status}" ]]; then
   echo "De server worktree is niet schoon. Deploy afgebroken."
-  git status --short
+  printf '%s\n' "${dirty_status}"
   exit 1
 fi
 
