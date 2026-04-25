@@ -1,5 +1,4 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getSubscriptionPackKind } from "@/lib/iap/subscription-products";
 
 export type DateRange = {
   from: Date;
@@ -162,48 +161,11 @@ function getCreditPackRevenueInput(
   };
 }
 
-async function getSubscriptionIapRevenueRows(
-  supabase: ReturnType<typeof createAdminClient>,
-  range: DateRange
-) {
-  const { data: iapRows } = await supabase
-    .from("iap_transactions")
-    .select("platform, store_transaction_id, amount_cents, currency, created_at, pack_id, raw_payload")
-    .gte("created_at", range.from.toISOString())
-    .lte("created_at", range.to.toISOString())
-    .not("pack_id", "is", null)
-    .returns<IapRevenueRow[]>();
-
-  const packIds = Array.from(
-    new Set(
-      (iapRows ?? [])
-        .map((row) => row.pack_id)
-        .filter((value): value is string => Boolean(value))
-    )
-  );
-
-  if (!packIds.length) {
-    return [] as IapRevenueRow[];
-  }
-
-  const { data: packs } = await supabase
-    .from("credit_packs")
-    .select("id, slug")
-    .in("id", packIds)
-    .returns<Array<{ id: string; slug: string | null }>>();
-  const subscriptionPackIds = new Set(
-    (packs ?? [])
-      .filter((pack) => getSubscriptionPackKind(pack.slug))
-      .map((pack) => pack.id)
-  );
-
-  if (!subscriptionPackIds.size) {
-    return [] as IapRevenueRow[];
-  }
-
-  return (iapRows ?? []).filter(
-    (row) => row.pack_id && subscriptionPackIds.has(row.pack_id)
-  );
+function isStoreBackedPurchase(row: {
+  source?: string | null;
+  note?: string | null;
+}) {
+  return detectPurchaseStore(row.source, row.note) !== "other";
 }
 
 export function resolveMonthRange(month: string | undefined): DateRange | null {
@@ -427,6 +389,7 @@ export async function getEcommerceOverview(range: DateRange) {
     { data: creditPackPurchases },
     { data: ebookPurchases },
     { data: websiteOrderItems },
+    { data: iapRevenueRows },
   ] = await Promise.all([
     supabase
       .from("credit_pack_purchases")
@@ -444,36 +407,30 @@ export async function getEcommerceOverview(range: DateRange) {
       .select("amount_cents, currency, source, external_order_id, occurred_at")
       .gte("occurred_at", range.from.toISOString())
       .lte("occurred_at", range.to.toISOString()),
+    supabase
+      .from("iap_transactions")
+      .select("platform, store_transaction_id, amount_cents, currency, created_at, pack_id, raw_payload")
+      .gte("created_at", range.from.toISOString())
+      .lte("created_at", range.to.toISOString())
+      .returns<IapRevenueRow[]>(),
   ]);
-  const creditPackExternalRefs = Array.from(
-    new Set(
-      (creditPackPurchases ?? [])
-        .map((row) => row.external_ref?.trim())
-        .filter((value): value is string => Boolean(value))
-    )
-  );
-  const { data: iapRevenueRows } = creditPackExternalRefs.length
-    ? await supabase
-        .from("iap_transactions")
-        .select("platform, store_transaction_id, amount_cents, currency, raw_payload")
-        .in("store_transaction_id", creditPackExternalRefs)
-        .returns<IapRevenueRow[]>()
-    : { data: [] as IapRevenueRow[] };
   const iapRevenueByTransactionId = getIapRevenueByTransactionId(iapRevenueRows);
-  const subscriptionIapRevenueRows = await getSubscriptionIapRevenueRows(
-    supabase,
-    range
-  );
 
   const summary = createRevenueSummary();
   let creditsSold = 0;
 
   for (const row of creditPackPurchases ?? []) {
     creditsSold += Number(row.credits_total ?? 0);
+    if (isStoreBackedPurchase(row)) {
+      continue;
+    }
     addRevenue(summary, getCreditPackRevenueInput(row, iapRevenueByTransactionId));
   }
 
   for (const row of ebookPurchases ?? []) {
+    if (isStoreBackedPurchase({ source: row.source, note: row.external_reference })) {
+      continue;
+    }
     addRevenue(summary, {
       amountCents: row.amount_cents,
       currency: row.currency,
@@ -495,7 +452,7 @@ export async function getEcommerceOverview(range: DateRange) {
     });
   }
 
-  for (const row of subscriptionIapRevenueRows) {
+  for (const row of iapRevenueRows ?? []) {
     addRevenue(summary, {
       amountCents: row.amount_cents,
       currency: row.currency,
@@ -541,6 +498,7 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
     { data: creditPackPurchases },
     { data: ebookPurchases },
     { data: websiteOrderItems },
+    { data: iapRevenueRows },
   ] = await Promise.all([
     supabase
       .from("credit_pack_purchases")
@@ -550,7 +508,7 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
       .order("created_at", { ascending: true }),
     supabase
       .from("app_ebook_purchases")
-      .select("amount_cents, currency, purchased_at, purchase_status")
+      .select("amount_cents, currency, source, purchased_at, purchase_status")
       .eq("purchase_status", "paid")
       .gte("purchased_at", range.from.toISOString())
       .lte("purchased_at", range.to.toISOString())
@@ -561,26 +519,15 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
       .gte("occurred_at", range.from.toISOString())
       .lte("occurred_at", range.to.toISOString())
       .order("occurred_at", { ascending: true }),
+    supabase
+      .from("iap_transactions")
+      .select("platform, store_transaction_id, amount_cents, currency, created_at, pack_id, raw_payload")
+      .gte("created_at", range.from.toISOString())
+      .lte("created_at", range.to.toISOString())
+      .order("created_at", { ascending: true })
+      .returns<IapRevenueRow[]>(),
   ]);
-  const creditPackExternalRefs = Array.from(
-    new Set(
-      (creditPackPurchases ?? [])
-        .map((row) => row.external_ref?.trim())
-        .filter((value): value is string => Boolean(value))
-    )
-  );
-  const { data: iapRevenueRows } = creditPackExternalRefs.length
-    ? await supabase
-        .from("iap_transactions")
-        .select("platform, store_transaction_id, amount_cents, currency, raw_payload")
-        .in("store_transaction_id", creditPackExternalRefs)
-        .returns<IapRevenueRow[]>()
-    : { data: [] as IapRevenueRow[] };
   const iapRevenueByTransactionId = getIapRevenueByTransactionId(iapRevenueRows);
-  const subscriptionIapRevenueRows = await getSubscriptionIapRevenueRows(
-    supabase,
-    range
-  );
 
   const dailyMap = new Map<string, number>();
   const addDailyRevenue = (input: RevenueInput) => {
@@ -602,10 +549,16 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
   };
 
   for (const row of creditPackPurchases ?? []) {
+    if (isStoreBackedPurchase(row)) {
+      continue;
+    }
     addDailyRevenue(getCreditPackRevenueInput(row, iapRevenueByTransactionId));
   }
 
   for (const row of ebookPurchases ?? []) {
+    if (isStoreBackedPurchase({ source: row.source, note: null })) {
+      continue;
+    }
     addDailyRevenue({
       amountCents: row.amount_cents,
       currency: row.currency,
@@ -623,7 +576,7 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
     });
   }
 
-  for (const row of subscriptionIapRevenueRows) {
+  for (const row of iapRevenueRows ?? []) {
     addDailyRevenue({
       amountCents: row.amount_cents,
       currency: row.currency,
