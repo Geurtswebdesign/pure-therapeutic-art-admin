@@ -146,7 +146,8 @@ export function resolveMonthRange(month: string | undefined): DateRange | null {
 
 export function resolveRange(range: string | undefined): DateRange {
   const now = new Date();
-  const days = range === "7d" ? 7 : range === "90d" ? 90 : 30;
+  const days =
+    range === "7d" ? 7 : range === "28d" ? 28 : range === "90d" ? 90 : 30;
   const from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
   return { from, to: now };
 }

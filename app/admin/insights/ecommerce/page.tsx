@@ -89,6 +89,22 @@ function getStoreBreakdownByCurrency(
   return new Map(storeRevenueEntries.map((entry) => [entry.currency, entry]));
 }
 
+function calculateStoreRevenueEntries(
+  storeRevenueEntries: Array<{
+    currency: string;
+    appleAmountCents: number;
+    googleAmountCents: number;
+    otherAmountCents: number;
+  }>
+) {
+  return storeRevenueEntries
+    .map((entry) => ({
+      currency: entry.currency,
+      amountCents: entry.appleAmountCents + entry.googleAmountCents,
+    }))
+    .filter((entry) => entry.amountCents > 0);
+}
+
 function calculateRevenueBreakdown(
   revenueEntries: Array<{ currency: string; amountCents: number }>,
   storeRevenueEntries: Array<{
@@ -174,10 +190,24 @@ export default async function EcommercePage({
     revenueEntries,
     overview.storeRevenueEntries
   );
+  const storeRevenueEntries = calculateStoreRevenueEntries(
+    overview.storeRevenueEntries
+  ).sort((a, b) => b.amountCents - a.amountCents);
+  const primaryStoreRevenue = storeRevenueEntries[0];
   const primaryRevenue = revenueEntries[0];
+  const storeRevenueLabel = primaryStoreRevenue
+    ? formatCurrency(primaryStoreRevenue.amountCents, primaryStoreRevenue.currency)
+    : "0";
   const revenueLabel = primaryRevenue
     ? formatCurrency(primaryRevenue.amountCents, primaryRevenue.currency)
     : "0";
+  const otherRevenueLabel =
+    primaryRevenue && primaryStoreRevenue && primaryRevenue.currency === primaryStoreRevenue.currency
+      ? formatCurrency(
+          primaryRevenue.amountCents - primaryStoreRevenue.amountCents,
+          primaryRevenue.currency
+        )
+      : null;
   const avgOrderValue =
     overview.transactions > 0 && revenueEntries.length === 1
       ? formatCurrency(primaryRevenue.amountCents / overview.transactions, primaryRevenue.currency)
@@ -219,24 +249,35 @@ export default async function EcommercePage({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article className="rounded border bg-white p-4">
-          <p className="text-xs text-gray-500">Revenue</p>
-          <h2 className="text-2xl font-semibold">{revenueLabel}</h2>
-          {revenueEntries.length > 1 ? (
+          <p className="text-xs text-gray-500">RevenueCat / store revenue</p>
+          <h2 className="text-2xl font-semibold">{storeRevenueLabel}</h2>
+          {storeRevenueEntries.length > 1 ? (
             <p className="mt-2 text-xs text-gray-500">
               Mixed currencies:{" "}
-              {revenueEntries
+              {storeRevenueEntries
                 .map((row) => formatCurrency(row.amountCents, row.currency))
                 .join(" · ")}
             </p>
           ) : null}
+          <p className="mt-2 text-xs text-gray-500">
+            Apple + Google bruto omzet.
+          </p>
         </article>
         <article className="rounded border bg-white p-4">
-          <p className="text-xs text-gray-500">Transactions</p>
-          <h2 className="text-2xl font-semibold">{overview.transactions}</h2>
+          <p className="text-xs text-gray-500">Total ecommerce revenue</p>
+          <h2 className="text-2xl font-semibold">{revenueLabel}</h2>
+          {otherRevenueLabel ? (
+            <p className="mt-2 text-xs text-gray-500">
+              Other channels: {otherRevenueLabel}
+            </p>
+          ) : null}
         </article>
         <article className="rounded border bg-white p-4">
           <p className="text-xs text-gray-500">Avg. order value</p>
           <h2 className="text-2xl font-semibold">{avgOrderValue}</h2>
+          <p className="mt-2 text-xs text-gray-500">
+            Based on {overview.transactions} transactions.
+          </p>
         </article>
         <article className="rounded border bg-white p-4">
           <p className="text-xs text-gray-500">Conversion rate</p>

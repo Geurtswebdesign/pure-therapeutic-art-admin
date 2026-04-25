@@ -6,6 +6,7 @@ import { resolveAdminBrowserPath } from "@/lib/site/admin-client-paths";
 
 const ranges = [
   { label: "7d", value: "7d" },
+  { label: "28d", value: "28d" },
   { label: "30d", value: "30d" },
   { label: "90d", value: "90d" },
 ];
