@@ -103,20 +103,20 @@ export function getDefaultSubscriptionStoreProductIds(
 
   if (kind === "year_assignments") {
     return {
-      appleStoreProductId: "jaarabonnement",
+      appleStoreProductId: "subscription.yearly_full_access",
       googleStoreProductId: "jaarabonnement:annual-autorenewing",
     };
   }
 
   if (kind === "therapist_monthly") {
     return {
-      appleStoreProductId: "therapeut-maand",
+      appleStoreProductId: "subscription.therapist.monthly",
       googleStoreProductId: THERAPIST_MONTHLY_GOOGLE_PRODUCT_IDS[0],
     };
   }
 
   return {
-    appleStoreProductId: "therapeut-jaar",
+    appleStoreProductId: "subscription.therapist.yearly",
     googleStoreProductId: THERAPIST_YEARLY_GOOGLE_PRODUCT_IDS[0],
   };
 }
