@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { Capacitor } from "@capacitor/core";
 import { ExternalLink } from "lucide-react";
 import { resolveBaseUiLanguage, type UiLanguage } from "@/lib/i18n/runtime";
 import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
@@ -15,7 +16,6 @@ type Props = {
   hasAccess: boolean;
   isLoggedIn: boolean;
   isReady: boolean;
-  hasStoreConfiguration: boolean;
   appleStoreProductId: string;
   googleStoreProductId: string;
   purchaseDescription: string;
@@ -45,6 +45,10 @@ const COPY = {
       "Dit e-book koop je via Apple of Google in de native app. Na succesvolle store-aankoop verschijnt het automatisch in je account onder EBooks.",
     nativeMissing:
       "Voor dit e-book ontbreken nog de Apple- en/of Google-product-id's. Vul die eerst in de shopadmin in.",
+    nativeMissingApple:
+      "Voor dit e-book ontbreekt nog de Apple product-id. Vul die eerst in de shopadmin in.",
+    nativeMissingGoogle:
+      "Voor dit e-book ontbreekt nog de Google product-id. Vul die eerst in de shopadmin in.",
     nativeBadge: "Beschikbaar in native app",
   },
   en: {
@@ -65,6 +69,10 @@ const COPY = {
       "Buy this ebook through Apple or Google in the native app. After a successful store purchase it will appear automatically in your account under EBooks.",
     nativeMissing:
       "This ebook is missing the Apple and/or Google store product IDs. Fill those in first in the shop admin.",
+    nativeMissingApple:
+      "This ebook is missing the Apple store product ID. Fill it in first in the shop admin.",
+    nativeMissingGoogle:
+      "This ebook is missing the Google store product ID. Fill it in first in the shop admin.",
     nativeBadge: "Available in native app",
   },
   de: {
@@ -85,9 +93,45 @@ const COPY = {
       "Dieses E-Book kaufst du uber Apple oder Google in der nativen App. Nach erfolgreichem Store-Kauf erscheint es automatisch in deinem Konto unter EBooks.",
     nativeMissing:
       "Fur dieses E-Book fehlen noch die Apple- und/oder Google-Produkt-IDs. Trage sie zuerst in der Shop-Admin ein.",
+    nativeMissingApple:
+      "Fur dieses E-Book fehlt noch die Apple-Produkt-ID. Trage sie zuerst in der Shop-Admin ein.",
+    nativeMissingGoogle:
+      "Fur dieses E-Book fehlt noch die Google-Produkt-ID. Trage sie zuerst in der Shop-Admin ein.",
     nativeBadge: "In nativer App verfugbar",
   },
 } as const;
+
+function getStoreProductId(
+  appleStoreProductId: string,
+  googleStoreProductId: string
+) {
+  const platform = Capacitor.getPlatform();
+
+  if (platform === "ios") {
+    return appleStoreProductId.trim() || null;
+  }
+
+  if (platform === "android") {
+    return googleStoreProductId.trim() || null;
+  }
+
+  return null;
+}
+
+function getMissingStoreMessage(
+  platform: string,
+  copy: (typeof COPY)[keyof typeof COPY]
+) {
+  if (platform === "ios") {
+    return copy.nativeMissingApple;
+  }
+
+  if (platform === "android") {
+    return copy.nativeMissingGoogle;
+  }
+
+  return copy.nativeMissing;
+}
 
 function resolvePurchaseError(
   errorMessage: string,
@@ -111,7 +155,6 @@ export default function InAppEbookPurchaseCard({
   hasAccess,
   isLoggedIn,
   isReady,
-  hasStoreConfiguration,
   appleStoreProductId,
   googleStoreProductId,
   purchaseDescription,
@@ -125,6 +168,12 @@ export default function InAppEbookPurchaseCard({
   const purchaseMessages = getPublicAppMessages(language).ebookPurchase;
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const nativePlatform = Capacitor.getPlatform();
+  const storeProductId = getStoreProductId(
+    appleStoreProductId,
+    googleStoreProductId
+  );
+  const hasStoreConfiguration = Boolean(storeProductId);
 
   if (hasAccess && readerHref) {
     return (
@@ -224,7 +273,9 @@ export default function InAppEbookPurchaseCard({
               </>
             ) : (
               <>
-                <p className="text-sm leading-6 text-[#6b5d50]">{t.nativeMissing}</p>
+                <p className="text-sm leading-6 text-[#6b5d50]">
+                  {getMissingStoreMessage(nativePlatform, t)}
+                </p>
                 <div className="inline-flex rounded-full border border-[#decfbe] bg-[#fcf6f1] px-4 py-2 text-sm font-medium text-[#8a5f49]">
                   {t.nativeBadge}
                 </div>

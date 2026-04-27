@@ -89,10 +89,6 @@ export default async function ShopProductPage({
           userId: user?.id ?? null,
         })
       : null;
-  const hasStoreConfiguration =
-    category === "ebooks"
-      ? Boolean(item.appleStoreProductId?.trim() && item.googleStoreProductId?.trim())
-      : false;
   const ebookPurchaseMode =
     category === "ebooks" ? getEbookPurchaseMode() : "disabled";
   const categoryLabel =
@@ -159,7 +155,6 @@ export default async function ShopProductPage({
               hasAccess={ebookState.hasAccess}
               isLoggedIn={Boolean(user)}
               isReady={ebookState.isReady}
-              hasStoreConfiguration={hasStoreConfiguration}
               appleStoreProductId={item.appleStoreProductId ?? ""}
               googleStoreProductId={item.googleStoreProductId ?? ""}
               purchaseDescription={item.purchaseDescription}
