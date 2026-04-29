@@ -218,6 +218,7 @@ async function getSecurityPrivacyCategoryDocuments(
     .select("id, slug, title, excerpt, body, language, status, published_at, updated_at")
     .in("id", contentItemIds)
     .eq("status", "published")
+    .eq("language", preferredLanguage)
     .returns<LegalContentItemRow[]>();
 
   if (itemsError) {
@@ -228,11 +229,6 @@ async function getSecurityPrivacyCategoryDocuments(
   return (items ?? [])
     .filter((item) => item.slug && item.title)
     .sort((left, right) => {
-      const leftLanguage = normalizeValue(left.language);
-      const rightLanguage = normalizeValue(right.language);
-      if (leftLanguage === preferredLanguage && rightLanguage !== preferredLanguage) return -1;
-      if (rightLanguage === preferredLanguage && leftLanguage !== preferredLanguage) return 1;
-
       const leftDate = left.published_at ?? left.updated_at ?? "";
       const rightDate = right.published_at ?? right.updated_at ?? "";
       return rightDate.localeCompare(leftDate);
