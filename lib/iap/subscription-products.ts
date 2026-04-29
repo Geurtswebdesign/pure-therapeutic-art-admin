@@ -133,6 +133,34 @@ function getSupportedGoogleSubscriptionProductIds(kind: SubscriptionPackKind) {
   return [...THERAPIST_YEARLY_GOOGLE_PRODUCT_IDS];
 }
 
+function isSupportedSubscriptionStoreProductId(
+  platform: "apple" | "google",
+  kind: SubscriptionPackKind,
+  storeProductId: string
+) {
+  const normalizedStoreProductId = storeProductId.trim();
+
+  if (!normalizedStoreProductId) {
+    return false;
+  }
+
+  if (platform === "apple") {
+    if (kind === "year_assignments") {
+      return normalizedStoreProductId === "subscription.yearly_full_access";
+    }
+
+    if (kind === "therapist_monthly") {
+      return normalizedStoreProductId === "subscription.therapist.monthly";
+    }
+
+    return normalizedStoreProductId === "subscription.therapist.yearly";
+  }
+
+  return getSupportedGoogleSubscriptionProductIds(kind).includes(
+    normalizedStoreProductId
+  );
+}
+
 function buildResolvedSubscriptionPack(
   pack: SubscriptionPackLike,
   storeProductIds: SubscriptionStoreProductIds
@@ -202,6 +230,20 @@ export async function getSubscriptionPackStoreProducts(packs: SubscriptionPackLi
   }
 
   for (const row of data ?? []) {
+    const pack = packs.find((entry) => entry.id === row.pack_id);
+    const kind = getSubscriptionPackKind(pack);
+
+    if (
+      !kind ||
+      !isSupportedSubscriptionStoreProductId(
+        row.platform,
+        kind,
+        row.store_product_id
+      )
+    ) {
+      continue;
+    }
+
     const current = mappings.get(row.pack_id) ?? {
       appleStoreProductId: null,
       googleStoreProductId: null,

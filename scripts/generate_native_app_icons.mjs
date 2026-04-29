@@ -5,7 +5,12 @@ import fs from "node:fs/promises";
 import sharp from "sharp";
 
 const ROOT = process.cwd();
-const SOURCE_ICON = path.join(ROOT, "assets", "branding", "logo.png");
+const SOURCE_ICON = path.join(
+  ROOT,
+  "assets",
+  "branding",
+  "app-icon-apple-1024.png"
+);
 const IOS_ICON = path.join(
   ROOT,
   "ios",
@@ -16,7 +21,6 @@ const IOS_ICON = path.join(
   "AppIcon-512@2x.png"
 );
 const ANDROID_RES = path.join(ROOT, "android", "app", "src", "main", "res");
-const BG = { r: 247, g: 240, b: 233, alpha: 1 };
 
 const LEGACY_ANDROID_SIZES = [
   ["mipmap-mdpi", 48],
@@ -52,42 +56,17 @@ async function ensureSourcePng(sourcePath) {
 }
 
 async function createIosIcon(sourcePngPath) {
-  const foreground = await sharp(sourcePngPath)
-    .resize(760, 760, { fit: "contain" })
-    .png()
-    .toBuffer();
-
-  await sharp({
-    create: {
-      width: 1024,
-      height: 1024,
-      channels: 4,
-      background: BG,
-    },
-  })
-    .composite([{ input: foreground, gravity: "center" }])
+  await sharp(sourcePngPath)
+    .resize(1024, 1024, { fit: "cover" })
+    .removeAlpha()
     .png()
     .toFile(IOS_ICON);
 }
 
 async function createAndroidIcons(sourcePngPath) {
-  const fullIcon = await sharp({
-    create: {
-      width: 1024,
-      height: 1024,
-      channels: 4,
-      background: BG,
-    },
-  })
-    .composite([
-      {
-        input: await sharp(sourcePngPath)
-          .resize(760, 760, { fit: "contain" })
-          .png()
-          .toBuffer(),
-        gravity: "center",
-      },
-    ])
+  const fullIcon = await sharp(sourcePngPath)
+    .resize(1024, 1024, { fit: "cover" })
+    .removeAlpha()
     .png()
     .toBuffer();
 
@@ -130,7 +109,7 @@ async function main() {
   const sourcePngPath = await ensureSourcePng(SOURCE_ICON);
   await createIosIcon(sourcePngPath);
   await createAndroidIcons(sourcePngPath);
-  console.log("Native app icons generated from assets/branding/logo.png");
+  console.log("Native app icons generated from assets/branding/app-icon-apple-1024.png");
 }
 
 main().catch((error) => {
