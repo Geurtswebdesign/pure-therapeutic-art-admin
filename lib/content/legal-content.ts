@@ -27,6 +27,9 @@ const LEGAL_CONTENT_TITLES = new Set(
 
 const LEGAL_CATEGORY_NAMES = new Set(
   [
+    "Veiligheid & privacy",
+    "Security & privacy",
+    "Sicherheit & Datenschutz",
     "Disclaimer",
     "Algemene voorwaarden en condities",
     "Privacyverklaring AVG",
@@ -36,8 +39,50 @@ const LEGAL_CATEGORY_NAMES = new Set(
   ].map((value) => value.toLowerCase())
 );
 
+const LEGAL_CATEGORY_SLUGS = new Set(
+  [
+    "veiligheid-privacy",
+    "security-privacy",
+    "disclaimer",
+    "algemene-voorwaarden-en-condities",
+    "privacyverklaring-avg",
+    "impressum",
+    "imperssum",
+    "copyright",
+  ].map((value) => value.toLowerCase())
+);
+
+type LegalTermRow = {
+  id: string;
+  parent_id: string | null;
+  name: string | null;
+  slug: string | null;
+};
+
 function normalizeValue(value: string | null | undefined) {
   return value?.trim().toLowerCase() ?? "";
+}
+
+function isLegalTerm(term: LegalTermRow, termsById: Map<string, LegalTermRow>) {
+  let current: LegalTermRow | undefined = term;
+  const visited = new Set<string>();
+
+  while (current && !visited.has(current.id)) {
+    visited.add(current.id);
+
+    const slug = normalizeValue(current.slug);
+    const name = normalizeValue(current.name);
+    if (
+      (slug && LEGAL_CATEGORY_SLUGS.has(slug)) ||
+      (name && LEGAL_CATEGORY_NAMES.has(name))
+    ) {
+      return true;
+    }
+
+    current = current.parent_id ? termsById.get(current.parent_id) : undefined;
+  }
+
+  return false;
 }
 
 export function isLegalContentMetadata(input: {
@@ -95,14 +140,27 @@ export async function isLegalContentItem(contentItemId: string) {
   if (termIds.length) {
     const { data: terms, error: termsError } = await supabase
       .from("content_terms")
-      .select("name")
-      .in("id", termIds);
+      .select("id, parent_id, name, slug");
 
     if (termsError) {
       throw termsError;
     }
 
-    categories = (terms ?? [])
+    const termsById = new Map(
+      ((terms ?? []) as LegalTermRow[]).map((term) => [term.id, term])
+    );
+
+    if (
+      termIds.some((termId) => {
+        const term = termsById.get(termId);
+        return term ? isLegalTerm(term, termsById) : false;
+      })
+    ) {
+      return true;
+    }
+
+    categories = ((terms ?? []) as LegalTermRow[])
+      .filter((term) => termIds.includes(term.id))
       .map((row) => row.name)
       .filter((value): value is string => Boolean(value));
   }

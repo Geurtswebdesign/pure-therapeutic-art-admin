@@ -15,7 +15,10 @@ import { getBalanceByScope } from "@/lib/users/getBalanceByScope";
 import { getContentAccessScope } from "@/lib/content/access";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
-import { isLegalContentMetadata } from "@/lib/content/legal-content";
+import {
+  isLegalContentItem,
+  isLegalContentMetadata,
+} from "@/lib/content/legal-content";
 import {
   getUserContentProgress,
   isContentProgressStorageReady,
@@ -95,11 +98,12 @@ export default async function ContentDetailPage({
 
   const { category, themeNavigation } = await loadSupplementaryContext(item.id);
   const isSeedCategory = Boolean(category?.is_homepage_seed);
-  const isLegalContent = isLegalContentMetadata({
-    slug: item.slug,
-    title: item.title,
-    categories: category?.name ? [category.name] : [],
-  });
+  const isLegalContent =
+    isLegalContentMetadata({
+      slug: item.slug,
+      title: item.title,
+      categories: category?.name ? [category.name] : [],
+    }) || (await isLegalContentItem(item.id));
   const backHref = themeNavigation
     ? `/content/themas/${themeNavigation.theme.slug}`
     : category
