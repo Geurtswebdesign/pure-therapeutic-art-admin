@@ -130,26 +130,12 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
     ? requestedCategory
     : "";
 
-  let categoryItemIds: string[] | null = null;
-
-  if (activeCategory) {
-    const { data: relationships, error: categoryRelationshipsError } = await supabase
-      .from("content_term_relationships")
-      .select("content_item_id")
-      .eq("term_id", activeCategory);
-
-    if (categoryRelationshipsError) {
-      throw new Error(t.loadError);
-    }
-
-    categoryItemIds = Array.from(
-      new Set(
-        (relationships ?? [])
-          .map((relationship) => relationship.content_item_id)
-          .filter((value): value is string => Boolean(value))
-      )
-    );
-  }
+  const countSelect = activeCategory
+    ? "id, content_term_relationships!inner(term_id)"
+    : "id";
+  const contentSelect = activeCategory
+    ? "id, title, body, status, updated_at, published_at, credit_cost, content_term_relationships!inner(term_id)"
+    : "id, title, body, status, updated_at, published_at, credit_cost";
 
   function applyContentFilters<T>(
     query: T,
@@ -163,12 +149,11 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
       ) as FilterableContentQuery;
     }
 
-    if (categoryItemIds !== null) {
-      if (categoryItemIds.length === 0) {
-        return null;
-      }
-
-      nextQuery = nextQuery.in("id", categoryItemIds) as FilterableContentQuery;
+    if (activeCategory) {
+      nextQuery = nextQuery.eq(
+        "content_term_relationships.term_id",
+        activeCategory
+      ) as FilterableContentQuery;
     }
 
     if (creditFilter === "free") {
@@ -192,7 +177,7 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
     const query = applyContentFilters(
       supabase
         .from("content_items")
-        .select("id", { count: "exact", head: true }),
+        .select(countSelect, { count: "exact", head: true }),
       status
     );
 
@@ -203,6 +188,7 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
     const { count, error } = await query;
 
     if (error) {
+      console.error("[AdminContentPage:getStatusCount]", error);
       throw new Error(t.loadError);
     }
 
@@ -256,7 +242,7 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
   const contentQuery = applyContentFilters(
     supabase
       .from("content_items")
-      .select("id, title, body, status, updated_at, published_at, credit_cost"),
+      .select(contentSelect),
     statusFilter
   );
 
@@ -287,10 +273,11 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
     const { data: items, error } = await orderedQuery.range(from, to);
 
     if (error) {
+      console.error("[AdminContentPage:contentQuery]", error);
       throw new Error(t.loadError);
     }
 
-    itemRows = ((items ?? []) as Array<{
+    itemRows = ((items ?? []) as unknown as Array<{
       id: string;
       title: string;
       body?: string | null;
@@ -323,6 +310,7 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
       );
 
     if (relationshipsError) {
+      console.error("[AdminContentPage:relationships]", relationshipsError);
       throw new Error(t.loadError);
     }
 
@@ -341,6 +329,7 @@ export default async function AdminContentPage({ searchParams }: PageProps) {
         .in("id", termIds);
 
       if (termsError) {
+        console.error("[AdminContentPage:terms]", termsError);
         throw new Error(t.loadError);
       }
 
