@@ -2,13 +2,9 @@ import "server-only";
 
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { stripRichText } from "@/lib/content/stripRichText";
 
-export type LegalDocumentSlug =
-  | "disclaimer"
-  | "terms"
-  | "privacy"
-  | "impressum"
-  | "copyright";
+export type LegalDocumentSlug = string;
 
 export type LegalDocument = {
   slug: LegalDocumentSlug;
@@ -18,10 +14,15 @@ export type LegalDocument = {
 };
 
 type LegalContentItemRow = {
+  id?: string | null;
   slug: string | null;
   title: string | null;
+  excerpt?: string | null;
+  body?: string | null;
   language: string | null;
   status: string | null;
+  published_at?: string | null;
+  updated_at?: string | null;
 };
 
 type LegalDocumentDefinition = LegalDocument & {
@@ -35,6 +36,16 @@ function buildContentHref(item: Pick<LegalContentItemRow, "slug" | "language">) 
   }
 
   return item.language ? `/${item.language}/${item.slug}` : `/content/${item.slug}`;
+}
+
+function normalizeValue(value: string | null | undefined) {
+  return value?.trim().toLowerCase() ?? "";
+}
+
+function summarizeContent(item: Pick<LegalContentItemRow, "excerpt" | "body">) {
+  const text = stripRichText(item.excerpt || item.body || "");
+  if (!text) return "";
+  return text.length > 220 ? `${text.slice(0, 217).trim()}...` : text;
 }
 
 function toNormalizedSet(values: string[]) {
@@ -122,6 +133,116 @@ async function attachLegalContentHrefs(
       href: bestMatch ? buildContentHref(bestMatch) : null,
     };
   });
+}
+
+async function getSecurityPrivacyCategoryDocuments(
+  preferredLanguage: UiLanguage
+): Promise<LegalDocument[]> {
+  const supabase = createAdminClient();
+
+  const { data: terms, error: termsError } = await supabase
+    .from("content_terms")
+    .select("id, parent_id, slug, name, sort_order")
+    .order("sort_order", { ascending: true })
+    .returns<
+      Array<{
+        id: string;
+        parent_id: string | null;
+        slug: string | null;
+        name: string | null;
+        sort_order: number | null;
+      }>
+    >();
+
+  if (termsError) {
+    console.error("getSecurityPrivacyCategoryDocuments:terms", termsError);
+    return [];
+  }
+
+  const legalRootIds = new Set(
+    (terms ?? [])
+      .filter((term) => {
+        const slug = normalizeValue(term.slug);
+        const name = normalizeValue(term.name);
+        return (
+          slug === "veiligheid-privacy" ||
+          slug === "security-privacy" ||
+          name === "veiligheid & privacy" ||
+          name === "security & privacy" ||
+          name === "sicherheit & datenschutz"
+        );
+      })
+      .map((term) => term.id)
+  );
+
+  if (!legalRootIds.size) return [];
+
+  const termIds = new Set(legalRootIds);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const term of terms ?? []) {
+      if (term.parent_id && termIds.has(term.parent_id) && !termIds.has(term.id)) {
+        termIds.add(term.id);
+        changed = true;
+      }
+    }
+  }
+
+  const { data: relationships, error: relationshipsError } = await supabase
+    .from("content_term_relationships")
+    .select("content_item_id, term_id")
+    .in("term_id", Array.from(termIds))
+    .returns<Array<{ content_item_id: string | null; term_id: string | null }>>();
+
+  if (relationshipsError) {
+    console.error(
+      "getSecurityPrivacyCategoryDocuments:relationships",
+      relationshipsError
+    );
+    return [];
+  }
+
+  const contentItemIds = Array.from(
+    new Set(
+      (relationships ?? [])
+        .map((relationship) => relationship.content_item_id)
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+
+  if (!contentItemIds.length) return [];
+
+  const { data: items, error: itemsError } = await supabase
+    .from("content_items")
+    .select("id, slug, title, excerpt, body, language, status, published_at, updated_at")
+    .in("id", contentItemIds)
+    .eq("status", "published")
+    .returns<LegalContentItemRow[]>();
+
+  if (itemsError) {
+    console.error("getSecurityPrivacyCategoryDocuments:items", itemsError);
+    return [];
+  }
+
+  return (items ?? [])
+    .filter((item) => item.slug && item.title)
+    .sort((left, right) => {
+      const leftLanguage = normalizeValue(left.language);
+      const rightLanguage = normalizeValue(right.language);
+      if (leftLanguage === preferredLanguage && rightLanguage !== preferredLanguage) return -1;
+      if (rightLanguage === preferredLanguage && leftLanguage !== preferredLanguage) return 1;
+
+      const leftDate = left.published_at ?? left.updated_at ?? "";
+      const rightDate = right.published_at ?? right.updated_at ?? "";
+      return rightDate.localeCompare(leftDate);
+    })
+    .map((item) => ({
+      slug: item.slug!,
+      title: item.title!,
+      body: summarizeContent(item),
+      href: buildContentHref(item),
+    }));
 }
 
 export async function getLegalDocuments(
@@ -279,5 +400,27 @@ export async function getLegalDocuments(
     ];
   }
 
-  return attachLegalContentHrefs(definitions, language);
+  const [configuredDocuments, categoryDocuments] = await Promise.all([
+    attachLegalContentHrefs(definitions, language),
+    getSecurityPrivacyCategoryDocuments(language),
+  ]);
+
+  const existingHrefs = new Set(
+    configuredDocuments
+      .map((document) => document.href)
+      .filter((href): href is string => Boolean(href))
+  );
+  const existingSlugs = new Set(
+    configuredDocuments.map((document) => normalizeValue(document.slug))
+  );
+
+  const extraDocuments = categoryDocuments.filter((document) => {
+    const normalizedSlug = normalizeValue(document.slug);
+    return (
+      !existingSlugs.has(normalizedSlug) &&
+      (!document.href || !existingHrefs.has(document.href))
+    );
+  });
+
+  return [...configuredDocuments, ...extraDocuments];
 }
