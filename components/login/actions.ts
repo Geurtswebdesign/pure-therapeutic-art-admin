@@ -257,10 +257,10 @@ export async function requestPasswordReset(formData: FormData) {
   const adminHostRequest = isAdminHost(requestHost);
   const emailDomain = email.includes("@") ? email.split("@")[1] : "unknown";
 
-  if (!email) {
+  if (!email || !email.includes("@")) {
     redirect(
       getScopedLoginUrl(
-        { mode: "forgot", error: "recovery" },
+        { mode: "forgot", error: "email" },
         adminHostRequest,
         requestHost
       )

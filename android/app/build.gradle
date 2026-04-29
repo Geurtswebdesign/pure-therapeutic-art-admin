@@ -1,8 +1,27 @@
 apply plugin: 'com.android.application'
 
 import groovy.json.JsonSlurper
+import java.util.Properties
 
 def capacitorConfigFile = file('src/main/assets/capacitor.config.json')
+def signingPropertiesFile = rootProject.file('signing.properties')
+def signingProperties = new Properties()
+
+if (signingPropertiesFile.exists()) {
+    signingPropertiesFile.withInputStream { stream ->
+        signingProperties.load(stream)
+    }
+}
+
+def getSigningValue = { String name ->
+    return signingProperties.getProperty(name) ?: System.getenv(name)
+}
+
+def releaseStoreFile = getSigningValue('ANDROID_RELEASE_STORE_FILE')
+def releaseStorePassword = getSigningValue('ANDROID_RELEASE_STORE_PASSWORD')
+def releaseKeyAlias = getSigningValue('ANDROID_RELEASE_KEY_ALIAS')
+def releaseKeyPassword = getSigningValue('ANDROID_RELEASE_KEY_PASSWORD')
+def hasReleaseSigning = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
 
 def getCapacitorServerUrl = {
     if (!capacitorConfigFile.exists()) {
@@ -51,6 +70,13 @@ gradle.taskGraph.whenReady { graph ->
             "Run 'npm run native:sync' without CAPACITOR_SERVER_URL before creating a release build."
         )
     }
+
+    if (!hasReleaseSigning) {
+        throw new GradleException(
+            "Refusing to build an unsigned Android release. Configure android/signing.properties " +
+            "or ANDROID_RELEASE_* environment variables before running bundleRelease."
+        )
+    }
 }
 
 android {
@@ -69,8 +95,19 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                storeFile rootProject.file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }

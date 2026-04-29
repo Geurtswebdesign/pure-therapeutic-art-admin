@@ -212,6 +212,7 @@ export default async function LoginPage({
   const hasLoginError = error === "invalid";
   const hasRateLimitError = error === "rate-limit";
   const hasRecoveryError = error === "recovery";
+  const hasRecoveryEmailError = error === "email";
   const rateLimitMinutes = Number.parseInt(minutesParam ?? "", 10);
   const hasRegisterError = error === "register";
   const hasTherapistPackError = error === "therapist-pack";
@@ -561,6 +562,12 @@ export default async function LoginPage({
             {recoverySent ? (
               <p className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
                 {t.forgotSent}
+              </p>
+            ) : null}
+
+            {hasRecoveryEmailError ? (
+              <p className="rounded-[1rem] border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                {t.forgotInvalidEmail}
               </p>
             ) : null}
 

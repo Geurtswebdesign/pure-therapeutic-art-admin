@@ -1,0 +1,4 @@
+ANDROID_RELEASE_STORE_FILE=../pure-grief-and-therapeutic-art.jks
+ANDROID_RELEASE_STORE_PASSWORD=replace-with-keystore-password
+ANDROID_RELEASE_KEY_ALIAS=com.detroostboom.puretherapeuticart
+ANDROID_RELEASE_KEY_PASSWORD=replace-with-key-password

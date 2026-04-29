@@ -25,6 +25,7 @@ type AppMessages = {
     forgotIntro: string;
     forgotSubmit: string;
     forgotSent: string;
+    forgotInvalidEmail: string;
     forgotFailed: string;
     backToLogin: string;
     registerTitle: string;
@@ -327,6 +328,7 @@ const nl: AppMessages = {
     forgotSubmit: "Stuur herstelmail",
     forgotSent:
       "Als er een account bestaat voor dit e-mailadres, staat er nu een herstelmail voor je klaar.",
+    forgotInvalidEmail: "Vul eerst een geldig e-mailadres in.",
     forgotFailed:
       "Het versturen van de herstelmail is mislukt. Probeer het opnieuw.",
     backToLogin: "Terug naar inloggen",
@@ -633,6 +635,7 @@ const en: AppMessages = {
     forgotSubmit: "Send recovery email",
     forgotSent:
       "If an account exists for this email address, a recovery email is on its way.",
+    forgotInvalidEmail: "Enter a valid email address first.",
     forgotFailed:
       "Sending the recovery email failed. Please try again.",
     backToLogin: "Back to login",
@@ -702,6 +705,7 @@ const de: AppMessages = {
     forgotSubmit: "Wiederherstellungs-E-Mail senden",
     forgotSent:
       "Wenn fur diese E-Mail-Adresse ein Konto existiert, wurde eine Wiederherstellungs-E-Mail versendet.",
+    forgotInvalidEmail: "Gib zuerst eine gultige E-Mail-Adresse ein.",
     forgotFailed:
       "Die Wiederherstellungs-E-Mail konnte nicht gesendet werden. Bitte versuche es erneut.",
     backToLogin: "Zuruck zum Login",
