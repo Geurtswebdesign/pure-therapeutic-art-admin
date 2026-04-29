@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase/browser";
+import { uploadMediaAssetClient } from "@/lib/content/uploadClient";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getAppMessages } from "@/lib/i18n/appMessages";
 
@@ -15,7 +16,7 @@ type MediaAsset = {
 };
 
 type Tab = "library" | "upload";
-type FolderFilter = "all" | string;
+type CategoryFilter = "all" | string;
 type UploadItem = {
   id: string;
   name: string;
@@ -36,6 +37,9 @@ function friendlyUploadError(error: unknown) {
   const lower = message.toLowerCase();
   if (lower.includes("maximum allowed size") || lower.includes("payload too large")) {
     return `Bestand te groot. Maximaal ${MAX_UPLOAD_MB} MB per bestand.`;
+  }
+  if (message && !lower.includes("failed to fetch")) {
+    return message;
   }
   return "Upload mislukt. Controleer bestandsgrootte en probeer opnieuw.";
 }
@@ -61,22 +65,36 @@ function isPdfAsset(asset: MediaAsset) {
   return asset.mime_type === "application/pdf" || hasPdfFileExtension(asset.file_path);
 }
 
-function toStoragePath(filePath: string) {
-  if (!filePath.startsWith("http")) return filePath;
-  const marker = "/storage/v1/object/public/";
-  const idx = filePath.indexOf(marker);
-  if (idx < 0) return filePath;
-  return filePath.slice(idx + marker.length);
+function normalizeMediaAssetPath(filePath: string) {
+  let path = filePath.trim();
+
+  if (path.startsWith("http")) {
+    try {
+      const url = new URL(path);
+      path = decodeURIComponent(url.pathname);
+    } catch {
+      return filePath;
+    }
+  }
+
+  const storageMarkers = [
+    "/storage/v1/object/public/",
+    "/storage/v1/object/sign/",
+    "/storage/v1/object/authenticated/",
+  ];
+  for (const marker of storageMarkers) {
+    const idx = path.indexOf(marker);
+    if (idx >= 0) {
+      path = path.slice(idx + marker.length);
+      break;
+    }
+  }
+
+  return path.replace(/^\/+/, "");
 }
 
-function slugifyBase(name: string) {
-  const noExt = name.replace(/\.[^/.]+$/, "");
-  return noExt
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .slice(0, 60);
+function toStoragePath(filePath: string) {
+  return normalizeMediaAssetPath(filePath);
 }
 
 function sanitizeFolderPath(input: string) {
@@ -90,13 +108,13 @@ function sanitizeFolderPath(input: string) {
 }
 
 function relativePath(filePath: string) {
-  const storagePath = toStoragePath(filePath);
+  const storagePath = normalizeMediaAssetPath(filePath);
   return storagePath.startsWith("media/")
     ? storagePath.slice("media/".length)
     : storagePath;
 }
 
-function folderPathFromAsset(filePath: string) {
+function categoryPathFromAsset(filePath: string) {
   const rel = relativePath(filePath);
   const parts = rel.split("/").filter(Boolean);
   if (parts.length <= 1) return "library";
@@ -155,7 +173,7 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
   const [assets, setAssets] = useState<MediaAsset[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [folderFilter, setFolderFilter] = useState<FolderFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [uploadFolder, setUploadFolder] = useState("library");
   const [newFolderInput, setNewFolderInput] = useState("");
   const [manualFolders, setManualFolders] = useState<string[]>([]);
@@ -175,10 +193,10 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
     [assets, selectedIds]
   );
 
-  const folders = useMemo(() => {
+  const categories = useMemo(() => {
     const set = new Set<string>(["library"]);
     for (const asset of assets) {
-      set.add(folderPathFromAsset(asset.file_path));
+      set.add(categoryPathFromAsset(asset.file_path));
     }
     for (const folder of manualFolders) {
       set.add(folder);
@@ -192,12 +210,18 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
       const alt = (asset.alt_text ?? "").toLowerCase();
       const path = asset.file_path.toLowerCase();
       const matchesQuery = !q || alt.includes(q) || path.includes(q);
-      const matchesFolder =
-        folderFilter === "all" ||
-        folderPathFromAsset(asset.file_path) === folderFilter;
-      return matchesQuery && matchesFolder;
+      const matchesCategory =
+        categoryFilter === "all" ||
+        categoryPathFromAsset(asset.file_path) === categoryFilter;
+      return matchesQuery && matchesCategory;
     });
-  }, [assets, query, folderFilter]);
+  }, [assets, query, categoryFilter]);
+
+  useEffect(() => {
+    if (categoryFilter !== "all" && !categories.includes(categoryFilter)) {
+      setCategoryFilter("all");
+    }
+  }, [categories, categoryFilter]);
 
   useEffect(() => {
     loadAssets();
@@ -218,24 +242,6 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
     setLoading(false);
   }
 
-  async function getImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
-    if (!file.type.startsWith("image/")) return null;
-
-    return await new Promise((resolve) => {
-      const objectUrl = URL.createObjectURL(file);
-      const img = new window.Image();
-      img.onload = () => {
-        resolve({ width: img.naturalWidth, height: img.naturalHeight });
-        URL.revokeObjectURL(objectUrl);
-      };
-      img.onerror = () => {
-        resolve(null);
-        URL.revokeObjectURL(objectUrl);
-      };
-      img.src = objectUrl;
-    });
-  }
-
   async function handleUpload(files: FileList | File[] | null) {
     if (!files || files.length === 0) return;
     setUploading(true);
@@ -244,7 +250,6 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
     try {
       const list = Array.from(files);
       let uploadFailed = 0;
-      let insertFailed = 0;
       const queue: UploadItem[] = list.map((file) => ({
         id: crypto.randomUUID(),
         name: file.name,
@@ -277,56 +282,11 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
             continue;
           }
 
-          const ext = file.name.split(".").pop() ?? "bin";
-          const base = slugifyBase(file.name) || "asset";
           const safeFolder = sanitizeFolderPath(uploadFolder || "library") || "library";
-          const fileName = `${safeFolder}/${base}-${crypto.randomUUID()}.${ext}`;
           setItem(uploadItemId, { status: "uploading", progress: 20 });
 
-          const { error: uploadError } = await supabase.storage
-            .from("media")
-            .upload(fileName, file, {
-              cacheControl: "3600",
-              upsert: false,
-            });
-
-          if (uploadError) {
-            uploadFailed += 1;
-            setUploadError(friendlyUploadError(uploadError));
-            setItem(uploadItemId, {
-              status: "failed",
-              progress: 100,
-              error: friendlyUploadError(uploadError),
-            });
-            console.error("Media upload failed:", uploadError);
-            continue;
-          }
-
-          // Write media row so the library always contains uploads.
           setItem(uploadItemId, { status: "processing", progress: 80 });
-          const dimensions = await getImageDimensions(file);
-          const mimeType = file.type || "application/octet-stream";
-
-          const { error: insertError } = await supabase
-            .from("media_assets")
-            .insert({
-              file_path: `media/${fileName}`,
-              mime_type: mimeType,
-              width: dimensions?.width ?? null,
-              height: dimensions?.height ?? null,
-              alt_text: null,
-            });
-
-          if (insertError) {
-            insertFailed += 1;
-            setItem(uploadItemId, {
-              status: "failed",
-              progress: 100,
-              error: insertError.message,
-            });
-            console.warn("media_assets insert failed:", insertError.message);
-            continue;
-          }
+          await uploadMediaAssetClient(file, safeFolder);
           setItem(uploadItemId, { status: "done", progress: 100 });
         } catch (error) {
           uploadFailed += 1;
@@ -343,11 +303,7 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
 
       await loadAssets();
       setTab("library");
-      if (insertFailed > 0) {
-        setUploadError(
-          t.uploadPartialFailed.replace("{count}", String(insertFailed))
-        );
-      } else if (uploadFailed > 0) {
+      if (uploadFailed > 0) {
         setUploadError(t.uploadFailed.replace("{count}", String(uploadFailed)));
       }
     } finally {
@@ -462,7 +418,7 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
 
       await loadAssets();
       setSelectedIds([]);
-      setFolderFilter(destination);
+      setCategoryFilter(destination);
     } catch (error) {
       setUploadError(friendlyUploadError(error));
     } finally {
@@ -512,7 +468,7 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
                 onChange={(e) => setUploadFolder(e.target.value)}
                 className="w-full rounded border px-2 py-1.5 text-sm"
               >
-                {folders.map((folder) => (
+                {categories.map((folder) => (
                   <option key={folder} value={folder}>
                     {folder}
                   </option>
@@ -638,28 +594,28 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
       {tab === "library" ? (
         <div className="grid grid-cols-12 gap-4">
           <aside className="col-span-3 rounded border bg-white p-4 space-y-2">
-            <h2 className="font-medium">Mappen</h2>
+            <h2 className="font-medium">Categorieen</h2>
             <button
               type="button"
-              onClick={() => setFolderFilter("all")}
+              onClick={() => setCategoryFilter("all")}
               className={`block w-full rounded px-2 py-1 text-left text-sm ${
-                folderFilter === "all" ? "bg-black text-white" : "hover:bg-gray-100"
+                categoryFilter === "all" ? "bg-black text-white" : "hover:bg-gray-100"
               }`}
             >
-              Alle mappen ({assets.length})
+              Alle categorieen ({assets.length})
             </button>
-            {folders.map((folder) => {
+            {categories.map((folder) => {
               const count = assets.filter(
-                (asset) => folderPathFromAsset(asset.file_path) === folder
+                (asset) => categoryPathFromAsset(asset.file_path) === folder
               ).length;
               const depth = folder.split("/").length - 1;
               return (
                 <button
                   key={folder}
                   type="button"
-                  onClick={() => setFolderFilter(folder)}
+                  onClick={() => setCategoryFilter(folder)}
                   className={`block w-full rounded px-2 py-1 text-left text-sm ${
-                    folderFilter === folder ? "bg-black text-white" : "hover:bg-gray-100"
+                    categoryFilter === folder ? "bg-black text-white" : "hover:bg-gray-100"
                   }`}
                   style={{ paddingLeft: `${8 + depth * 10}px` }}
                 >
@@ -672,11 +628,24 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
           <section className="col-span-6 rounded border bg-white p-4 space-y-3">
             <div className="flex items-center gap-3">
               <h2 className="font-medium">{t.libraryTitle}</h2>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="ml-auto w-48 rounded border px-2 py-1 text-sm"
+                aria-label="Filter op categorie"
+              >
+                <option value="all">Alle categorieen</option>
+                {categories.map((folder) => (
+                  <option key={folder} value={folder}>
+                    {folder}
+                  </option>
+                ))}
+              </select>
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t.searchPlaceholder}
-                className="ml-auto w-72 rounded border px-2 py-1 text-sm"
+                className="w-72 rounded border px-2 py-1 text-sm"
               />
             </div>
 
@@ -690,7 +659,7 @@ export default function MediaLibraryClient({ initialTab = "library" }: Props) {
                 className="rounded border px-2 py-1 text-xs"
                 disabled={bulkBusy || selectedIds.length === 0}
               >
-                {folders.map((folder) => (
+                {categories.map((folder) => (
                   <option key={folder} value={folder}>
                     {folder}
                   </option>
