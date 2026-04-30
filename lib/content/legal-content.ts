@@ -28,8 +28,12 @@ const LEGAL_CONTENT_TITLES = new Set(
 const LEGAL_CATEGORY_NAMES = new Set(
   [
     "Veiligheid & privacy",
+    "Safety & Privacy",
     "Security & privacy",
     "Sicherheit & Datenschutz",
+    "Welkom",
+    "Welcome",
+    "Willkommen",
     "Disclaimer",
     "Algemene voorwaarden en condities",
     "Privacyverklaring AVG",
@@ -42,7 +46,11 @@ const LEGAL_CATEGORY_NAMES = new Set(
 const LEGAL_CATEGORY_SLUGS = new Set(
   [
     "veiligheid-privacy",
+    "safety-privacy",
     "security-privacy",
+    "welkom",
+    "welcome",
+    "willkommen",
     "disclaimer",
     "algemene-voorwaarden-en-condities",
     "privacyverklaring-avg",
