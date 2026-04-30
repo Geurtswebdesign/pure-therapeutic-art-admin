@@ -25,9 +25,7 @@ type RevenueSummary = {
     string,
     { appleAmountCents: number; googleAmountCents: number; otherAmountCents: number }
   >;
-  sandboxRevenueByCurrency: Map<string, number>;
   transactions: number;
-  sandboxTransactions: number;
 };
 
 type IapRevenueRow = {
@@ -73,9 +71,7 @@ function createRevenueSummary(): RevenueSummary {
   return {
     revenueByCurrency: new Map(),
     storeRevenueByCurrency: new Map(),
-    sandboxRevenueByCurrency: new Map(),
     transactions: 0,
-    sandboxTransactions: 0,
   };
 }
 
@@ -91,11 +87,6 @@ function addRevenue(summary: RevenueSummary, input: RevenueInput) {
 
   const currency = normalizeCurrency(input.currency);
   if (isSandboxEnvironment(input.environment)) {
-    summary.sandboxTransactions += 1;
-    summary.sandboxRevenueByCurrency.set(
-      currency,
-      (summary.sandboxRevenueByCurrency.get(currency) ?? 0) + amountCents
-    );
     return;
   }
 
@@ -159,6 +150,10 @@ function getCreditPackRevenueInput(
     note: row.note,
     environment: getRevenueCatEnvironment(iapRevenue?.raw_payload),
   };
+}
+
+function isProductionRevenueInput(input: RevenueInput) {
+  return !isSandboxEnvironment(input.environment);
 }
 
 function isStoreBackedPurchase(row: {
@@ -420,11 +415,14 @@ export async function getEcommerceOverview(range: DateRange) {
   let creditsSold = 0;
 
   for (const row of creditPackPurchases ?? []) {
-    creditsSold += Number(row.credits_total ?? 0);
+    const revenueInput = getCreditPackRevenueInput(row, iapRevenueByTransactionId);
+    if (isProductionRevenueInput(revenueInput)) {
+      creditsSold += Number(row.credits_total ?? 0);
+    }
     if (isStoreBackedPurchase(row)) {
       continue;
     }
-    addRevenue(summary, getCreditPackRevenueInput(row, iapRevenueByTransactionId));
+    addRevenue(summary, revenueInput);
   }
 
   for (const row of ebookPurchases ?? []) {
@@ -475,20 +473,11 @@ export async function getEcommerceOverview(range: DateRange) {
     currency,
     ...amounts,
   }));
-  const sandboxRevenueEntries = Array.from(
-    summary.sandboxRevenueByCurrency.entries()
-  ).map(([currency, amountCents]) => ({
-    currency,
-    amountCents,
-  }));
-
   return {
     revenueEntries,
     storeRevenueEntries,
-    sandboxRevenueEntries,
     creditsSold,
     transactions: summary.transactions,
-    sandboxTransactions: summary.sandboxTransactions,
   };
 }
 
@@ -595,16 +584,28 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
 
 export async function getTopCreditPacks(range: DateRange, limit = 6) {
   const supabase = createAdminClient();
-  const { data: purchases } = await supabase
-    .from("credit_pack_purchases")
-    .select("pack_id, amount_cents, credits_total, created_at")
-    .gte("created_at", range.from.toISOString())
-    .lte("created_at", range.to.toISOString());
+  const [{ data: purchases }, { data: iapRevenueRows }] = await Promise.all([
+    supabase
+      .from("credit_pack_purchases")
+      .select("pack_id, amount_cents, credits_total, currency, created_at, source, note, external_ref")
+      .gte("created_at", range.from.toISOString())
+      .lte("created_at", range.to.toISOString()),
+    supabase
+      .from("iap_transactions")
+      .select("platform, store_transaction_id, amount_cents, currency, created_at, pack_id, raw_payload")
+      .gte("created_at", range.from.toISOString())
+      .lte("created_at", range.to.toISOString())
+      .returns<IapRevenueRow[]>(),
+  ]);
+  const iapRevenueByTransactionId = getIapRevenueByTransactionId(iapRevenueRows);
 
   const totals = new Map<string, { count: number; revenue: number; credits: number }>();
   for (const row of purchases ?? []) {
     const packId = row.pack_id as string | null;
     if (!packId) continue;
+    const revenueInput = getCreditPackRevenueInput(row, iapRevenueByTransactionId);
+    if (!isProductionRevenueInput(revenueInput)) continue;
+
     const current = totals.get(packId) ?? { count: 0, revenue: 0, credits: 0 };
     current.count += 1;
     current.revenue += Number(row.amount_cents ?? 0);

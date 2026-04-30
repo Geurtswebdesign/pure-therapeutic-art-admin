@@ -195,10 +195,6 @@ export default async function EcommercePage({
   ).sort((a, b) => b.amountCents - a.amountCents);
   const primaryStoreRevenue = storeRevenueEntries[0];
   const primaryRevenue = revenueEntries[0];
-  const sandboxRevenueEntries = overview.sandboxRevenueEntries.sort(
-    (a, b) => b.amountCents - a.amountCents
-  );
-  const primarySandboxRevenue = sandboxRevenueEntries[0];
   const storeRevenueLabel = primaryStoreRevenue
     ? formatCurrency(primaryStoreRevenue.amountCents, primaryStoreRevenue.currency)
     : "0";
@@ -212,9 +208,6 @@ export default async function EcommercePage({
           primaryRevenue.currency
         )
       : null;
-  const sandboxRevenueLabel = primarySandboxRevenue
-    ? formatCurrency(primarySandboxRevenue.amountCents, primarySandboxRevenue.currency)
-    : "0";
   const avgOrderValue =
     overview.transactions > 0 && revenueEntries.length === 1
       ? formatCurrency(primaryRevenue.amountCents / overview.transactions, primaryRevenue.currency)
@@ -268,13 +261,6 @@ export default async function EcommercePage({
           ) : null}
           <p className="mt-2 text-xs text-gray-500">
             Apple + Google bruto omzet.
-          </p>
-        </article>
-        <article className="rounded border bg-white p-4">
-          <p className="text-xs text-gray-500">Sandbox / test revenue</p>
-          <h2 className="text-2xl font-semibold">{sandboxRevenueLabel}</h2>
-          <p className="mt-2 text-xs text-gray-500">
-            {overview.sandboxTransactions} test transactions excluded from revenue.
           </p>
         </article>
         <article className="rounded border bg-white p-4">
