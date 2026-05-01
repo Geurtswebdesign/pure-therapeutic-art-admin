@@ -137,6 +137,46 @@ function isUnconfirmedEmailError(error: { code?: string; message?: string } | nu
   );
 }
 
+function isApprovedProfileData(profileData: unknown) {
+  if (!profileData || typeof profileData !== "object" || Array.isArray(profileData)) {
+    return true;
+  }
+
+  const status = (profileData as Record<string, unknown>).account_approval_status;
+  return status === undefined || status === null || status === "approved";
+}
+
+async function confirmApprovedAuthEmail(input: {
+  email: string;
+  supabaseAdmin: ReturnType<typeof createAdminClient>;
+}) {
+  const { data: users } = await input.supabaseAdmin.rpc("get_admin_users");
+  const matchingUser = ((users ?? []) as Array<{ id?: string; email?: string | null }>).find(
+    (user) => user.email?.toLowerCase() === input.email
+  );
+
+  if (!matchingUser?.id) {
+    return false;
+  }
+
+  const { data: profile, error: profileError } = await input.supabaseAdmin
+    .from("profiles")
+    .select("profile_data")
+    .eq("user_id", matchingUser.id)
+    .maybeSingle<{ profile_data?: Record<string, unknown> | null }>();
+
+  if (profileError || !isApprovedProfileData(profile?.profile_data)) {
+    return false;
+  }
+
+  const { error } = await input.supabaseAdmin.auth.admin.updateUserById(
+    matchingUser.id,
+    { email_confirm: true }
+  );
+
+  return !error;
+}
+
 export async function registerAccount(formData: FormData) {
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim();
@@ -485,21 +525,34 @@ export async function login(formData: FormData) {
 
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const signInResult = await supabase.auth.signInWithPassword({
     email,
     password,
   });
+  let signInError = signInResult.error;
+
+  if (isUnconfirmedEmailError(signInError)) {
+    const confirmed = await confirmApprovedAuthEmail({ email, supabaseAdmin });
+
+    if (confirmed) {
+      const retryResult = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      signInError = retryResult.error;
+    }
+  }
 
   const nowIso = new Date().toISOString();
 
-  if (error) {
+  if (signInError) {
     try {
       await supabaseAdmin.from("auth_login_attempts").insert({
         email,
         ip_address: ipAddress,
         user_agent: userAgent,
         is_success: false,
-        error_code: error.message,
+        error_code: signInError.message,
         attempted_at: nowIso,
       });
     } catch {
@@ -513,18 +566,18 @@ export async function login(formData: FormData) {
       userAgent,
       details: {
         email,
-        error: error.message,
+        error: signInError.message,
       },
     });
 
     await logServerEvent({
       eventName: "login_failed",
       eventCategory: "auth",
-      eventLabel: error.message,
+      eventLabel: signInError.message,
       path: "/login",
     });
 
-    if (isUnconfirmedEmailError(error)) {
+    if (isUnconfirmedEmailError(signInError)) {
       const unconfirmedRedirect =
         origin === "account"
           ? "/account?error=email-unconfirmed"

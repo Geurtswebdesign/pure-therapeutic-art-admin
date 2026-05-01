@@ -250,6 +250,18 @@ export async function updateUserApprovalStatus(
   }
 
   const supabase = createAdminClient();
+
+  if (status === "approved") {
+    const { error: confirmError } = await supabase.auth.admin.updateUserById(
+      userId,
+      { email_confirm: true }
+    );
+
+    if (confirmError) {
+      throw new Error("E-mailadres bevestigen mislukt");
+    }
+  }
+
   const { data: existingProfile, error: loadError } = await supabase
     .from("profiles")
     .select("profile_data")
