@@ -57,6 +57,7 @@ const AUTH_COPY: Record<
     registerHint: string;
     loginFailed: string;
     loginUnconfirmed: string;
+    loginApprovalRequired: string;
     therapistPackTitle: string;
     therapistPackUnavailable: string;
     therapistPackError: string;
@@ -88,6 +89,8 @@ const AUTH_COPY: Record<
     loginFailed: "Inloggen mislukt. Controleer je gegevens en probeer opnieuw.",
     loginUnconfirmed:
       "Je account is aangemaakt, maar je e-mailadres is nog niet bevestigd. Open de bevestigingsmail en probeer daarna opnieuw in te loggen.",
+    loginApprovalRequired:
+      "Je account wacht nog op goedkeuring. Zodra wij je account hebben goedgekeurd kun je inloggen.",
     therapistPackTitle: "Startvariant",
     therapistPackUnavailable:
       "Er zijn op dit moment geen actieve therapeut-abonnementen beschikbaar.",
@@ -121,6 +124,8 @@ const AUTH_COPY: Record<
     loginFailed: "Login failed. Check your details and try again.",
     loginUnconfirmed:
       "Your account was created, but your email address is not confirmed yet. Open the confirmation email, then try logging in again.",
+    loginApprovalRequired:
+      "Your account is waiting for approval. You can log in after we approve it.",
     therapistPackTitle: "Starting option",
     therapistPackUnavailable:
       "There are currently no active therapist subscriptions available.",
@@ -157,6 +162,8 @@ const AUTH_COPY: Record<
       "Anmeldung fehlgeschlagen. Bitte pruefe deine Angaben und versuche es erneut.",
     loginUnconfirmed:
       "Dein Konto wurde erstellt, aber deine E-Mail-Adresse ist noch nicht bestaetigt. Oeffne die Bestaetigungs-E-Mail und melde dich danach erneut an.",
+    loginApprovalRequired:
+      "Dein Konto wartet noch auf Freigabe. Nach unserer Freigabe kannst du dich anmelden.",
     therapistPackTitle: "Startoption",
     therapistPackUnavailable:
       "Aktuell sind keine aktiven Therapeuten-Abonnements verfuegbar.",
@@ -218,6 +225,7 @@ export default async function LoginPage({
   const isRecoveryMode = mode === "forgot";
   const hasLoginError = error === "invalid";
   const hasUnconfirmedEmailError = error === "email-unconfirmed";
+  const hasApprovalRequiredError = error === "approval-required";
   const hasRateLimitError = error === "rate-limit";
   const hasRecoveryError = error === "recovery";
   const hasRecoveryEmailError = error === "email";
@@ -642,6 +650,11 @@ export default async function LoginPage({
             {hasUnconfirmedEmailError ? (
               <p className="rounded-[1rem] border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
                 {copy.loginUnconfirmed}
+              </p>
+            ) : null}
+            {hasApprovalRequiredError ? (
+              <p className="rounded-[1rem] border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                {copy.loginApprovalRequired}
               </p>
             ) : null}
             {hasRateLimitError ? (

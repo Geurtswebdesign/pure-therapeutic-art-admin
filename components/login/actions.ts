@@ -142,19 +142,11 @@ export async function registerAccount(formData: FormData) {
   const lastName = String(formData.get("last_name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
-  const requestedNext = String(formData.get("next") ?? "").trim();
   const accountType = resolveFrontendAccountType();
   const therapistPlan = resolveTherapistSubscriptionPlan(
     String(formData.get("therapist_plan") ?? "").trim()
   );
   const displayName = [firstName, lastName].filter(Boolean).join(" ").trim();
-  const defaultNext = therapistPlan
-    ? "/shop/credits#therapeut-abonnement"
-    : "/account";
-  const safeNext =
-    requestedNext.startsWith("/") && !requestedNext.startsWith("//")
-      ? requestedNext
-      : defaultNext;
 
   if (!firstName || !lastName || !email || password.length < 8) {
     redirect("/login?mode=register&error=register");
@@ -168,7 +160,6 @@ export async function registerAccount(formData: FormData) {
     redirect("/login?mode=register&error=therapist-pack");
   }
 
-  const supabase = await createClient();
   const supabaseAdmin = createAdminClient();
 
   await logServerEvent({
@@ -209,6 +200,8 @@ export async function registerAccount(formData: FormData) {
         first_name: firstName,
         last_name: lastName,
         account_type: accountType,
+        account_approval_status: "pending",
+        account_approval_requested_at: new Date().toISOString(),
         therapist_subscription_preference: selectedTherapistPack
           ? {
               plan: selectedTherapistPack.plan,
@@ -244,25 +237,14 @@ export async function registerAccount(formData: FormData) {
     redirect("/login?mode=register&error=register");
   }
 
-  const { error: signInError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
   await logServerEvent({
-    eventName: signInError ? "register_success_login_failed" : "register_success",
+    eventName: "register_success",
     eventCategory: "auth",
-    eventLabel:
-      signInError?.message ??
-      (therapistPlan ? `therapist:${therapistPlan}` : "therapist:free"),
+    eventLabel: therapistPlan ? `therapist:${therapistPlan}` : "therapist:free",
     path: "/login",
   });
 
-  if (signInError) {
-    redirect("/login?registered=1");
-  }
-
-  redirect(safeNext);
+  redirect("/login?registered=1");
 }
 
 export async function requestPasswordReset(formData: FormData) {
@@ -563,11 +545,23 @@ export async function login(formData: FormData) {
   const adminProfile = user
     ? await supabaseAdmin
         .from("profiles")
-        .select("role")
+        .select("role, profile_data")
         .eq("user_id", user.id)
-        .maybeSingle<{ role?: string }>()
+        .maybeSingle<{ role?: string; profile_data?: Record<string, unknown> | null }>()
     : null;
   const isAdmin = isAdminRole(adminProfile?.data?.role);
+  const approvalStatus = adminProfile?.data?.profile_data?.account_approval_status;
+  const accountNeedsApproval =
+    !isAdmin && (approvalStatus === "pending" || approvalStatus === "rejected");
+
+  if (accountNeedsApproval) {
+    await supabase.auth.signOut();
+    redirect(
+      origin === "account"
+        ? "/account?error=approval-required"
+        : `/login?error=approval-required${safeNext ? `&next=${encodeURIComponent(safeNext)}` : ""}`
+    );
+  }
 
   if (adminHostRequest && isAdmin && user) {
     const { data: factors } = await supabase.auth.mfa.listFactors();

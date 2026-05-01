@@ -25,6 +25,38 @@ export default async function AdminUsersPage() {
     throw new Error(t.loadFailed);
   }
 
+  const userIds = (users ?? [])
+    .map((user: { id?: string | null }) => user.id)
+    .filter((id: string | null | undefined): id is string => Boolean(id));
+  const { data: profiles } = userIds.length
+    ? await supabaseAdmin
+        .from("profiles")
+        .select("user_id, profile_data")
+        .in("user_id", userIds)
+    : { data: [] };
+  const approvalStatusByUserId = new Map(
+    (profiles ?? []).map((profile) => [
+      profile.user_id as string,
+      profile.profile_data &&
+      typeof profile.profile_data === "object" &&
+      !Array.isArray(profile.profile_data)
+        ? (profile.profile_data as Record<string, unknown>).account_approval_status
+        : null,
+    ])
+  );
+  const usersWithApprovalStatus = (users ?? []).map((user: { id?: string | null }) => {
+    const rawStatus = user.id ? approvalStatusByUserId.get(user.id) : null;
+    const approval_status =
+      rawStatus === "pending" || rawStatus === "rejected" || rawStatus === "approved"
+        ? rawStatus
+        : "approved";
+
+    return {
+      ...user,
+      approval_status,
+    };
+  });
+
   return (
     <div className="space-y-6">
       <AdminPageHeader
@@ -33,7 +65,7 @@ export default async function AdminUsersPage() {
       />
 
       <UsersTableClient
-        users={users ?? []}
+        users={usersWithApprovalStatus}
         currentAdminId={admin.id}
         language={language}
       />

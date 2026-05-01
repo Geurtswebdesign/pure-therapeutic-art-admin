@@ -70,6 +70,8 @@ export async function createUser({
         role: accessRole,
         profile_data: {
           account_type: nextAccountType,
+          account_approval_status: "approved",
+          account_approved_at: new Date().toISOString(),
         },
       },
       { onConflict: "user_id" }
@@ -178,6 +180,8 @@ export async function adminResetPassword(
 }
 type UserRole = "user" | "admin";
 
+type UserApprovalStatus = "approved" | "pending" | "rejected";
+
 export async function updateUserRole(
   userId: string,
   role: UserRole
@@ -228,6 +232,79 @@ export async function updateUserRole(
       nextRole: role,
     },
   });
+
+  return { success: true };
+}
+
+export async function updateUserApprovalStatus(
+  userId: string,
+  status: UserApprovalStatus
+) {
+  const admin = await getAdminUser();
+  if (!admin) {
+    throw new Error("Niet geautoriseerd");
+  }
+
+  if (!["approved", "pending", "rejected"].includes(status)) {
+    throw new Error("Ongeldige accountstatus");
+  }
+
+  const supabase = createAdminClient();
+  const { data: existingProfile, error: loadError } = await supabase
+    .from("profiles")
+    .select("profile_data")
+    .eq("user_id", userId)
+    .maybeSingle<{ profile_data?: Record<string, unknown> | null }>();
+
+  if (loadError) {
+    throw new Error("Profiel ophalen mislukt");
+  }
+
+  const nowIso = new Date().toISOString();
+  const profileData = {
+    ...(existingProfile?.profile_data ?? {}),
+    account_approval_status: status,
+    ...(status === "approved"
+      ? { account_approved_at: nowIso, account_rejected_at: null }
+      : status === "rejected"
+        ? { account_rejected_at: nowIso, account_approved_at: null }
+        : { account_approved_at: null, account_rejected_at: null }),
+    account_approval_updated_at: nowIso,
+    account_approval_updated_by: admin.id,
+  };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      profile_data: profileData,
+      updated_at: nowIso,
+    })
+    .eq("user_id", userId);
+
+  if (error) {
+    throw new Error("Accountstatus bijwerken mislukt");
+  }
+
+  if (status !== "approved") {
+    await invalidateUserSessions({
+      userIds: [userId],
+      reason: `account_${status}`,
+      updatedBy: admin.id,
+    });
+  }
+
+  await logSecurityAuditEvent({
+    eventType: "user_approval_status_updated",
+    severity: "warning",
+    actorUserId: admin.id,
+    targetUserId: userId,
+    details: {
+      status,
+    },
+  });
+
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${userId}`);
 
   return { success: true };
 }

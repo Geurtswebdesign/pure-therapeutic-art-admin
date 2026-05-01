@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   bulkUpdateUserRole,
   bulkDeleteUsers,
+  updateUserApprovalStatus,
   updateUserRole,
 } from "@/app/admin/users/actions";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
@@ -17,6 +18,7 @@ type User = {
   email: string | null;
   display_name: string | null;
   role: "user" | "admin";
+  approval_status?: "approved" | "pending" | "rejected";
   credits: number;
   created_at: string;
 };
@@ -35,9 +37,11 @@ export default function UsersTableClient({
   const [selected, setSelected] = useState<string[]>([]);
   type UserRole = "admin" | "user";
   type RoleFilter = "all" | UserRole;
+  type ApprovalFilter = "all" | "approved" | "pending" | "rejected";
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [approvalFilter, setApprovalFilter] = useState<ApprovalFilter>("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -52,6 +56,9 @@ export default function UsersTableClient({
   const filteredUsers = users.filter((u) => {
     const matchesRole =
         roleFilter === "all" || u.role === roleFilter;
+    const approvalStatus = u.approval_status ?? "approved";
+    const matchesApproval =
+        approvalFilter === "all" || approvalStatus === approvalFilter;
 
     const q = search.toLowerCase();
     const matchesSearch =
@@ -59,8 +66,14 @@ export default function UsersTableClient({
         u.display_name?.toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q);
 
-    return matchesRole && matchesSearch;
+    return matchesRole && matchesApproval && matchesSearch;
     });
+
+  function getApprovalLabel(status: User["approval_status"]) {
+    if (status === "pending") return "Wacht op goedkeuring";
+    if (status === "rejected") return "Geweigerd";
+    return "Goedgekeurd";
+  }
 
   function toggleAll(checked: boolean) {
     setSelected(checked ? filteredUsers.map((u) => u.id) : []);
@@ -185,6 +198,27 @@ export default function UsersTableClient({
           <option value="admin">{t.admins}</option>
           <option value="user">{t.users}</option>
         </select>
+
+        <select
+          value={approvalFilter}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (
+              value === "all" ||
+              value === "approved" ||
+              value === "pending" ||
+              value === "rejected"
+            ) {
+              setApprovalFilter(value);
+            }
+          }}
+          className="border rounded px-2 py-1 text-sm"
+        >
+          <option value="all">Alle statussen</option>
+          <option value="pending">Wacht op goedkeuring</option>
+          <option value="approved">Goedgekeurd</option>
+          <option value="rejected">Geweigerd</option>
+        </select>
       </div>
 
       {/* TABLE */}
@@ -205,6 +239,7 @@ export default function UsersTableClient({
               <th className="text-left px-2 py-2">{t.name}</th>
               <th className="text-left px-2 py-2">{t.email}</th>
               <th className="text-left px-2 py-2">{t.role}</th>
+              <th className="text-left px-2 py-2">Status</th>
               <th className="text-right px-2 py-2">{t.credits}</th>
             </tr>
           </thead>
@@ -248,6 +283,45 @@ export default function UsersTableClient({
                         </select>
                     )}
                     </td>
+                <td className="px-2 py-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`rounded px-2 py-0.5 text-xs ${
+                        u.approval_status === "pending"
+                          ? "bg-amber-100 text-amber-800"
+                          : u.approval_status === "rejected"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-emerald-100 text-emerald-700"
+                      }`}
+                    >
+                      {getApprovalLabel(u.approval_status)}
+                    </span>
+                    {u.id !== currentAdminId && u.approval_status !== "approved" ? (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await updateUserApprovalStatus(u.id, "approved");
+                          location.reload();
+                        }}
+                        className="rounded border border-emerald-200 px-2 py-1 text-xs text-emerald-700 hover:bg-emerald-50"
+                      >
+                        Goedkeuren
+                      </button>
+                    ) : null}
+                    {u.id !== currentAdminId && u.approval_status !== "rejected" ? (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await updateUserApprovalStatus(u.id, "rejected");
+                          location.reload();
+                        }}
+                        className="rounded border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
+                      >
+                        Weigeren
+                      </button>
+                    ) : null}
+                  </div>
+                </td>
                 <td className="px-2 py-2 text-right">
                   {u.credits}
                 </td>
