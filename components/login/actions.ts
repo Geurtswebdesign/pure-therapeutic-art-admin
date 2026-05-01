@@ -178,15 +178,13 @@ export async function registerAccount(formData: FormData) {
     path: "/login",
   });
 
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
-    options: {
-      data: {
-        first_name: firstName,
-        last_name: lastName,
-      },
-      emailRedirectTo: getPublicAreaUrl("/login?registered=1"),
+    email_confirm: true,
+    user_metadata: {
+      first_name: firstName,
+      last_name: lastName,
     },
   });
 
@@ -200,9 +198,11 @@ export async function registerAccount(formData: FormData) {
     redirect("/login?mode=register&error=register");
   }
 
+  const userId = data.user.id;
+
   const { error: profileError } = await supabaseAdmin.from("profiles").upsert(
     {
-      user_id: data.user.id,
+      user_id: userId,
       display_name: displayName || null,
       role: "user",
       profile_data: {
@@ -227,7 +227,7 @@ export async function registerAccount(formData: FormData) {
 
   const { error: walletError } = await supabaseAdmin.from("credit_wallets").upsert(
     {
-      user_id: data.user.id,
+      user_id: userId,
       credits_available: 0,
       credits_total_purchased: 0,
     },
@@ -244,18 +244,25 @@ export async function registerAccount(formData: FormData) {
     redirect("/login?mode=register&error=register");
   }
 
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
   await logServerEvent({
-    eventName: "register_success",
+    eventName: signInError ? "register_success_login_failed" : "register_success",
     eventCategory: "auth",
-    eventLabel: therapistPlan ? `therapist:${therapistPlan}` : "therapist:free",
+    eventLabel:
+      signInError?.message ??
+      (therapistPlan ? `therapist:${therapistPlan}` : "therapist:free"),
     path: "/login",
   });
 
-  if (data.session) {
-    redirect(safeNext);
+  if (signInError) {
+    redirect("/login?registered=1");
   }
 
-  redirect("/login?registered=1");
+  redirect(safeNext);
 }
 
 export async function requestPasswordReset(formData: FormData) {
