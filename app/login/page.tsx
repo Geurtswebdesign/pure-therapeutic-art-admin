@@ -56,6 +56,7 @@ const AUTH_COPY: Record<
     paidTherapistDescription: string;
     registerHint: string;
     loginFailed: string;
+    loginUnconfirmed: string;
     therapistPackTitle: string;
     therapistPackUnavailable: string;
     therapistPackError: string;
@@ -85,6 +86,8 @@ const AUTH_COPY: Record<
     registerHint:
       "Na registratie kun je je profiel verder aanvullen. Kies je hieronder al een abonnement, dan kun je dat daarna meteen in de shop afronden.",
     loginFailed: "Inloggen mislukt. Controleer je gegevens en probeer opnieuw.",
+    loginUnconfirmed:
+      "Je account is aangemaakt, maar je e-mailadres is nog niet bevestigd. Open de bevestigingsmail en probeer daarna opnieuw in te loggen.",
     therapistPackTitle: "Startvariant",
     therapistPackUnavailable:
       "Er zijn op dit moment geen actieve therapeut-abonnementen beschikbaar.",
@@ -116,6 +119,8 @@ const AUTH_COPY: Record<
     registerHint:
       "After registration you can complete your profile. If you choose a subscription below, you can complete it in the shop right away afterwards.",
     loginFailed: "Login failed. Check your details and try again.",
+    loginUnconfirmed:
+      "Your account was created, but your email address is not confirmed yet. Open the confirmation email, then try logging in again.",
     therapistPackTitle: "Starting option",
     therapistPackUnavailable:
       "There are currently no active therapist subscriptions available.",
@@ -150,6 +155,8 @@ const AUTH_COPY: Record<
       "Nach der Registrierung kannst du dein Profil weiter ergaenzen. Wenn du unten bereits ein Abo waehlen moechtest, kannst du es danach sofort im Shop abschliessen.",
     loginFailed:
       "Anmeldung fehlgeschlagen. Bitte pruefe deine Angaben und versuche es erneut.",
+    loginUnconfirmed:
+      "Dein Konto wurde erstellt, aber deine E-Mail-Adresse ist noch nicht bestaetigt. Oeffne die Bestaetigungs-E-Mail und melde dich danach erneut an.",
     therapistPackTitle: "Startoption",
     therapistPackUnavailable:
       "Aktuell sind keine aktiven Therapeuten-Abonnements verfuegbar.",
@@ -210,6 +217,7 @@ export default async function LoginPage({
   const isRegisterMode = !adminRequestHost && mode === "register";
   const isRecoveryMode = mode === "forgot";
   const hasLoginError = error === "invalid";
+  const hasUnconfirmedEmailError = error === "email-unconfirmed";
   const hasRateLimitError = error === "rate-limit";
   const hasRecoveryError = error === "recovery";
   const hasRecoveryEmailError = error === "email";
@@ -629,6 +637,11 @@ export default async function LoginPage({
             {hasLoginError ? (
               <p className="rounded-[1rem] border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
                 {copy.loginFailed}
+              </p>
+            ) : null}
+            {hasUnconfirmedEmailError ? (
+              <p className="rounded-[1rem] border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                {copy.loginUnconfirmed}
               </p>
             ) : null}
             {hasRateLimitError ? (

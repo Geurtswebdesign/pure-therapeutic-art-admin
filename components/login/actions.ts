@@ -130,6 +130,13 @@ function getScopedLoginUrl(
     : getPublicLoginUrl(params);
 }
 
+function isUnconfirmedEmailError(error: { code?: string; message?: string } | null) {
+  return (
+    error?.code === "email_not_confirmed" ||
+    error?.message?.toLowerCase().includes("email not confirmed")
+  );
+}
+
 export async function registerAccount(formData: FormData) {
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim();
@@ -179,6 +186,7 @@ export async function registerAccount(formData: FormData) {
         first_name: firstName,
         last_name: lastName,
       },
+      emailRedirectTo: getPublicAreaUrl("/login?registered=1"),
     },
   });
 
@@ -526,6 +534,17 @@ export async function login(formData: FormData) {
       eventLabel: error.message,
       path: "/login",
     });
+
+    if (isUnconfirmedEmailError(error)) {
+      const unconfirmedRedirect =
+        origin === "account"
+          ? "/account?error=email-unconfirmed"
+          : adminHostRequest
+            ? getAdminLoginUrl({ error: "email-unconfirmed" }, requestHost)
+            : `/login?error=email-unconfirmed${safeNext ? `&next=${encodeURIComponent(safeNext)}` : ""}`;
+
+      redirect(unconfirmedRedirect);
+    }
 
     redirect(invalidRedirect);
   }
