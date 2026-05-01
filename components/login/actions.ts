@@ -240,8 +240,8 @@ export async function registerAccount(formData: FormData) {
         first_name: firstName,
         last_name: lastName,
         account_type: accountType,
-        account_approval_status: "pending",
-        account_approval_requested_at: new Date().toISOString(),
+        account_approval_status: "approved",
+        account_approved_at: new Date().toISOString(),
         therapist_subscription_preference: selectedTherapistPack
           ? {
               plan: selectedTherapistPack.plan,

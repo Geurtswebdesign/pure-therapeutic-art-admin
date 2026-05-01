@@ -335,7 +335,7 @@ const nl: AppMessages = {
     registerTitle: "Account aanmaken",
     registerSubmit: "Account aanmaken",
     registerSuccess:
-      "Je account is aangemaakt en wacht op goedkeuring. Zodra wij je account hebben goedgekeurd kun je inloggen.",
+      "Je account is aangemaakt. Je kunt nu inloggen.",
     registerFailed: "Aanmelden mislukt. Controleer je gegevens en probeer opnieuw.",
     mfaTitle: "Bevestig 2FA",
     mfaPrompt: "Vul de code uit je authenticator app in.",
@@ -642,7 +642,7 @@ const en: AppMessages = {
     registerTitle: "Create account",
     registerSubmit: "Create account",
     registerSuccess:
-      "Your account was created and is waiting for approval. You can log in after we approve it.",
+      "Your account was created. You can now log in.",
     registerFailed: "Registration failed. Check your details and try again.",
     mfaTitle: "Confirm 2FA",
     mfaPrompt: "Enter the code from your authenticator app.",
@@ -712,7 +712,7 @@ const de: AppMessages = {
     registerTitle: "Konto erstellen",
     registerSubmit: "Konto erstellen",
     registerSuccess:
-      "Dein Konto wurde erstellt und wartet auf Freigabe. Nach unserer Freigabe kannst du dich anmelden.",
+      "Dein Konto wurde erstellt. Du kannst dich jetzt anmelden.",
     registerFailed:
       "Registrierung fehlgeschlagen. Bitte prufe deine Angaben und versuche es erneut.",
     mfaTitle: "2FA bestaetigen",
