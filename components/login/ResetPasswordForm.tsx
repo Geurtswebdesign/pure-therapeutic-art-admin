@@ -29,6 +29,43 @@ export default function ResetPasswordForm({
     let active = true;
 
     const resolveRecoverySession = async () => {
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("code");
+      const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+
+      if (code) {
+        const { error: exchangeError } =
+          await supabaseBrowser.auth.exchangeCodeForSession(code);
+
+        if (!active) return;
+
+        if (exchangeError) {
+          setError(exchangeError.message);
+          setViewState("invalid");
+          return;
+        }
+
+        url.searchParams.delete("code");
+        window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+      } else if (accessToken && refreshToken) {
+        const { error: tokenError } = await supabaseBrowser.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (!active) return;
+
+        if (tokenError) {
+          setError(tokenError.message);
+          setViewState("invalid");
+          return;
+        }
+
+        window.history.replaceState(null, "", url.pathname);
+      }
+
       const { data, error: sessionError } =
         await supabaseBrowser.auth.getSession();
 
