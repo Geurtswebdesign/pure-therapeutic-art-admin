@@ -304,8 +304,8 @@ export async function requestPasswordReset(formData: FormData) {
     );
   }
 
-  const supabase = await createClient();
-  const redirectTo = adminHostRequest
+  const supabaseAdmin = createAdminClient();
+  const resetBaseUrl = adminHostRequest
     ? getAdminAreaUrl("/reset-password", requestHost)
     : getPublicAreaUrl("/reset-password");
 
@@ -316,15 +316,79 @@ export async function requestPasswordReset(formData: FormData) {
     path: "/login",
   });
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo,
+  const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+    type: "recovery",
+    email,
+    options: {
+      redirectTo: resetBaseUrl,
+    },
   });
 
-  if (error) {
+  if (error || !data?.properties?.hashed_token) {
     await logServerEvent({
       eventName: "password_reset_request_failed",
       eventCategory: "auth",
-      eventLabel: error.message,
+      eventLabel: error?.message ?? "missing_recovery_token",
+      path: "/login",
+    });
+
+    redirect(
+      getScopedLoginUrl(
+        { mode: "forgot", error: "recovery" },
+        adminHostRequest,
+        requestHost
+      )
+    );
+  }
+
+  const resetUrl = new URL(resetBaseUrl);
+  resetUrl.searchParams.set("token_hash", data.properties.hashed_token);
+  resetUrl.searchParams.set("type", "recovery");
+
+  const fromEmail = process.env.GOOGLE_SENDER_EMAIL;
+
+  if (!fromEmail) {
+    await logServerEvent({
+      eventName: "password_reset_request_failed",
+      eventCategory: "auth",
+      eventLabel: "missing_sender_email",
+      path: "/login",
+    });
+
+    redirect(
+      getScopedLoginUrl(
+        { mode: "forgot", error: "recovery" },
+        adminHostRequest,
+        requestHost
+      )
+    );
+  }
+
+  try {
+    await sendMail({
+      to: email,
+      subject: "Wachtwoord herstellen",
+      fromName: "Pure Therapeutic ART Therapy",
+      fromEmail,
+      html: `
+        <p>Je hebt een nieuw wachtwoord aangevraagd.</p>
+        <p>Klik op de knop hieronder om een nieuw wachtwoord te kiezen.</p>
+        <p>
+          <a href="${resetUrl.toString()}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#1d2327;color:#ffffff;text-decoration:none;">
+            Nieuw wachtwoord kiezen
+          </a>
+        </p>
+        <p>Werkt de knop niet? Kopieer dan deze link naar je browser:</p>
+        <p><a href="${resetUrl.toString()}">${resetUrl.toString()}</a></p>
+        <p>Heb je dit niet aangevraagd? Dan kun je deze mail negeren.</p>
+      `,
+    });
+  } catch (mailError) {
+    await logServerEvent({
+      eventName: "password_reset_request_failed",
+      eventCategory: "auth",
+      eventLabel:
+        mailError instanceof Error ? mailError.message : "mail_send_failed",
       path: "/login",
     });
 

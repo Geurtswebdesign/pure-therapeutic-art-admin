@@ -30,12 +30,31 @@ export default function ResetPasswordForm({
 
     const resolveRecoverySession = async () => {
       const url = new URL(window.location.href);
+      const tokenHash = url.searchParams.get("token_hash");
+      const type = url.searchParams.get("type");
       const code = url.searchParams.get("code");
       const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
       const accessToken = hashParams.get("access_token");
       const refreshToken = hashParams.get("refresh_token");
 
-      if (code) {
+      if (tokenHash && type === "recovery") {
+        const { error: verifyError } = await supabaseBrowser.auth.verifyOtp({
+          type: "recovery",
+          token_hash: tokenHash,
+        });
+
+        if (!active) return;
+
+        if (verifyError) {
+          setError(verifyError.message);
+          setViewState("invalid");
+          return;
+        }
+
+        url.searchParams.delete("token_hash");
+        url.searchParams.delete("type");
+        window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+      } else if (code) {
         const { error: exchangeError } =
           await supabaseBrowser.auth.exchangeCodeForSession(code);
 
