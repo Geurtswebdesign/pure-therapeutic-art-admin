@@ -14,6 +14,7 @@
     "lint": "eslint",
     "native:prepare": "node scripts/prepare_capacitor_shell.mjs",
     "content:translate:backfill": "node scripts/backfill_content_translations.mjs",
+    "themes:translate:backfill": "node scripts/backfill_theme_translations.mjs",
     "native:icons": "node scripts/generate_native_app_icons.mjs",
     "native:splash": "node scripts/generate_native_splash_assets.mjs",
     "native:add:ios": "npm run native:prepare && cap add ios",

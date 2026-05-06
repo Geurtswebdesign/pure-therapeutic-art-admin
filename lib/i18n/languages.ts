@@ -4,7 +4,15 @@ export type LanguageOption = {
 };
 
 export const DEFAULT_PRIMARY_LANGUAGE = "nl";
-export const DEFAULT_SUPPORTED_LANGUAGES = ["nl", "en", "de"] as const;
+export const DEFAULT_SUPPORTED_LANGUAGES = [
+  "nl",
+  "en",
+  "de",
+  "pt",
+  "es",
+  "ar",
+  "it",
+] as const;
 
 export function normalizeLanguageCode(value: string): string {
   return value.trim().replace(/_/g, "-").toLowerCase();

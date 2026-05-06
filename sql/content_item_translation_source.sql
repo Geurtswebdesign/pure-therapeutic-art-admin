@@ -3,3 +3,7 @@ alter table public.content_items
 
 create index if not exists content_items_translation_source_id_idx
   on public.content_items (translation_source_id);
+
+create unique index if not exists content_items_translation_source_language_uidx
+  on public.content_items (translation_source_id, language)
+  where translation_source_id is not null;

@@ -6,7 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const DEFAULT_ENV_FILES = [".env.local", ".env.production", ".env"];
 const DEFAULT_PRIMARY_LANGUAGE = "nl";
-const DEFAULT_SUPPORTED_LANGUAGES = ["nl", "en", "de"];
+const DEFAULT_SUPPORTED_LANGUAGES = ["nl", "en", "de", "pt", "es", "ar", "it"];
 const DEFAULT_TIMEOUT_MS = 180_000;
 const DEFAULT_CONCURRENCY = 3;
 
