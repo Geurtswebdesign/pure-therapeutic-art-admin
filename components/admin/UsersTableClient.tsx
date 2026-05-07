@@ -19,6 +19,12 @@ type User = {
   display_name: string | null;
   role: "user" | "admin";
   approval_status?: "approved" | "pending" | "rejected";
+  subscriptions?: {
+    hasYearAssignments: boolean;
+    yearAssignmentsActiveUntil: string | null;
+    hasTherapistDirectory: boolean;
+    therapistDirectoryActiveUntil: string | null;
+  };
   credits: number;
   created_at: string;
 };
@@ -73,6 +79,50 @@ export default function UsersTableClient({
     if (status === "pending") return "Wacht op goedkeuring";
     if (status === "rejected") return "Geweigerd";
     return "Goedgekeurd";
+  }
+
+  function formatDate(value: string | null) {
+    if (!value) {
+      return t.indefinite;
+    }
+
+    return new Intl.DateTimeFormat("nl-NL", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(new Date(value));
+  }
+
+  function getSubscriptionBadges(user: User) {
+    const subscriptions = user.subscriptions;
+    if (!subscriptions) {
+      return [];
+    }
+
+    return [
+      subscriptions.hasYearAssignments
+        ? {
+            label: t.yearSubscription,
+            activeUntil: subscriptions.yearAssignmentsActiveUntil,
+            className: "bg-indigo-50 text-indigo-700 ring-indigo-100",
+          }
+        : null,
+      subscriptions.hasTherapistDirectory
+        ? {
+            label: t.therapistSubscription,
+            activeUntil: subscriptions.therapistDirectoryActiveUntil,
+            className: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+          }
+        : null,
+    ].filter(
+      (
+        item
+      ): item is {
+        label: string;
+        activeUntil: string | null;
+        className: string;
+      } => Boolean(item)
+    );
   }
 
   function toggleAll(checked: boolean) {
@@ -239,6 +289,7 @@ export default function UsersTableClient({
               <th className="text-left px-2 py-2">{t.name}</th>
               <th className="text-left px-2 py-2">{t.email}</th>
               <th className="text-left px-2 py-2">{t.role}</th>
+              <th className="text-left px-2 py-2">{t.subscriptions}</th>
               <th className="text-left px-2 py-2">Status</th>
               <th className="text-right px-2 py-2">{t.credits}</th>
             </tr>
@@ -283,6 +334,24 @@ export default function UsersTableClient({
                         </select>
                     )}
                     </td>
+                <td className="px-2 py-2">
+                  {getSubscriptionBadges(u).length ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {getSubscriptionBadges(u).map((subscription) => (
+                        <span
+                          key={subscription.label}
+                          className={`inline-flex rounded px-2 py-0.5 text-xs ring-1 ${subscription.className}`}
+                        >
+                          {subscription.label}: {formatDate(subscription.activeUntil)}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-400">
+                      {t.noActiveSubscriptions}
+                    </span>
+                  )}
+                </td>
                 <td className="px-2 py-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span

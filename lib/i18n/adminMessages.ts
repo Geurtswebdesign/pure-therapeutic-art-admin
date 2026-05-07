@@ -212,6 +212,11 @@ type AdminMessages = {
     name: string;
     email: string;
     role: string;
+    subscriptions: string;
+    noActiveSubscriptions: string;
+    yearSubscription: string;
+    therapistSubscription: string;
+    indefinite: string;
     credits: string;
     you: string;
     user: string;
@@ -545,6 +550,11 @@ const nl: AdminMessages = {
     name: "Naam",
     email: "E-mail",
     role: "Rol",
+    subscriptions: "Abonnementen",
+    noActiveSubscriptions: "Geen actief abonnement",
+    yearSubscription: "Jaar",
+    therapistSubscription: "Therapeut",
+    indefinite: "onbepaalde tijd",
     credits: "Credits",
     you: "Jij",
     user: "Gebruiker",
@@ -860,6 +870,11 @@ const en: AdminMessages = {
     users: "Users",
     name: "Name",
     role: "Role",
+    subscriptions: "Subscriptions",
+    noActiveSubscriptions: "No active subscription",
+    yearSubscription: "Year",
+    therapistSubscription: "Therapist",
+    indefinite: "indefinite",
     you: "You",
     user: "User",
     noUsersFound: "No users found.",
@@ -1173,6 +1188,11 @@ const de: AdminMessages = {
     users: "Benutzer",
     name: "Name",
     role: "Rolle",
+    subscriptions: "Abonnements",
+    noActiveSubscriptions: "Kein aktives Abonnement",
+    yearSubscription: "Jahr",
+    therapistSubscription: "Therapeut",
+    indefinite: "unbegrenzt",
     you: "Du",
     user: "Benutzer",
     noUsersFound: "Keine Benutzer gefunden.",

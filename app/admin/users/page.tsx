@@ -5,6 +5,57 @@ import { getAdminUser } from "@/lib/auth/getAdminUser";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
+import {
+  THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
+  YEAR_ASSIGNMENTS_ENTITLEMENT_KEY,
+  isTimedEntitlementActive,
+} from "@/lib/users/entitlements";
+
+type SubscriptionSummary = {
+  hasYearAssignments: boolean;
+  yearAssignmentsActiveUntil: string | null;
+  hasTherapistDirectory: boolean;
+  therapistDirectoryActiveUntil: string | null;
+};
+
+type UserEntitlementRow = {
+  user_id: string;
+  entitlement_key: string;
+  starts_at: string;
+  ends_at: string | null;
+  is_active: boolean | null;
+};
+
+function getActiveSubscriptionSummary(
+  rows: UserEntitlementRow[],
+  entitlementKey: string,
+  nowIso: string
+) {
+  let latest: string | null = null;
+  let hasActive = false;
+
+  for (const row of rows) {
+    if (row.entitlement_key !== entitlementKey) {
+      continue;
+    }
+
+    if (!isTimedEntitlementActive(row, nowIso)) {
+      continue;
+    }
+
+    hasActive = true;
+
+    if (!row.ends_at) {
+      return { hasActive, activeUntil: null };
+    }
+
+    if (!latest || row.ends_at > latest) {
+      latest = row.ends_at;
+    }
+  }
+
+  return { hasActive, activeUntil: latest };
+}
 
 export default async function AdminUsersPage() {
   const language = resolveUiLanguage(await getPrimaryLanguage());
@@ -34,6 +85,17 @@ export default async function AdminUsersPage() {
         .select("user_id, profile_data")
         .in("user_id", userIds)
     : { data: [] };
+  const { data: entitlements } = userIds.length
+    ? await supabaseAdmin
+        .from("user_entitlements")
+        .select("user_id, entitlement_key, starts_at, ends_at, is_active")
+        .in("user_id", userIds)
+        .in("entitlement_key", [
+          YEAR_ASSIGNMENTS_ENTITLEMENT_KEY,
+          THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
+        ])
+        .returns<UserEntitlementRow[]>()
+    : { data: [] as UserEntitlementRow[] };
   const approvalStatusByUserId = new Map(
     (profiles ?? []).map((profile) => [
       profile.user_id as string,
@@ -44,16 +106,57 @@ export default async function AdminUsersPage() {
         : null,
     ])
   );
+  const entitlementsByUserId = new Map<string, UserEntitlementRow[]>();
+  for (const entitlement of entitlements ?? []) {
+    const current = entitlementsByUserId.get(entitlement.user_id) ?? [];
+    current.push(entitlement);
+    entitlementsByUserId.set(entitlement.user_id, current);
+  }
+  const nowIso = new Date().toISOString();
+  const subscriptionByUserId = new Map<string, SubscriptionSummary>();
+  for (const userId of userIds) {
+    const rows = entitlementsByUserId.get(userId) ?? [];
+    const yearAssignments = getActiveSubscriptionSummary(
+      rows,
+      YEAR_ASSIGNMENTS_ENTITLEMENT_KEY,
+      nowIso
+    );
+    const therapistDirectory = getActiveSubscriptionSummary(
+      rows,
+      THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
+      nowIso
+    );
+    subscriptionByUserId.set(userId, {
+      hasYearAssignments: yearAssignments.hasActive,
+      yearAssignmentsActiveUntil: yearAssignments.activeUntil,
+      hasTherapistDirectory: therapistDirectory.hasActive,
+      therapistDirectoryActiveUntil: therapistDirectory.activeUntil,
+    });
+  }
   const usersWithApprovalStatus = (users ?? []).map((user: { id?: string | null }) => {
     const rawStatus = user.id ? approvalStatusByUserId.get(user.id) : null;
     const approval_status =
       rawStatus === "pending" || rawStatus === "rejected" || rawStatus === "approved"
         ? rawStatus
         : "approved";
+    const subscriptions = user.id
+      ? subscriptionByUserId.get(user.id) ?? {
+          hasYearAssignments: false,
+          yearAssignmentsActiveUntil: null,
+          hasTherapistDirectory: false,
+          therapistDirectoryActiveUntil: null,
+        }
+      : {
+          hasYearAssignments: false,
+          yearAssignmentsActiveUntil: null,
+          hasTherapistDirectory: false,
+          therapistDirectoryActiveUntil: null,
+        };
 
     return {
       ...user,
       approval_status,
+      subscriptions,
     };
   });
 
