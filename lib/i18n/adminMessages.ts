@@ -217,6 +217,12 @@ type AdminMessages = {
     yearSubscription: string;
     therapistSubscription: string;
     indefinite: string;
+    therapistDirectory: string;
+    visibleInDirectory: string;
+    hiddenInDirectory: string;
+    notTherapist: string;
+    profileDisabled: string;
+    subscriptionMissing: string;
     credits: string;
     you: string;
     user: string;
@@ -555,6 +561,12 @@ const nl: AdminMessages = {
     yearSubscription: "Jaar",
     therapistSubscription: "Therapeut",
     indefinite: "onbepaalde tijd",
+    therapistDirectory: "Therapeutenoverzicht",
+    visibleInDirectory: "Actief getoond",
+    hiddenInDirectory: "Niet getoond",
+    notTherapist: "Geen therapeut-account",
+    profileDisabled: "Profiel staat uit",
+    subscriptionMissing: "Geen actief therapeut-abonnement",
     credits: "Credits",
     you: "Jij",
     user: "Gebruiker",
@@ -875,6 +887,12 @@ const en: AdminMessages = {
     yearSubscription: "Year",
     therapistSubscription: "Therapist",
     indefinite: "indefinite",
+    therapistDirectory: "Therapist directory",
+    visibleInDirectory: "Shown",
+    hiddenInDirectory: "Hidden",
+    notTherapist: "Not a therapist account",
+    profileDisabled: "Profile disabled",
+    subscriptionMissing: "No active therapist subscription",
     you: "You",
     user: "User",
     noUsersFound: "No users found.",
@@ -1193,6 +1211,12 @@ const de: AdminMessages = {
     yearSubscription: "Jahr",
     therapistSubscription: "Therapeut",
     indefinite: "unbegrenzt",
+    therapistDirectory: "Therapeutenverzeichnis",
+    visibleInDirectory: "Wird angezeigt",
+    hiddenInDirectory: "Nicht angezeigt",
+    notTherapist: "Kein Therapeutenkonto",
+    profileDisabled: "Profil deaktiviert",
+    subscriptionMissing: "Kein aktives Therapeuten-Abo",
     you: "Du",
     user: "Benutzer",
     noUsersFound: "Keine Benutzer gefunden.",

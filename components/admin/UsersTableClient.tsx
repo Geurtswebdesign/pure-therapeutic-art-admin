@@ -25,6 +25,11 @@ type User = {
     hasTherapistDirectory: boolean;
     therapistDirectoryActiveUntil: string | null;
   };
+  directoryVisibility?: {
+    accountType: "user" | "client" | "therapist";
+    publicProfileEnabled: boolean;
+    isVisibleInTherapistDirectory: boolean;
+  };
   credits: number;
   created_at: string;
 };
@@ -123,6 +128,27 @@ export default function UsersTableClient({
         className: string;
       } => Boolean(item)
     );
+  }
+
+  function getDirectoryVisibilityReason(user: User) {
+    const visibility = user.directoryVisibility;
+    if (!visibility) {
+      return t.hiddenInDirectory;
+    }
+
+    if (visibility.isVisibleInTherapistDirectory) {
+      return t.visibleInDirectory;
+    }
+
+    if (visibility.accountType !== "therapist") {
+      return t.notTherapist;
+    }
+
+    if (!visibility.publicProfileEnabled) {
+      return t.profileDisabled;
+    }
+
+    return t.subscriptionMissing;
   }
 
   function toggleAll(checked: boolean) {
@@ -290,6 +316,7 @@ export default function UsersTableClient({
               <th className="text-left px-2 py-2">{t.email}</th>
               <th className="text-left px-2 py-2">{t.role}</th>
               <th className="text-left px-2 py-2">{t.subscriptions}</th>
+              <th className="text-left px-2 py-2">{t.therapistDirectory}</th>
               <th className="text-left px-2 py-2">Status</th>
               <th className="text-right px-2 py-2">{t.credits}</th>
             </tr>
@@ -351,6 +378,17 @@ export default function UsersTableClient({
                       {t.noActiveSubscriptions}
                     </span>
                   )}
+                </td>
+                <td className="px-2 py-2">
+                  <span
+                    className={`inline-flex rounded px-2 py-0.5 text-xs ring-1 ${
+                      u.directoryVisibility?.isVisibleInTherapistDirectory
+                        ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
+                        : "bg-gray-50 text-gray-500 ring-gray-200"
+                    }`}
+                  >
+                    {getDirectoryVisibilityReason(u)}
+                  </span>
                 </td>
                 <td className="px-2 py-2">
                   <div className="flex flex-wrap items-center gap-2">

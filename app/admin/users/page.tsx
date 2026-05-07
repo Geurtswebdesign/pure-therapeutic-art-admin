@@ -6,16 +6,33 @@ import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
 import { getAdminMessages } from "@/lib/i18n/adminMessages";
 import {
+  getProfileAccountType,
+  getTherapistProfileData,
+  type AppProfileData,
+  type UserAccountType,
+} from "@/lib/users/accountTypes";
+import {
   THERAPIST_DIRECTORY_ENTITLEMENT_KEY,
   YEAR_ASSIGNMENTS_ENTITLEMENT_KEY,
   isTimedEntitlementActive,
 } from "@/lib/users/entitlements";
+
+type ProfileRow = {
+  user_id: string;
+  profile_data?: AppProfileData | null;
+};
 
 type SubscriptionSummary = {
   hasYearAssignments: boolean;
   yearAssignmentsActiveUntil: string | null;
   hasTherapistDirectory: boolean;
   therapistDirectoryActiveUntil: string | null;
+};
+
+type DirectoryVisibilitySummary = {
+  accountType: UserAccountType;
+  publicProfileEnabled: boolean;
+  isVisibleInTherapistDirectory: boolean;
 };
 
 type UserEntitlementRow = {
@@ -84,6 +101,7 @@ export default async function AdminUsersPage() {
         .from("profiles")
         .select("user_id, profile_data")
         .in("user_id", userIds)
+        .returns<ProfileRow[]>()
     : { data: [] };
   const { data: entitlements } = userIds.length
     ? await supabaseAdmin
@@ -98,7 +116,7 @@ export default async function AdminUsersPage() {
     : { data: [] as UserEntitlementRow[] };
   const approvalStatusByUserId = new Map(
     (profiles ?? []).map((profile) => [
-      profile.user_id as string,
+      profile.user_id,
       profile.profile_data &&
       typeof profile.profile_data === "object" &&
       !Array.isArray(profile.profile_data)
@@ -106,6 +124,16 @@ export default async function AdminUsersPage() {
         : null,
     ])
   );
+  const directoryVisibilityByUserId = new Map<string, DirectoryVisibilitySummary>();
+  for (const profile of profiles ?? []) {
+    const accountType = getProfileAccountType(profile.profile_data ?? null);
+    const therapistProfile = getTherapistProfileData(profile.profile_data ?? null);
+    directoryVisibilityByUserId.set(profile.user_id, {
+      accountType,
+      publicProfileEnabled: Boolean(therapistProfile.public_profile_enabled),
+      isVisibleInTherapistDirectory: false,
+    });
+  }
   const entitlementsByUserId = new Map<string, UserEntitlementRow[]>();
   for (const entitlement of entitlements ?? []) {
     const current = entitlementsByUserId.get(entitlement.user_id) ?? [];
@@ -152,11 +180,30 @@ export default async function AdminUsersPage() {
           hasTherapistDirectory: false,
           therapistDirectoryActiveUntil: null,
         };
+    const directoryVisibility = user.id
+      ? directoryVisibilityByUserId.get(user.id) ?? {
+          accountType: "user" as const,
+          publicProfileEnabled: false,
+          isVisibleInTherapistDirectory: false,
+        }
+      : {
+          accountType: "user" as const,
+          publicProfileEnabled: false,
+          isVisibleInTherapistDirectory: false,
+        };
+    const nextDirectoryVisibility = {
+      ...directoryVisibility,
+      isVisibleInTherapistDirectory:
+        directoryVisibility.accountType === "therapist" &&
+        directoryVisibility.publicProfileEnabled &&
+        subscriptions.hasTherapistDirectory,
+    };
 
     return {
       ...user,
       approval_status,
       subscriptions,
+      directoryVisibility: nextDirectoryVisibility,
     };
   });
 
