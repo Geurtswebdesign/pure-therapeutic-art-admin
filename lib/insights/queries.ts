@@ -94,6 +94,12 @@ export type AdminAssignedProductRow = {
   note: string | null;
 };
 
+const HIDDEN_ADMIN_ASSIGNED_PRODUCT_USER_IDS = new Set([
+  "f10d25c3-2c29-4702-bc7f-c9788db7f3a7",
+  "56dc360f-c807-4b55-9cda-7cdd61f2501a",
+  "293e46f1-5d36-4fcd-9abd-caf84fe426ec",
+]);
+
 function detectPurchaseStore(
   source: string | null | undefined,
   note: string | null | undefined
@@ -572,10 +578,16 @@ export async function getAdminAssignedProducts(
       .order("created_at", { ascending: false })
       .returns<AdminEntitlementRow[]>(),
   ]);
+  const visiblePurchases = (purchases ?? []).filter(
+    (row) => !HIDDEN_ADMIN_ASSIGNED_PRODUCT_USER_IDS.has(row.user_id)
+  );
+  const visibleEntitlements = (entitlements ?? []).filter(
+    (row) => !HIDDEN_ADMIN_ASSIGNED_PRODUCT_USER_IDS.has(row.user_id)
+  );
 
-  const purchaseIds = (purchases ?? []).map((row) => row.id);
+  const purchaseIds = visiblePurchases.map((row) => row.id);
   const packIds = Array.from(
-    new Set((purchases ?? []).map((row) => row.pack_id).filter(Boolean))
+    new Set(visiblePurchases.map((row) => row.pack_id).filter(Boolean))
   ) as string[];
 
   const [{ data: creditTransactions }, { data: packs }] = await Promise.all([
@@ -603,7 +615,7 @@ export async function getAdminAssignedProducts(
   const packById = new Map((packs ?? []).map((pack) => [pack.id, pack]));
   const userIds = new Set<string>();
 
-  for (const row of purchases ?? []) {
+  for (const row of visiblePurchases) {
     userIds.add(row.user_id);
     const adminId = adminIdByPurchaseId.get(row.id);
     if (adminId) {
@@ -611,7 +623,7 @@ export async function getAdminAssignedProducts(
     }
   }
 
-  for (const row of entitlements ?? []) {
+  for (const row of visibleEntitlements) {
     userIds.add(row.user_id);
     if (row.created_by) {
       userIds.add(row.created_by);
@@ -635,7 +647,7 @@ export async function getAdminAssignedProducts(
   const getProfileName = (userId: string | null | undefined) =>
     userId ? profileNameById.get(userId) ?? shortUserId(userId) : "Onbekend";
 
-  const purchaseRows: AdminAssignedProductRow[] = (purchases ?? []).map((row) => {
+  const purchaseRows: AdminAssignedProductRow[] = visiblePurchases.map((row) => {
     const pack = row.pack_id ? packById.get(row.pack_id) : null;
     const adminId = adminIdByPurchaseId.get(row.id) ?? null;
 
@@ -655,7 +667,7 @@ export async function getAdminAssignedProducts(
     };
   });
 
-  const entitlementRows: AdminAssignedProductRow[] = (entitlements ?? []).map((row) => {
+  const entitlementRows: AdminAssignedProductRow[] = visibleEntitlements.map((row) => {
     const metadata = asObject(row.metadata);
     const packName = asString(metadata?.pack_name);
     const entitlementLabel =
