@@ -308,74 +308,6 @@ export default async function EcommercePage({
       </div>
 
       <section className="space-y-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-semibold">
-              Door admins toegewezen producten
-            </h3>
-            <p className="text-xs text-gray-500">
-              Deze regels worden apart getoond omdat ze handmatig vanuit de
-              admin zijn toegekend.
-            </p>
-          </div>
-          <MonthFilter
-            basePath="/admin/insights/ecommerce"
-            month={monthRange ? monthValue : undefined}
-            range={rangeValue}
-            options={monthOptions}
-          />
-        </div>
-        {adminAssignedProducts.length ? (
-          <div className="overflow-hidden rounded border bg-white">
-            <table className="min-w-full divide-y divide-stone-200 text-sm">
-              <thead className="bg-stone-50 text-left text-xs uppercase tracking-wide text-gray-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Datum</th>
-                  <th className="px-4 py-3 font-medium">Product</th>
-                  <th className="px-4 py-3 font-medium">Gebruiker</th>
-                  <th className="px-4 py-3 font-medium">Toegewezen door</th>
-                  <th className="px-4 py-3 text-right font-medium">Bedrag</th>
-                  <th className="px-4 py-3 font-medium">Notitie</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {adminAssignedProducts.map((row) => (
-                  <tr key={row.id}>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
-                      {formatDateTime(row.createdAt)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">
-                        {row.productName}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {row.productType === "credits"
-                          ? "Creditpakket"
-                          : "Abonnement"}
-                        {row.quantity ? ` · ${row.quantity}` : ""}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-700">{row.userName}</td>
-                    <td className="px-4 py-3 text-gray-700">{row.adminName}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right font-medium">
-                      {formatOptionalCurrency(row.amountCents, row.currency)}
-                    </td>
-                    <td className="max-w-[18rem] px-4 py-3 text-xs text-gray-500">
-                      {row.note || "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="rounded border bg-white p-4 text-sm text-gray-500">
-            Geen admin-toekenningen gevonden voor deze periode.
-          </div>
-        )}
-      </section>
-
-      <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold">Afdrachten op omzet</h3>
@@ -545,6 +477,74 @@ export default async function EcommercePage({
           </div>
         </article>
       </div>
+
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold">
+              Door admins toegewezen producten
+            </h3>
+            <p className="text-xs text-gray-500">
+              Deze regels worden apart getoond omdat ze handmatig vanuit de
+              admin zijn toegekend.
+            </p>
+          </div>
+          <MonthFilter
+            basePath="/admin/insights/ecommerce"
+            month={monthRange ? monthValue : undefined}
+            range={rangeValue}
+            options={monthOptions}
+          />
+        </div>
+        {adminAssignedProducts.length ? (
+          <div className="overflow-hidden rounded border bg-white">
+            <table className="min-w-full divide-y divide-stone-200 text-sm">
+              <thead className="bg-stone-50 text-left text-xs uppercase tracking-wide text-gray-500">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Datum</th>
+                  <th className="px-4 py-3 font-medium">Product</th>
+                  <th className="px-4 py-3 font-medium">Gebruiker</th>
+                  <th className="px-4 py-3 font-medium">Toegewezen door</th>
+                  <th className="px-4 py-3 text-right font-medium">Bedrag</th>
+                  <th className="px-4 py-3 font-medium">Notitie</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {adminAssignedProducts.map((row) => (
+                  <tr key={row.id}>
+                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                      {formatDateTime(row.createdAt)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900">
+                        {row.productName}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {row.productType === "credits"
+                          ? "Creditpakket"
+                          : "Abonnement"}
+                        {row.quantity ? ` · ${row.quantity}` : ""}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-700">{row.userName}</td>
+                    <td className="px-4 py-3 text-gray-700">{row.adminName}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right font-medium">
+                      {formatOptionalCurrency(row.amountCents, row.currency)}
+                    </td>
+                    <td className="max-w-[18rem] px-4 py-3 text-xs text-gray-500">
+                      {row.note || "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rounded border bg-white p-4 text-sm text-gray-500">
+            Geen admin-toekenningen gevonden voor deze periode.
+          </div>
+        )}
+      </section>
     </section>
   );
 }
