@@ -7,8 +7,18 @@ export type DateRange = {
 
 type EcommercePurchaseStore = "apple" | "google" | "other";
 
-const APPLE_SOURCES = new Set(["apple", "app_store", "appstore", "ios"]);
-const GOOGLE_SOURCES = new Set(["google", "play_store", "playstore", "android"]);
+const APPLE_SOURCES = new Set([
+  "apple",
+  "appstore",
+  "appleappstore",
+  "ios",
+]);
+const GOOGLE_SOURCES = new Set([
+  "google",
+  "playstore",
+  "googleplay",
+  "android",
+]);
 
 type RevenueInput = {
   amountCents: number | null | undefined;
@@ -53,12 +63,19 @@ function detectPurchaseStore(
   note: string | null | undefined
 ): EcommercePurchaseStore {
   const normalizedSource = source?.trim().toLowerCase() ?? "";
+  const compactSource = normalizedSource.replace(/[\s_-]+/g, "");
   if (APPLE_SOURCES.has(normalizedSource)) return "apple";
   if (GOOGLE_SOURCES.has(normalizedSource)) return "google";
+  if (APPLE_SOURCES.has(compactSource)) return "apple";
+  if (GOOGLE_SOURCES.has(compactSource)) return "google";
 
   const normalizedNote = note?.trim().toLowerCase() ?? "";
-  if (/\bapple\s+(iap|revenuecat)\b/.test(normalizedNote)) return "apple";
-  if (/\bgoogle\s+(iap|revenuecat)\b/.test(normalizedNote)) return "google";
+  if (/\b(apple|app[-_\s]?store|ios)\s+(iap|revenuecat|store|order)\b/.test(normalizedNote)) {
+    return "apple";
+  }
+  if (/\b(google|google[-_\s]?play|play[-_\s]?store|android)\s+(iap|revenuecat|store|order)\b/.test(normalizedNote)) {
+    return "google";
+  }
 
   return "other";
 }
