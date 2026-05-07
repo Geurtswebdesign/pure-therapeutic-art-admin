@@ -13,6 +13,8 @@ type SubscriptionPackLike = {
   id: string;
   slug: string;
   name: string;
+  price_cents?: number | null;
+  currency?: string | null;
   is_active?: boolean;
 };
 
@@ -47,15 +49,25 @@ export type ResolvedSubscriptionPack = {
   googleStoreProductId: string | null;
 };
 
+export type SubscriptionPackResolutionOptions = {
+  therapistPlanHint?: TherapistSubscriptionPlan | null;
+  amountCents?: number | null;
+  currency?: string | null;
+};
+
 const THERAPIST_MONTHLY_GOOGLE_PRODUCT_IDS = [
   "therapeut:therapeut-maand",
   "therapeut-maand:monthly-autorenewing",
+  "therapeut-maand",
 ] as const;
 
 const THERAPIST_YEARLY_GOOGLE_PRODUCT_IDS = [
   "therapeut:therapeut-jaar",
   "therapeut-jaar:annual-autorenewing",
+  "therapeut-jaar",
 ] as const;
+
+const SHARED_THERAPIST_GOOGLE_PRODUCT_ID = "therapeut";
 
 function normalizeLabel(value: string) {
   return value
@@ -131,6 +143,31 @@ function getSupportedGoogleSubscriptionProductIds(kind: SubscriptionPackKind) {
   }
 
   return [...THERAPIST_YEARLY_GOOGLE_PRODUCT_IDS];
+}
+
+function getTherapistKindForPlan(
+  plan: TherapistSubscriptionPlan
+): SubscriptionPackKind {
+  return plan === "monthly" ? "therapist_monthly" : "therapist_yearly";
+}
+
+function matchesPackPrice(
+  pack: SubscriptionPackLike,
+  options: SubscriptionPackResolutionOptions | undefined
+) {
+  if (options?.amountCents === null || options?.amountCents === undefined) {
+    return false;
+  }
+
+  if (pack.price_cents !== options.amountCents) {
+    return false;
+  }
+
+  if (!options.currency || !pack.currency) {
+    return true;
+  }
+
+  return pack.currency.toUpperCase() === options.currency.toUpperCase();
 }
 
 function isSupportedSubscriptionStoreProductId(
@@ -265,7 +302,8 @@ export async function getSubscriptionPackStoreProducts(packs: SubscriptionPackLi
 
 export async function resolveSubscriptionPackByStoreProductId(
   platform: "apple" | "google",
-  storeProductId: string
+  storeProductId: string,
+  options?: SubscriptionPackResolutionOptions
 ) {
   const normalizedStoreProductId = storeProductId.trim();
   if (!normalizedStoreProductId) {
@@ -288,7 +326,7 @@ export async function resolveSubscriptionPackByStoreProductId(
   if (mappedProduct?.pack_id) {
     const { data: pack, error: packError } = await supabase
       .from("credit_packs")
-      .select("id, slug, name, is_active")
+      .select("id, slug, name, price_cents, currency, is_active")
       .eq("id", mappedProduct.pack_id)
       .maybeSingle<SubscriptionPackLike>();
 
@@ -312,7 +350,7 @@ export async function resolveSubscriptionPackByStoreProductId(
 
   const { data: packs, error: packsError } = await supabase
     .from("credit_packs")
-    .select("id, slug, name, is_active")
+    .select("id, slug, name, price_cents, currency, is_active")
     .eq("is_active", true)
     .returns<SubscriptionPackLike[]>();
 
@@ -339,6 +377,50 @@ export async function resolveSubscriptionPackByStoreProductId(
     const resolved = buildResolvedSubscriptionPack(pack, defaults);
     if (resolved) {
       return resolved;
+    }
+  }
+
+  if (
+    platform === "google" &&
+    normalizedStoreProductId === SHARED_THERAPIST_GOOGLE_PRODUCT_ID
+  ) {
+    const targetKind = options?.therapistPlanHint
+      ? getTherapistKindForPlan(options.therapistPlanHint)
+      : null;
+
+    const therapistPacks = (packs ?? [])
+      .map((pack) => ({
+        pack,
+        defaults: getDefaultSubscriptionStoreProductIds(pack),
+        kind: getSubscriptionPackKind(pack),
+      }))
+      .filter((entry) => {
+        if (!entry.defaults || !entry.kind) {
+          return false;
+        }
+
+        if (
+          entry.kind !== "therapist_monthly" &&
+          entry.kind !== "therapist_yearly"
+        ) {
+          return false;
+        }
+
+        if (targetKind) {
+          return entry.kind === targetKind;
+        }
+
+        return matchesPackPrice(entry.pack, options);
+      });
+
+    if (therapistPacks.length === 1) {
+      const match = therapistPacks[0];
+      if (match.defaults) {
+        return buildResolvedSubscriptionPack(match.pack, {
+          ...match.defaults,
+          googleStoreProductId: normalizedStoreProductId,
+        });
+      }
     }
   }
 

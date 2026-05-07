@@ -35,6 +35,8 @@ type RevenueCatEvent = {
   expiration_at_ms?: number | string | null;
   entitlement_id?: string | null;
   entitlement_ids?: string[] | null;
+  product_plan_identifier?: string | null;
+  presented_offering_id?: string | null;
   period_type?: string | null;
   cancel_reason?: string | null;
 };
@@ -92,6 +94,49 @@ function resolveUserId(event: RevenueCatEvent) {
 
 function resolveTransactionId(event: RevenueCatEvent) {
   return event.transaction_id ?? event.original_transaction_id ?? null;
+}
+
+function getAmountCents(event: RevenueCatEvent) {
+  return typeof event.price_in_purchased_currency === "number"
+    ? Math.round(event.price_in_purchased_currency * 100)
+    : null;
+}
+
+function getCurrency(event: RevenueCatEvent) {
+  return event.currency ?? "EUR";
+}
+
+function getTherapistPlanHint(event: RevenueCatEvent) {
+  const entitlementIds = Array.isArray(event.entitlement_ids)
+    ? event.entitlement_ids
+    : [];
+  const values = [
+    event.product_id,
+    event.entitlement_id,
+    event.product_plan_identifier,
+    event.presented_offering_id,
+    ...entitlementIds,
+  ]
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => value.toLowerCase());
+
+  if (
+    values.some((value) =>
+      /(^|[-_: ])(jaar|year|yearly|annual)([-_: ]|$)/.test(value)
+    )
+  ) {
+    return "yearly" as const;
+  }
+
+  if (
+    values.some((value) =>
+      /(^|[-_: ])(maand|month|monthly)([-_: ]|$)/.test(value)
+    )
+  ) {
+    return "monthly" as const;
+  }
+
+  return null;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -258,6 +303,8 @@ function buildSubscriptionMetadata(input: {
     last_event_at: input.eventTimestampIso,
     entitlement_id: input.event.entitlement_id ?? null,
     entitlement_ids: entitlementIds,
+    product_plan_identifier: input.event.product_plan_identifier ?? null,
+    presented_offering_id: input.event.presented_offering_id ?? null,
     period_type: input.event.period_type ?? null,
     cancel_reason: input.event.cancel_reason ?? null,
   };
@@ -273,11 +320,8 @@ async function upsertSubscriptionEntitlement(input: {
 }) {
   const transactionId = resolveTransactionId(input.event);
   const originalTransactionId = getSubscriptionOriginalTransactionId(input.event);
-  const amountCents =
-    typeof input.event.price_in_purchased_currency === "number"
-      ? Math.round(input.event.price_in_purchased_currency * 100)
-      : null;
-  const currency = input.event.currency ?? "EUR";
+  const amountCents = getAmountCents(input.event);
+  const currency = getCurrency(input.event);
   const eventTimestampIso = getEventTimestampIso(input.event);
   const purchasedAtIso = getPurchasedAtIso(input.event) ?? new Date().toISOString();
   const expirationAtIso = getExpirationAtIso(input.event);
@@ -417,11 +461,8 @@ async function updateSubscriptionCancellation(input: {
   }
 
   const eventTimestampIso = getEventTimestampIso(input.event);
-  const amountCents =
-    typeof input.event.price_in_purchased_currency === "number"
-      ? Math.round(input.event.price_in_purchased_currency * 100)
-      : null;
-  const currency = input.event.currency ?? "EUR";
+  const amountCents = getAmountCents(input.event);
+  const currency = getCurrency(input.event);
   const supabase = createAdminClient();
 
   await Promise.all(
@@ -471,11 +512,8 @@ async function expireSubscriptionEntitlement(input: {
     getEventTimestampIso(input.event) ??
     new Date().toISOString();
   const eventTimestampIso = getEventTimestampIso(input.event);
-  const amountCents =
-    typeof input.event.price_in_purchased_currency === "number"
-      ? Math.round(input.event.price_in_purchased_currency * 100)
-      : null;
-  const currency = input.event.currency ?? "EUR";
+  const amountCents = getAmountCents(input.event);
+  const currency = getCurrency(input.event);
 
   const rows = await loadSubscriptionEntitlements(
     input.userId,
@@ -564,11 +602,8 @@ export async function POST(request: Request) {
         platform,
         storeTransactionId: transactionId,
         storeProductId: event.product_id,
-        amountCents:
-          typeof event.price_in_purchased_currency === "number"
-            ? Math.round(event.price_in_purchased_currency * 100)
-            : null,
-        currency: event.currency ?? "EUR",
+        amountCents: getAmountCents(event),
+        currency: getCurrency(event),
         rawPayload: payload,
       });
 
@@ -600,7 +635,12 @@ export async function POST(request: Request) {
 
   const subscriptionPack = await resolveSubscriptionPackByStoreProductId(
     platform,
-    event.product_id
+    event.product_id,
+    {
+      therapistPlanHint: getTherapistPlanHint(event),
+      amountCents: getAmountCents(event),
+      currency: getCurrency(event),
+    }
   );
 
   if (subscriptionPack) {
@@ -671,11 +711,8 @@ export async function POST(request: Request) {
       storeProductId: event.product_id,
       userId,
       quantity: 1,
-      amountCents:
-        typeof event.price_in_purchased_currency === "number"
-          ? Math.round(event.price_in_purchased_currency * 100)
-          : null,
-      currency: event.currency ?? "EUR",
+      amountCents: getAmountCents(event),
+      currency: getCurrency(event),
       rawPayload: payload,
     });
 
