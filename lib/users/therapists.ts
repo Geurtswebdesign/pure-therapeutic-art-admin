@@ -187,7 +187,6 @@ export async function getPublicTherapistDirectoryData(
   const { data, error } = await supabase
     .from("profiles")
     .select("user_id, display_name, profile_data")
-    .eq("role", "user")
     .returns<ProfileRow[]>();
 
   if (error) {
