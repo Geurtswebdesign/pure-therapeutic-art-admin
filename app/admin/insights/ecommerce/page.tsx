@@ -2,6 +2,7 @@ import {
   resolveRange,
   resolveMonthRange,
   getEcommerceOverview,
+  getAdminAssignedProducts,
   getEcommerceDailyRevenue,
   getTopCreditPacks,
   getTopCoupons,
@@ -33,6 +34,22 @@ function formatCurrency(amountCents: number, currency: string) {
   } catch {
     return `${(amountCents / 100).toFixed(2)} ${currency}`;
   }
+}
+
+function formatOptionalCurrency(amountCents: number | null, currency: string) {
+  return amountCents === null ? "-" : formatCurrency(amountCents, currency);
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("nl-NL", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "Europe/Amsterdam",
+  }).format(new Date(value));
 }
 
 function calculateRevenueSplit(input: {
@@ -168,6 +185,7 @@ export default async function EcommercePage({
   const [
     overview,
     revenueDaily,
+    adminAssignedProducts,
     topPacks,
     coupons,
     abandoned,
@@ -176,6 +194,7 @@ export default async function EcommercePage({
   ] = await Promise.all([
     getEcommerceOverview(range),
     getEcommerceDailyRevenue(range),
+    getAdminAssignedProducts(range),
     getTopCreditPacks(range, 6),
     getTopCoupons(range, 8),
     getCartAbandonment(range, 8),
@@ -287,6 +306,62 @@ export default async function EcommercePage({
           </p>
         </article>
       </div>
+
+      {adminAssignedProducts.length ? (
+        <section className="space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold">
+              Door admins toegewezen producten
+            </h3>
+            <p className="text-xs text-gray-500">
+              Deze regels worden apart getoond omdat ze handmatig vanuit de
+              admin zijn toegekend.
+            </p>
+          </div>
+          <div className="overflow-hidden rounded border bg-white">
+            <table className="min-w-full divide-y divide-stone-200 text-sm">
+              <thead className="bg-stone-50 text-left text-xs uppercase tracking-wide text-gray-500">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Datum</th>
+                  <th className="px-4 py-3 font-medium">Product</th>
+                  <th className="px-4 py-3 font-medium">Gebruiker</th>
+                  <th className="px-4 py-3 font-medium">Toegewezen door</th>
+                  <th className="px-4 py-3 text-right font-medium">Bedrag</th>
+                  <th className="px-4 py-3 font-medium">Notitie</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {adminAssignedProducts.map((row) => (
+                  <tr key={row.id}>
+                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                      {formatDateTime(row.createdAt)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900">
+                        {row.productName}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {row.productType === "credits"
+                          ? "Creditpakket"
+                          : "Abonnement"}
+                        {row.quantity ? ` · ${row.quantity}` : ""}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-700">{row.userName}</td>
+                    <td className="px-4 py-3 text-gray-700">{row.adminName}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right font-medium">
+                      {formatOptionalCurrency(row.amountCents, row.currency)}
+                    </td>
+                    <td className="max-w-[18rem] px-4 py-3 text-xs text-gray-500">
+                      {row.note || "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">

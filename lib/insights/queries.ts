@@ -58,6 +58,42 @@ type CreditPackRevenueRow = {
   external_ref?: string | null;
 };
 
+type AdminCreditPackPurchaseRow = {
+  id: string;
+  user_id: string;
+  pack_id: string | null;
+  quantity: number | null;
+  credits_total: number | null;
+  amount_cents: number | null;
+  currency: string | null;
+  created_at: string | null;
+  note: string | null;
+};
+
+type AdminEntitlementRow = {
+  id: string;
+  user_id: string;
+  entitlement_key: string;
+  created_at: string | null;
+  created_by: string | null;
+  metadata: Record<string, unknown> | null;
+};
+
+export type AdminAssignedProductRow = {
+  id: string;
+  createdAt: string | null;
+  userId: string;
+  userName: string;
+  adminId: string | null;
+  adminName: string;
+  productName: string;
+  productType: "credits" | "subscription";
+  quantity: number | null;
+  amountCents: number | null;
+  currency: string;
+  note: string | null;
+};
+
 function detectPurchaseStore(
   source: string | null | undefined,
   note: string | null | undefined
@@ -134,6 +170,22 @@ function asObject(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
+}
+
+function asString(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function asNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function shortUserId(userId: string | null | undefined) {
+  if (!userId) {
+    return "Onbekend";
+  }
+
+  return userId.length > 8 ? `${userId.slice(0, 8)}...` : userId;
 }
 
 function getRevenueCatEnvironment(rawPayload: unknown) {
@@ -496,6 +548,142 @@ export async function getEcommerceOverview(range: DateRange) {
     creditsSold,
     transactions: summary.transactions,
   };
+}
+
+export async function getAdminAssignedProducts(
+  range: DateRange
+): Promise<AdminAssignedProductRow[]> {
+  const supabase = createAdminClient();
+  const [{ data: purchases }, { data: entitlements }] = await Promise.all([
+    supabase
+      .from("credit_pack_purchases")
+      .select("id, user_id, pack_id, quantity, credits_total, amount_cents, currency, created_at, note")
+      .eq("source", "admin")
+      .gte("created_at", range.from.toISOString())
+      .lte("created_at", range.to.toISOString())
+      .order("created_at", { ascending: false })
+      .returns<AdminCreditPackPurchaseRow[]>(),
+    supabase
+      .from("user_entitlements")
+      .select("id, user_id, entitlement_key, created_at, created_by, metadata")
+      .eq("source", "admin")
+      .gte("created_at", range.from.toISOString())
+      .lte("created_at", range.to.toISOString())
+      .order("created_at", { ascending: false })
+      .returns<AdminEntitlementRow[]>(),
+  ]);
+
+  const purchaseIds = (purchases ?? []).map((row) => row.id);
+  const packIds = Array.from(
+    new Set((purchases ?? []).map((row) => row.pack_id).filter(Boolean))
+  ) as string[];
+
+  const [{ data: creditTransactions }, { data: packs }] = await Promise.all([
+    purchaseIds.length
+      ? supabase
+          .from("credit_transactions")
+          .select("ref_id, admin_id")
+          .in("ref_id", purchaseIds)
+          .returns<Array<{ ref_id: string | null; admin_id: string | null }>>()
+      : Promise.resolve({ data: [] }),
+    packIds.length
+      ? supabase
+          .from("credit_packs")
+          .select("id, name, slug")
+          .in("id", packIds)
+          .returns<Array<{ id: string; name: string | null; slug: string | null }>>()
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const adminIdByPurchaseId = new Map(
+    (creditTransactions ?? [])
+      .filter((row) => row.ref_id)
+      .map((row) => [row.ref_id as string, row.admin_id])
+  );
+  const packById = new Map((packs ?? []).map((pack) => [pack.id, pack]));
+  const userIds = new Set<string>();
+
+  for (const row of purchases ?? []) {
+    userIds.add(row.user_id);
+    const adminId = adminIdByPurchaseId.get(row.id);
+    if (adminId) {
+      userIds.add(adminId);
+    }
+  }
+
+  for (const row of entitlements ?? []) {
+    userIds.add(row.user_id);
+    if (row.created_by) {
+      userIds.add(row.created_by);
+    }
+  }
+
+  const { data: profiles } = userIds.size
+    ? await supabase
+        .from("profiles")
+        .select("user_id, display_name")
+        .in("user_id", Array.from(userIds))
+        .returns<Array<{ user_id: string; display_name: string | null }>>()
+    : { data: [] as Array<{ user_id: string; display_name: string | null }> };
+
+  const profileNameById = new Map(
+    (profiles ?? []).map((profile) => [
+      profile.user_id,
+      profile.display_name?.trim() || shortUserId(profile.user_id),
+    ])
+  );
+  const getProfileName = (userId: string | null | undefined) =>
+    userId ? profileNameById.get(userId) ?? shortUserId(userId) : "Onbekend";
+
+  const purchaseRows: AdminAssignedProductRow[] = (purchases ?? []).map((row) => {
+    const pack = row.pack_id ? packById.get(row.pack_id) : null;
+    const adminId = adminIdByPurchaseId.get(row.id) ?? null;
+
+    return {
+      id: `credit-${row.id}`,
+      createdAt: row.created_at,
+      userId: row.user_id,
+      userName: getProfileName(row.user_id),
+      adminId,
+      adminName: getProfileName(adminId),
+      productName: pack?.name || pack?.slug || "Creditpakket",
+      productType: "credits",
+      quantity: row.quantity ?? row.credits_total ?? null,
+      amountCents: row.amount_cents,
+      currency: normalizeCurrency(row.currency),
+      note: row.note,
+    };
+  });
+
+  const entitlementRows: AdminAssignedProductRow[] = (entitlements ?? []).map((row) => {
+    const metadata = asObject(row.metadata);
+    const packName = asString(metadata?.pack_name);
+    const entitlementLabel =
+      row.entitlement_key === "therapist_directory"
+        ? "Therapeutenoverzicht"
+        : row.entitlement_key === "year_assignments"
+          ? "Jaarabonnement volledige toegang"
+          : row.entitlement_key;
+
+    return {
+      id: `entitlement-${row.id}`,
+      createdAt: row.created_at,
+      userId: row.user_id,
+      userName: getProfileName(row.user_id),
+      adminId: row.created_by,
+      adminName: getProfileName(row.created_by),
+      productName: packName || entitlementLabel,
+      productType: "subscription",
+      quantity: asNumber(metadata?.duration_months),
+      amountCents: asNumber(metadata?.amount_cents),
+      currency: normalizeCurrency(asString(metadata?.currency)),
+      note: asString(metadata?.note) || null,
+    };
+  });
+
+  return [...purchaseRows, ...entitlementRows].sort((a, b) =>
+    (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+  );
 }
 
 export async function getEcommerceDailyRevenue(range: DateRange) {
