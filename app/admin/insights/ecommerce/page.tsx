@@ -307,8 +307,8 @@ export default async function EcommercePage({
         </article>
       </div>
 
-      {adminAssignedProducts.length ? (
-        <section className="space-y-3">
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold">
               Door admins toegewezen producten
@@ -318,6 +318,14 @@ export default async function EcommercePage({
               admin zijn toegekend.
             </p>
           </div>
+          <MonthFilter
+            basePath="/admin/insights/ecommerce"
+            month={monthRange ? monthValue : undefined}
+            range={rangeValue}
+            options={monthOptions}
+          />
+        </div>
+        {adminAssignedProducts.length ? (
           <div className="overflow-hidden rounded border bg-white">
             <table className="min-w-full divide-y divide-stone-200 text-sm">
               <thead className="bg-stone-50 text-left text-xs uppercase tracking-wide text-gray-500">
@@ -360,8 +368,12 @@ export default async function EcommercePage({
               </tbody>
             </table>
           </div>
-        </section>
-      ) : null}
+        ) : (
+          <div className="rounded border bg-white p-4 text-sm text-gray-500">
+            Geen admin-toekenningen gevonden voor deze periode.
+          </div>
+        )}
+      </section>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
