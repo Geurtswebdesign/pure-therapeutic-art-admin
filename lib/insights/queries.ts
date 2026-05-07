@@ -238,6 +238,10 @@ function isStoreBackedPurchase(row: {
   return detectPurchaseStore(row.source, row.note) !== "other";
 }
 
+function isAdminAssignedPurchase(row: { source?: string | null }) {
+  return row.source?.trim().toLowerCase() === "admin";
+}
+
 export function resolveMonthRange(month: string | undefined): DateRange | null {
   if (!month || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
     return null;
@@ -493,6 +497,9 @@ export async function getEcommerceOverview(range: DateRange) {
     const revenueInput = getCreditPackRevenueInput(row, iapRevenueByTransactionId);
     if (isProductionRevenueInput(revenueInput)) {
       creditsSold += Number(row.credits_total ?? 0);
+    }
+    if (isAdminAssignedPurchase(row)) {
+      continue;
     }
     if (isStoreBackedPurchase(row)) {
       continue;
@@ -755,6 +762,9 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
   };
 
   for (const row of creditPackPurchases ?? []) {
+    if (isAdminAssignedPurchase(row)) {
+      continue;
+    }
     if (isStoreBackedPurchase(row)) {
       continue;
     }
@@ -818,6 +828,9 @@ export async function getTopCreditPacks(range: DateRange, limit = 6) {
 
   const totals = new Map<string, { count: number; revenue: number; credits: number }>();
   for (const row of purchases ?? []) {
+    if (isAdminAssignedPurchase(row)) {
+      continue;
+    }
     const packId = row.pack_id as string | null;
     if (!packId) continue;
     const revenueInput = getCreditPackRevenueInput(row, iapRevenueByTransactionId);
