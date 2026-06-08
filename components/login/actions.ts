@@ -381,11 +381,35 @@ export async function requestPasswordReset(formData: FormData) {
       },
     });
   } catch (mailError) {
+    const mailErrorMessage =
+      mailError instanceof Error ? mailError.message : "mail_send_failed";
+    const supabase = await createClient();
+    const { error: supabaseMailError } =
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: resetBaseUrl,
+      });
+
+    if (!supabaseMailError) {
+      await logServerEvent({
+        eventName: "password_reset_request_fallback_sent",
+        eventCategory: "auth",
+        eventLabel: mailErrorMessage,
+        path: "/login",
+      });
+
+      redirect(
+        getScopedLoginUrl(
+          { mode: "forgot", sent: "1" },
+          adminHostRequest,
+          requestHost
+        )
+      );
+    }
+
     await logServerEvent({
       eventName: "password_reset_request_failed",
       eventCategory: "auth",
-      eventLabel:
-        mailError instanceof Error ? mailError.message : "mail_send_failed",
+      eventLabel: `${mailErrorMessage}; supabase: ${supabaseMailError.message}`,
       path: "/login",
     });
 
