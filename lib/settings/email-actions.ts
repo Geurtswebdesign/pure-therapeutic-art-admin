@@ -320,6 +320,9 @@ export async function sendEmailSettingsTest(input: {
       unlock_date: new Date().toISOString(),
       remaining_credits: "10",
       reminder_text: "Dit is een testherinnering.",
+      reset_url: `${
+        process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+      }/reset-password?token_hash=voorbeeld&type=recovery`,
       action_url: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/account`,
       app_url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
     },

@@ -3,6 +3,7 @@ export const EMAIL_TEMPLATE_TYPES = [
   "reminder",
   "credits_added",
   "welcome",
+  "password_reset",
 ] as const;
 
 export type EmailTemplateType = (typeof EMAIL_TEMPLATE_TYPES)[number];

@@ -142,6 +142,9 @@ export default function EmailSettingsForm({
       unlock_date: new Date().toISOString(),
       remaining_credits: "10",
       reminder_text: "Dit is een voorbeeldherinnering.",
+      reset_url: `${
+        websiteUrl || "http://localhost:3000"
+      }/reset-password?token_hash=voorbeeld&type=recovery`,
       action_url: `${websiteUrl || "http://localhost:3000"}/account`,
       app_url: websiteUrl || "http://localhost:3000",
       app_name: appName || "Pure Therapeutic ART Therapy",

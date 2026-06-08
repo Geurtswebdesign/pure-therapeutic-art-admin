@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getRuntimeSecuritySettings } from "@/lib/security/runtime";
 import { logSecurityAuditEvent } from "@/lib/security/audit";
 import { sendMail } from "@/lib/mail/sendMail";
+import { sendTransactionalEmail } from "@/lib/mail/service";
 import { logServerEvent } from "@/lib/analytics/server";
 import { isAdminRole } from "@/lib/users/accountTypes";
 import type { UserAccountType } from "@/lib/users/accountTypes";
@@ -128,6 +129,15 @@ function getScopedLoginUrl(
   return adminHostRequest
     ? getAdminLoginUrl(params, requestHost)
     : getPublicLoginUrl(params);
+}
+
+function isMissingRecoveryUserError(error: { message?: string } | null) {
+  const message = error?.message?.toLowerCase() ?? "";
+  return (
+    message.includes("user not found") ||
+    message.includes("user does not exist") ||
+    message.includes("no user")
+  );
 }
 
 function isUnconfirmedEmailError(error: { code?: string; message?: string } | null) {
@@ -324,6 +334,23 @@ export async function requestPasswordReset(formData: FormData) {
     },
   });
 
+  if (isMissingRecoveryUserError(error)) {
+    await logServerEvent({
+      eventName: "password_reset_request_accepted",
+      eventCategory: "auth",
+      eventLabel: "unknown_account",
+      path: "/login",
+    });
+
+    redirect(
+      getScopedLoginUrl(
+        { mode: "forgot", sent: "1" },
+        adminHostRequest,
+        requestHost
+      )
+    );
+  }
+
   if (error || !data?.properties?.hashed_token) {
     await logServerEvent({
       eventName: "password_reset_request_failed",
@@ -345,43 +372,13 @@ export async function requestPasswordReset(formData: FormData) {
   resetUrl.searchParams.set("token_hash", data.properties.hashed_token);
   resetUrl.searchParams.set("type", "recovery");
 
-  const fromEmail = process.env.GOOGLE_SENDER_EMAIL;
-
-  if (!fromEmail) {
-    await logServerEvent({
-      eventName: "password_reset_request_failed",
-      eventCategory: "auth",
-      eventLabel: "missing_sender_email",
-      path: "/login",
-    });
-
-    redirect(
-      getScopedLoginUrl(
-        { mode: "forgot", error: "recovery" },
-        adminHostRequest,
-        requestHost
-      )
-    );
-  }
-
   try {
-    await sendMail({
+    await sendTransactionalEmail({
+      templateType: "password_reset",
       to: email,
-      subject: "Wachtwoord herstellen",
-      fromName: "Pure Therapeutic ART Therapy",
-      fromEmail,
-      html: `
-        <p>Je hebt een nieuw wachtwoord aangevraagd.</p>
-        <p>Klik op de knop hieronder om een nieuw wachtwoord te kiezen.</p>
-        <p>
-          <a href="${resetUrl.toString()}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#1d2327;color:#ffffff;text-decoration:none;">
-            Nieuw wachtwoord kiezen
-          </a>
-        </p>
-        <p>Werkt de knop niet? Kopieer dan deze link naar je browser:</p>
-        <p><a href="${resetUrl.toString()}">${resetUrl.toString()}</a></p>
-        <p>Heb je dit niet aangevraagd? Dan kun je deze mail negeren.</p>
-      `,
+      variables: {
+        reset_url: resetUrl.toString(),
+      },
     });
   } catch (mailError) {
     await logServerEvent({

@@ -18,6 +18,29 @@ type EmailTemplateRow = {
   is_active: boolean;
 };
 
+const FALLBACK_EMAIL_TEMPLATES: Partial<
+  Record<EmailTemplateType, EmailTemplateRow>
+> = {
+  password_reset: {
+    type: "password_reset",
+    sender_key: "noreply",
+    subject: "Wachtwoord herstellen",
+    html: `
+      <p>Je hebt een nieuw wachtwoord aangevraagd.</p>
+      <p>Klik op de knop hieronder om een nieuw wachtwoord te kiezen.</p>
+      <p>
+        <a href="{{reset_url}}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#1d2327;color:#ffffff;text-decoration:none;">
+          Nieuw wachtwoord kiezen
+        </a>
+      </p>
+      <p>Werkt de knop niet? Kopieer dan deze link naar je browser:</p>
+      <p><a href="{{reset_url}}">{{reset_url}}</a></p>
+      <p>Heb je dit niet aangevraagd? Dan kun je deze mail negeren.</p>
+    `,
+    is_active: true,
+  },
+};
+
 const DEFAULT_BRANDING: EmailBrandingSettings = {
   app_name: "Pure Therapeutic ART Therapy",
   primary_color: "#111827",
@@ -106,7 +129,10 @@ export async function sendTransactionalEmail(input: {
   to: string;
   variables?: Record<string, unknown>;
 }) {
-  const template = await getEmailTemplate(input.templateType);
+  const template =
+    (await getEmailTemplate(input.templateType)) ??
+    FALLBACK_EMAIL_TEMPLATES[input.templateType] ??
+    null;
   if (!template || !template.is_active) {
     throw new Error(`Actieve e-mailtemplate ontbreekt voor type: ${input.templateType}`);
   }
