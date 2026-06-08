@@ -112,7 +112,7 @@ async function insertEmailLog(input: {
   metadata?: Record<string, unknown>;
 }) {
   const supabase = createAdminClient();
-  await supabase.from("email_logs").insert({
+  const { error } = await supabase.from("email_logs").insert({
     template_type: input.templateType ?? null,
     recipient: input.recipient,
     subject: input.subject,
@@ -122,6 +122,10 @@ async function insertEmailLog(input: {
     metadata: input.metadata ?? {},
     sent_at: input.status === "sent" ? new Date().toISOString() : null,
   });
+
+  if (error) {
+    console.warn("Email log insert failed:", error.message);
+  }
 }
 
 export async function sendTransactionalEmail(input: {
@@ -129,10 +133,12 @@ export async function sendTransactionalEmail(input: {
   to: string;
   variables?: Record<string, unknown>;
 }) {
+  const storedTemplate = await getEmailTemplate(input.templateType);
+  const fallbackTemplate = FALLBACK_EMAIL_TEMPLATES[input.templateType] ?? null;
   const template =
-    (await getEmailTemplate(input.templateType)) ??
-    FALLBACK_EMAIL_TEMPLATES[input.templateType] ??
-    null;
+    storedTemplate ??
+    fallbackTemplate;
+  const usesFallbackTemplate = !storedTemplate && Boolean(fallbackTemplate);
   if (!template || !template.is_active) {
     throw new Error(`Actieve e-mailtemplate ontbreekt voor type: ${input.templateType}`);
   }
@@ -162,19 +168,24 @@ export async function sendTransactionalEmail(input: {
     preheader: subject,
   });
   const sender = await getEmailSenderProfile(template.sender_key);
-  if (sender && !sender.is_active) {
+  const fallbackSenderEmail = process.env.GOOGLE_SENDER_EMAIL?.trim();
+
+  if (sender && !sender.is_active && !usesFallbackTemplate) {
     throw new Error(`Afzenderprofiel '${template.sender_key}' is niet actief.`);
   }
-  if (!sender) {
+  if (!sender && (!usesFallbackTemplate || !fallbackSenderEmail)) {
     throw new Error(`Afzenderprofiel '${template.sender_key}' bestaat niet.`);
   }
-  if (!sender.email?.trim()) {
+  if (!sender?.email?.trim() && (!usesFallbackTemplate || !fallbackSenderEmail)) {
     throw new Error(
       `Afzenderprofiel '${template.sender_key}' heeft geen e-mailadres. Vul dit in bij Settings > Email > Afzenders.`
     );
   }
   const senderName = sender?.name || branding.app_name;
-  const senderEmail = sender.email.trim();
+  const senderEmail = sender?.email?.trim() || fallbackSenderEmail;
+  if (!senderEmail) {
+    throw new Error("Ontbrekende environment variable: GOOGLE_SENDER_EMAIL");
+  }
   const replyTo = sender?.reply_to || branding.support_email || undefined;
 
   await insertEmailLog({
