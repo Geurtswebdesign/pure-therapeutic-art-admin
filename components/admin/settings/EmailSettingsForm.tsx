@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import {
+  diagnoseEmailSettings,
   saveEmailBranding,
   saveEmailSenderProfiles,
   saveEmailTemplate,
@@ -47,6 +48,7 @@ type EmailLog = {
   status: string;
   error_message: string | null;
   created_at: string;
+  metadata: Record<string, unknown> | null;
 };
 
 type Props = {
@@ -80,6 +82,11 @@ export default function EmailSettingsForm({
   branding,
   logs,
 }: Props) {
+  const [diagnostics, setDiagnostics] = useState<{
+    checkedAt: string;
+    checks: string[];
+    issues: string[];
+  } | null>(null);
   const [tab, setTab] = useState<Tab>("branding");
   const templateOptions = templates.length
     ? templates.map((t) => t.type)
@@ -188,6 +195,12 @@ export default function EmailSettingsForm({
     setSenderKey(next?.sender_key ?? "noreply");
   }
 
+  function getLogTemplateLabel(log: EmailLog) {
+    const requestedType = log.metadata?.requested_template_type;
+    if (log.template_type) return log.template_type;
+    return typeof requestedType === "string" ? requestedType : "n/a";
+  }
+
   function runAction(
     action: () => Promise<void>,
     successMessage: string,
@@ -233,7 +246,7 @@ export default function EmailSettingsForm({
       </div>
 
       {tab === "smtp" ? (
-        <div className="space-y-2 text-sm">
+        <div className="space-y-3 text-sm">
           <p className="text-gray-700">OAuth2 status vanuit environment variables:</p>
           <ul className="list-disc space-y-1 pl-5">
             <li>GOOGLE_CLIENT_ID: {smtpStatus.hasClientId ? "OK" : "ONTBREEKT"}</li>
@@ -245,6 +258,47 @@ export default function EmailSettingsForm({
           <p className="text-xs text-gray-500">
             Tip: zet meerdere afzenders komma-gescheiden in GOOGLE_ALLOWED_SENDER_EMAILS.
           </p>
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() =>
+              runAction(
+                async () => {
+                  setDiagnostics(await diagnoseEmailSettings());
+                },
+                "Diagnose uitgevoerd.",
+                "email_diagnostics"
+              )
+            }
+            className="rounded border px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-60"
+          >
+            Diagnose uitvoeren
+          </button>
+          {diagnostics ? (
+            <div className="space-y-3 rounded border bg-gray-50 p-3">
+              <p className="text-xs text-gray-500">
+                Laatst gecontroleerd: {new Date(diagnostics.checkedAt).toLocaleString("nl-NL")}
+              </p>
+              {diagnostics.issues.length ? (
+                <div>
+                  <h3 className="text-sm font-semibold text-red-700">Problemen</h3>
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-red-700">
+                    {diagnostics.issues.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">Checks</h3>
+                <ul className="mt-1 list-disc space-y-1 pl-5 text-gray-700">
+                  {diagnostics.checks.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -547,15 +601,19 @@ export default function EmailSettingsForm({
                     <th className="px-2 py-1 text-left">Type</th>
                     <th className="px-2 py-1 text-left">Ontvanger</th>
                     <th className="px-2 py-1 text-left">Status</th>
+                    <th className="px-2 py-1 text-left">Fout</th>
                   </tr>
                 </thead>
                 <tbody>
                   {logs.map((log) => (
                     <tr key={log.id} className="border-t">
                       <td className="px-2 py-1">{new Date(log.created_at).toLocaleString("nl-NL")}</td>
-                      <td className="px-2 py-1">{log.template_type ?? "n/a"}</td>
+                      <td className="px-2 py-1">{getLogTemplateLabel(log)}</td>
                       <td className="px-2 py-1">{log.recipient}</td>
                       <td className="px-2 py-1">{log.status}</td>
+                      <td className="max-w-80 px-2 py-1 text-red-700">
+                        {log.error_message ?? ""}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -32,6 +32,7 @@ type EmailLogRow = {
   status: string;
   error_message: string | null;
   created_at: string;
+  metadata: Record<string, unknown> | null;
 };
 
 type EmailSettingsAdminData = {
@@ -69,6 +70,27 @@ const DEFAULT_BRANDING: EmailBrandingSettings & { id: string } = {
   website_url: null,
 };
 
+function maskEmail(value: string | null | undefined) {
+  const email = value?.trim().toLowerCase();
+  if (!email || !email.includes("@")) return "ontbreekt";
+  const [name, domain] = email.split("@");
+  return `${name.slice(0, 2)}***@${domain}`;
+}
+
+function getAllowedGoogleSenders() {
+  return new Set(
+    [
+      process.env.GOOGLE_SENDER_EMAIL,
+      ...(process.env.GOOGLE_ALLOWED_SENDER_EMAILS ?? "")
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ]
+      .filter(Boolean)
+      .map((value) => value!.toLowerCase())
+  );
+}
+
 export async function getEmailSettingsAdminData(): Promise<EmailSettingsAdminData> {
   const admin = await getAdminUser();
   assertAdmin(admin);
@@ -103,7 +125,7 @@ export async function getEmailSettingsAdminData(): Promise<EmailSettingsAdminDat
         .maybeSingle<EmailBrandingSettings & { id: string }>(),
       supabase
         .from("email_logs")
-        .select("id, template_type, recipient, subject, status, error_message, created_at")
+        .select("id, template_type, recipient, subject, status, error_message, created_at, metadata")
         .order("created_at", { ascending: false })
         .limit(30)
         .returns<EmailLogRow[]>(),
@@ -329,4 +351,113 @@ export async function sendEmailSettingsTest(input: {
   });
 
   revalidatePath("/admin/settings/email");
+}
+
+export async function diagnoseEmailSettings() {
+  const admin = await getAdminUser();
+  assertAdmin(admin);
+
+  const supabase = createAdminClient();
+  const [
+    { data: templates, error: templatesError },
+    { data: senderProfiles, error: senderProfilesError },
+  ] = await Promise.all([
+    supabase
+      .from("email_templates")
+      .select("type, sender_key, subject, is_active")
+      .returns<Array<{
+        type: EmailTemplateType;
+        sender_key: EmailSenderKey;
+        subject: string | null;
+        is_active: boolean;
+      }>>(),
+    supabase
+      .from("email_sender_profiles")
+      .select("key, name, email, is_active")
+      .returns<Array<{
+        key: EmailSenderKey;
+        name: string;
+        email: string | null;
+        is_active: boolean;
+      }>>(),
+  ]);
+
+  if (templatesError) throw new Error(templatesError.message);
+  if (senderProfilesError) throw new Error(senderProfilesError.message);
+
+  const issues: string[] = [];
+  const checks: string[] = [];
+  const allowedGoogleSenders = getAllowedGoogleSenders();
+  const googleSender = process.env.GOOGLE_SENDER_EMAIL?.trim().toLowerCase();
+
+  const envChecks = [
+    ["GOOGLE_CLIENT_ID", process.env.GOOGLE_CLIENT_ID],
+    ["GOOGLE_CLIENT_SECRET", process.env.GOOGLE_CLIENT_SECRET],
+    ["GOOGLE_REFRESH_TOKEN", process.env.GOOGLE_REFRESH_TOKEN],
+    ["GOOGLE_SENDER_EMAIL", process.env.GOOGLE_SENDER_EMAIL],
+  ] as const;
+
+  for (const [name, value] of envChecks) {
+    if (value) {
+      checks.push(`${name}: OK`);
+    } else {
+      issues.push(`${name}: ontbreekt`);
+    }
+  }
+
+  checks.push(`GOOGLE_SENDER_EMAIL adres: ${maskEmail(googleSender)}`);
+  checks.push(
+    `Toegestane Gmail afzenders: ${
+      allowedGoogleSenders.size
+        ? [...allowedGoogleSenders].map(maskEmail).join(", ")
+        : "geen"
+    }`
+  );
+
+  const templateMap = new Map((templates ?? []).map((template) => [template.type, template]));
+  for (const type of EMAIL_TEMPLATE_TYPES) {
+    const template = templateMap.get(type);
+    if (!template) {
+      if (type === "welcome" || type === "password_reset") {
+        checks.push(`${type}: database-template ontbreekt, code-fallback actief`);
+      } else {
+        issues.push(`${type}: database-template ontbreekt`);
+      }
+      continue;
+    }
+    if (!template.is_active) issues.push(`${type}: template is inactief`);
+    if (!template.subject?.trim()) issues.push(`${type}: onderwerp ontbreekt`);
+    checks.push(`${type}: gebruikt afzenderprofiel '${template.sender_key}'`);
+  }
+
+  for (const sender of senderProfiles ?? []) {
+    if (!sender.is_active) {
+      checks.push(`Afzender '${sender.key}': inactief`);
+      continue;
+    }
+
+    const email = sender.email?.trim().toLowerCase();
+    if (!email) {
+      issues.push(`Afzender '${sender.key}': actief maar e-mailadres ontbreekt`);
+      continue;
+    }
+
+    if (!allowedGoogleSenders.has(email)) {
+      issues.push(
+        `Afzender '${sender.key}' (${maskEmail(email)}): niet toegestaan door GOOGLE_SENDER_EMAIL/GOOGLE_ALLOWED_SENDER_EMAILS`
+      );
+    } else {
+      checks.push(`Afzender '${sender.key}' (${maskEmail(email)}): toegestaan`);
+    }
+  }
+
+  if (!issues.length) {
+    checks.push("Geen configuratieproblemen gevonden in env, templates en afzenders.");
+  }
+
+  return {
+    checkedAt: new Date().toISOString(),
+    checks,
+    issues,
+  };
 }

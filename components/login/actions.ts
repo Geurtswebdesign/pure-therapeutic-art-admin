@@ -294,6 +294,27 @@ export async function registerAccount(formData: FormData) {
     path: "/login",
   });
 
+  try {
+    await sendTransactionalEmail({
+      templateType: "welcome",
+      to: email,
+      variables: {
+        user_name: displayName || firstName || email,
+        user_email: email,
+        action_url: getPublicAreaUrl("/account"),
+        app_url: getPublicAreaUrl("/"),
+      },
+    });
+  } catch (mailError) {
+    await logServerEvent({
+      eventName: "register_welcome_email_failed",
+      eventCategory: "auth",
+      eventLabel:
+        mailError instanceof Error ? mailError.message : "mail_send_failed",
+      path: "/login",
+    });
+  }
+
   redirect("/login?registered=1");
 }
 

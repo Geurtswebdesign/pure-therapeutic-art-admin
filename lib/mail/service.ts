@@ -21,6 +21,23 @@ type EmailTemplateRow = {
 const FALLBACK_EMAIL_TEMPLATES: Partial<
   Record<EmailTemplateType, EmailTemplateRow>
 > = {
+  welcome: {
+    type: "welcome",
+    sender_key: "noreply",
+    subject: "Welkom bij {{app_name}}",
+    html: `
+      <p>Welkom {{user_name}},</p>
+      <p>Je account is aangemaakt. Je kunt direct inloggen en aan de slag.</p>
+      <p>
+        <a href="{{action_url}}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#1d2327;color:#ffffff;text-decoration:none;">
+          Naar je account
+        </a>
+      </p>
+      <p>Werkt de knop niet? Kopieer dan deze link naar je browser:</p>
+      <p><a href="{{action_url}}">{{action_url}}</a></p>
+    `,
+    is_active: true,
+  },
   password_reset: {
     type: "password_reset",
     sender_key: "noreply",
@@ -112,18 +129,33 @@ async function insertEmailLog(input: {
   metadata?: Record<string, unknown>;
 }) {
   const supabase = createAdminClient();
-  const { error } = await supabase.from("email_logs").insert({
+  const payload = {
     template_type: input.templateType ?? null,
     recipient: input.recipient,
     subject: input.subject,
     status: input.status,
     provider: "google_oauth2",
     error_message: input.errorMessage ?? null,
-    metadata: input.metadata ?? {},
+    metadata: {
+      ...(input.metadata ?? {}),
+      requested_template_type: input.templateType ?? null,
+    },
     sent_at: input.status === "sent" ? new Date().toISOString() : null,
-  });
+  };
+
+  const { error } = await supabase.from("email_logs").insert(payload);
 
   if (error) {
+    if (input.templateType) {
+      const { error: fallbackError } = await supabase.from("email_logs").insert({
+        ...payload,
+        template_type: null,
+      });
+
+      if (!fallbackError) return;
+      console.warn("Email log fallback insert failed:", fallbackError.message);
+    }
+
     console.warn("Email log insert failed:", error.message);
   }
 }
