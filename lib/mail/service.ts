@@ -181,8 +181,12 @@ export async function sendTransactionalEmail(input: {
       `Afzenderprofiel '${template.sender_key}' heeft geen e-mailadres. Vul dit in bij Settings > Email > Afzenders.`
     );
   }
-  const senderName = sender?.name || branding.app_name;
-  const senderEmail = sender?.email?.trim() || fallbackSenderEmail;
+  const senderName = usesFallbackTemplate
+    ? branding.app_name
+    : sender?.name || branding.app_name;
+  const senderEmail = usesFallbackTemplate
+    ? fallbackSenderEmail
+    : sender?.email?.trim();
   if (!senderEmail) {
     throw new Error("Ontbrekende environment variable: GOOGLE_SENDER_EMAIL");
   }
