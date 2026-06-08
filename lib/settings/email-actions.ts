@@ -5,6 +5,7 @@ import { getAdminUser } from "@/lib/auth/getAdminUser";
 import { normalizeSupabaseStorageUrl } from "@/lib/images/supabaseStorageUrl";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendTransactionalEmail } from "@/lib/mail/service";
+import { verifyGoogleMailProvider } from "@/lib/mail/sendMail";
 import {
   EMAIL_TEMPLATE_TYPES,
   EMAIL_SENDER_KEYS,
@@ -89,6 +90,10 @@ function getAllowedGoogleSenders() {
       .filter(Boolean)
       .map((value) => value!.toLowerCase())
   );
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Onbekende fout";
 }
 
 export async function getEmailSettingsAdminData(): Promise<EmailSettingsAdminData> {
@@ -413,6 +418,17 @@ export async function diagnoseEmailSettings() {
         : "geen"
     }`
   );
+
+  if (envChecks.every(([, value]) => Boolean(value))) {
+    try {
+      await verifyGoogleMailProvider();
+      checks.push("Gmail OAuth/SMTP verificatie: OK");
+    } catch (error) {
+      issues.push(`Gmail OAuth/SMTP verificatie mislukt: ${getErrorMessage(error)}`);
+    }
+  } else {
+    issues.push("Gmail OAuth/SMTP verificatie overgeslagen: env-config is incompleet");
+  }
 
   const templateMap = new Map((templates ?? []).map((template) => [template.type, template]));
   for (const type of EMAIL_TEMPLATE_TYPES) {
