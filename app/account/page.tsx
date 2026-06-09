@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { Download, type LucideIcon } from "lucide-react";
+import { Download, ShieldCheck, type LucideIcon } from "lucide-react";
 import PublicAppShell from "@/components/public/PublicAppShell";
 import AppLogoutButton from "@/components/account/AppLogoutButton";
 import AccountPanelAutoScroll from "@/components/account/AccountPanelAutoScroll";
@@ -176,6 +175,39 @@ type ContentProductsRow = {
 };
 
 type ActiveAccountPanel = "purchases" | "ebooks" | "subscriptions" | "security" | null;
+
+function getGuestAccountMessages(language: UiLanguage) {
+  if (language === "en") {
+    return {
+      title: "Account & settings",
+      subtitle:
+        "Log in to view your profile, purchases, e-books, subscriptions and progress.",
+      login: "Log in",
+      register: "Create account",
+      settingsTitle: "App settings",
+    };
+  }
+
+  if (language === "de") {
+    return {
+      title: "Konto & Einstellungen",
+      subtitle:
+        "Melde dich an, um dein Profil, deine Einkaufe, E-Books, Abonnements und deinen Fortschritt zu sehen.",
+      login: "Anmelden",
+      register: "Konto erstellen",
+      settingsTitle: "App-Einstellungen",
+    };
+  }
+
+  return {
+    title: "Account & instellingen",
+    subtitle:
+      "Log in om je profiel, aankopen, e-books, abonnementen en voortgang te bekijken.",
+    login: "Inloggen",
+    register: "Account maken",
+    settingsTitle: "App-instellingen",
+  };
+}
 
 function buildContentHref(slug: string | null) {
   return slug ? `/content/${slug}` : null;
@@ -1036,25 +1068,112 @@ export default async function AccountPage({
   const tab = Array.isArray(params?.tab) ? params?.tab[0] : params?.tab;
   const activePanel = normalizeActivePanel(params?.panel);
   const activeTab = tab === "profile" ? "profile" : "overview";
+  const currentYear = new Date().getFullYear();
+  const [supportedLanguageOptions, legalDocuments] = await Promise.all([
+    withAccountFallback(
+      "supported language options",
+      getSupportedLanguageOptions(language),
+      []
+    ),
+    withAccountFallback(
+      "legal documents",
+      getLegalDocuments(language, currentYear),
+      []
+    ),
+  ]);
 
   const user = await getCurrentUser();
-  const supabase = createAdminClient();
 
   if (!user) {
-    const nextParams = new URLSearchParams();
-    if (tab) {
-      nextParams.set("tab", tab);
-    }
-    if (activePanel) {
-      nextParams.set("panel", activePanel);
-    }
+    const guestT = getGuestAccountMessages(language);
 
-    const nextPath = nextParams.size
-      ? `/account?${nextParams.toString()}`
-      : "/account";
-    redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+    return (
+      <PublicAppShell activeTab="profiel">
+        <section className="space-y-4">
+          <AccountPanelAutoScroll targetId="account-content-panel" />
+
+          <div className="rounded-[1.5rem] border border-[#d8c6b8] bg-[#d8e0d3] px-4 py-4">
+            <h2 className="font-serif text-2xl leading-tight text-stone-950">
+              {guestT.title}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-stone-700">
+              {guestT.subtitle}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link
+                href="/login?next=%2Faccount"
+                className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-800"
+              >
+                {guestT.login}
+              </Link>
+              <Link
+                href="/login?mode=register&next=%2Faccount"
+                className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white"
+              >
+                {guestT.register}
+              </Link>
+            </div>
+          </div>
+
+          <div className={accountCardClassName()}>
+            <h3 className="mb-3 font-serif text-2xl text-stone-950">
+              {guestT.settingsTitle}
+            </h3>
+            <div className="overflow-hidden rounded-2xl border border-[#e5dbcf] bg-white">
+              <div className="border-b border-[#ead8cb]">
+                <LanguagePreferenceDialog
+                  triggerLabel={contentProductsT.language}
+                  currentLanguage={language}
+                  languageOptions={supportedLanguageOptions}
+                  title={contentProductsT.dialogTitle}
+                  subtitle={contentProductsT.dialogSubtitle}
+                  saveLabel={contentProductsT.dialogSave}
+                  savingLabel={contentProductsT.dialogSaving}
+                  cancelLabel={messages.accountProfile.cancel}
+                />
+              </div>
+              <ContentProductsRowItem
+                label={contentProductsT.security}
+                href="/account?panel=security"
+                icon={ShieldCheck}
+              />
+            </div>
+          </div>
+
+          {activePanel === "security" ? (
+            <div id="account-content-panel" className={accountCardClassName()}>
+              <h3 className="font-serif text-2xl text-stone-950">
+                {contentProductsT.securityTitle}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-stone-600">
+                {contentProductsT.securitySubtitle}
+              </p>
+
+              <div className="mt-4 overflow-hidden rounded-2xl border border-[#e5dbcf] bg-white">
+                {legalDocuments.map((document, index) => (
+                  <div
+                    key={document.slug}
+                    className={
+                      index === legalDocuments.length - 1
+                        ? ""
+                        : "border-b border-[#ead8cb]"
+                    }
+                  >
+                    <ContentProductsRowItem
+                      label={document.title}
+                      href={document.href ?? `/account/security/${document.slug}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </section>
+      </PublicAppShell>
+    );
   }
 
+  const supabase = createAdminClient();
   const [
     { data: profile },
     { data: wallet },
@@ -1062,7 +1181,6 @@ export default async function AccountPage({
     { data: therapistEntitlements },
     progressCollections,
     contentProductsData,
-    supportedLanguageOptions,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -1098,11 +1216,6 @@ export default async function AccountPage({
         preferredLanguage: language,
       }),
       EMPTY_CONTENT_PRODUCTS_DATA
-    ),
-    withAccountFallback(
-      "supported language options",
-      getSupportedLanguageOptions(language),
-      []
     ),
   ]);
 
@@ -1253,12 +1366,6 @@ export default async function AccountPage({
   ];
   const purchaseGroups = buildPurchaseGroups(contentProductsData.purchases, contentProductsT);
   const ebookGroups = buildEbookGroups(contentProductsData.ebooks, contentProductsT);
-  const currentYear = new Date().getFullYear();
-  const legalDocuments = await withAccountFallback(
-    "legal documents",
-    getLegalDocuments(language, currentYear),
-    []
-  );
 
   return (
     <PublicAppShell activeTab="profiel">

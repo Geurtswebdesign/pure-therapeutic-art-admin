@@ -1,7 +1,9 @@
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPrimaryLanguage } from "@/lib/i18n/getPrimaryLanguage";
+import { APP_LANGUAGE_COOKIE_NAME } from "@/lib/i18n/language-cookie";
 import {
   isKnownLanguage,
   normalizeLanguageCode,
@@ -39,6 +41,19 @@ export const getAppLanguage = cache(async (): Promise<string> => {
       }
     } catch (error) {
       console.error("[getAppLanguage]", error);
+    }
+  }
+
+  const cookieLanguage = (await cookies()).get(APP_LANGUAGE_COOKIE_NAME)?.value;
+  if (cookieLanguage) {
+    const normalizedCookieLanguage = normalizeLanguageCode(cookieLanguage);
+    if (
+      isKnownLanguage(
+        normalizedCookieLanguage,
+        languageSettings.supportedLanguages
+      )
+    ) {
+      return normalizedCookieLanguage;
     }
   }
 

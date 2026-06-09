@@ -1,8 +1,10 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { APP_LANGUAGE_COOKIE_NAME } from "@/lib/i18n/language-cookie";
 import { isKnownLanguage, normalizeLanguageCode } from "@/lib/i18n/languages";
 import { getSupportedLanguageCodes } from "@/lib/i18n/settings";
 import { getTherapistDirectoryEntitlementSummary } from "@/lib/users/therapistDirectoryAccess";
@@ -97,14 +99,27 @@ export async function updateMyProfile(input: {
 
 export async function updateMyPreferredLanguage(languageCode: string) {
   const user = await getCurrentUser();
-  if (!user) {
-    throw new Error("Niet ingelogd");
-  }
-
   const normalizedCode = normalizeLanguageCode(languageCode);
   const supportedLanguages = await getSupportedLanguageCodes();
   if (!isKnownLanguage(normalizedCode, supportedLanguages)) {
     throw new Error("Ongeldige taal");
+  }
+
+  if (!user) {
+    (await cookies()).set(APP_LANGUAGE_COOKIE_NAME, normalizedCode, {
+      httpOnly: true,
+      maxAge: 60 * 60 * 24 * 365,
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    revalidatePath("/");
+    revalidatePath("/account");
+    revalidatePath("/content");
+    revalidatePath("/therapeuten");
+    revalidatePath("/login");
+    return;
   }
 
   const supabase = createAdminClient();
