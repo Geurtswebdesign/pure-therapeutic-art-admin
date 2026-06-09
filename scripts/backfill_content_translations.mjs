@@ -9,6 +9,7 @@ const DEFAULT_PRIMARY_LANGUAGE = "nl";
 const DEFAULT_SUPPORTED_LANGUAGES = ["nl", "en", "de", "pt", "es", "ar", "it"];
 const DEFAULT_TIMEOUT_MS = 180_000;
 const DEFAULT_CONCURRENCY = 3;
+const SUPABASE_PAGE_SIZE = 1000;
 
 function normalizeLanguageCode(value) {
   return String(value ?? "").trim().replace(/_/g, "-").toLowerCase();
@@ -63,6 +64,28 @@ function getLanguageDisplayLabel(code, displayLocale = "en") {
       : `${formattedLabel} (${normalized})`;
   } catch {
     return fallback;
+  }
+}
+
+async function fetchAllRows(buildQuery, label) {
+  const rows = [];
+
+  for (let offset = 0; ; offset += SUPABASE_PAGE_SIZE) {
+    const { data, error } = await buildQuery().range(
+      offset,
+      offset + SUPABASE_PAGE_SIZE - 1
+    );
+
+    if (error) {
+      throw new Error(`${label} laden mislukt: ${error.message}`);
+    }
+
+    const pageRows = data ?? [];
+    rows.push(...pageRows);
+
+    if (pageRows.length < SUPABASE_PAGE_SIZE) {
+      return rows;
+    }
   }
 }
 
@@ -863,19 +886,20 @@ async function main() {
     ? requestedTargetLanguages
     : supportedLanguages;
 
-  const { data: contentItems, error: contentItemsError } = await supabase
-    .from("content_items")
-    .select(
-      "id, title, body, slug, excerpt, featured_image_alt, featured_image_url, credit_cost, language, translation_source_id, status"
-    )
-    .neq("status", "trash");
-
-  if (contentItemsError) {
-    throw new Error(`Content-items laden mislukt: ${contentItemsError.message}`);
-  }
+  const contentItems = await fetchAllRows(
+    () =>
+      supabase
+        .from("content_items")
+        .select(
+          "id, title, body, slug, excerpt, featured_image_alt, featured_image_url, credit_cost, language, translation_source_id, status"
+        )
+        .neq("status", "trash")
+        .order("id", { ascending: true }),
+    "Content-items"
+  );
 
   const familyMap = new Map();
-  for (const item of contentItems ?? []) {
+  for (const item of contentItems) {
     const familyId = getTranslationRootId(item);
     const familyItems = familyMap.get(familyId) ?? [];
     familyItems.push(item);

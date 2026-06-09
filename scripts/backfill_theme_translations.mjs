@@ -9,6 +9,7 @@ const DEFAULT_PRIMARY_LANGUAGE = "nl";
 const DEFAULT_SUPPORTED_LANGUAGES = ["nl", "en", "de", "pt", "es", "ar", "it"];
 const DEFAULT_TIMEOUT_MS = 180_000;
 const DEFAULT_CONCURRENCY = 3;
+const SUPABASE_PAGE_SIZE = 1000;
 
 function normalizeLanguageCode(value) {
   return String(value ?? "").trim().replace(/_/g, "-").toLowerCase();
@@ -63,6 +64,28 @@ function getLanguageDisplayLabel(code, displayLocale = "en") {
       : `${formattedLabel} (${normalized})`;
   } catch {
     return fallback;
+  }
+}
+
+async function fetchAllRows(buildQuery, label) {
+  const rows = [];
+
+  for (let offset = 0; ; offset += SUPABASE_PAGE_SIZE) {
+    const { data, error } = await buildQuery().range(
+      offset,
+      offset + SUPABASE_PAGE_SIZE - 1
+    );
+
+    if (error) {
+      throw new Error(`${label} laden mislukt: ${error.message}`);
+    }
+
+    const pageRows = data ?? [];
+    rows.push(...pageRows);
+
+    if (pageRows.length < SUPABASE_PAGE_SIZE) {
+      return rows;
+    }
   }
 }
 
@@ -564,18 +587,18 @@ function isTranslatableThemeSectionItem(item) {
 }
 
 async function loadThemeGraph(supabase) {
-  const { data: pages, error: pagesError } = await supabase
-    .from("content_theme_pages")
-    .select("id, slug, eyebrow, title, description, hero_image_alt")
-    .eq("is_published", true)
-    .order("sort_order", { ascending: true })
-    .order("title", { ascending: true });
+  const pages = await fetchAllRows(
+    () =>
+      supabase
+        .from("content_theme_pages")
+        .select("id, slug, eyebrow, title, description, hero_image_alt")
+        .eq("is_published", true)
+        .order("sort_order", { ascending: true })
+        .order("title", { ascending: true }),
+    "Themabronnen"
+  );
 
-  if (pagesError) {
-    throw new Error(`Themabronnen laden mislukt: ${pagesError.message}`);
-  }
-
-  const pageRows = (pages ?? []).map((page) => ({
+  const pageRows = pages.map((page) => ({
     id: page.id,
     slug: page.slug,
     eyebrow: page.eyebrow ?? "",
@@ -589,17 +612,17 @@ async function loadThemeGraph(supabase) {
     return [];
   }
 
-  const { data: sections, error: sectionsError } = await supabase
-    .from("content_theme_sections")
-    .select("id, theme_page_id, title, description, section_image_alt, sort_order")
-    .in("theme_page_id", pageIds)
-    .order("sort_order", { ascending: true });
+  const sections = await fetchAllRows(
+    () =>
+      supabase
+        .from("content_theme_sections")
+        .select("id, theme_page_id, title, description, section_image_alt, sort_order")
+        .in("theme_page_id", pageIds)
+        .order("sort_order", { ascending: true }),
+    "Themesecties"
+  );
 
-  if (sectionsError) {
-    throw new Error(`Themesecties laden mislukt: ${sectionsError.message}`);
-  }
-
-  const sectionRows = (sections ?? []).map((section) => ({
+  const sectionRows = sections.map((section) => ({
     id: section.id,
     themePageId: section.theme_page_id,
     title: section.title ?? "",
@@ -612,21 +635,19 @@ async function loadThemeGraph(supabase) {
   const itemsBySectionId = new Map(sectionIds.map((sectionId) => [sectionId, []]));
 
   if (sectionIds.length) {
-    const { data: sectionItems, error: sectionItemsError } = await supabase
-      .from("content_theme_section_items")
-      .select(
-        "id, theme_section_id, custom_title, custom_excerpt, override_image_alt, sort_order"
-      )
-      .in("theme_section_id", sectionIds)
-      .order("sort_order", { ascending: true });
+    const sectionItems = await fetchAllRows(
+      () =>
+        supabase
+          .from("content_theme_section_items")
+          .select(
+            "id, theme_section_id, custom_title, custom_excerpt, override_image_alt, sort_order"
+          )
+          .in("theme_section_id", sectionIds)
+          .order("sort_order", { ascending: true }),
+      "Theme-sectie-items"
+    );
 
-    if (sectionItemsError) {
-      throw new Error(
-        `Theme-sectie-items laden mislukt: ${sectionItemsError.message}`
-      );
-    }
-
-    for (const item of sectionItems ?? []) {
+    for (const item of sectionItems) {
       if (!isTranslatableThemeSectionItem(item)) {
         continue;
       }
@@ -680,51 +701,49 @@ async function loadExistingThemeTranslationSets(
 
   const [pageRows, sectionRows, sectionItemRows] = await Promise.all([
     pageIds.length
-      ? supabase
-          .from("content_theme_page_translations")
-          .select("theme_page_id, language")
-          .in("theme_page_id", pageIds)
-          .in("language", targetLanguages)
-      : { data: [], error: null },
+      ? fetchAllRows(
+          () =>
+            supabase
+              .from("content_theme_page_translations")
+              .select("theme_page_id, language")
+              .in("theme_page_id", pageIds)
+              .in("language", targetLanguages),
+          "Theme-paginavertalingen"
+        )
+      : [],
     sectionIds.length
-      ? supabase
-          .from("content_theme_section_translations")
-          .select("theme_section_id, language")
-          .in("theme_section_id", sectionIds)
-          .in("language", targetLanguages)
-      : { data: [], error: null },
+      ? fetchAllRows(
+          () =>
+            supabase
+              .from("content_theme_section_translations")
+              .select("theme_section_id, language")
+              .in("theme_section_id", sectionIds)
+              .in("language", targetLanguages),
+          "Theme-sectievertalingen"
+        )
+      : [],
     sectionItemIds.length
-      ? supabase
-          .from("content_theme_section_item_translations")
-          .select("theme_section_item_id, language")
-          .in("theme_section_item_id", sectionItemIds)
-          .in("language", targetLanguages)
-      : { data: [], error: null },
+      ? fetchAllRows(
+          () =>
+            supabase
+              .from("content_theme_section_item_translations")
+              .select("theme_section_item_id, language")
+              .in("theme_section_item_id", sectionItemIds)
+              .in("language", targetLanguages),
+          "Theme-sectie-itemvertalingen"
+        )
+      : [],
   ]);
-
-  if (pageRows.error) {
-    throw new Error(`Theme-paginavertalingen laden mislukt: ${pageRows.error.message}`);
-  }
-  if (sectionRows.error) {
-    throw new Error(`Theme-sectievertalingen laden mislukt: ${sectionRows.error.message}`);
-  }
-  if (sectionItemRows.error) {
-    throw new Error(
-      `Theme-sectie-itemvertalingen laden mislukt: ${sectionItemRows.error.message}`
-    );
-  }
 
   return {
     pageLanguageSet: new Set(
-      (pageRows.data ?? []).map((row) => `${row.theme_page_id}:${row.language}`)
+      pageRows.map((row) => `${row.theme_page_id}:${row.language}`)
     ),
     sectionLanguageSet: new Set(
-      (sectionRows.data ?? []).map((row) => `${row.theme_section_id}:${row.language}`)
+      sectionRows.map((row) => `${row.theme_section_id}:${row.language}`)
     ),
     sectionItemLanguageSet: new Set(
-      (sectionItemRows.data ?? []).map(
-        (row) => `${row.theme_section_item_id}:${row.language}`
-      )
+      sectionItemRows.map((row) => `${row.theme_section_item_id}:${row.language}`)
     ),
   };
 }
