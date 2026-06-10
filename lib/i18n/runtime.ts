@@ -6,6 +6,7 @@ import {
 
 export type BaseUiLanguage = "nl" | "en" | "de";
 export type UiLanguage = string;
+export const RTL_LANGUAGES = new Set(["ar"]);
 
 export function resolveUiLanguage(input?: string | null): UiLanguage {
   return getLanguageBaseCode(input) || DEFAULT_PRIMARY_LANGUAGE;
@@ -40,4 +41,9 @@ export function resolveLanguageLocale(input?: string | null): string {
   }
 
   return "nl-NL";
+}
+
+export function resolveTextDirection(input?: string | null): "ltr" | "rtl" {
+  const language = resolveUiLanguage(input);
+  return RTL_LANGUAGES.has(language) ? "rtl" : "ltr";
 }

@@ -15,6 +15,7 @@ import { NativeLaunchController } from "@/components/native/NativeLaunchControll
 import { getPublicSplashSettings } from "@/lib/settings/public";
 import { isNativeAppUserAgent } from "@/lib/native/isNativeAppRequest";
 import { getRequestHost, isAdminHost } from "@/lib/site/urls";
+import { resolveTextDirection } from "@/lib/i18n/runtime";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -65,7 +66,11 @@ export default async function RootLayout({
   }
 
   return (
-    <html className={isNativeApp ? "native-app" : undefined} lang={appLanguage}>
+    <html
+      className={isNativeApp ? "native-app" : undefined}
+      dir={resolveTextDirection(appLanguage)}
+      lang={appLanguage}
+    >
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${isNativeApp ? "native-app" : ""} antialiased`}
       >

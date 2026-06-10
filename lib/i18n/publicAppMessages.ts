@@ -1,5 +1,4 @@
 import type { UiLanguage } from "@/lib/i18n/runtime";
-import { resolveBaseUiLanguage } from "@/lib/i18n/runtime";
 
 export type PublicAppMessages = {
   nav: {
@@ -785,9 +784,662 @@ const de: PublicAppMessages = {
   },
 };
 
+const fr: PublicAppMessages = {
+  ...en,
+  nav: {
+    home: "Accueil",
+    trainingen: "Formations",
+    shop: "Boutique",
+    therapeuten: "Thérapeutes",
+    profiel: "Profil",
+  },
+  home: {
+    headerSubtitle: "Repos, croissance et réconfort",
+    signedInTitle: "Bon retour",
+    signedInMotivation:
+      "Heureux de vous revoir. Prenez un moment pour vous et faites aujourd'hui un petit pas.",
+    userFallback: "Utilisateur",
+    register: "Créer un compte",
+    openCategory: "Ouvrir la catégorie",
+    categoryFallbackDescription:
+      "Explorez les thèmes et exercices de cette catégorie.",
+    emptyState: "Aucun contenu disponible pour le moment.",
+  },
+  content: {
+    seedFallbackDescription:
+      "Explorez les catégories régulières de ce domaine.",
+    regularFallbackDescription:
+      "Explorez les thèmes et exercices de cette catégorie.",
+    chooseRegularCategory:
+      "Choisissez une catégorie régulière dans cette catégorie principale.",
+    chooseTheme: "Choisissez un thème dans cette catégorie.",
+    back: "Retour",
+    themesTitle: "Thèmes",
+    themesSubtitle:
+      "Choisissez un thème pour ouvrir les exercices dans un ordre fixe.",
+    noThemes:
+      "Aucun thème publié n'est encore disponible dans cette catégorie.",
+    noLevelContent: "Rien n'est encore disponible à ce niveau.",
+    noSeedCategories:
+      "Aucune catégorie principale n'est encore disponible.",
+  },
+  themeIndex: {
+    eyebrow: "Aperçu des thèmes",
+    title: "Parcours composés",
+    subtitle:
+      "Ici, le contenu est organisé par catégorie, mais aussi par ordre, accent et cohérence.",
+    empty: "Aucune page de thème publiée n'est encore disponible.",
+  },
+  themeCard: {
+    themeLabel: "Thème",
+    childThemes: "sous-thèmes",
+    sections: "sections",
+    items: "éléments",
+  },
+  themePage: {
+    back: "Retour",
+    subthemes: "Sous-thèmes",
+    noItemsInSection:
+      "Aucun élément publié n'est encore lié à cette section.",
+    noSections: "Ce thème n'a pas encore de sections publiées.",
+  },
+  article: {
+    back: "Retour",
+    imageFallbackAlt: "Image",
+    partOfTheme: "Partie du thème",
+    previous: "Précédent",
+    next: "Suivant",
+    noPrevious: "Aucun élément précédent",
+    noNext: "Aucun élément suivant",
+  },
+  pdfViewer: {
+    back: "Retour",
+    openExternal: "Ouvrir dans le navigateur",
+    loading: "Chargement du PDF...",
+    loadError:
+      "Le chargement du PDF dans l'app a échoué. Ouvrez le fichier dans le navigateur.",
+    zoomOut: "Zoom arrière",
+    zoomIn: "Zoom avant",
+    zoomReset: "Réinitialiser le zoom",
+    fallbackPrefix: "Si le PDF ne s'affiche pas,",
+    fallbackLink: "ouvrez le fichier ici",
+  },
+  trainings: {
+    title: "Formations Pure Therapeutic ART",
+    subtitle:
+      "Consultez toutes les formations à venir et ouvrez directement la réservation.",
+    loadErrorTitle: "Les formations n'ont pas pu être chargées",
+    loadErrorBody:
+      "Vérifiez si la fonction Supabase `wp-events` a été déployée.",
+    emptyTitle: "Aucune formation trouvée pour le moment",
+    emptyBody:
+      "Dès que des événements existent dans WordPress/Amelia, ils apparaîtront ici.",
+    noDate: "Pas encore de date",
+    freePrice: "Gratuit",
+    startLabel: "Début",
+    sessionSingular: "session",
+    sessionPlural: "sessions",
+    maxPrefix: "Max",
+    bookNow: "Réserver",
+    noBookingLink: "Aucun lien de réservation",
+  },
+  therapists: {
+    title: "Trouver un thérapeute",
+    searchLabel: "Rechercher",
+    searchPlaceholder: "Par exemple deuil, traumatisme ou art-thérapie",
+    allCities: "Toutes les villes",
+    allSpecializations: "Toutes les professions",
+    allTargetGroups: "Tous les publics",
+    allLanguages: "Toutes les langues",
+    allMethods: "Toutes les méthodes",
+    filter: "Filtrer",
+    reset: "Réinitialiser",
+    resultSingular: "thérapeute trouvé",
+    resultPlural: "thérapeutes trouvés",
+    email: "E-mail",
+    call: "Appeler",
+    website: "Site web",
+    showMore: "Plus d'informations",
+    showLess: "Moins d'informations",
+    yearsExperienceSuffix: "ans d'expérience",
+  },
+  shop: {
+    ...en.shop,
+    assignmentCreditsTitle: "Crédits d'exercices",
+    assignmentCreditsDescription:
+      "Vous trouverez ici les packs actifs et l'abonnement annuel pour accéder aux exercices.",
+    assignmentCreditsListTitle: "Options d'exercices",
+    therapistSubscriptionTitle: "Abonnement thérapeute",
+    therapistSubscriptionDescription:
+      "Pour les thérapeutes avec un compte gratuit qui souhaitent rendre leur profil visible dans l'annuaire.",
+    therapistSubscriptionDetailDescription:
+      "Avec cet abonnement, vous pouvez rendre votre profil visible dans l'annuaire des thérapeutes.",
+    booksTitle: "Livres",
+    booksDescription:
+      "Aperçu des livres physiques et visuels de la boutique.",
+    booksListTitle: "Tous les livres",
+    ebooksTitle: "E-books",
+    ebooksDescription:
+      "Aperçu des e-books réservés à l'app. Après achat, ils apparaissent dans votre compte.",
+    ebooksListTitle: "Tous les e-books",
+    gamesTitle: "Jeux",
+    gamesDescription: "Aperçu du matériel de jeu dans la boutique.",
+    gamesListTitle: "Tous les jeux",
+    backToShop: "Retour à la boutique",
+    backToCategoryPrefix: "Retour à",
+    categoryEyebrow: "Catégorie boutique",
+  },
+  shopCatalog: {
+    ...en.shopCatalog,
+    viewAllOptions: "Voir toutes les options",
+    noImageLinked: "Aucune image liée",
+    productMoreInfo: "Plus d'infos",
+    assignmentPack: "Pack d'exercices",
+    mostChosen: "Le plus choisi",
+    bonusLabel: "bonus",
+    startPack: "Pack de départ",
+    basicPack: "Pack de base",
+    plusPack: "Pack plus",
+    valuePack: "Pack avantage",
+    yearSubscriptionBadge: "Abonnement",
+    yearSubscriptionShortTitle: "12 mois",
+    yearSubscriptionAccessLabel: "Accès à tous les exercices",
+    yearSubscriptionTitleFallback: "Abonnement annuel",
+    therapistDirectory: "Annuaire des thérapeutes",
+    profileVisible: "Rendre le profil visible",
+    therapistSubscriptionBadge: "Abonnement thérapeute",
+    durationLabel: "Durée",
+    fullAccessLabel: "Accès complet",
+    monthSingular: "mois",
+    monthPlural: "mois",
+  },
+  ebookPurchase: {
+    disabledError: "Le paiement intégré n'est pas encore actif.",
+    loginRequiredError: "Connectez-vous d'abord pour acheter un e-book.",
+    notFoundError: "E-book introuvable.",
+    paymentConnectionMissingDescription:
+      "L'étape de paiement intégré pour les e-books n'est pas encore connectée.",
+    paymentConnectionMissingLabel: "Connexion de paiement manquante",
+    fallbackError: "Le traitement de l'achat a échoué.",
+  },
+};
+
+const es: PublicAppMessages = {
+  ...fr,
+  nav: {
+    home: "Inicio",
+    trainingen: "Formación",
+    shop: "Tienda",
+    therapeuten: "Terapeutas",
+    profiel: "Perfil",
+  },
+  home: {
+    headerSubtitle: "Calma, crecimiento y consuelo",
+    signedInTitle: "Bienvenido de nuevo",
+    signedInMotivation:
+      "Nos alegra verte. Tómate un momento para ti y da hoy un pequeño paso.",
+    userFallback: "Usuario",
+    register: "Registrarse",
+    openCategory: "Abrir categoría",
+    categoryFallbackDescription:
+      "Explora temas y ejercicios dentro de esta categoría.",
+    emptyState: "Todavía no hay contenido disponible.",
+  },
+  content: {
+    seedFallbackDescription:
+      "Explora las categorías habituales dentro de este dominio.",
+    regularFallbackDescription:
+      "Explora temas y ejercicios dentro de esta categoría.",
+    chooseRegularCategory:
+      "Elige una categoría habitual dentro de esta categoría principal.",
+    chooseTheme: "Elige un tema dentro de esta categoría.",
+    back: "Volver",
+    themesTitle: "Temas",
+    themesSubtitle:
+      "Elige un tema para abrir los ejercicios en un orden fijo.",
+    noThemes:
+      "Todavía no hay temas publicados disponibles en esta categoría.",
+    noLevelContent: "Todavía no hay nada disponible en este nivel.",
+    noSeedCategories:
+      "Todavía no hay categorías principales disponibles.",
+  },
+  themeIndex: {
+    eyebrow: "Resumen de temas",
+    title: "Rutas compuestas",
+    subtitle:
+      "Aquí organizamos el contenido por categoría, orden, énfasis y coherencia.",
+    empty: "Todavía no hay páginas de tema publicadas.",
+  },
+  themeCard: {
+    themeLabel: "Tema",
+    childThemes: "subtemas",
+    sections: "secciones",
+    items: "elementos",
+  },
+  themePage: {
+    back: "Volver",
+    subthemes: "Subtemas",
+    noItemsInSection:
+      "Todavía no hay elementos publicados vinculados a esta sección.",
+    noSections: "Este tema todavía no tiene secciones publicadas.",
+  },
+  article: {
+    back: "Volver",
+    imageFallbackAlt: "Imagen",
+    partOfTheme: "Parte del tema",
+    previous: "Anterior",
+    next: "Siguiente",
+    noPrevious: "No hay elemento anterior",
+    noNext: "No hay elemento siguiente",
+  },
+  trainings: {
+    ...fr.trainings,
+    title: "Formaciones Pure Therapeutic ART",
+    subtitle:
+      "Consulta todas las formaciones próximas y abre la reserva directamente.",
+    loadErrorTitle: "No se pudieron cargar las formaciones",
+    emptyTitle: "Todavía no se encontraron formaciones",
+    noDate: "Sin fecha todavía",
+    freePrice: "Gratis",
+    startLabel: "Inicio",
+    sessionSingular: "sesión",
+    sessionPlural: "sesiones",
+    bookNow: "Reservar",
+    noBookingLink: "Sin enlace de reserva",
+  },
+  therapists: {
+    ...fr.therapists,
+    title: "Encontrar un terapeuta",
+    searchLabel: "Buscar",
+    searchPlaceholder: "Por ejemplo duelo, trauma o terapia visual",
+    allCities: "Todas las ciudades",
+    allSpecializations: "Todas las profesiones",
+    allTargetGroups: "Todos los grupos",
+    allLanguages: "Todos los idiomas",
+    allMethods: "Todos los métodos",
+    filter: "Filtrar",
+    reset: "Restablecer",
+    resultSingular: "terapeuta encontrado",
+    resultPlural: "terapeutas encontrados",
+    call: "Llamar",
+    website: "Sitio web",
+    showMore: "Más información",
+    showLess: "Menos información",
+    yearsExperienceSuffix: "años de experiencia",
+  },
+  shop: {
+    ...fr.shop,
+    assignmentCreditsTitle: "Créditos de ejercicios",
+    assignmentCreditsDescription:
+      "Aquí se muestran los packs activos y la suscripción anual para desbloquear ejercicios.",
+    assignmentCreditsListTitle: "Opciones de ejercicios",
+    therapistSubscriptionTitle: "Suscripción de terapeuta",
+    booksTitle: "Libros",
+    booksListTitle: "Todos los libros",
+    ebooksTitle: "E-books",
+    ebooksListTitle: "Todos los e-books",
+    gamesTitle: "Juegos",
+    gamesListTitle: "Todos los juegos",
+    backToShop: "Volver a la tienda",
+    backToCategoryPrefix: "Volver a",
+    categoryEyebrow: "Categoría de tienda",
+  },
+  shopCatalog: {
+    ...fr.shopCatalog,
+    viewAllOptions: "Ver todas las opciones",
+    noImageLinked: "Sin imagen vinculada",
+    productMoreInfo: "Más información",
+    assignmentPack: "Pack de ejercicios",
+    mostChosen: "Más elegido",
+    yearSubscriptionAccessLabel: "Acceso a todos los ejercicios",
+    yearSubscriptionTitleFallback: "Suscripción anual",
+    therapistDirectory: "Directorio de terapeutas",
+    profileVisible: "Hacer visible el perfil",
+    durationLabel: "Duración",
+    fullAccessLabel: "Acceso completo",
+    monthSingular: "mes",
+    monthPlural: "meses",
+  },
+};
+
+const pt: PublicAppMessages = {
+  ...es,
+  nav: {
+    home: "Início",
+    trainingen: "Formações",
+    shop: "Loja",
+    therapeuten: "Terapeutas",
+    profiel: "Perfil",
+  },
+  home: {
+    headerSubtitle: "Descanso, crescimento e conforto",
+    signedInTitle: "Bem-vindo de volta",
+    signedInMotivation:
+      "É bom ter você aqui. Reserve um momento para si e dê hoje um pequeno passo.",
+    userFallback: "Usuário",
+    register: "Registar",
+    openCategory: "Abrir categoria",
+    categoryFallbackDescription:
+      "Explore temas e exercícios dentro desta categoria.",
+    emptyState: "Ainda não há conteúdo disponível.",
+  },
+  content: {
+    ...es.content,
+    seedFallbackDescription:
+      "Explore as categorias regulares dentro deste domínio.",
+    regularFallbackDescription:
+      "Explore temas e exercícios dentro desta categoria.",
+    chooseRegularCategory:
+      "Escolha uma categoria regular dentro desta categoria principal.",
+    chooseTheme: "Escolha um tema dentro desta categoria.",
+    back: "Voltar",
+    themesTitle: "Temas",
+    themesSubtitle:
+      "Escolha um tema para abrir os exercícios numa ordem fixa.",
+    noThemes:
+      "Ainda não há temas publicados disponíveis nesta categoria.",
+    noLevelContent: "Ainda não há nada disponível neste nível.",
+    noSeedCategories:
+      "Ainda não há categorias principais disponíveis.",
+  },
+  themeCard: {
+    themeLabel: "Tema",
+    childThemes: "subtemas",
+    sections: "secções",
+    items: "itens",
+  },
+  themePage: {
+    back: "Voltar",
+    subthemes: "Subtemas",
+    noItemsInSection:
+      "Ainda não há itens publicados ligados a esta secção.",
+    noSections: "Este tema ainda não tem secções publicadas.",
+  },
+  article: {
+    ...es.article,
+    back: "Voltar",
+    previous: "Anterior",
+    next: "Seguinte",
+  },
+  trainings: {
+    ...es.trainings,
+    title: "Formações Pure Therapeutic ART",
+    subtitle:
+      "Veja todas as formações futuras e abra a reserva diretamente.",
+    bookNow: "Reservar agora",
+  },
+  therapists: {
+    ...es.therapists,
+    title: "Encontrar um terapeuta",
+    searchLabel: "Pesquisar",
+    allCities: "Todas as cidades",
+    allLanguages: "Todos os idiomas",
+    filter: "Filtrar",
+    reset: "Repor",
+    resultSingular: "terapeuta encontrado",
+    resultPlural: "terapeutas encontrados",
+    call: "Ligar",
+    website: "Site",
+  },
+  shop: {
+    ...es.shop,
+    assignmentCreditsTitle: "Créditos de exercícios",
+    therapistSubscriptionTitle: "Subscrição de terapeuta",
+    booksTitle: "Livros",
+    gamesTitle: "Jogos",
+    backToShop: "Voltar à loja",
+  },
+  shopCatalog: {
+    ...es.shopCatalog,
+    viewAllOptions: "Ver todas as opções",
+    productMoreInfo: "Mais informações",
+    mostChosen: "Mais escolhido",
+    durationLabel: "Duração",
+    fullAccessLabel: "Acesso completo",
+    monthSingular: "mês",
+    monthPlural: "meses",
+  },
+};
+
+const it: PublicAppMessages = {
+  ...es,
+  nav: {
+    home: "Home",
+    trainingen: "Formazioni",
+    shop: "Shop",
+    therapeuten: "Terapeuti",
+    profiel: "Profilo",
+  },
+  home: {
+    headerSubtitle: "Riposo, crescita e conforto",
+    signedInTitle: "Bentornato",
+    signedInMotivation:
+      "Siamo felici di rivederti. Prenditi un momento per te e fai oggi un piccolo passo.",
+    userFallback: "Utente",
+    register: "Registrati",
+    openCategory: "Apri categoria",
+    categoryFallbackDescription:
+      "Esplora temi ed esercizi in questa categoria.",
+    emptyState: "Nessun contenuto ancora disponibile.",
+  },
+  content: {
+    ...es.content,
+    back: "Indietro",
+    themesTitle: "Temi",
+    chooseTheme: "Scegli un tema in questa categoria.",
+    themesSubtitle:
+      "Scegli un tema per aprire gli esercizi in un ordine fisso.",
+  },
+  themeCard: {
+    themeLabel: "Tema",
+    childThemes: "sottotemi",
+    sections: "sezioni",
+    items: "elementi",
+  },
+  themePage: {
+    back: "Indietro",
+    subthemes: "Sottotemi",
+    noItemsInSection:
+      "Non ci sono ancora elementi pubblicati collegati a questa sezione.",
+    noSections: "Questo tema non ha ancora sezioni pubblicate.",
+  },
+  article: {
+    ...es.article,
+    back: "Indietro",
+    previous: "Precedente",
+    next: "Successivo",
+  },
+  trainings: {
+    ...es.trainings,
+    title: "Formazioni Pure Therapeutic ART",
+    subtitle:
+      "Vedi tutte le formazioni in programma e apri subito la prenotazione.",
+    bookNow: "Prenota",
+  },
+  therapists: {
+    ...es.therapists,
+    title: "Trova un terapeuta",
+    searchLabel: "Cerca",
+    allCities: "Tutte le città",
+    allLanguages: "Tutte le lingue",
+    filter: "Filtra",
+    reset: "Reimposta",
+    resultSingular: "terapeuta trovato",
+    resultPlural: "terapeuti trovati",
+    call: "Chiama",
+    website: "Sito web",
+  },
+  shop: {
+    ...es.shop,
+    assignmentCreditsTitle: "Crediti per esercizi",
+    therapistSubscriptionTitle: "Abbonamento terapeuta",
+    booksTitle: "Libri",
+    gamesTitle: "Giochi",
+    backToShop: "Torna allo shop",
+  },
+  shopCatalog: {
+    ...es.shopCatalog,
+    viewAllOptions: "Vedi tutte le opzioni",
+    productMoreInfo: "Più informazioni",
+    mostChosen: "Più scelto",
+    durationLabel: "Durata",
+    fullAccessLabel: "Accesso completo",
+    monthSingular: "mese",
+    monthPlural: "mesi",
+  },
+};
+
+const ar: PublicAppMessages = {
+  ...en,
+  nav: {
+    home: "الرئيسية",
+    trainingen: "التدريبات",
+    shop: "المتجر",
+    therapeuten: "المعالجون",
+    profiel: "الملف",
+  },
+  home: {
+    headerSubtitle: "راحة ونمو وطمأنينة",
+    signedInTitle: "مرحباً بعودتك",
+    signedInMotivation:
+      "يسعدنا وجودك هنا. خذ لحظة لنفسك واتخذ خطوة صغيرة اليوم.",
+    userFallback: "مستخدم",
+    register: "إنشاء حساب",
+    openCategory: "فتح الفئة",
+    categoryFallbackDescription:
+      "استكشف الموضوعات والتمارين داخل هذه الفئة.",
+    emptyState: "لا يوجد محتوى متاح بعد.",
+  },
+  content: {
+    ...en.content,
+    seedFallbackDescription:
+      "استكشف الفئات العادية داخل هذا المجال.",
+    regularFallbackDescription:
+      "استكشف الموضوعات والتمارين داخل هذه الفئة.",
+    chooseRegularCategory:
+      "اختر فئة عادية داخل هذه الفئة الرئيسية.",
+    chooseTheme: "اختر موضوعاً داخل هذه الفئة.",
+    back: "رجوع",
+    themesTitle: "الموضوعات",
+    themesSubtitle:
+      "اختر موضوعاً لفتح التمارين بترتيب ثابت.",
+    noThemes: "لا توجد موضوعات منشورة في هذه الفئة بعد.",
+    noLevelContent: "لا يوجد محتوى متاح في هذا المستوى بعد.",
+    noSeedCategories: "لا توجد فئات رئيسية متاحة بعد.",
+  },
+  themeIndex: {
+    eyebrow: "نظرة عامة على الموضوعات",
+    title: "مسارات منظمة",
+    subtitle:
+      "هنا ننظم المحتوى حسب الفئة والترتيب والتركيز والترابط.",
+    empty: "لا توجد صفحات موضوعات منشورة بعد.",
+  },
+  themeCard: {
+    themeLabel: "موضوع",
+    childThemes: "موضوعات فرعية",
+    sections: "أقسام",
+    items: "عناصر",
+  },
+  themePage: {
+    back: "رجوع",
+    subthemes: "موضوعات فرعية",
+    noItemsInSection: "لا توجد عناصر منشورة مرتبطة بهذا القسم بعد.",
+    noSections: "لا يحتوي هذا الموضوع على أقسام منشورة بعد.",
+  },
+  article: {
+    back: "رجوع",
+    imageFallbackAlt: "صورة",
+    partOfTheme: "جزء من الموضوع",
+    previous: "السابق",
+    next: "التالي",
+    noPrevious: "لا يوجد عنصر سابق",
+    noNext: "لا يوجد عنصر تالٍ",
+  },
+  trainings: {
+    ...en.trainings,
+    title: "تدريبات Pure Therapeutic ART",
+    subtitle:
+      "اعرض جميع التدريبات القادمة وافتح نافذة الحجز مباشرة.",
+    loadErrorTitle: "تعذر تحميل التدريبات",
+    emptyTitle: "لم يتم العثور على تدريبات بعد",
+    noDate: "لا يوجد تاريخ بعد",
+    freePrice: "مجاني",
+    startLabel: "البداية",
+    sessionSingular: "جلسة",
+    sessionPlural: "جلسات",
+    bookNow: "احجز الآن",
+    noBookingLink: "لا يوجد رابط حجز",
+  },
+  therapists: {
+    ...en.therapists,
+    title: "ابحث عن معالج",
+    searchLabel: "بحث",
+    searchPlaceholder: "مثلاً الحزن أو الصدمة أو العلاج البصري",
+    allCities: "كل المدن",
+    allSpecializations: "كل المهن",
+    allTargetGroups: "كل الفئات",
+    allLanguages: "كل اللغات",
+    allMethods: "كل الطرق",
+    filter: "تصفية",
+    reset: "إعادة تعيين",
+    resultSingular: "تم العثور على معالج",
+    resultPlural: "تم العثور على معالجين",
+    email: "البريد الإلكتروني",
+    call: "اتصال",
+    website: "الموقع",
+    showMore: "مزيد من المعلومات",
+    showLess: "معلومات أقل",
+    yearsExperienceSuffix: "سنوات خبرة",
+  },
+  shop: {
+    ...en.shop,
+    assignmentCreditsTitle: "أرصدة التمارين",
+    assignmentCreditsDescription:
+      "هنا نعرض الحزم النشطة والاشتراك السنوي للتمارين.",
+    assignmentCreditsListTitle: "خيارات التمارين",
+    therapistSubscriptionTitle: "اشتراك المعالج",
+    booksTitle: "كتب",
+    ebooksTitle: "كتب إلكترونية",
+    gamesTitle: "ألعاب",
+    backToShop: "العودة إلى المتجر",
+    backToCategoryPrefix: "العودة إلى",
+    categoryEyebrow: "فئة المتجر",
+  },
+  shopCatalog: {
+    ...en.shopCatalog,
+    viewAllOptions: "عرض كل الخيارات",
+    noImageLinked: "لا توجد صورة مرتبطة",
+    productMoreInfo: "مزيد من المعلومات",
+    assignmentPack: "حزمة تمارين",
+    mostChosen: "الأكثر اختياراً",
+    yearSubscriptionAccessLabel: "الوصول إلى كل التمارين",
+    yearSubscriptionTitleFallback: "اشتراك سنوي",
+    therapistDirectory: "دليل المعالجين",
+    profileVisible: "إظهار الملف الشخصي",
+    durationLabel: "المدة",
+    fullAccessLabel: "وصول كامل",
+    monthSingular: "شهر",
+    monthPlural: "أشهر",
+  },
+  ebookPurchase: {
+    disabledError: "اتصال الدفع داخل التطبيق غير نشط بعد.",
+    loginRequiredError: "سجّل الدخول أولاً لشراء كتاب إلكتروني.",
+    notFoundError: "لم يتم العثور على الكتاب الإلكتروني.",
+    paymentConnectionMissingDescription:
+      "خطوة الدفع داخل التطبيق للكتب الإلكترونية غير متصلة بعد.",
+    paymentConnectionMissingLabel: "اتصال الدفع مفقود",
+    fallbackError: "فشلت معالجة عملية الشراء.",
+  },
+};
+
 export function getPublicAppMessages(language: UiLanguage): PublicAppMessages {
-  const baseLanguage = resolveBaseUiLanguage(language);
-  if (baseLanguage === "en") return en;
-  if (baseLanguage === "de") return de;
+  const normalizedLanguage = language.toLowerCase().split("-")[0] ?? "nl";
+  if (normalizedLanguage === "en") return en;
+  if (normalizedLanguage === "de") return de;
+  if (normalizedLanguage === "fr") return fr;
+  if (normalizedLanguage === "es") return es;
+  if (normalizedLanguage === "pt") return pt;
+  if (normalizedLanguage === "ar") return ar;
+  if (normalizedLanguage === "it") return it;
   return nl;
 }

@@ -20,6 +20,7 @@ import {
 import {
   resolveBaseUiLanguage,
   resolveLanguageLocale,
+  resolveUiLanguage,
   type UiLanguage,
 } from "@/lib/i18n/runtime";
 import { getPublicAppMessages } from "@/lib/i18n/publicAppMessages";
@@ -178,44 +179,140 @@ export function getPackUnitLabel(
   amount: number,
   language: UiLanguage = "nl"
 ) {
-  const baseLanguage = language === "en" || language === "de" ? language : "nl";
-  if (scope === "book") {
-    if (baseLanguage === "en") {
-      return amount === 1 ? "book credit" : "book credits";
-    }
-    if (baseLanguage === "de") {
-      return amount === 1 ? "Buch-Credit" : "Buch-Credits";
-    }
-    return amount === 1 ? "boekcredit" : "boekcredits";
+  const baseLanguage = resolveUiLanguage(language);
+  const labels = {
+    en: {
+      book: ["book credit", "book credits"],
+      game: ["game credit", "game credits"],
+      referral: ["referral credit", "referral credits"],
+      assignment: ["assignment", "assignments"],
+    },
+    de: {
+      book: ["Buch-Credit", "Buch-Credits"],
+      game: ["Spiel-Credit", "Spiel-Credits"],
+      referral: ["Verweis-Credit", "Verweis-Credits"],
+      assignment: ["Aufgabe", "Aufgaben"],
+    },
+    fr: {
+      book: ["crédit livre", "crédits livre"],
+      game: ["crédit jeu", "crédits jeu"],
+      referral: ["crédit de référence", "crédits de référence"],
+      assignment: ["exercice", "exercices"],
+    },
+    es: {
+      book: ["crédito de libro", "créditos de libro"],
+      game: ["crédito de juego", "créditos de juego"],
+      referral: ["crédito de referencia", "créditos de referencia"],
+      assignment: ["ejercicio", "ejercicios"],
+    },
+    pt: {
+      book: ["crédito de livro", "créditos de livro"],
+      game: ["crédito de jogo", "créditos de jogo"],
+      referral: ["crédito de referência", "créditos de referência"],
+      assignment: ["exercício", "exercícios"],
+    },
+    ar: {
+      book: ["رصيد كتاب", "أرصدة كتب"],
+      game: ["رصيد لعبة", "أرصدة ألعاب"],
+      referral: ["رصيد إحالة", "أرصدة إحالة"],
+      assignment: ["تمرين", "تمارين"],
+    },
+    it: {
+      book: ["credito libro", "crediti libro"],
+      game: ["credito gioco", "crediti gioco"],
+      referral: ["credito riferimento", "crediti riferimento"],
+      assignment: ["esercizio", "esercizi"],
+    },
+  } as const;
+  const languageLabels =
+    labels[baseLanguage as keyof typeof labels] ?? {
+      book: ["boekcredit", "boekcredits"],
+      game: ["spelcredit", "spelcredits"],
+      referral: ["verwijscredit", "verwijscredits"],
+      assignment: ["opdracht", "opdrachten"],
+    };
+  const key = scope === "book" || scope === "game" || scope === "referral"
+    ? scope
+    : "assignment";
+  const [singular, plural] = languageLabels[key];
+  return amount === 1 ? singular : plural;
+}
+
+function getLocalizedPackCopy(language: UiLanguage) {
+  const baseLanguage = resolveUiLanguage(language);
+  if (baseLanguage === "fr") {
+    return {
+      bonus: (total: number, bonus: number) =>
+        `À utiliser librement pour ${total} exercices, dont ${bonus} crédits bonus.`,
+      small: "Idéal pour découvrir l'app et débloquer quelques exercices.",
+      regular:
+        "Pratique si vous souhaitez ouvrir régulièrement des exercices dans l'app.",
+      balanced:
+        "Le meilleur équilibre entre quantité et prix pour un usage régulier.",
+      intensive:
+        "Utile si vous travaillez plus intensivement et souhaitez garder de la marge.",
+      large:
+        "Avantageux si vous voulez acheter à l'avance et garder assez d'exercices disponibles.",
+    };
+  }
+  if (baseLanguage === "es") {
+    return {
+      bonus: (total: number, bonus: number) =>
+        `Uso libre para ${total} ejercicios, incluidos ${bonus} créditos extra.`,
+      small: "Ideal para conocer la app y desbloquear algunos ejercicios.",
+      regular:
+        "Útil si quieres abrir ejercicios regularmente en la app.",
+      balanced:
+        "El mejor equilibrio entre cantidad y precio para uso regular.",
+      intensive:
+        "Útil si trabajas con más intensidad y quieres margen adicional.",
+      large:
+        "Ventajoso si quieres comprar por adelantado y tener suficientes ejercicios disponibles.",
+    };
+  }
+  if (baseLanguage === "pt") {
+    return {
+      bonus: (total: number, bonus: number) =>
+        `Use livremente para ${total} exercícios, incluindo ${bonus} créditos bónus.`,
+      small: "Ideal para conhecer a app e desbloquear alguns exercícios.",
+      regular:
+        "Útil se quiser abrir exercícios regularmente na app.",
+      balanced:
+        "O melhor equilíbrio entre quantidade e preço para uso regular.",
+      intensive:
+        "Útil se trabalhar de forma mais intensiva e quiser margem extra.",
+      large:
+        "Vantajoso se quiser comprar antecipadamente e manter exercícios suficientes disponíveis.",
+    };
+  }
+  if (baseLanguage === "ar") {
+    return {
+      bonus: (total: number, bonus: number) =>
+        `استخدمها بحرية لـ ${total} تمارين، بما في ذلك ${bonus} أرصدة إضافية.`,
+      small: "مثالي للتعرف على التطبيق وفتح بعض التمارين.",
+      regular: "مفيد إذا كنت تريد فتح التمارين بانتظام في التطبيق.",
+      balanced: "أفضل توازن بين الكمية والسعر للاستخدام المنتظم.",
+      intensive: "مفيد إذا كنت تعمل بشكل مكثف وتريد مساحة إضافية.",
+      large: "مفيد إذا كنت تريد الشراء مسبقاً والاحتفاظ بتمارين كافية.",
+    };
+  }
+  if (baseLanguage === "it") {
+    return {
+      bonus: (total: number, bonus: number) =>
+        `Utilizzabile liberamente per ${total} esercizi, inclusi ${bonus} crediti bonus.`,
+      small: "Ideale per conoscere l'app e sbloccare alcuni esercizi.",
+      regular:
+        "Utile se vuoi aprire esercizi regolarmente nell'app.",
+      balanced:
+        "Il miglior equilibrio tra quantità e prezzo per un uso regolare.",
+      intensive:
+        "Utile se lavori in modo più intensivo e vuoi margine extra.",
+      large:
+        "Conveniente se vuoi acquistare in anticipo e avere sempre esercizi disponibili.",
+    };
   }
 
-  if (scope === "game") {
-    if (baseLanguage === "en") {
-      return amount === 1 ? "game credit" : "game credits";
-    }
-    if (baseLanguage === "de") {
-      return amount === 1 ? "Spiel-Credit" : "Spiel-Credits";
-    }
-    return amount === 1 ? "spelcredit" : "spelcredits";
-  }
-
-  if (scope === "referral") {
-    if (baseLanguage === "en") {
-      return amount === 1 ? "referral credit" : "referral credits";
-    }
-    if (baseLanguage === "de") {
-      return amount === 1 ? "Verweis-Credit" : "Verweis-Credits";
-    }
-    return amount === 1 ? "verwijscredit" : "verwijscredits";
-  }
-
-  if (baseLanguage === "en") {
-    return amount === 1 ? "assignment" : "assignments";
-  }
-  if (baseLanguage === "de") {
-    return amount === 1 ? "Aufgabe" : "Aufgaben";
-  }
-  return amount === 1 ? "opdracht" : "opdrachten";
+  return null;
 }
 
 export function getPackDescription(
@@ -224,8 +321,12 @@ export function getPackDescription(
 ) {
   const baseLanguage = resolveBaseUiLanguage(language);
   const total = getPackCount(pack);
+  const localized = getLocalizedPackCopy(language);
 
   if (pack.bonus_credits > 0) {
+    if (localized) {
+      return localized.bonus(total, pack.bonus_credits);
+    }
     if (baseLanguage === "en") {
       return `Use freely for ${total} assignments, including ${pack.bonus_credits} bonus credits.`;
     }
@@ -236,6 +337,9 @@ export function getPackDescription(
   }
 
   if (total <= 10) {
+    if (localized) {
+      return localized.small;
+    }
     if (baseLanguage === "en") {
       return "Ideal for getting acquainted and unlocking a few individual assignments.";
     }
@@ -246,6 +350,9 @@ export function getPackDescription(
   }
 
   if (total <= 50) {
+    if (localized) {
+      return localized.regular;
+    }
     if (baseLanguage === "en") {
       return "Helpful if you want to open assignments regularly in the app.";
     }
@@ -256,6 +363,9 @@ export function getPackDescription(
   }
 
   if (total <= 100) {
+    if (localized) {
+      return localized.balanced;
+    }
     if (baseLanguage === "en") {
       return "The best balance between quantity and price for regular use.";
     }
@@ -266,6 +376,9 @@ export function getPackDescription(
   }
 
   if (total <= 150) {
+    if (localized) {
+      return localized.intensive;
+    }
     if (baseLanguage === "en") {
       return "Useful if you work more intensively and want extra room available.";
     }
@@ -273,6 +386,10 @@ export function getPackDescription(
       return "Praktisch, wenn du intensiver arbeitest und zusatzlichen Spielraum behalten mochtest.";
     }
     return "Handig als je intensiever werkt en extra ruimte achter de hand wilt houden.";
+  }
+
+  if (localized) {
+    return localized.large;
   }
 
   if (baseLanguage === "en") {
@@ -343,7 +460,23 @@ function getTherapistSubscriptionDescription(
   pack: TherapistSubscriptionPackOption,
   language: UiLanguage = "nl"
 ) {
+  const baseLanguage = resolveUiLanguage(language);
   if (pack.plan === "monthly") {
+    if (baseLanguage === "fr") {
+      return "Pour les thérapeutes qui veulent d'abord être visibles facilement dans l'annuaire.";
+    }
+    if (baseLanguage === "es") {
+      return "Para terapeutas que quieren empezar a aparecer en el directorio de forma accesible.";
+    }
+    if (baseLanguage === "pt") {
+      return "Para terapeutas que querem começar a aparecer no diretório de forma acessível.";
+    }
+    if (baseLanguage === "ar") {
+      return "للمعالجين الذين يريدون الظهور أولاً في الدليل بطريقة سهلة.";
+    }
+    if (baseLanguage === "it") {
+      return "Per terapeuti che vogliono iniziare a essere visibili nella directory.";
+    }
     if (language === "en") {
       return "For therapists who first want to become visible in the therapist directory in an accessible way.";
     }
@@ -351,6 +484,22 @@ function getTherapistSubscriptionDescription(
       return "Fur Therapeuten, die zuerst niedrigschwellig im Therapeutenverzeichnis sichtbar werden mochten.";
     }
     return "Voor therapeuten die eerst laagdrempelig zichtbaar willen worden in de therapeutenlijst.";
+  }
+
+  if (baseLanguage === "fr") {
+    return "Pour les thérapeutes qui souhaitent garder leur profil visible plus longtemps.";
+  }
+  if (baseLanguage === "es") {
+    return "Para terapeutas que quieren mantener su perfil visible durante más tiempo.";
+  }
+  if (baseLanguage === "pt") {
+    return "Para terapeutas que querem manter o perfil visível por mais tempo.";
+  }
+  if (baseLanguage === "ar") {
+    return "للمعالجين الذين يريدون إبقاء ملفهم مرئياً لفترة أطول.";
+  }
+  if (baseLanguage === "it") {
+    return "Per terapeuti che vogliono mantenere visibile il profilo più a lungo.";
   }
 
   if (language === "en") {
