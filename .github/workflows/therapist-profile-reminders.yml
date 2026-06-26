@@ -1,0 +1,45 @@
+name: Therapist Profile Reminders
+
+on:
+  schedule:
+    - cron: "10 6 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run without sending emails"
+        required: false
+        default: "false"
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call reminder endpoint
+        env:
+          REMINDER_URL: ${{ secrets.THERAPIST_PROFILE_REMINDER_URL }}
+          PROD_APP_URL: ${{ secrets.PROD_APP_URL }}
+          REMINDER_SECRET: ${{ secrets.THERAPIST_PROFILE_REMINDER_SECRET }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${REMINDER_URL}" ]; then
+            if [ -z "${PROD_APP_URL}" ]; then
+              echo "Set THERAPIST_PROFILE_REMINDER_URL or PROD_APP_URL secret." >&2
+              exit 1
+            fi
+            REMINDER_URL="${PROD_APP_URL%/}/api/cron/therapist-profile-reminders"
+          fi
+
+          if [ "${DRY_RUN:-false}" = "true" ]; then
+            separator="?"
+            case "$REMINDER_URL" in
+              *\?*) separator="&" ;;
+            esac
+            REMINDER_URL="${REMINDER_URL}${separator}dryRun=1"
+          fi
+
+          curl --fail-with-body \
+            --request POST \
+            --header "Authorization: Bearer ${REMINDER_SECRET}" \
+            "$REMINDER_URL"

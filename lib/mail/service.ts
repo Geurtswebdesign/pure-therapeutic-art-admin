@@ -21,6 +21,23 @@ type EmailTemplateRow = {
 const FALLBACK_EMAIL_TEMPLATES: Partial<
   Record<EmailTemplateType, EmailTemplateRow>
 > = {
+  reminder: {
+    type: "reminder",
+    sender_key: "noreply",
+    subject: "{{subject}}",
+    html: `
+      <p>Hallo {{user_name}},</p>
+      <p>{{reminder_text}}</p>
+      <p>
+        <a href="{{action_url}}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#1d2327;color:#ffffff;text-decoration:none;">
+          {{action_label}}
+        </a>
+      </p>
+      <p>Werkt de knop niet? Kopieer dan deze link naar je browser:</p>
+      <p><a href="{{action_url}}">{{action_url}}</a></p>
+    `,
+    is_active: true,
+  },
   welcome: {
     type: "welcome",
     sender_key: "noreply",
@@ -164,6 +181,7 @@ export async function sendTransactionalEmail(input: {
   templateType: EmailTemplateType;
   to: string;
   variables?: Record<string, unknown>;
+  logMetadata?: Record<string, unknown>;
 }) {
   const storedTemplate = await getEmailTemplate(input.templateType);
   const fallbackTemplate = FALLBACK_EMAIL_TEMPLATES[input.templateType] ?? null;
@@ -230,6 +248,7 @@ export async function sendTransactionalEmail(input: {
     subject,
     status: "queued",
     metadata: {
+      ...(input.logMetadata ?? {}),
       template_type: input.templateType,
       sender_key: template.sender_key,
       sender_email: senderEmail,
@@ -252,6 +271,7 @@ export async function sendTransactionalEmail(input: {
       subject,
       status: "sent",
       metadata: {
+        ...(input.logMetadata ?? {}),
         template_type: input.templateType,
         sender_key: template.sender_key,
         sender_email: senderEmail,
@@ -267,6 +287,7 @@ export async function sendTransactionalEmail(input: {
       status: "failed",
       errorMessage: message,
       metadata: {
+        ...(input.logMetadata ?? {}),
         template_type: input.templateType,
         sender_key: template.sender_key,
         sender_email: senderEmail,

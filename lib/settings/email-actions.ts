@@ -434,7 +434,7 @@ export async function diagnoseEmailSettings() {
   for (const type of EMAIL_TEMPLATE_TYPES) {
     const template = templateMap.get(type);
     if (!template) {
-      if (type === "welcome" || type === "password_reset") {
+      if (type === "welcome" || type === "password_reset" || type === "reminder") {
         checks.push(`${type}: database-template ontbreekt, code-fallback actief`);
       } else {
         issues.push(`${type}: database-template ontbreekt`);

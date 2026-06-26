@@ -20,6 +20,9 @@ jobs:
       PROD_PORT: ${{ secrets.PROD_PORT }}
       PROD_APP_DIR: ${{ secrets.PROD_APP_DIR }}
       PROD_SSH_PRIVATE_KEY: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+      PROD_APP_URL: ${{ secrets.PROD_APP_URL }}
+      THERAPIST_PROFILE_REMINDER_URL: ${{ secrets.THERAPIST_PROFILE_REMINDER_URL }}
+      THERAPIST_PROFILE_REMINDER_SECRET: ${{ secrets.THERAPIST_PROFILE_REMINDER_SECRET }}
     steps:
       - name: Validate deploy secrets
         run: |
@@ -44,3 +47,22 @@ jobs:
              cd '${APP_DIR}' && grep -qxF '.pm2/' .git/info/exclude 2>/dev/null || printf '%s\n' '.pm2/' >> .git/info/exclude; \
              cd '${APP_DIR}' && git restore --staged --worktree --source=HEAD -- next-env.d.ts >/dev/null 2>&1 || true; \
              export DEPLOY_BRANCH='production'; export REPO_REMOTE='origin'; bash '${APP_DIR}/deploy/update-server-from-git.sh'"
+
+      - name: Run therapist profile reminder catch-up
+        if: env.THERAPIST_PROFILE_REMINDER_SECRET != ''
+        run: |
+          set -euo pipefail
+
+          REMINDER_URL="${THERAPIST_PROFILE_REMINDER_URL}"
+          if [ -z "$REMINDER_URL" ]; then
+            if [ -z "${PROD_APP_URL}" ]; then
+              echo "Skipping therapist profile reminders: set PROD_APP_URL or THERAPIST_PROFILE_REMINDER_URL."
+              exit 0
+            fi
+            REMINDER_URL="${PROD_APP_URL%/}/api/cron/therapist-profile-reminders"
+          fi
+
+          curl --fail-with-body \
+            --request POST \
+            --header "Authorization: Bearer ${THERAPIST_PROFILE_REMINDER_SECRET}" \
+            "$REMINDER_URL"
