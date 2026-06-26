@@ -1,3 +1,5 @@
+import { resolveCurrentSupabaseStorageUrl } from "@/lib/supabase/storage-url";
+
 export type CatalogCategory = "boeken" | "ebooks" | "spellen";
 export type CatalogStatus = "concept" | "live" | "in_development";
 
@@ -277,7 +279,9 @@ function normalizeCatalogItem(
     category: normalizeCatalogCategory(item?.category, fallback.category),
     title: asString(item?.title, fallback.title),
     body: typeof item?.body === "string" ? item.body : fallback.body,
-    imageUrl: asString(item?.imageUrl, fallback.imageUrl || ""),
+    imageUrl: resolveCurrentSupabaseStorageUrl(
+      asString(item?.imageUrl, fallback.imageUrl || "")
+    ),
     imageAlt: asString(item?.imageAlt, fallback.imageAlt || ""),
     introTitle: asString(item?.introTitle, fallback.introTitle),
     introText: asString(item?.introText, fallback.introText),

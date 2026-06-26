@@ -1452,13 +1452,25 @@ export default async function AccountPage({
                               className="rounded-2xl border border-[#e5dbcf] bg-white px-4 py-4"
                             >
                               <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div className="min-w-0 flex-1">
-                                  <h4 className="font-medium text-stone-900">{item.title}</h4>
-                                  {item.excerpt ? (
-                                    <p className="mt-1 text-sm leading-6 text-stone-600">
-                                      {item.excerpt}
-                                    </p>
+                                <div className="flex min-w-0 flex-1 gap-3">
+                                  {item.imageUrl ? (
+                                    <div className="h-24 w-20 shrink-0 overflow-hidden rounded-xl border border-[#eadfd4] bg-[#f8f3ed]">
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={item.imageUrl}
+                                        alt={item.imageAlt || item.title}
+                                        className="h-full w-full object-cover"
+                                      />
+                                    </div>
                                   ) : null}
+                                  <div className="min-w-0 flex-1">
+                                    <h4 className="font-medium text-stone-900">{item.title}</h4>
+                                    {item.excerpt ? (
+                                      <p className="mt-1 text-sm leading-6 text-stone-600">
+                                        {item.excerpt}
+                                      </p>
+                                    ) : null}
+                                  </div>
                                 </div>
                                 <div className="text-sm text-stone-500">
                                   {contentProductsT.openedAt}:{" "}

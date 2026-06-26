@@ -119,6 +119,8 @@ export type AccountEbookItem = {
   contentItemId: string | null;
   title: string;
   excerpt: string | null;
+  imageUrl: string | null;
+  imageAlt: string | null;
   href: string | null;
   unlockedAt: string;
   themeTitle: string | null;
@@ -647,6 +649,8 @@ export async function getAccountContentProductsData(
     contentItemId: null,
     title: item.title,
     excerpt: item.excerpt,
+    imageUrl: item.imageUrl,
+    imageAlt: item.imageAlt,
     href: item.href,
     unlockedAt: item.purchasedAt,
     themeTitle: null,
