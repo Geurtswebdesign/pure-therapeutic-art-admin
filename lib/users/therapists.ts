@@ -190,7 +190,25 @@ export async function getPublicTherapistDirectoryData(
     .returns<ProfileRow[]>();
 
   if (error) {
-    throw new Error("Therapeuten laden mislukt");
+    console.error("Therapeuten laden mislukt", error);
+
+    return {
+      therapists: [],
+      cities: [],
+      specializations: mergeTherapistOptions(
+        THERAPIST_PROFILE_OPTION_SETS.specializations,
+        []
+      ),
+      targetGroups: mergeTherapistOptions(
+        THERAPIST_PROFILE_OPTION_SETS.targetGroups,
+        []
+      ),
+      languages: mergeTherapistOptions(
+        THERAPIST_PROFILE_OPTION_SETS.languages,
+        []
+      ),
+      methods: mergeTherapistOptions(THERAPIST_PROFILE_OPTION_SETS.methods, []),
+    };
   }
 
   const therapistUserIds = (data ?? [])
@@ -208,7 +226,7 @@ export async function getPublicTherapistDirectoryData(
     : { data: [] as TherapistEntitlementRow[], error: null };
 
   if (entitlementError) {
-    throw new Error("Therapeutenabonnementen laden mislukt");
+    console.error("Therapeutenabonnementen laden mislukt", entitlementError);
   }
 
   const nowIso = new Date().toISOString();
@@ -221,7 +239,9 @@ export async function getPublicTherapistDirectoryData(
   const allTherapists = (data ?? [])
     .map(toPublicTherapist)
     .filter((item): item is PublicTherapist => Boolean(item))
-    .filter((item) => activeTherapistIds.has(item.userId))
+    .filter(
+      (item) => Boolean(entitlementError) || activeTherapistIds.has(item.userId)
+    )
     .sort((a, b) => a.displayName.localeCompare(b.displayName, "nl"));
 
   const therapists = allTherapists.filter((item) => matchesTherapist(item, filters));

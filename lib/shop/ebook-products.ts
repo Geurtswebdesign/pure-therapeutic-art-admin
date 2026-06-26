@@ -33,6 +33,8 @@ export type OwnedEbookProductSummary = {
   productId: string;
   title: string;
   excerpt: string | null;
+  imageUrl: string | null;
+  imageAlt: string | null;
   purchasedAt: string;
   amountCents: number | null;
   currency: string | null;
@@ -180,6 +182,8 @@ export async function listOwnedEbookProducts(
       productId: row.product_id,
       title: item?.title || row.product_title || "E-book",
       excerpt: item?.description || null,
+      imageUrl: item?.imageUrl?.trim() || null,
+      imageAlt: item?.imageAlt?.trim() || item?.title || null,
       purchasedAt: row.purchased_at,
       amountCents: row.amount_cents,
       currency: row.currency || "EUR",
