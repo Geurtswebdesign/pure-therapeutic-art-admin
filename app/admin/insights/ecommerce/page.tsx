@@ -21,7 +21,8 @@ type SearchParams = {
 };
 
 const DANNY_SHARE = 0.22;
-const STORE_SHARE = 0.15;
+const STORE_ONE_TIME_SHARE = 0.15;
+const STORE_SUBSCRIPTION_SHARE = 0.3;
 const VAT_SHARE = 0.09;
 
 function formatCurrency(amountCents: number, currency: string) {
@@ -54,43 +55,67 @@ function formatDateTime(value: string | null) {
 
 function calculateRevenueSplit(input: {
   grossAmountCents: number;
-  dannyEligibleAmountCents: number;
-  appleGrossAmountCents: number;
-  googleGrossAmountCents: number;
+  appleOneTimeGrossAmountCents: number;
+  appleSubscriptionGrossAmountCents: number;
+  googleOneTimeGrossAmountCents: number;
+  googleSubscriptionGrossAmountCents: number;
 }) {
   const {
     grossAmountCents,
-    dannyEligibleAmountCents,
-    appleGrossAmountCents,
-    googleGrossAmountCents,
+    appleOneTimeGrossAmountCents,
+    appleSubscriptionGrossAmountCents,
+    googleOneTimeGrossAmountCents,
+    googleSubscriptionGrossAmountCents,
   } = input;
 
-  const dannyAmountCents = Math.round(dannyEligibleAmountCents * DANNY_SHARE);
-  const appleAmountCents = Math.round(appleGrossAmountCents * STORE_SHARE);
-  const googleAmountCents = Math.round(googleGrossAmountCents * STORE_SHARE);
+  const appleOneTimeAmountCents = Math.round(
+    appleOneTimeGrossAmountCents * STORE_ONE_TIME_SHARE
+  );
+  const appleSubscriptionAmountCents = Math.round(
+    appleSubscriptionGrossAmountCents * STORE_SUBSCRIPTION_SHARE
+  );
+  const googleOneTimeAmountCents = Math.round(
+    googleOneTimeGrossAmountCents * STORE_ONE_TIME_SHARE
+  );
+  const googleSubscriptionAmountCents = Math.round(
+    googleSubscriptionGrossAmountCents * STORE_SUBSCRIPTION_SHARE
+  );
+  const appleAmountCents = appleOneTimeAmountCents + appleSubscriptionAmountCents;
+  const googleAmountCents = googleOneTimeAmountCents + googleSubscriptionAmountCents;
   const storeAmountCents = appleAmountCents + googleAmountCents;
-  const vatAmountCents = Math.round(grossAmountCents * VAT_SHARE);
-  const remainingAmountCents =
-    grossAmountCents - dannyAmountCents - storeAmountCents - vatAmountCents;
+  const afterStoreAmountCents = grossAmountCents - storeAmountCents;
+  const vatAmountCents = Math.round(afterStoreAmountCents * VAT_SHARE);
+  const afterVatAmountCents = afterStoreAmountCents - vatAmountCents;
+  const dannyAmountCents = Math.round(afterVatAmountCents * DANNY_SHARE);
+  const remainingAmountCents = afterVatAmountCents - dannyAmountCents;
 
   return {
     grossAmountCents,
-    dannyEligibleAmountCents,
-    appleGrossAmountCents,
-    googleGrossAmountCents,
+    appleOneTimeGrossAmountCents,
+    appleSubscriptionGrossAmountCents,
+    googleOneTimeGrossAmountCents,
+    googleSubscriptionGrossAmountCents,
+    appleOneTimeAmountCents,
+    appleSubscriptionAmountCents,
+    googleOneTimeAmountCents,
+    googleSubscriptionAmountCents,
     dannyAmountCents,
     appleAmountCents,
     googleAmountCents,
     storeAmountCents,
+    afterStoreAmountCents,
     vatAmountCents,
+    afterVatAmountCents,
     remainingAmountCents,
   };
 }
 
 function getEmptyStoreRevenue() {
   return {
-    appleAmountCents: 0,
-    googleAmountCents: 0,
+    appleOneTimeAmountCents: 0,
+    appleSubscriptionAmountCents: 0,
+    googleOneTimeAmountCents: 0,
+    googleSubscriptionAmountCents: 0,
     otherAmountCents: 0,
   };
 }
@@ -98,8 +123,10 @@ function getEmptyStoreRevenue() {
 function getStoreBreakdownByCurrency(
   storeRevenueEntries: Array<{
     currency: string;
-    appleAmountCents: number;
-    googleAmountCents: number;
+    appleOneTimeAmountCents: number;
+    appleSubscriptionAmountCents: number;
+    googleOneTimeAmountCents: number;
+    googleSubscriptionAmountCents: number;
     otherAmountCents: number;
   }>
 ) {
@@ -109,15 +136,21 @@ function getStoreBreakdownByCurrency(
 function calculateStoreRevenueEntries(
   storeRevenueEntries: Array<{
     currency: string;
-    appleAmountCents: number;
-    googleAmountCents: number;
+    appleOneTimeAmountCents: number;
+    appleSubscriptionAmountCents: number;
+    googleOneTimeAmountCents: number;
+    googleSubscriptionAmountCents: number;
     otherAmountCents: number;
   }>
 ) {
   return storeRevenueEntries
     .map((entry) => ({
       currency: entry.currency,
-      amountCents: entry.appleAmountCents + entry.googleAmountCents,
+      amountCents:
+        entry.appleOneTimeAmountCents +
+        entry.appleSubscriptionAmountCents +
+        entry.googleOneTimeAmountCents +
+        entry.googleSubscriptionAmountCents,
     }))
     .filter((entry) => entry.amountCents > 0);
 }
@@ -126,8 +159,10 @@ function calculateRevenueBreakdown(
   revenueEntries: Array<{ currency: string; amountCents: number }>,
   storeRevenueEntries: Array<{
     currency: string;
-    appleAmountCents: number;
-    googleAmountCents: number;
+    appleOneTimeAmountCents: number;
+    appleSubscriptionAmountCents: number;
+    googleOneTimeAmountCents: number;
+    googleSubscriptionAmountCents: number;
     otherAmountCents: number;
   }>
 ) {
@@ -135,15 +170,15 @@ function calculateRevenueBreakdown(
 
   return revenueEntries.map((entry) => {
     const storeBreakdown = storeBreakdownByCurrency.get(entry.currency) ?? getEmptyStoreRevenue();
-    const dannyEligibleAmountCents = entry.amountCents;
 
     return {
       currency: entry.currency,
       ...calculateRevenueSplit({
         grossAmountCents: entry.amountCents,
-        dannyEligibleAmountCents,
-        appleGrossAmountCents: storeBreakdown.appleAmountCents,
-        googleGrossAmountCents: storeBreakdown.googleAmountCents,
+        appleOneTimeGrossAmountCents: storeBreakdown.appleOneTimeAmountCents,
+        appleSubscriptionGrossAmountCents: storeBreakdown.appleSubscriptionAmountCents,
+        googleOneTimeGrossAmountCents: storeBreakdown.googleOneTimeAmountCents,
+        googleSubscriptionGrossAmountCents: storeBreakdown.googleSubscriptionAmountCents,
       }),
     };
   });
@@ -338,33 +373,44 @@ export default async function EcommercePage({
                 </div>
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                  <div className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-3">
-                    <p className="text-xs font-medium text-rose-700">
-                      Danny (22% op credits/microtransacties)
-                    </p>
-                    <p className="mt-1 text-base font-semibold text-rose-900">
-                      {formatCurrency(entry.dannyAmountCents, entry.currency)}
-                    </p>
-                    <p className="mt-1 text-xs text-rose-700/80">
-                      Basis: {formatCurrency(entry.dannyEligibleAmountCents, entry.currency)}
-                    </p>
-                  </div>
                   <div className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-3">
-                    <p className="text-xs font-medium text-amber-700">Apple (15%)</p>
+                    <p className="text-xs font-medium text-amber-700">Apple (15% / 30%)</p>
                     <p className="mt-1 text-base font-semibold text-amber-900">
                       {formatCurrency(entry.appleAmountCents, entry.currency)}
                     </p>
+                    <p className="mt-1 text-xs text-amber-700/80">
+                      Eenmalig: {formatCurrency(entry.appleOneTimeAmountCents, entry.currency)}
+                      {" · "}
+                      Abonnement: {formatCurrency(entry.appleSubscriptionAmountCents, entry.currency)}
+                    </p>
                   </div>
                   <div className="rounded-lg border border-orange-100 bg-orange-50 px-3 py-3">
-                    <p className="text-xs font-medium text-orange-700">Google (15%)</p>
+                    <p className="text-xs font-medium text-orange-700">Google (15% / 30%)</p>
                     <p className="mt-1 text-base font-semibold text-orange-900">
                       {formatCurrency(entry.googleAmountCents, entry.currency)}
+                    </p>
+                    <p className="mt-1 text-xs text-orange-700/80">
+                      Eenmalig: {formatCurrency(entry.googleOneTimeAmountCents, entry.currency)}
+                      {" · "}
+                      Abonnement: {formatCurrency(entry.googleSubscriptionAmountCents, entry.currency)}
                     </p>
                   </div>
                   <div className="rounded-lg border border-sky-100 bg-sky-50 px-3 py-3">
                     <p className="text-xs font-medium text-sky-700">BTW (9%)</p>
                     <p className="mt-1 text-base font-semibold text-sky-900">
                       {formatCurrency(entry.vatAmountCents, entry.currency)}
+                    </p>
+                    <p className="mt-1 text-xs text-sky-700/80">
+                      Basis: {formatCurrency(entry.afterStoreAmountCents, entry.currency)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-3">
+                    <p className="text-xs font-medium text-rose-700">Danny (22%)</p>
+                    <p className="mt-1 text-base font-semibold text-rose-900">
+                      {formatCurrency(entry.dannyAmountCents, entry.currency)}
+                    </p>
+                    <p className="mt-1 text-xs text-rose-700/80">
+                      Basis: {formatCurrency(entry.afterVatAmountCents, entry.currency)}
                     </p>
                   </div>
                   <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-3">

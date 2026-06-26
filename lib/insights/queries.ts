@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isTherapistSubscriptionPackSlug } from "@/lib/users/entitlements";
 
 export type DateRange = {
   from: Date;
@@ -6,6 +7,15 @@ export type DateRange = {
 };
 
 type EcommercePurchaseStore = "apple" | "google" | "other";
+type EcommercePurchaseKind = "one_time" | "subscription";
+
+type StoreRevenueSummary = {
+  appleOneTimeAmountCents: number;
+  appleSubscriptionAmountCents: number;
+  googleOneTimeAmountCents: number;
+  googleSubscriptionAmountCents: number;
+  otherAmountCents: number;
+};
 
 const APPLE_SOURCES = new Set([
   "apple",
@@ -27,14 +37,12 @@ type RevenueInput = {
   source?: string | null;
   note?: string | null;
   environment?: string | null;
+  purchaseKind?: EcommercePurchaseKind;
 };
 
 type RevenueSummary = {
   revenueByCurrency: Map<string, number>;
-  storeRevenueByCurrency: Map<
-    string,
-    { appleAmountCents: number; googleAmountCents: number; otherAmountCents: number }
-  >;
+  storeRevenueByCurrency: Map<string, StoreRevenueSummary>;
   transactions: number;
 };
 
@@ -49,6 +57,7 @@ type IapRevenueRow = {
 };
 
 type CreditPackRevenueRow = {
+  pack_id?: string | null;
   amount_cents: number | null;
   credits_total?: number | null;
   currency: string | null;
@@ -56,6 +65,22 @@ type CreditPackRevenueRow = {
   source: string | null;
   note: string | null;
   external_ref?: string | null;
+};
+
+type WebsiteOrderItemRevenueRow = {
+  amount_cents: number | null;
+  currency: string | null;
+  source: string | null;
+  external_order_id: string | null;
+  occurred_at: string | null;
+  item_kind?: string | null;
+};
+
+type PackSummaryRow = {
+  id: string;
+  slug: string | null;
+  name: string | null;
+  key: string | null;
 };
 
 type AdminCreditPackPurchaseRow = {
@@ -126,6 +151,16 @@ function normalizeCurrency(currency: string | null | undefined) {
   return currency?.trim().toUpperCase() || "EUR";
 }
 
+function createStoreRevenueSummary(): StoreRevenueSummary {
+  return {
+    appleOneTimeAmountCents: 0,
+    appleSubscriptionAmountCents: 0,
+    googleOneTimeAmountCents: 0,
+    googleSubscriptionAmountCents: 0,
+    otherAmountCents: 0,
+  };
+}
+
 function createRevenueSummary(): RevenueSummary {
   return {
     revenueByCurrency: new Map(),
@@ -136,6 +171,26 @@ function createRevenueSummary(): RevenueSummary {
 
 function isSandboxEnvironment(environment: string | null | undefined) {
   return environment?.trim().toUpperCase() === "SANDBOX";
+}
+
+function getPurchaseKindFromPack(pack: PackSummaryRow | null | undefined): EcommercePurchaseKind {
+  if (!pack) {
+    return "one_time";
+  }
+
+  const slug = pack.slug?.trim().toLowerCase() ?? "";
+  if (slug === "jaarabonnement" || isTherapistSubscriptionPackSlug(slug)) {
+    return "subscription";
+  }
+
+  const label = `${pack.name ?? ""} ${pack.key ?? ""}`.trim().toLowerCase();
+  return /\b(abonnement|subscription)\b/.test(label) ? "subscription" : "one_time";
+}
+
+function getPurchaseKindFromWebsiteItem(
+  row: Pick<WebsiteOrderItemRevenueRow, "item_kind">
+): EcommercePurchaseKind {
+  return row.item_kind === "subscription" ? "subscription" : "one_time";
 }
 
 function addRevenue(summary: RevenueSummary, input: RevenueInput) {
@@ -156,16 +211,22 @@ function addRevenue(summary: RevenueSummary, input: RevenueInput) {
     (summary.revenueByCurrency.get(currency) ?? 0) + amountCents
   );
 
-  const storeRevenue = summary.storeRevenueByCurrency.get(currency) ?? {
-    appleAmountCents: 0,
-    googleAmountCents: 0,
-    otherAmountCents: 0,
-  };
+  const storeRevenue =
+    summary.storeRevenueByCurrency.get(currency) ?? createStoreRevenueSummary();
   const purchaseStore = detectPurchaseStore(input.source, input.note);
+  const purchaseKind = input.purchaseKind ?? "one_time";
   if (purchaseStore === "apple") {
-    storeRevenue.appleAmountCents += amountCents;
+    if (purchaseKind === "subscription") {
+      storeRevenue.appleSubscriptionAmountCents += amountCents;
+    } else {
+      storeRevenue.appleOneTimeAmountCents += amountCents;
+    }
   } else if (purchaseStore === "google") {
-    storeRevenue.googleAmountCents += amountCents;
+    if (purchaseKind === "subscription") {
+      storeRevenue.googleSubscriptionAmountCents += amountCents;
+    } else {
+      storeRevenue.googleOneTimeAmountCents += amountCents;
+    }
   } else {
     storeRevenue.otherAmountCents += amountCents;
   }
@@ -211,11 +272,13 @@ function getIapRevenueByTransactionId(rows: IapRevenueRow[] | null | undefined) 
 
 function getCreditPackRevenueInput(
   row: CreditPackRevenueRow,
-  iapRevenueByTransactionId: Map<string, IapRevenueRow>
+  iapRevenueByTransactionId: Map<string, IapRevenueRow>,
+  packById: Map<string, PackSummaryRow>
 ): RevenueInput {
   const iapRevenue = row.external_ref
     ? iapRevenueByTransactionId.get(row.external_ref)
     : null;
+  const packId = iapRevenue?.pack_id ?? row.pack_id;
 
   return {
     amountCents: iapRevenue?.amount_cents ?? row.amount_cents,
@@ -224,6 +287,7 @@ function getCreditPackRevenueInput(
     source: iapRevenue?.platform ?? row.source,
     note: row.note,
     environment: getRevenueCatEnvironment(iapRevenue?.raw_payload),
+    purchaseKind: getPurchaseKindFromPack(packId ? packById.get(packId) : null),
   };
 }
 
@@ -467,7 +531,7 @@ export async function getEcommerceOverview(range: DateRange) {
   ] = await Promise.all([
     supabase
       .from("credit_pack_purchases")
-      .select("amount_cents, credits_total, currency, created_at, source, note, external_ref")
+      .select("pack_id, amount_cents, credits_total, currency, created_at, source, note, external_ref")
       .gte("created_at", range.from.toISOString())
       .lte("created_at", range.to.toISOString()),
     supabase
@@ -478,9 +542,10 @@ export async function getEcommerceOverview(range: DateRange) {
       .lte("purchased_at", range.to.toISOString()),
     supabase
       .from("website_order_items")
-      .select("amount_cents, currency, source, external_order_id, occurred_at")
+      .select("amount_cents, currency, source, external_order_id, occurred_at, item_kind")
       .gte("occurred_at", range.from.toISOString())
-      .lte("occurred_at", range.to.toISOString()),
+      .lte("occurred_at", range.to.toISOString())
+      .returns<WebsiteOrderItemRevenueRow[]>(),
     supabase
       .from("iap_transactions")
       .select("platform, store_transaction_id, amount_cents, currency, created_at, pack_id, raw_payload")
@@ -489,12 +554,29 @@ export async function getEcommerceOverview(range: DateRange) {
       .returns<IapRevenueRow[]>(),
   ]);
   const iapRevenueByTransactionId = getIapRevenueByTransactionId(iapRevenueRows);
+  const emptyPackById = new Map<string, PackSummaryRow>();
+  const packIds = Array.from(
+    new Set(
+      [
+        ...(creditPackPurchases ?? []).map((row) => row.pack_id as string | null | undefined),
+        ...(iapRevenueRows ?? []).map((row) => row.pack_id),
+      ].filter((packId): packId is string => Boolean(packId))
+    )
+  );
+  const { data: packs } = packIds.length
+    ? await supabase
+        .from("credit_packs")
+        .select("id, slug, name, key")
+        .in("id", packIds)
+        .returns<PackSummaryRow[]>()
+    : { data: [] as PackSummaryRow[] };
+  const packById = new Map((packs ?? []).map((pack) => [pack.id, pack]));
 
   const summary = createRevenueSummary();
   let creditsSold = 0;
 
   for (const row of creditPackPurchases ?? []) {
-    const revenueInput = getCreditPackRevenueInput(row, iapRevenueByTransactionId);
+    const revenueInput = getCreditPackRevenueInput(row, iapRevenueByTransactionId, packById);
     if (isProductionRevenueInput(revenueInput)) {
       creditsSold += Number(row.credits_total ?? 0);
     }
@@ -529,6 +611,7 @@ export async function getEcommerceOverview(range: DateRange) {
       source: row.source,
       note: row.external_order_id,
       environment: null,
+      purchaseKind: getPurchaseKindFromWebsiteItem(row),
     });
   }
 
@@ -540,6 +623,7 @@ export async function getEcommerceOverview(range: DateRange) {
       source: row.platform,
       note: row.store_transaction_id,
       environment: getRevenueCatEnvironment(row.raw_payload),
+      purchaseKind: getPurchaseKindFromPack(row.pack_id ? packById.get(row.pack_id) : null),
     });
   }
 
@@ -741,6 +825,7 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
       .returns<IapRevenueRow[]>(),
   ]);
   const iapRevenueByTransactionId = getIapRevenueByTransactionId(iapRevenueRows);
+  const emptyPackById = new Map<string, PackSummaryRow>();
 
   const dailyMap = new Map<string, number>();
   const addDailyRevenue = (input: RevenueInput) => {
@@ -768,7 +853,7 @@ export async function getEcommerceDailyRevenue(range: DateRange) {
     if (isStoreBackedPurchase(row)) {
       continue;
     }
-    addDailyRevenue(getCreditPackRevenueInput(row, iapRevenueByTransactionId));
+    addDailyRevenue(getCreditPackRevenueInput(row, iapRevenueByTransactionId, emptyPackById));
   }
 
   for (const row of ebookPurchases ?? []) {
@@ -825,6 +910,7 @@ export async function getTopCreditPacks(range: DateRange, limit = 6) {
       .returns<IapRevenueRow[]>(),
   ]);
   const iapRevenueByTransactionId = getIapRevenueByTransactionId(iapRevenueRows);
+  const emptyPackById = new Map<string, PackSummaryRow>();
 
   const totals = new Map<string, { count: number; revenue: number; credits: number }>();
   for (const row of purchases ?? []) {
@@ -833,7 +919,7 @@ export async function getTopCreditPacks(range: DateRange, limit = 6) {
     }
     const packId = row.pack_id as string | null;
     if (!packId) continue;
-    const revenueInput = getCreditPackRevenueInput(row, iapRevenueByTransactionId);
+    const revenueInput = getCreditPackRevenueInput(row, iapRevenueByTransactionId, emptyPackById);
     if (!isProductionRevenueInput(revenueInput)) continue;
 
     const current = totals.get(packId) ?? { count: 0, revenue: 0, credits: 0 };
