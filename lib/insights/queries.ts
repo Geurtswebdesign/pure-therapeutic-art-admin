@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getSubscriptionPackKind } from "@/lib/iap/subscription-products";
 import { isTherapistSubscriptionPackSlug } from "@/lib/users/entitlements";
 
 export type DateRange = {
@@ -49,6 +50,7 @@ type RevenueSummary = {
 type IapRevenueRow = {
   platform: string | null;
   store_transaction_id: string | null;
+  store_product_id?: string | null;
   amount_cents: number | null;
   currency: string | null;
   created_at?: string | null;
@@ -81,6 +83,12 @@ type PackSummaryRow = {
   slug: string | null;
   name: string | null;
   key: string | null;
+};
+
+type IapProductMappingRow = {
+  platform: string | null;
+  store_product_id: string | null;
+  pack_id: string | null;
 };
 
 type AdminCreditPackPurchaseRow = {
@@ -179,12 +187,117 @@ function getPurchaseKindFromPack(pack: PackSummaryRow | null | undefined): Ecomm
   }
 
   const slug = pack.slug?.trim().toLowerCase() ?? "";
-  if (slug === "jaarabonnement" || isTherapistSubscriptionPackSlug(slug)) {
+  if (
+    slug === "jaarabonnement" ||
+    isTherapistSubscriptionPackSlug(slug) ||
+    getSubscriptionPackKind(slug)
+  ) {
     return "subscription";
   }
 
   const label = `${pack.name ?? ""} ${pack.key ?? ""}`.trim().toLowerCase();
   return /\b(abonnement|subscription)\b/.test(label) ? "subscription" : "one_time";
+}
+
+function getIapProductMappingKey(
+  platform: string | null | undefined,
+  storeProductId: string | null | undefined
+) {
+  const normalizedStoreProductId = storeProductId?.trim();
+  if (!normalizedStoreProductId) {
+    return null;
+  }
+
+  return `${platform?.trim().toLowerCase() || "unknown"}:${normalizedStoreProductId}`;
+}
+
+function getRevenueCatEvent(rawPayload: unknown) {
+  return asObject(asObject(rawPayload)?.event);
+}
+
+function getIapStoreProductId(row: Pick<IapRevenueRow, "store_product_id" | "raw_payload">) {
+  const event = getRevenueCatEvent(row.raw_payload);
+  const candidates = [
+    row.store_product_id,
+    event?.product_id,
+    asObject(row.raw_payload)?.product_id,
+  ];
+
+  return candidates.find((value): value is string => typeof value === "string" && value.trim().length > 0)
+    ?.trim() ?? null;
+}
+
+function getPurchaseKindFromStoreProductId(
+  storeProductId: string | null | undefined
+): EcommercePurchaseKind | null {
+  const normalized = storeProductId?.trim().toLowerCase() ?? "";
+  if (!normalized) {
+    return null;
+  }
+
+  if (
+    normalized === "subscription.yearly_full_access" ||
+    normalized === "subscription.therapist.monthly" ||
+    normalized === "subscription.therapist.yearly" ||
+    normalized.includes("annual-autorenewing") ||
+    normalized.includes("monthly-autorenewing") ||
+    normalized.includes("subscription") ||
+    normalized.includes("abonnement") ||
+    normalized.includes("therapeut-maand") ||
+    normalized.includes("therapeut-jaar") ||
+    normalized.includes("jaarabonnement")
+  ) {
+    return "subscription";
+  }
+
+  return null;
+}
+
+function getPurchaseKindFromRevenueCatPayload(rawPayload: unknown): EcommercePurchaseKind | null {
+  const event = getRevenueCatEvent(rawPayload);
+  const eventType = asString(event?.type).toUpperCase();
+  if (eventType === "NON_RENEWING_PURCHASE") {
+    return "one_time";
+  }
+
+  if (
+    eventType === "INITIAL_PURCHASE" ||
+    eventType === "RENEWAL" ||
+    eventType === "PRODUCT_CHANGE"
+  ) {
+    return "subscription";
+  }
+
+  return getPurchaseKindFromStoreProductId(asString(event?.product_id));
+}
+
+function getPurchaseKindFromIapRow(
+  row: IapRevenueRow,
+  packById: Map<string, PackSummaryRow>,
+  iapProductPackByStoreProduct: Map<string, string>
+): EcommercePurchaseKind {
+  const directPackKind = getPurchaseKindFromPack(
+    row.pack_id ? packById.get(row.pack_id) : null
+  );
+  if (directPackKind === "subscription") {
+    return "subscription";
+  }
+
+  const storeProductId = getIapStoreProductId(row);
+  const mappingKey = getIapProductMappingKey(row.platform, storeProductId);
+  const mappedPackId = mappingKey ? iapProductPackByStoreProduct.get(mappingKey) : null;
+  const mappedPackKind = getPurchaseKindFromPack(
+    mappedPackId ? packById.get(mappedPackId) : null
+  );
+  if (mappedPackKind === "subscription") {
+    return "subscription";
+  }
+
+  return (
+    getPurchaseKindFromRevenueCatPayload(row.raw_payload) ??
+    getPurchaseKindFromStoreProductId(storeProductId) ??
+    "one_time"
+  );
 }
 
 function getPurchaseKindFromWebsiteItem(
@@ -548,18 +661,40 @@ export async function getEcommerceOverview(range: DateRange) {
       .returns<WebsiteOrderItemRevenueRow[]>(),
     supabase
       .from("iap_transactions")
-      .select("platform, store_transaction_id, amount_cents, currency, created_at, pack_id, raw_payload")
+      .select("platform, store_transaction_id, store_product_id, amount_cents, currency, created_at, pack_id, raw_payload")
       .gte("created_at", range.from.toISOString())
       .lte("created_at", range.to.toISOString())
       .returns<IapRevenueRow[]>(),
   ]);
   const iapRevenueByTransactionId = getIapRevenueByTransactionId(iapRevenueRows);
-  const emptyPackById = new Map<string, PackSummaryRow>();
+  const iapStoreProductIds = Array.from(
+    new Set(
+      (iapRevenueRows ?? [])
+        .map((row) => getIapStoreProductId(row))
+        .filter((storeProductId): storeProductId is string => Boolean(storeProductId))
+    )
+  );
+  const { data: iapProductMappings } = iapStoreProductIds.length
+    ? await supabase
+        .from("iap_products")
+        .select("platform, store_product_id, pack_id")
+        .in("store_product_id", iapStoreProductIds)
+        .returns<IapProductMappingRow[]>()
+    : { data: [] as IapProductMappingRow[] };
+  const iapProductPackByStoreProduct = new Map(
+    (iapProductMappings ?? [])
+      .map((row) => {
+        const key = getIapProductMappingKey(row.platform, row.store_product_id);
+        return key && row.pack_id ? ([key, row.pack_id] as const) : null;
+      })
+      .filter((entry): entry is readonly [string, string] => Boolean(entry))
+  );
   const packIds = Array.from(
     new Set(
       [
         ...(creditPackPurchases ?? []).map((row) => row.pack_id as string | null | undefined),
         ...(iapRevenueRows ?? []).map((row) => row.pack_id),
+        ...(iapProductMappings ?? []).map((row) => row.pack_id),
       ].filter((packId): packId is string => Boolean(packId))
     )
   );
@@ -623,7 +758,11 @@ export async function getEcommerceOverview(range: DateRange) {
       source: row.platform,
       note: row.store_transaction_id,
       environment: getRevenueCatEnvironment(row.raw_payload),
-      purchaseKind: getPurchaseKindFromPack(row.pack_id ? packById.get(row.pack_id) : null),
+      purchaseKind: getPurchaseKindFromIapRow(
+        row,
+        packById,
+        iapProductPackByStoreProduct
+      ),
     });
   }
 
