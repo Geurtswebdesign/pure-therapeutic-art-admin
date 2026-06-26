@@ -52,6 +52,20 @@ type AdminUsersPageRow = {
   created_at?: string | null;
 };
 
+type ApprovalStatus = "approved" | "pending" | "rejected";
+
+type AdminUsersClientRow = {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  role: "user" | "admin";
+  credits: number;
+  created_at: string | null;
+  approval_status: ApprovalStatus;
+  subscriptions: SubscriptionSummary;
+  directoryVisibility: DirectoryVisibilitySummary;
+};
+
 function getActiveSubscriptionSummary(
   rows: UserEntitlementRow[],
   entitlementKey: string,
@@ -170,7 +184,9 @@ export default async function AdminUsersPage() {
       therapistDirectoryActiveUntil: therapistDirectory.activeUntil,
     });
   }
-  const userRows = (users ?? []) as AdminUsersPageRow[];
+  const userRows = ((users ?? []) as AdminUsersPageRow[]).filter(
+    (user): user is AdminUsersPageRow & { id: string } => Boolean(user.id)
+  );
   const missingCreatedAtUserIds: string[] = userRows
     .filter((user) => Boolean(user.id) && !user.created_at)
     .map((user) => user.id)
@@ -185,36 +201,23 @@ export default async function AdminUsersPage() {
       }
     })
   );
-  const usersWithApprovalStatus = userRows.map((user) => {
-    const rawStatus = user.id ? approvalStatusByUserId.get(user.id) : null;
-    const approval_status =
+  const usersWithApprovalStatus: AdminUsersClientRow[] = userRows.map((user) => {
+    const rawStatus = approvalStatusByUserId.get(user.id);
+    const approval_status: ApprovalStatus =
       rawStatus === "pending" || rawStatus === "rejected" || rawStatus === "approved"
         ? rawStatus
         : "approved";
-    const subscriptions = user.id
-      ? subscriptionByUserId.get(user.id) ?? {
-          hasYearAssignments: false,
-          yearAssignmentsActiveUntil: null,
-          hasTherapistDirectory: false,
-          therapistDirectoryActiveUntil: null,
-        }
-      : {
-          hasYearAssignments: false,
-          yearAssignmentsActiveUntil: null,
-          hasTherapistDirectory: false,
-          therapistDirectoryActiveUntil: null,
-        };
-    const directoryVisibility = user.id
-      ? directoryVisibilityByUserId.get(user.id) ?? {
-          accountType: "user" as const,
-          publicProfileEnabled: false,
-          isVisibleInTherapistDirectory: false,
-        }
-      : {
-          accountType: "user" as const,
-          publicProfileEnabled: false,
-          isVisibleInTherapistDirectory: false,
-        };
+    const subscriptions = subscriptionByUserId.get(user.id) ?? {
+      hasYearAssignments: false,
+      yearAssignmentsActiveUntil: null,
+      hasTherapistDirectory: false,
+      therapistDirectoryActiveUntil: null,
+    };
+    const directoryVisibility = directoryVisibilityByUserId.get(user.id) ?? {
+      accountType: "user" as const,
+      publicProfileEnabled: false,
+      isVisibleInTherapistDirectory: false,
+    };
     const nextDirectoryVisibility = {
       ...directoryVisibility,
       isVisibleInTherapistDirectory:
@@ -224,13 +227,15 @@ export default async function AdminUsersPage() {
     };
 
     return {
-      ...user,
+      id: user.id,
+      email: user.email ?? null,
+      display_name: user.display_name ?? null,
+      role: user.role === "admin" ? "admin" : "user",
+      credits: typeof user.credits === "number" ? user.credits : 0,
       created_at:
-        "created_at" in user && typeof user.created_at === "string"
+        typeof user.created_at === "string"
           ? user.created_at
-          : user.id
-            ? authCreatedAtByUserId.get(user.id) ?? null
-            : null,
+          : authCreatedAtByUserId.get(user.id) ?? null,
       approval_status,
       subscriptions,
       directoryVisibility: nextDirectoryVisibility,
