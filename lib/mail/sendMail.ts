@@ -10,7 +10,7 @@ type SendMailInput = {
   replyTo?: string;
 };
 
-const RETRY_DELAYS_MS = [500, 1500] as const;
+const RETRY_DELAYS_MS = [1000, 3000, 7000, 15000, 30000] as const;
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
