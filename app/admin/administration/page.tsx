@@ -94,6 +94,7 @@ type CombinedTransactionRow = {
   id: string;
   created_at: string;
   user_id: string;
+  user_label: string;
   type:
     | "assignment_pack"
     | "scoped_pack"
@@ -116,6 +117,11 @@ type AdminUserRpcRow = {
   email: string | null;
   display_name: string | null;
 };
+
+function formatUserLabel(user: UserOption | undefined, userId: string) {
+  const label = user?.display_name?.trim() || user?.email?.trim();
+  return label || `${userId.slice(0, 8)}...`;
+}
 
 function scopeLabel(
   scope: CombinedTransactionRow["scope"] | ScopedWalletRow["credit_scope"],
@@ -176,6 +182,8 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
     }));
   }
 
+  const userById = new Map(users.map((user) => [user.user_id, user]));
+
   const { data: wallets } = await supabase
     .from("credit_wallets")
     .select("user_id, credits_available, credits_total_purchased, updated_at")
@@ -234,6 +242,7 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
       id: tx.id,
       created_at: tx.created_at,
       user_id: tx.user_id,
+      user_label: formatUserLabel(userById.get(tx.user_id), tx.user_id),
       type: "assignment_pack" as const,
       scope: "assignment" as const,
       delta: tx.delta,
@@ -244,6 +253,7 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
       id: tx.id,
       created_at: tx.created_at,
       user_id: tx.user_id,
+      user_label: formatUserLabel(userById.get(tx.user_id), tx.user_id),
       type: "scoped_pack" as const,
       scope: tx.credit_scope,
       delta: tx.delta,
@@ -268,6 +278,7 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
         id: row.id,
         created_at: row.created_at,
         user_id: row.user_id,
+        user_label: formatUserLabel(userById.get(row.user_id), row.user_id),
         type: isTherapistSubscription
           ? ("therapist_subscription" as const)
           : ("year_subscription" as const),
@@ -408,7 +419,7 @@ export default async function AdministrationPage({ searchParams }: PageProps) {
                 {combinedTransactions.map((row) => (
                   <tr key={`${row.type}-${row.id}`} className="border-t">
                     <td className="px-2 py-2">{new Date(row.created_at).toLocaleString(locale)}</td>
-                    <td className="px-2 py-2">{row.user_id.slice(0, 8)}...</td>
+                    <td className="px-2 py-2">{row.user_label}</td>
                     <td className="px-2 py-2">
                       {row.type === "assignment_pack"
                         ? t.assignmentPack

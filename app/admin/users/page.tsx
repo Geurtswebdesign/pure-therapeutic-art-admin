@@ -161,6 +161,23 @@ export default async function AdminUsersPage() {
       therapistDirectoryActiveUntil: therapistDirectory.activeUntil,
     });
   }
+  const missingCreatedAtUserIds = (users ?? [])
+    .filter(
+      (user: { id?: string | null; created_at?: string | null }) =>
+        Boolean(user.id) && !user.created_at
+    )
+    .map((user: { id?: string | null }) => user.id)
+    .filter((id: string | null | undefined): id is string => Boolean(id));
+  const authCreatedAtByUserId = new Map<string, string>();
+  await Promise.all(
+    missingCreatedAtUserIds.map(async (userId) => {
+      const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
+      const createdAt = data.user?.created_at ?? null;
+      if (createdAt) {
+        authCreatedAtByUserId.set(userId, createdAt);
+      }
+    })
+  );
   const usersWithApprovalStatus = (users ?? []).map((user: { id?: string | null }) => {
     const rawStatus = user.id ? approvalStatusByUserId.get(user.id) : null;
     const approval_status =
@@ -201,6 +218,12 @@ export default async function AdminUsersPage() {
 
     return {
       ...user,
+      created_at:
+        "created_at" in user && typeof user.created_at === "string"
+          ? user.created_at
+          : user.id
+            ? authCreatedAtByUserId.get(user.id) ?? null
+            : null,
       approval_status,
       subscriptions,
       directoryVisibility: nextDirectoryVisibility,

@@ -31,7 +31,7 @@ type User = {
     isVisibleInTherapistDirectory: boolean;
   };
   credits: number;
-  created_at: string;
+  created_at?: string | null;
 };
 
 export default function UsersTableClient({
@@ -95,6 +95,18 @@ export default function UsersTableClient({
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+    }).format(new Date(value));
+  }
+
+  function formatRegisteredDate(value: string | null | undefined) {
+    if (!value) return "—";
+
+    return new Intl.DateTimeFormat("nl-NL", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(new Date(value));
   }
 
@@ -315,6 +327,7 @@ export default function UsersTableClient({
               <th className="text-left px-2 py-2">{t.name}</th>
               <th className="text-left px-2 py-2">{t.email}</th>
               <th className="text-left px-2 py-2">{t.role}</th>
+              <th className="text-left px-2 py-2">Aangemeld op</th>
               <th className="text-left px-2 py-2">{t.subscriptions}</th>
               <th className="text-left px-2 py-2">{t.therapistDirectory}</th>
               <th className="text-left px-2 py-2">Status</th>
@@ -361,6 +374,9 @@ export default function UsersTableClient({
                         </select>
                     )}
                     </td>
+                <td className="px-2 py-2 text-gray-600">
+                  {formatRegisteredDate(u.created_at)}
+                </td>
                 <td className="px-2 py-2">
                   {getSubscriptionBadges(u).length ? (
                     <div className="flex flex-wrap gap-1.5">
