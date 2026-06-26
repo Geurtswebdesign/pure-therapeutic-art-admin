@@ -43,6 +43,15 @@ type UserEntitlementRow = {
   is_active: boolean | null;
 };
 
+type AdminUsersPageRow = {
+  id?: string | null;
+  email?: string | null;
+  display_name?: string | null;
+  role?: "user" | "admin" | null;
+  credits?: number | null;
+  created_at?: string | null;
+};
+
 function getActiveSubscriptionSummary(
   rows: UserEntitlementRow[],
   entitlementKey: string,
@@ -161,12 +170,10 @@ export default async function AdminUsersPage() {
       therapistDirectoryActiveUntil: therapistDirectory.activeUntil,
     });
   }
-  const missingCreatedAtUserIds = (users ?? [])
-    .filter(
-      (user: { id?: string | null; created_at?: string | null }) =>
-        Boolean(user.id) && !user.created_at
-    )
-    .map((user: { id?: string | null }) => user.id)
+  const userRows = (users ?? []) as AdminUsersPageRow[];
+  const missingCreatedAtUserIds: string[] = userRows
+    .filter((user) => Boolean(user.id) && !user.created_at)
+    .map((user) => user.id)
     .filter((id: string | null | undefined): id is string => Boolean(id));
   const authCreatedAtByUserId = new Map<string, string>();
   await Promise.all(
@@ -178,7 +185,7 @@ export default async function AdminUsersPage() {
       }
     })
   );
-  const usersWithApprovalStatus = (users ?? []).map((user: { id?: string | null }) => {
+  const usersWithApprovalStatus = userRows.map((user) => {
     const rawStatus = user.id ? approvalStatusByUserId.get(user.id) : null;
     const approval_status =
       rawStatus === "pending" || rawStatus === "rejected" || rawStatus === "approved"
