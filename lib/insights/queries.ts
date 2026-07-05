@@ -585,6 +585,115 @@ export async function getTopEventsByCategoryPrefix(
   }>;
 }
 
+export async function getViewedContent(range: DateRange, limit = 25) {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("analytics_events")
+    .select("event_label, path, anon_id, session_id, occurred_at")
+    .eq("event_type", "event")
+    .eq("event_category", "content")
+    .eq("event_name", "content_viewed")
+    .gte("occurred_at", range.from.toISOString())
+    .lte("occurred_at", range.to.toISOString())
+    .not("event_label", "is", null)
+    .order("occurred_at", { ascending: false })
+    .limit(5000);
+
+  const events = data ?? [];
+  const contentIds = Array.from(
+    new Set(
+      events
+        .map((row) => row.event_label)
+        .filter((id): id is string => Boolean(id))
+    )
+  );
+
+  const titleById = new Map<
+    string,
+    { title: string | null; slug: string | null; language: string | null }
+  >();
+
+  if (contentIds.length) {
+    const { data: contentItems } = await supabase
+      .from("content_items")
+      .select("id, title, slug, language")
+      .in("id", contentIds);
+
+    for (const item of contentItems ?? []) {
+      titleById.set(item.id, {
+        title: item.title ?? null,
+        slug: item.slug ?? null,
+        language: item.language ?? null,
+      });
+    }
+  }
+
+  const viewsById = new Map<
+    string,
+    {
+      content_id: string;
+      title: string | null;
+      slug: string | null;
+      language: string | null;
+      views: number;
+      unique_visitors: Set<string>;
+      sessions: Set<string>;
+      last_viewed_at: string | null;
+      sample_path: string | null;
+    }
+  >();
+
+  for (const event of events) {
+    const contentId = event.event_label;
+    if (!contentId) continue;
+
+    const content = titleById.get(contentId);
+    const existing =
+      viewsById.get(contentId) ??
+      {
+        content_id: contentId,
+        title: content?.title ?? null,
+        slug: content?.slug ?? null,
+        language: content?.language ?? null,
+        views: 0,
+        unique_visitors: new Set<string>(),
+        sessions: new Set<string>(),
+        last_viewed_at: null,
+        sample_path: event.path ?? null,
+      };
+
+    existing.views += 1;
+    if (event.anon_id) existing.unique_visitors.add(event.anon_id);
+    if (event.session_id) existing.sessions.add(event.session_id);
+    if (
+      event.occurred_at &&
+      (!existing.last_viewed_at || event.occurred_at > existing.last_viewed_at)
+    ) {
+      existing.last_viewed_at = event.occurred_at;
+    }
+    if (!existing.sample_path && event.path) {
+      existing.sample_path = event.path;
+    }
+
+    viewsById.set(contentId, existing);
+  }
+
+  return Array.from(viewsById.values())
+    .sort((a, b) => b.views - a.views)
+    .slice(0, limit)
+    .map((row) => ({
+      content_id: row.content_id,
+      title: row.title,
+      slug: row.slug,
+      language: row.language,
+      views: row.views,
+      unique_visitors: row.unique_visitors.size,
+      sessions: row.sessions.size,
+      last_viewed_at: row.last_viewed_at,
+      sample_path: row.sample_path,
+    }));
+}
+
 export async function getRealtime(minutes = 30) {
   const supabase = createAdminClient();
   const { data } = await supabase.rpc("analytics_realtime", {

@@ -3,6 +3,7 @@ import TabsNav from "@/components/analytics/TabsNav";
 const tabs = [
   { label: "Overview", href: "/admin/insights/publishers/overview" },
   { label: "Page report", href: "/admin/insights/publishers/pages" },
+  { label: "Viewed content", href: "/admin/insights/publishers/content" },
   { label: "Country report", href: "/admin/insights/publishers/countries" },
   { label: "Events", href: "/admin/insights/publishers/events" },
 ];

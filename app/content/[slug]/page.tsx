@@ -15,6 +15,7 @@ import { getBalanceByScope } from "@/lib/users/getBalanceByScope";
 import { getContentAccessScope } from "@/lib/content/access";
 import { getAppLanguage } from "@/lib/i18n/getAppLanguage";
 import { resolveUiLanguage } from "@/lib/i18n/runtime";
+import { logServerEvent } from "@/lib/analytics/server";
 import {
   isLegalContentItem,
   isLegalContentMetadata,
@@ -116,6 +117,13 @@ export default async function ContentDetailPage({
       extractFirstPdfSourceFromHtml(item.excerpt);
 
     if (pdfSrc) {
+      void logServerEvent({
+        eventName: "content_viewed",
+        eventCategory: "content",
+        eventLabel: item.id,
+        path: `/content/${slug}`,
+      });
+
       const viewer = (
         <PdfViewerScreen
           pdfSrc={pdfSrc}
@@ -137,6 +145,13 @@ export default async function ContentDetailPage({
   }
 
   const blocks = await getPublishedBlocks(item.id);
+
+  void logServerEvent({
+    eventName: "content_viewed",
+    eventCategory: "content",
+    eventLabel: item.id,
+    path: `/content/${slug}`,
+  });
 
   const article = (
     <PublicContentArticle
