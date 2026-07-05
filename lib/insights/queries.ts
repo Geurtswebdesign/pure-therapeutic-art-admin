@@ -694,6 +694,88 @@ export async function getViewedContent(range: DateRange, limit = 25) {
     }));
 }
 
+export async function getRecentContentViewers(range: DateRange, limit = 100) {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("user_content_progress")
+    .select("user_id, content_item_id, last_viewed_at")
+    .not("last_viewed_at", "is", null)
+    .gte("last_viewed_at", range.from.toISOString())
+    .lte("last_viewed_at", range.to.toISOString())
+    .order("last_viewed_at", { ascending: false })
+    .limit(limit);
+
+  const rows = data ?? [];
+  const userIds = Array.from(
+    new Set(rows.map((row) => row.user_id).filter((id): id is string => Boolean(id)))
+  );
+  const contentIds = Array.from(
+    new Set(
+      rows
+        .map((row) => row.content_item_id)
+        .filter((id): id is string => Boolean(id))
+    )
+  );
+
+  const [{ data: profiles }, { data: contentItems }] = await Promise.all([
+    userIds.length
+      ? supabase
+          .from("profiles")
+          .select("user_id, display_name")
+          .in("user_id", userIds)
+          .returns<Array<{ user_id: string; display_name: string | null }>>()
+      : Promise.resolve({ data: [] as Array<{ user_id: string; display_name: string | null }> }),
+    contentIds.length
+      ? supabase
+          .from("content_items")
+          .select("id, title, slug, language")
+          .in("id", contentIds)
+          .returns<
+            Array<{
+              id: string;
+              title: string | null;
+              slug: string | null;
+              language: string | null;
+            }>
+          >()
+      : Promise.resolve({
+          data: [] as Array<{
+            id: string;
+            title: string | null;
+            slug: string | null;
+            language: string | null;
+          }>,
+        }),
+  ]);
+
+  const profileByUserId = new Map(
+    (profiles ?? []).map((profile) => [
+      profile.user_id,
+      profile.display_name?.trim() || shortUserId(profile.user_id),
+    ])
+  );
+  const contentById = new Map((contentItems ?? []).map((item) => [item.id, item]));
+
+  return rows.map((row) => {
+    const content = contentById.get(row.content_item_id);
+    const path = content?.slug
+      ? content.language
+        ? `/${content.language}/${content.slug}`
+        : `/content/${content.slug}`
+      : null;
+
+    return {
+      user_id: row.user_id,
+      user_name: profileByUserId.get(row.user_id) ?? shortUserId(row.user_id),
+      content_id: row.content_item_id,
+      content_title: content?.title ?? row.content_item_id,
+      content_language: content?.language ?? null,
+      content_path: path,
+      last_viewed_at: row.last_viewed_at,
+    };
+  });
+}
+
 export async function getRealtime(minutes = 30) {
   const supabase = createAdminClient();
   const { data } = await supabase.rpc("analytics_realtime", {
