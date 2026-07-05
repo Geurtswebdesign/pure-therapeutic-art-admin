@@ -694,8 +694,13 @@ export async function getViewedContent(range: DateRange, limit = 25) {
     }));
 }
 
-export async function getRecentContentViewers(range: DateRange, limit = 100) {
+export async function getRecentContentViewers(
+  range: DateRange,
+  limit = 100,
+  userQuery?: string
+) {
   const supabase = createAdminClient();
+  const normalizedUserQuery = userQuery?.trim().toLowerCase() ?? "";
   const { data } = await supabase
     .from("user_content_progress")
     .select("user_id, content_item_id, last_viewed_at")
@@ -703,7 +708,7 @@ export async function getRecentContentViewers(range: DateRange, limit = 100) {
     .gte("last_viewed_at", range.from.toISOString())
     .lte("last_viewed_at", range.to.toISOString())
     .order("last_viewed_at", { ascending: false })
-    .limit(limit);
+    .limit(normalizedUserQuery ? 5000 : limit);
 
   const rows = data ?? [];
   const userIds = Array.from(
@@ -721,10 +726,22 @@ export async function getRecentContentViewers(range: DateRange, limit = 100) {
     userIds.length
       ? supabase
           .from("profiles")
-          .select("user_id, display_name")
+          .select("user_id, display_name, profile_data")
           .in("user_id", userIds)
-          .returns<Array<{ user_id: string; display_name: string | null }>>()
-      : Promise.resolve({ data: [] as Array<{ user_id: string; display_name: string | null }> }),
+          .returns<
+            Array<{
+              user_id: string;
+              display_name: string | null;
+              profile_data?: Record<string, unknown> | null;
+            }>
+          >()
+      : Promise.resolve({
+          data: [] as Array<{
+            user_id: string;
+            display_name: string | null;
+            profile_data?: Record<string, unknown> | null;
+          }>,
+        }),
     contentIds.length
       ? supabase
           .from("content_items")
@@ -748,32 +765,62 @@ export async function getRecentContentViewers(range: DateRange, limit = 100) {
         }),
   ]);
 
-  const profileByUserId = new Map(
-    (profiles ?? []).map((profile) => [
-      profile.user_id,
-      profile.display_name?.trim() || shortUserId(profile.user_id),
-    ])
+  const authUserResults = await Promise.all(
+    userIds.map(async (userId) => {
+      const { data: authUserData } = await supabase.auth.admin.getUserById(userId);
+      return {
+        userId,
+        email: authUserData.user?.email ?? null,
+        metadataName:
+          asString(authUserData.user?.user_metadata?.name) ||
+          asString(authUserData.user?.user_metadata?.full_name),
+      };
+    })
   );
+  const authByUserId = new Map(authUserResults.map((user) => [user.userId, user]));
+  const profileByUserId = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));
   const contentById = new Map((contentItems ?? []).map((item) => [item.id, item]));
 
-  return rows.map((row) => {
-    const content = contentById.get(row.content_item_id);
-    const path = content?.slug
-      ? content.language
-        ? `/${content.language}/${content.slug}`
-        : `/content/${content.slug}`
-      : null;
+  return rows
+    .map((row) => {
+      const profile = profileByUserId.get(row.user_id);
+      const authUser = authByUserId.get(row.user_id);
+      const firstName = asString(profile?.profile_data?.first_name);
+      const lastName = asString(profile?.profile_data?.last_name);
+      const profileDataName = [firstName, lastName].filter(Boolean).join(" ");
+      const userName =
+        profile?.display_name?.trim() ||
+        profileDataName ||
+        authUser?.metadataName ||
+        authUser?.email ||
+        shortUserId(row.user_id);
+      const content = contentById.get(row.content_item_id);
+      const path = content?.slug
+        ? content.language
+          ? `/${content.language}/${content.slug}`
+          : `/content/${content.slug}`
+        : null;
 
-    return {
-      user_id: row.user_id,
-      user_name: profileByUserId.get(row.user_id) ?? shortUserId(row.user_id),
-      content_id: row.content_item_id,
-      content_title: content?.title ?? row.content_item_id,
-      content_language: content?.language ?? null,
-      content_path: path,
-      last_viewed_at: row.last_viewed_at,
-    };
-  });
+      return {
+        user_id: row.user_id,
+        user_name: userName,
+        user_email: authUser?.email ?? null,
+        content_id: row.content_item_id,
+        content_title: content?.title ?? row.content_item_id,
+        content_language: content?.language ?? null,
+        content_path: path,
+        last_viewed_at: row.last_viewed_at,
+      };
+    })
+    .filter((row) => {
+      if (!normalizedUserQuery) return true;
+      return [
+        row.user_name,
+        row.user_email ?? "",
+        row.user_id,
+      ].some((value) => value.toLowerCase().includes(normalizedUserQuery));
+    })
+    .slice(0, limit);
 }
 
 export async function getRealtime(minutes = 30) {
