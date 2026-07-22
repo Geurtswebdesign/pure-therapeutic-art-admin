@@ -23,6 +23,22 @@ function normalizeText(value?: string) {
   return value?.trim() ?? "";
 }
 
+type PasswordChangeErrorCode =
+  | "PASSWORD_NOT_AUTHENTICATED"
+  | "PASSWORD_CURRENT_REQUIRED"
+  | "PASSWORD_TOO_SHORT"
+  | "PASSWORD_MUST_DIFFER"
+  | "PASSWORD_CURRENT_INCORRECT"
+  | "PASSWORD_MFA_REQUIRED"
+  | "PASSWORD_MFA_UNAVAILABLE"
+  | "PASSWORD_MFA_FAILED"
+  | "PASSWORD_MFA_INVALID"
+  | "PASSWORD_UPDATE_FAILED";
+
+function passwordChangeFailed(code: PasswordChangeErrorCode) {
+  return { ok: false as const, code };
+}
+
 export async function updateMyPassword(input: {
   currentPassword: string;
   newPassword: string;
@@ -30,17 +46,17 @@ export async function updateMyPassword(input: {
 }) {
   const user = await getCurrentUser();
   if (!user?.email) {
-    throw new Error("PASSWORD_NOT_AUTHENTICATED");
+    return passwordChangeFailed("PASSWORD_NOT_AUTHENTICATED");
   }
 
   if (!input.currentPassword) {
-    throw new Error("PASSWORD_CURRENT_REQUIRED");
+    return passwordChangeFailed("PASSWORD_CURRENT_REQUIRED");
   }
   if (input.newPassword.length < 8) {
-    throw new Error("PASSWORD_TOO_SHORT");
+    return passwordChangeFailed("PASSWORD_TOO_SHORT");
   }
   if (input.currentPassword === input.newPassword) {
-    throw new Error("PASSWORD_MUST_DIFFER");
+    return passwordChangeFailed("PASSWORD_MUST_DIFFER");
   }
 
   // Verify the current password without replacing the user's existing session.
@@ -69,7 +85,7 @@ export async function updateMyPassword(input: {
       actorUserId: user.id,
       targetUserId: user.id,
     });
-    throw new Error("PASSWORD_CURRENT_INCORRECT");
+    return passwordChangeFailed("PASSWORD_CURRENT_INCORRECT");
   }
 
   const cookieStore = await cookies();
@@ -91,26 +107,29 @@ export async function updateMyPassword(input: {
     }
   );
 
-  const { data: assurance } =
+  const { data: assurance, error: assuranceError } =
     await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (assuranceError) {
+    return passwordChangeFailed("PASSWORD_MFA_FAILED");
+  }
   if (
     assurance?.nextLevel === "aal2" &&
     assurance.currentLevel !== "aal2"
   ) {
     if (!input.mfaCode?.trim()) {
-      throw new Error("PASSWORD_MFA_REQUIRED");
+      return passwordChangeFailed("PASSWORD_MFA_REQUIRED");
     }
 
     const { data: factors } = await supabase.auth.mfa.listFactors();
     const factor = factors?.totp?.find((item) => item.status === "verified");
     if (!factor) {
-      throw new Error("PASSWORD_MFA_UNAVAILABLE");
+      return passwordChangeFailed("PASSWORD_MFA_UNAVAILABLE");
     }
 
     const { data: challenge, error: challengeError } =
       await supabase.auth.mfa.challenge({ factorId: factor.id });
     if (challengeError || !challenge?.id) {
-      throw new Error("PASSWORD_MFA_FAILED");
+      return passwordChangeFailed("PASSWORD_MFA_FAILED");
     }
 
     const { error: mfaError } = await supabase.auth.mfa.verify({
@@ -119,7 +138,7 @@ export async function updateMyPassword(input: {
       code: input.mfaCode.trim(),
     });
     if (mfaError) {
-      throw new Error("PASSWORD_MFA_INVALID");
+      return passwordChangeFailed("PASSWORD_MFA_INVALID");
     }
   }
 
@@ -127,7 +146,7 @@ export async function updateMyPassword(input: {
     password: input.newPassword,
   });
   if (updateError) {
-    throw new Error("PASSWORD_UPDATE_FAILED");
+    return passwordChangeFailed("PASSWORD_UPDATE_FAILED");
   }
 
   await logSecurityAuditEvent({
@@ -135,6 +154,8 @@ export async function updateMyPassword(input: {
     actorUserId: user.id,
     targetUserId: user.id,
   });
+
+  return { ok: true as const };
 }
 
 export async function updateMyProfile(input: {

@@ -97,16 +97,11 @@ export default function AccountPasswordForm({ language }: { language: UiLanguage
 
     startTransition(async () => {
       try {
-        await updateMyPassword({ currentPassword, newPassword, mfaCode });
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setMfaCode("");
-        setRequiresMfa(false);
-        setMessage(t.success);
-      } catch (error) {
-        setIsError(true);
-        const errorCode = error instanceof Error ? error.message : "";
+        const result = await updateMyPassword({
+          currentPassword,
+          newPassword,
+          mfaCode,
+        });
         const translatedErrors: Record<string, string> = {
           PASSWORD_NOT_AUTHENTICATED: t.notAuthenticated,
           PASSWORD_CURRENT_REQUIRED: t.currentRequired,
@@ -118,12 +113,29 @@ export default function AccountPasswordForm({ language }: { language: UiLanguage
           PASSWORD_MFA_UNAVAILABLE: t.mfaUnavailable,
           PASSWORD_MFA_FAILED: t.mfaUnavailable,
         };
-        if (errorCode === "PASSWORD_MFA_REQUIRED") {
+
+        if (!result.ok && result.code === "PASSWORD_MFA_REQUIRED") {
+          setIsError(false);
           setRequiresMfa(true);
           setMessage(t.mfaPrompt);
           return;
         }
-        setMessage(translatedErrors[errorCode] ?? t.failed);
+
+        if (!result.ok) {
+          setIsError(true);
+          setMessage(translatedErrors[result.code] ?? t.failed);
+          return;
+        }
+
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setMfaCode("");
+        setRequiresMfa(false);
+        setMessage(t.success);
+      } catch {
+        setIsError(true);
+        setMessage(t.failed);
       }
     });
   }
