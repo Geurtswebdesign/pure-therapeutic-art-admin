@@ -70,6 +70,26 @@ Rotate by:
 3. Updating the production environment values.
 4. Testing an actual outbound mail flow from the admin email settings page.
 
+### Prevent recurring `invalid_grant` errors
+
+For production mail, check the Google Auth Platform audience/publishing status.
+An external OAuth app left in `Testing` issues refresh tokens that expire after
+seven days when Gmail scopes are used. Move the app to `In production` before
+creating the replacement refresh token. For a Google Workspace-only setup,
+using an `Internal` app is another option when all senders belong to the same
+Workspace organization.
+
+After changing the publishing status:
+
+1. Revoke the old grant.
+2. Generate a new refresh token with offline access and the Gmail send scope.
+3. Update `GOOGLE_REFRESH_TOKEN` in both `.env.production` and the Plesk
+   environment configuration.
+4. Restart the app and run an actual test email.
+
+Changing the publishing status does not repair an already invalid token; a new
+refresh token is required once.
+
 ## WordPress events integration
 
 This app uses:
