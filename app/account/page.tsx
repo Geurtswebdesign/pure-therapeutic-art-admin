@@ -4,6 +4,7 @@ import PublicAppShell from "@/components/public/PublicAppShell";
 import AppLogoutButton from "@/components/account/AppLogoutButton";
 import AccountPanelAutoScroll from "@/components/account/AccountPanelAutoScroll";
 import AccountProfileForm from "@/components/account/AccountProfileForm";
+import AccountPasswordForm from "@/components/account/AccountPasswordForm";
 import LanguagePreferenceDialog from "@/components/account/LanguagePreferenceDialog";
 import ThemeProgressGrid from "@/components/account/ThemeProgressGrid";
 import { login } from "@/components/login/actions";
@@ -1136,6 +1137,7 @@ export default async function AccountPage({
               email={user.email ?? ""}
               language={language}
             />
+            <AccountPasswordForm language={language} />
           </>
         ) : (
           <>
