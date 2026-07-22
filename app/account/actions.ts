@@ -142,9 +142,15 @@ export async function updateMyPassword(input: {
     }
   }
 
-  const { error: updateError } = await supabase.auth.updateUser({
-    password: input.newPassword,
-  });
+  // The user's identity, current password and (when configured) MFA have all
+  // been verified above. Use the server-only admin client for the mutation so
+  // Supabase does not reject this trusted flow because of client AAL/session
+  // freshness rules. The service-role credential never reaches the browser.
+  const supabaseAdmin = createAdminClient();
+  const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+    user.id,
+    { password: input.newPassword }
+  );
   if (updateError) {
     return passwordChangeFailed("PASSWORD_UPDATE_FAILED");
   }
