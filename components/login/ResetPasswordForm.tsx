@@ -8,7 +8,12 @@ import { getAppMessages } from "@/lib/i18n/appMessages";
 import type { UiLanguage } from "@/lib/i18n/runtime";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 
-type ResetPasswordViewState = "loading" | "ready" | "invalid" | "success";
+type ResetPasswordViewState =
+  | "loading"
+  | "mfa"
+  | "ready"
+  | "invalid"
+  | "success";
 
 export default function ResetPasswordForm({
   language,
@@ -22,11 +27,60 @@ export default function ResetPasswordForm({
     useState<ResetPasswordViewState>("loading");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaChallengeId, setMfaChallengeId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let active = true;
+
+    const prepareRecoverySession = async () => {
+      const { data: assurance, error: assuranceError } =
+        await supabaseBrowser.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (!active) return;
+
+      if (assuranceError) {
+        setError(t.resetInvalid);
+        setViewState("invalid");
+        return;
+      }
+
+      if (
+        assurance?.nextLevel === "aal2" &&
+        assurance.currentLevel !== "aal2"
+      ) {
+        const { data: factors } = await supabaseBrowser.auth.mfa.listFactors();
+        const factor = factors?.totp?.find(
+          (item) => item.status === "verified"
+        );
+        if (!active) return;
+
+        if (!factor) {
+          setError(t.resetInvalid);
+          setViewState("invalid");
+          return;
+        }
+
+        const { data: challenge, error: challengeError } =
+          await supabaseBrowser.auth.mfa.challenge({ factorId: factor.id });
+        if (!active) return;
+
+        if (challengeError || !challenge?.id) {
+          setError(t.resetInvalid);
+          setViewState("invalid");
+          return;
+        }
+
+        setMfaFactorId(factor.id);
+        setMfaChallengeId(challenge.id);
+        setViewState("mfa");
+        return;
+      }
+
+      setViewState("ready");
+    };
 
     const resolveRecoverySession = async () => {
       const url = new URL(window.location.href);
@@ -96,27 +150,47 @@ export default function ResetPasswordForm({
         return;
       }
 
-      setViewState(data.session ? "ready" : "invalid");
+      if (!data.session) {
+        setViewState("invalid");
+        return;
+      }
+
+      await prepareRecoverySession();
     };
 
     void resolveRecoverySession();
 
-    const {
-      data: { subscription },
-    } = supabaseBrowser.auth.onAuthStateChange((event, session) => {
-      if (!active) return;
-
-      if ((event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") && session) {
-        setError(null);
-        setViewState("ready");
-      }
-    });
-
     return () => {
       active = false;
-      subscription.unsubscribe();
     };
-  }, []);
+  }, [t.resetInvalid]);
+
+  async function handleMfaSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!mfaFactorId || !mfaChallengeId) {
+      setError(t.resetInvalid);
+      setViewState("invalid");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    const { error: verifyError } = await supabaseBrowser.auth.mfa.verify({
+      factorId: mfaFactorId,
+      challengeId: mfaChallengeId,
+      code: mfaCode.trim(),
+    });
+
+    if (verifyError) {
+      setError(t.resetMfaInvalid);
+      setSaving(false);
+      return;
+    }
+
+    setMfaCode("");
+    setSaving(false);
+    setViewState("ready");
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -188,6 +262,41 @@ export default function ResetPasswordForm({
           {t.backToLogin}
         </Link>
       </div>
+    );
+  }
+
+  if (viewState === "mfa") {
+    return (
+      <form
+        onSubmit={handleMfaSubmit}
+        className="space-y-4 rounded-[1.5rem] border border-[#e5d8ca] bg-white/90 p-4 shadow-sm"
+      >
+        <p className="text-sm leading-6 text-[#6b5d50]">
+          {t.resetMfaPrompt}
+        </p>
+        <FormField label={t.resetMfaCode}>
+          <AuthInput
+            type="text"
+            inputMode="numeric"
+            required
+            autoComplete="one-time-code"
+            value={mfaCode}
+            onChange={(event) => setMfaCode(event.target.value)}
+          />
+        </FormField>
+        {error ? (
+          <p className="rounded-[1rem] border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            {error}
+          </p>
+        ) : null}
+        <button
+          type="submit"
+          disabled={saving || !mfaCode.trim()}
+          className="w-full rounded-full bg-[#1d2327] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#2b3439] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {saving ? t.resetMfaSubmitBusy : t.resetMfaSubmit}
+        </button>
+      </form>
     );
   }
 

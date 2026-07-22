@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
 import { logSecurityAuditEvent } from "@/lib/security/audit";
 import { getSupabaseCookieOptions } from "@/lib/site/urls";
@@ -25,6 +26,7 @@ function normalizeText(value?: string) {
 export async function updateMyPassword(input: {
   currentPassword: string;
   newPassword: string;
+  mfaCode?: string;
 }) {
   const user = await getCurrentUser();
   if (!user?.email) {
@@ -39,6 +41,35 @@ export async function updateMyPassword(input: {
   }
   if (input.currentPassword === input.newPassword) {
     throw new Error("PASSWORD_MUST_DIFFER");
+  }
+
+  // Verify the current password without replacing the user's existing session.
+  // Reusing the cookie client for signInWithPassword would downgrade an AAL2
+  // session to AAL1 and make Supabase reject the password update.
+  const credentialVerifier = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    }
+  );
+
+  const { error: verifyError } = await credentialVerifier.auth.signInWithPassword({
+    email: user.email,
+    password: input.currentPassword,
+  });
+  if (verifyError) {
+    await logSecurityAuditEvent({
+      eventType: "password_change_verification_failed",
+      severity: "warning",
+      actorUserId: user.id,
+      targetUserId: user.id,
+    });
+    throw new Error("PASSWORD_CURRENT_INCORRECT");
   }
 
   const cookieStore = await cookies();
@@ -60,18 +91,36 @@ export async function updateMyPassword(input: {
     }
   );
 
-  const { error: verifyError } = await supabase.auth.signInWithPassword({
-    email: user.email,
-    password: input.currentPassword,
-  });
-  if (verifyError) {
-    await logSecurityAuditEvent({
-      eventType: "password_change_verification_failed",
-      severity: "warning",
-      actorUserId: user.id,
-      targetUserId: user.id,
+  const { data: assurance } =
+    await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (
+    assurance?.nextLevel === "aal2" &&
+    assurance.currentLevel !== "aal2"
+  ) {
+    if (!input.mfaCode?.trim()) {
+      throw new Error("PASSWORD_MFA_REQUIRED");
+    }
+
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    const factor = factors?.totp?.find((item) => item.status === "verified");
+    if (!factor) {
+      throw new Error("PASSWORD_MFA_UNAVAILABLE");
+    }
+
+    const { data: challenge, error: challengeError } =
+      await supabase.auth.mfa.challenge({ factorId: factor.id });
+    if (challengeError || !challenge?.id) {
+      throw new Error("PASSWORD_MFA_FAILED");
+    }
+
+    const { error: mfaError } = await supabase.auth.mfa.verify({
+      factorId: factor.id,
+      challengeId: challenge.id,
+      code: input.mfaCode.trim(),
     });
-    throw new Error("PASSWORD_CURRENT_INCORRECT");
+    if (mfaError) {
+      throw new Error("PASSWORD_MFA_INVALID");
+    }
   }
 
   const { error: updateError } = await supabase.auth.updateUser({

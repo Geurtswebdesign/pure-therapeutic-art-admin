@@ -21,6 +21,10 @@ const COPY = {
     currentIncorrect: "Het huidige wachtwoord is niet correct.",
     notAuthenticated: "Je bent niet meer ingelogd. Log opnieuw in.",
     failed: "Wachtwoord wijzigen is mislukt. Probeer het opnieuw.",
+    mfaPrompt: "Vul ter bevestiging de code uit je authenticator-app in.",
+    mfaCode: "2FA-code",
+    mfaInvalid: "De 2FA-code is ongeldig. Probeer het opnieuw.",
+    mfaUnavailable: "2FA kan niet worden gecontroleerd. Log opnieuw in.",
     success: "Je wachtwoord is gewijzigd.",
     submit: "Wachtwoord wijzigen",
     busy: "Wijzigen...",
@@ -38,6 +42,10 @@ const COPY = {
     currentIncorrect: "The current password is incorrect.",
     notAuthenticated: "You are no longer signed in. Please sign in again.",
     failed: "Changing the password failed. Please try again.",
+    mfaPrompt: "Enter the code from your authenticator app to confirm.",
+    mfaCode: "2FA code",
+    mfaInvalid: "The 2FA code is invalid. Please try again.",
+    mfaUnavailable: "2FA could not be verified. Please sign in again.",
     success: "Your password has been changed.",
     submit: "Change password",
     busy: "Changing...",
@@ -55,6 +63,10 @@ const COPY = {
     currentIncorrect: "Das aktuelle Passwort ist nicht korrekt.",
     notAuthenticated: "Du bist nicht mehr angemeldet. Bitte melde dich erneut an.",
     failed: "Das Passwort konnte nicht geändert werden. Versuche es erneut.",
+    mfaPrompt: "Gib zur Bestätigung den Code aus deiner Authenticator-App ein.",
+    mfaCode: "2FA-Code",
+    mfaInvalid: "Der 2FA-Code ist ungültig. Versuche es erneut.",
+    mfaUnavailable: "2FA konnte nicht überprüft werden. Bitte melde dich erneut an.",
     success: "Dein Passwort wurde geändert.",
     submit: "Passwort ändern",
     busy: "Wird geändert...",
@@ -66,6 +78,8 @@ export default function AccountPasswordForm({ language }: { language: UiLanguage
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [requiresMfa, setRequiresMfa] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -83,10 +97,12 @@ export default function AccountPasswordForm({ language }: { language: UiLanguage
 
     startTransition(async () => {
       try {
-        await updateMyPassword({ currentPassword, newPassword });
+        await updateMyPassword({ currentPassword, newPassword, mfaCode });
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
+        setMfaCode("");
+        setRequiresMfa(false);
         setMessage(t.success);
       } catch (error) {
         setIsError(true);
@@ -98,7 +114,15 @@ export default function AccountPasswordForm({ language }: { language: UiLanguage
           PASSWORD_MUST_DIFFER: t.mustDiffer,
           PASSWORD_CURRENT_INCORRECT: t.currentIncorrect,
           PASSWORD_UPDATE_FAILED: t.failed,
+          PASSWORD_MFA_INVALID: t.mfaInvalid,
+          PASSWORD_MFA_UNAVAILABLE: t.mfaUnavailable,
+          PASSWORD_MFA_FAILED: t.mfaUnavailable,
         };
+        if (errorCode === "PASSWORD_MFA_REQUIRED") {
+          setRequiresMfa(true);
+          setMessage(t.mfaPrompt);
+          return;
+        }
         setMessage(translatedErrors[errorCode] ?? t.failed);
       }
     });
@@ -128,6 +152,20 @@ export default function AccountPasswordForm({ language }: { language: UiLanguage
             <input className={inputClass} type="password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
           </label>
         </div>
+        {requiresMfa ? (
+          <label className="block space-y-1">
+            <span className="text-sm text-stone-600">{t.mfaCode}</span>
+            <input
+              className={inputClass}
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              required
+              value={mfaCode}
+              onChange={(event) => setMfaCode(event.target.value)}
+            />
+          </label>
+        ) : null}
         <div className="flex flex-wrap items-center gap-3">
           <button type="submit" disabled={isPending} className="rounded-full bg-[#1c2428] px-4 py-2 text-sm text-white disabled:opacity-60">
             {isPending ? t.busy : t.submit}

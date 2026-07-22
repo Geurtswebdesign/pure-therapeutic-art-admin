@@ -44,6 +44,11 @@ type AppMessages = {
     resetLoading: string;
     resetInvalid: string;
     resetMismatch: string;
+    resetMfaPrompt: string;
+    resetMfaCode: string;
+    resetMfaSubmit: string;
+    resetMfaSubmitBusy: string;
+    resetMfaInvalid: string;
     resetSubmit: string;
     resetSubmitBusy: string;
     resetSuccess: string;
@@ -352,6 +357,12 @@ const nl: AppMessages = {
     resetInvalid:
       "Deze herstel-link is ongeldig of verlopen. Vraag opnieuw een wachtwoordreset aan.",
     resetMismatch: "De wachtwoorden komen niet overeen.",
+    resetMfaPrompt:
+      "Voor dit account is 2FA ingeschakeld. Vul de code uit je authenticator-app in voordat je een nieuw wachtwoord kiest.",
+    resetMfaCode: "2FA-code",
+    resetMfaSubmit: "Code controleren",
+    resetMfaSubmitBusy: "Controleren...",
+    resetMfaInvalid: "De 2FA-code is ongeldig. Probeer het opnieuw.",
     resetSubmit: "Nieuw wachtwoord opslaan",
     resetSubmitBusy: "Bezig met opslaan...",
     resetSuccess:
@@ -659,6 +670,12 @@ const en: AppMessages = {
     resetInvalid:
       "This recovery link is invalid or expired. Request a new password reset.",
     resetMismatch: "The passwords do not match.",
+    resetMfaPrompt:
+      "2FA is enabled for this account. Enter the code from your authenticator app before choosing a new password.",
+    resetMfaCode: "2FA code",
+    resetMfaSubmit: "Verify code",
+    resetMfaSubmitBusy: "Verifying...",
+    resetMfaInvalid: "The 2FA code is invalid. Please try again.",
     resetSubmit: "Save new password",
     resetSubmitBusy: "Saving...",
     resetSuccess:
@@ -730,6 +747,12 @@ const de: AppMessages = {
     resetInvalid:
       "Dieser Wiederherstellungs-Link ist ungueltig oder abgelaufen. Bitte fordere einen neuen Passwort-Reset an.",
     resetMismatch: "Die Passwoerter stimmen nicht ueberein.",
+    resetMfaPrompt:
+      "Für dieses Konto ist 2FA aktiviert. Gib den Code aus deiner Authenticator-App ein, bevor du ein neues Passwort festlegst.",
+    resetMfaCode: "2FA-Code",
+    resetMfaSubmit: "Code bestätigen",
+    resetMfaSubmitBusy: "Wird überprüft...",
+    resetMfaInvalid: "Der 2FA-Code ist ungültig. Versuche es erneut.",
     resetSubmit: "Neues Passwort speichern",
     resetSubmitBusy: "Speichern...",
     resetSuccess:
