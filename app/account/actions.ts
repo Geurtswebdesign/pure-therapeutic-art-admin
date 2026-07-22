@@ -2,7 +2,10 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { createServerClient } from "@supabase/ssr";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
+import { logSecurityAuditEvent } from "@/lib/security/audit";
+import { getSupabaseCookieOptions } from "@/lib/site/urls";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { APP_LANGUAGE_COOKIE_NAME } from "@/lib/i18n/language-cookie";
 import { isKnownLanguage, normalizeLanguageCode } from "@/lib/i18n/languages";
@@ -17,6 +20,72 @@ import {
 
 function normalizeText(value?: string) {
   return value?.trim() ?? "";
+}
+
+export async function updateMyPassword(input: {
+  currentPassword: string;
+  newPassword: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user?.email) {
+    throw new Error("Niet ingelogd");
+  }
+
+  if (!input.currentPassword) {
+    throw new Error("Vul je huidige wachtwoord in.");
+  }
+  if (input.newPassword.length < 8) {
+    throw new Error("Het nieuwe wachtwoord moet minimaal 8 tekens bevatten.");
+  }
+  if (input.currentPassword === input.newPassword) {
+    throw new Error("Kies een ander wachtwoord dan je huidige wachtwoord.");
+  }
+
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookieOptions: getSupabaseCookieOptions(),
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: input.currentPassword,
+  });
+  if (verifyError) {
+    await logSecurityAuditEvent({
+      eventType: "password_change_verification_failed",
+      severity: "warning",
+      actorUserId: user.id,
+      targetUserId: user.id,
+    });
+    throw new Error("Het huidige wachtwoord is niet correct.");
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: input.newPassword,
+  });
+  if (updateError) {
+    throw new Error("Wachtwoord wijzigen is mislukt. Probeer het opnieuw.");
+  }
+
+  await logSecurityAuditEvent({
+    eventType: "password_changed_by_user",
+    actorUserId: user.id,
+    targetUserId: user.id,
+  });
 }
 
 export async function updateMyProfile(input: {
