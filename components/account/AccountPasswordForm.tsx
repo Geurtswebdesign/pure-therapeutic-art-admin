@@ -25,6 +25,10 @@ const COPY = {
     mfaCode: "2FA-code",
     mfaInvalid: "De 2FA-code is ongeldig. Probeer het opnieuw.",
     mfaUnavailable: "2FA kan niet worden gecontroleerd. Log opnieuw in.",
+    policyRejected:
+      "Dit wachtwoord voldoet niet aan het ingestelde wachtwoordbeleid. Gebruik hoofdletters, kleine letters, cijfers en een speciaal teken.",
+    serviceUnauthorized:
+      "De server kan het wachtwoord momenteel niet aanpassen. Controleer de Supabase-serviceconfiguratie.",
     success: "Je wachtwoord is gewijzigd.",
     submit: "Wachtwoord wijzigen",
     busy: "Wijzigen...",
@@ -46,6 +50,10 @@ const COPY = {
     mfaCode: "2FA code",
     mfaInvalid: "The 2FA code is invalid. Please try again.",
     mfaUnavailable: "2FA could not be verified. Please sign in again.",
+    policyRejected:
+      "This password does not meet the password policy. Use uppercase and lowercase letters, numbers, and a special character.",
+    serviceUnauthorized:
+      "The server cannot change the password right now. Check the Supabase service configuration.",
     success: "Your password has been changed.",
     submit: "Change password",
     busy: "Changing...",
@@ -67,6 +75,10 @@ const COPY = {
     mfaCode: "2FA-Code",
     mfaInvalid: "Der 2FA-Code ist ungültig. Versuche es erneut.",
     mfaUnavailable: "2FA konnte nicht überprüft werden. Bitte melde dich erneut an.",
+    policyRejected:
+      "Dieses Passwort erfüllt die Passwortrichtlinie nicht. Verwende Groß- und Kleinbuchstaben, Zahlen und ein Sonderzeichen.",
+    serviceUnauthorized:
+      "Der Server kann das Passwort derzeit nicht ändern. Prüfe die Supabase-Servicekonfiguration.",
     success: "Dein Passwort wurde geändert.",
     submit: "Passwort ändern",
     busy: "Wird geändert...",
@@ -112,6 +124,8 @@ export default function AccountPasswordForm({ language }: { language: UiLanguage
           PASSWORD_MFA_INVALID: t.mfaInvalid,
           PASSWORD_MFA_UNAVAILABLE: t.mfaUnavailable,
           PASSWORD_MFA_FAILED: t.mfaUnavailable,
+          PASSWORD_POLICY_REJECTED: t.policyRejected,
+          PASSWORD_SERVICE_UNAUTHORIZED: t.serviceUnauthorized,
         };
 
         if (!result.ok && result.code === "PASSWORD_MFA_REQUIRED") {

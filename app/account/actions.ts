@@ -33,6 +33,8 @@ type PasswordChangeErrorCode =
   | "PASSWORD_MFA_UNAVAILABLE"
   | "PASSWORD_MFA_FAILED"
   | "PASSWORD_MFA_INVALID"
+  | "PASSWORD_POLICY_REJECTED"
+  | "PASSWORD_SERVICE_UNAUTHORIZED"
   | "PASSWORD_UPDATE_FAILED";
 
 function passwordChangeFailed(code: PasswordChangeErrorCode) {
@@ -152,6 +154,32 @@ export async function updateMyPassword(input: {
     { password: input.newPassword }
   );
   if (updateError) {
+    const safeErrorDetails = {
+      code: updateError.code ?? "unknown",
+      status: updateError.status ?? null,
+      name: updateError.name,
+    };
+    console.error("[account-password] Supabase admin update failed", safeErrorDetails);
+    await logSecurityAuditEvent({
+      eventType: "password_change_update_failed",
+      severity: "warning",
+      actorUserId: user.id,
+      targetUserId: user.id,
+      details: safeErrorDetails,
+    });
+
+    if (updateError.code === "same_password") {
+      return passwordChangeFailed("PASSWORD_MUST_DIFFER");
+    }
+    if (
+      updateError.code === "weak_password" ||
+      updateError.code === "validation_failed"
+    ) {
+      return passwordChangeFailed("PASSWORD_POLICY_REJECTED");
+    }
+    if (updateError.status === 401 || updateError.status === 403) {
+      return passwordChangeFailed("PASSWORD_SERVICE_UNAUTHORIZED");
+    }
     return passwordChangeFailed("PASSWORD_UPDATE_FAILED");
   }
 
