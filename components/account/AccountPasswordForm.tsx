@@ -2,7 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { updateMyPassword } from "@/app/account/actions";
-import type { UiLanguage } from "@/lib/i18n/runtime";
+import {
+  resolveBaseUiLanguage,
+  type UiLanguage,
+} from "@/lib/i18n/runtime";
 
 const COPY = {
   nl: {
@@ -12,6 +15,12 @@ const COPY = {
     next: "Nieuw wachtwoord",
     confirm: "Herhaal nieuw wachtwoord",
     mismatch: "De nieuwe wachtwoorden komen niet overeen.",
+    currentRequired: "Vul je huidige wachtwoord in.",
+    tooShort: "Het nieuwe wachtwoord moet minimaal 8 tekens bevatten.",
+    mustDiffer: "Kies een ander wachtwoord dan je huidige wachtwoord.",
+    currentIncorrect: "Het huidige wachtwoord is niet correct.",
+    notAuthenticated: "Je bent niet meer ingelogd. Log opnieuw in.",
+    failed: "Wachtwoord wijzigen is mislukt. Probeer het opnieuw.",
     success: "Je wachtwoord is gewijzigd.",
     submit: "Wachtwoord wijzigen",
     busy: "Wijzigen...",
@@ -23,25 +32,37 @@ const COPY = {
     next: "New password",
     confirm: "Repeat new password",
     mismatch: "The new passwords do not match.",
+    currentRequired: "Enter your current password.",
+    tooShort: "The new password must contain at least 8 characters.",
+    mustDiffer: "Choose a password that differs from your current password.",
+    currentIncorrect: "The current password is incorrect.",
+    notAuthenticated: "You are no longer signed in. Please sign in again.",
+    failed: "Changing the password failed. Please try again.",
     success: "Your password has been changed.",
     submit: "Change password",
     busy: "Changing...",
   },
   de: {
-    title: "Passwort andern",
-    intro: "Bestatige dein aktuelles Passwort und wahle danach ein neues Passwort.",
+    title: "Passwort ändern",
+    intro: "Bestätige dein aktuelles Passwort und wähle danach ein neues Passwort.",
     current: "Aktuelles Passwort",
     next: "Neues Passwort",
     confirm: "Neues Passwort wiederholen",
-    mismatch: "Die neuen Passworter stimmen nicht uberein.",
-    success: "Dein Passwort wurde geandert.",
-    submit: "Passwort andern",
-    busy: "Wird geandert...",
+    mismatch: "Die neuen Passwörter stimmen nicht überein.",
+    currentRequired: "Gib dein aktuelles Passwort ein.",
+    tooShort: "Das neue Passwort muss mindestens 8 Zeichen enthalten.",
+    mustDiffer: "Wähle ein anderes Passwort als dein aktuelles Passwort.",
+    currentIncorrect: "Das aktuelle Passwort ist nicht korrekt.",
+    notAuthenticated: "Du bist nicht mehr angemeldet. Bitte melde dich erneut an.",
+    failed: "Das Passwort konnte nicht geändert werden. Versuche es erneut.",
+    success: "Dein Passwort wurde geändert.",
+    submit: "Passwort ändern",
+    busy: "Wird geändert...",
   },
 } as const;
 
 export default function AccountPasswordForm({ language }: { language: UiLanguage }) {
-  const t = COPY[language];
+  const t = COPY[resolveBaseUiLanguage(language)];
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -69,7 +90,16 @@ export default function AccountPasswordForm({ language }: { language: UiLanguage
         setMessage(t.success);
       } catch (error) {
         setIsError(true);
-        setMessage(error instanceof Error ? error.message : t.mismatch);
+        const errorCode = error instanceof Error ? error.message : "";
+        const translatedErrors: Record<string, string> = {
+          PASSWORD_NOT_AUTHENTICATED: t.notAuthenticated,
+          PASSWORD_CURRENT_REQUIRED: t.currentRequired,
+          PASSWORD_TOO_SHORT: t.tooShort,
+          PASSWORD_MUST_DIFFER: t.mustDiffer,
+          PASSWORD_CURRENT_INCORRECT: t.currentIncorrect,
+          PASSWORD_UPDATE_FAILED: t.failed,
+        };
+        setMessage(translatedErrors[errorCode] ?? t.failed);
       }
     });
   }

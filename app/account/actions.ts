@@ -28,17 +28,17 @@ export async function updateMyPassword(input: {
 }) {
   const user = await getCurrentUser();
   if (!user?.email) {
-    throw new Error("Niet ingelogd");
+    throw new Error("PASSWORD_NOT_AUTHENTICATED");
   }
 
   if (!input.currentPassword) {
-    throw new Error("Vul je huidige wachtwoord in.");
+    throw new Error("PASSWORD_CURRENT_REQUIRED");
   }
   if (input.newPassword.length < 8) {
-    throw new Error("Het nieuwe wachtwoord moet minimaal 8 tekens bevatten.");
+    throw new Error("PASSWORD_TOO_SHORT");
   }
   if (input.currentPassword === input.newPassword) {
-    throw new Error("Kies een ander wachtwoord dan je huidige wachtwoord.");
+    throw new Error("PASSWORD_MUST_DIFFER");
   }
 
   const cookieStore = await cookies();
@@ -71,14 +71,14 @@ export async function updateMyPassword(input: {
       actorUserId: user.id,
       targetUserId: user.id,
     });
-    throw new Error("Het huidige wachtwoord is niet correct.");
+    throw new Error("PASSWORD_CURRENT_INCORRECT");
   }
 
   const { error: updateError } = await supabase.auth.updateUser({
     password: input.newPassword,
   });
   if (updateError) {
-    throw new Error("Wachtwoord wijzigen is mislukt. Probeer het opnieuw.");
+    throw new Error("PASSWORD_UPDATE_FAILED");
   }
 
   await logSecurityAuditEvent({
