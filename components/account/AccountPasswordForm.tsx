@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateMyPassword } from "@/app/account/actions";
 import {
   resolveBaseUiLanguage,
   type UiLanguage,
@@ -109,11 +108,15 @@ export default function AccountPasswordForm({ language }: { language: UiLanguage
 
     startTransition(async () => {
       try {
-        const result = await updateMyPassword({
-          currentPassword,
-          newPassword,
-          mfaCode,
+        const response = await fetch("/api/account/password", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currentPassword, newPassword, mfaCode }),
         });
+        const result = (await response.json()) as
+          | { ok: true }
+          | { ok: false; code: string };
         const translatedErrors: Record<string, string> = {
           PASSWORD_NOT_AUTHENTICATED: t.notAuthenticated,
           PASSWORD_CURRENT_REQUIRED: t.currentRequired,
